@@ -25,7 +25,7 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Getting workout plans for user: $userId', name: 'WorkoutRepository');
 
-      final response = await _apiClient.getWorkouts();
+      final response = await _apiClient.getWorkouts(userId);
 
       if (response.data != null && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
@@ -54,7 +54,7 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Getting exercises for workout: $schedaId', name: 'WorkoutRepository');
 
-      final response = await _apiClient.getWorkouts(); // TODO: Aggiornare con endpoint specifico per scheda
+      final response = await _apiClient.getWorkouts(0);
 
       if (response.data != null && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;

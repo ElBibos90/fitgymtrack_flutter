@@ -167,9 +167,9 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<dynamic> getWorkouts() async {
+  Future<dynamic> getWorkouts(int userId) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'user_id': userId};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(

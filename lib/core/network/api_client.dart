@@ -81,7 +81,7 @@ abstract class ApiClient {
       );
 
   @GET("/schede_standalone.php")
-  Future<dynamic> getWorkouts();
+  Future<dynamic> getWorkouts(@Query("user_id") int userId);
 
   @POST("/schede_standalone.php")
   Future<dynamic> createWorkout(
