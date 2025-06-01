@@ -11,6 +11,8 @@ import '../../../../shared/widgets/error_state.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../shared/theme/app_colors.dart';
+import '../../../../core/services/session_service.dart';
+import '../../../auth/bloc/auth_bloc.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
 import '../widgets/workout_plan_card.dart';
@@ -24,17 +26,74 @@ class WorkoutPlansScreen extends StatefulWidget {
 
 class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   late final WorkoutBloc _workoutBloc;
-  final int _currentUserId = 1; // TODO: Get from AuthBloc/SessionService
+  late final SessionService _sessionService;
+
+  int? _currentUserId;
+  bool _isLoadingUserId = true;
 
   @override
   void initState() {
     super.initState();
     _workoutBloc = getIt<WorkoutBloc>();
-    _loadWorkoutPlans();
+    _sessionService = getIt<SessionService>();
+    _initializeUserId();
+  }
+
+  Future<void> _initializeUserId() async {
+    try {
+      // Prima prova a recuperare da SessionService
+      final userId = await _sessionService.getCurrentUserId();
+
+      if (userId != null) {
+        setState(() {
+          _currentUserId = userId;
+          _isLoadingUserId = false;
+        });
+        _loadWorkoutPlans();
+      } else {
+        // Se non c'è in SessionService, prova dall'AuthBloc
+        final authState = context.read<AuthBloc>().state;
+        if (authState is AuthAuthenticated) {
+          setState(() {
+            _currentUserId = authState.user.id;
+            _isLoadingUserId = false;
+          });
+          _loadWorkoutPlans();
+        } else if (authState is AuthLoginSuccess) {
+          setState(() {
+            _currentUserId = authState.user.id;
+            _isLoadingUserId = false;
+          });
+          _loadWorkoutPlans();
+        } else {
+          // Utente non autenticato
+          setState(() {
+            _isLoadingUserId = false;
+          });
+          // Reindirizza al login
+          if (mounted) {
+            context.go('/login');
+          }
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingUserId = false;
+      });
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          message: 'Errore nel recupero dati utente',
+          isSuccess: false,
+        );
+      }
+    }
   }
 
   void _loadWorkoutPlans() {
-    _workoutBloc.loadWorkoutPlans(_currentUserId);
+    if (_currentUserId != null) {
+      _workoutBloc.loadWorkoutPlans(_currentUserId!);
+    }
   }
 
   @override
@@ -59,7 +118,13 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
             ),
           ],
         ),
-        body: BlocConsumer<WorkoutBloc, WorkoutState>(
+        body: _isLoadingUserId
+            ? const Center(child: CircularProgressIndicator())
+            : _currentUserId == null
+            ? const Center(
+          child: Text('Errore: utente non autenticato'),
+        )
+            : BlocConsumer<WorkoutBloc, WorkoutState>(
           listener: (context, state) {
             if (state is WorkoutError) {
               CustomSnackbar.show(
@@ -85,13 +150,15 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
             );
           },
         ),
-        floatingActionButton: FloatingActionButton.extended(
+        floatingActionButton: _currentUserId != null
+            ? FloatingActionButton.extended(
           onPressed: () => _navigateToCreateWorkout(),
           backgroundColor: AppColors.indigo600,
           foregroundColor: Colors.white,
           icon: const Icon(Icons.add),
           label: const Text('Nuova Scheda'),
-        ),
+        )
+            : null,
       ),
     );
   }

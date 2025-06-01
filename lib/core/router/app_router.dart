@@ -10,6 +10,7 @@ import '../../shared/widgets/auth_wrapper.dart';
 import '../../main.dart'; // Per la Dashboard esistente
 import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
+import '../../features/workouts/presentation/screens/active_workout_screen.dart';
 
 
 class AppRouter {
@@ -92,21 +93,8 @@ class AppRouter {
         ),
 
         // ============================================================================
-        // FUTURE ROUTES (placeholder)
+        // WORKOUT ROUTES
         // ============================================================================
-
-        GoRoute(
-          path: '/profile',
-          name: 'profile',
-          builder: (context, state) {
-            return AuthWrapper(
-              authenticatedChild: const Scaffold(
-                body: Center(child: Text('Profile Screen - Coming Soon')),
-              ),
-              unauthenticatedChild: const LoginScreen(),
-            );
-          },
-        ),
 
         GoRoute(
           path: '/workouts/create',
@@ -157,15 +145,24 @@ class AppRouter {
           },
         ),
 
+        // ✅ ROTTA SISTEMATA - Ora usa la schermata reale
         GoRoute(
           path: '/workouts/:id/start',
           name: 'start-workout',
           builder: (context, state) {
             final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            if (workoutId == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('ID scheda non valido'),
+                ),
+              );
+            }
+
             return AuthWrapper(
-              authenticatedChild: Scaffold(
-                appBar: AppBar(title: Text('Active Workout $workoutId')),
-                body: const Center(child: Text('Active Workout Screen - Coming Soon')),
+              authenticatedChild: ActiveWorkoutScreen(
+                schedaId: workoutId,
+                // allenamentoId è null per iniziare nuovo allenamento
               ),
               unauthenticatedChild: const LoginScreen(),
             );
@@ -179,6 +176,23 @@ class AppRouter {
             return AuthWrapper(
               authenticatedChild: const Scaffold(
                 body: Center(child: Text('Stats Screen - Coming Soon')),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // FUTURE ROUTES (placeholder)
+        // ============================================================================
+
+        GoRoute(
+          path: '/profile',
+          name: 'profile',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const Scaffold(
+                body: Center(child: Text('Profile Screen - Coming Soon')),
               ),
               unauthenticatedChild: const LoginScreen(),
             );

@@ -27,12 +27,12 @@ class WorkoutRepository {
 
       final response = await _apiClient.getWorkouts(userId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      // response è già il JSON parsed diretto
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final schedeList = data['schede'] as List<dynamic>? ?? [];
+          final schedeList = response['schede'] as List<dynamic>? ?? [];
           final workoutPlans = schedeList
               .cast<Map<String, dynamic>>()
               .map((json) => WorkoutPlan.fromJson(json))
@@ -41,7 +41,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${workoutPlans.length} workout plans', name: 'WorkoutRepository');
           return workoutPlans;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel caricamento delle schede');
+          throw Exception(response['message'] ?? 'Errore nel caricamento delle schede');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -54,14 +54,13 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Getting exercises for workout: $schedaId', name: 'WorkoutRepository');
 
-      final response = await _apiClient.getWorkouts(0);
+      final response = await _apiClient.getWorkoutExercises(schedaId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final eserciziList = data['esercizi'] as List<dynamic>? ?? [];
+          final eserciziList = response['esercizi'] as List<dynamic>? ?? [];
           final exercises = eserciziList
               .cast<Map<String, dynamic>>()
               .map((json) => WorkoutExercise.fromJson(json))
@@ -70,7 +69,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${exercises.length} exercises', name: 'WorkoutRepository');
           return exercises;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel caricamento degli esercizi');
+          throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -83,11 +82,10 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Creating workout plan: ${request.nome}', name: 'WorkoutRepository');
 
-      final response = await _apiClient.createWorkout(request.toJson());
+      final response = await _apiClient.createWorkoutStandalone(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return CreateWorkoutPlanResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return CreateWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -99,11 +97,10 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Updating workout plan: ${request.schedaId}', name: 'WorkoutRepository');
 
-      final response = await _apiClient.updateWorkout(request.toJson());
+      final response = await _apiClient.updateWorkoutStandalone(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return UpdateWorkoutPlanResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return UpdateWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -115,11 +112,11 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Deleting workout plan: $schedaId', name: 'WorkoutRepository');
 
-      final response = await _apiClient.deleteWorkout(schedaId);
+      final request = {'scheda_id': schedaId};
+      final response = await _apiClient.deleteWorkoutStandalone(request);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return DeleteWorkoutPlanResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return DeleteWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -133,12 +130,11 @@ class WorkoutRepository {
 
       final response = await _apiClient.getAvailableExercises(userId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final eserciziList = data['esercizi'] as List<dynamic>? ?? [];
+          final eserciziList = response['esercizi'] as List<dynamic>? ?? [];
           final exercises = eserciziList
               .cast<Map<String, dynamic>>()
               .map((json) => ExerciseItem.fromJson(json))
@@ -147,7 +143,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${exercises.length} available exercises', name: 'WorkoutRepository');
           return exercises;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel caricamento degli esercizi disponibili');
+          throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi disponibili');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -175,9 +171,8 @@ class WorkoutRepository {
 
       final response = await _apiClient.startWorkout(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return StartWorkoutResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return StartWorkoutResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -191,12 +186,11 @@ class WorkoutRepository {
 
       final response = await _apiClient.getCompletedSeries(allenamentoId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final serieList = data['serie'] as List<dynamic>? ?? [];
+          final serieList = response['serie'] as List<dynamic>? ?? [];
           final completedSeries = serieList
               .cast<Map<String, dynamic>>()
               .map((json) => CompletedSeriesData.fromJson(json))
@@ -205,7 +199,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${completedSeries.length} completed series', name: 'WorkoutRepository');
           return completedSeries;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel recupero delle serie completate');
+          throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -230,9 +224,8 @@ class WorkoutRepository {
 
       final response = await _apiClient.saveCompletedSeries(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return SaveCompletedSeriesResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return SaveCompletedSeriesResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -256,9 +249,8 @@ class WorkoutRepository {
 
       final response = await _apiClient.completeWorkout(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return CompleteWorkoutResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return CompleteWorkoutResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
@@ -276,12 +268,11 @@ class WorkoutRepository {
 
       final response = await _apiClient.getWorkoutHistory(userId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final allenamenti = data['allenamenti'] as List<dynamic>? ?? [];
+          final allenamenti = response['allenamenti'] as List<dynamic>? ?? [];
           final workoutHistory = allenamenti
               .cast<Map<String, dynamic>>()
               .map((json) => WorkoutHistory.fromMap(json))
@@ -290,7 +281,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${workoutHistory.length} workout history entries', name: 'WorkoutRepository');
           return workoutHistory;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel recupero della cronologia allenamenti');
+          throw Exception(response['message'] ?? 'Errore nel recupero della cronologia allenamenti');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -305,12 +296,11 @@ class WorkoutRepository {
 
       final response = await _apiClient.getWorkoutSeriesDetail(allenamentoId);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final serieList = data['serie'] as List<dynamic>? ?? [];
+          final serieList = response['serie'] as List<dynamic>? ?? [];
           final seriesDetails = serieList
               .cast<Map<String, dynamic>>()
               .map((json) => CompletedSeriesData.fromJson(json))
@@ -319,7 +309,7 @@ class WorkoutRepository {
           developer.log('Successfully loaded ${seriesDetails.length} series details', name: 'WorkoutRepository');
           return seriesDetails;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel recupero delle serie completate');
+          throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -335,9 +325,8 @@ class WorkoutRepository {
       final request = DeleteSeriesRequest(serieId: seriesId);
       final response = await _apiClient.deleteCompletedSeries(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final seriesResponse = SeriesOperationResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        final seriesResponse = SeriesOperationResponse.fromJson(response);
         return seriesResponse.success;
       } else {
         throw Exception('Formato risposta non valido');
@@ -366,9 +355,8 @@ class WorkoutRepository {
 
       final response = await _apiClient.updateCompletedSeries(request.toJson());
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final seriesResponse = SeriesOperationResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        final seriesResponse = SeriesOperationResponse.fromJson(response);
         return seriesResponse.success;
       } else {
         throw Exception('Formato risposta non valido');
@@ -385,9 +373,8 @@ class WorkoutRepository {
         'allenamento_id': workoutId,
       });
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final seriesResponse = SeriesOperationResponse.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        final seriesResponse = SeriesOperationResponse.fromJson(response);
         return seriesResponse.success;
       } else {
         throw Exception('Formato risposta non valido');
@@ -406,16 +393,15 @@ class WorkoutRepository {
 
       final response = await _apiClient.getUserStats();
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        final success = data['success'] as bool? ?? false;
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
 
         if (success) {
-          final statsData = data['stats'] as Map<String, dynamic>;
+          final statsData = response['stats'] as Map<String, dynamic>;
           final userStats = UserStats.fromJson(statsData);
           return userStats;
         } else {
-          throw Exception(data['message'] ?? 'Errore nel caricamento delle statistiche');
+          throw Exception(response['message'] ?? 'Errore nel caricamento delle statistiche');
         }
       } else {
         throw Exception('Formato risposta non valido');
@@ -430,9 +416,8 @@ class WorkoutRepository {
 
       final response = await _apiClient.getPeriodStats(period);
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
-        final data = response.data as Map<String, dynamic>;
-        return PeriodStats.fromJson(data);
+      if (response != null && response is Map<String, dynamic>) {
+        return PeriodStats.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
