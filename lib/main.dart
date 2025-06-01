@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'core/di/dependency_injection.dart';
+import 'features/auth/bloc/auth_bloc.dart';
+import 'shared/theme/app_theme.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await DependencyInjection.init();
+
   runApp(const FitGymTrackApp());
 }
 
@@ -15,25 +24,26 @@ class FitGymTrackApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return MaterialApp(
-          title: 'FitGymTrack',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1976D2), // Blu Material
-              brightness: Brightness.light,
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthBloc>(
+              create: (context) => getIt<AuthBloc>(),
             ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF90CAF9), // Blu chiaro per dark
-              brightness: Brightness.dark,
+            BlocProvider<RegisterBloc>(
+              create: (context) => getIt<RegisterBloc>(),
             ),
+            BlocProvider<PasswordResetBloc>(
+              create: (context) => getIt<PasswordResetBloc>(),
+            ),
+          ],
+          child: MaterialApp(
+            title: 'FitGymTrack',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            home: const SplashScreen(),
           ),
-          themeMode: ThemeMode.system,
-          home: const SplashScreen(),
         );
       },
     );
@@ -71,11 +81,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    // Dopo 3 secondi, vai alla home
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     });
@@ -97,7 +106,6 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo/Icona
               Container(
                 width: 120.w,
                 height: 120.w,
@@ -122,7 +130,6 @@ class _SplashScreenState extends State<SplashScreen>
 
               SizedBox(height: 24.h),
 
-              // Nome App
               Text(
                 'FitGymTrack',
                 style: TextStyle(
@@ -135,7 +142,6 @@ class _SplashScreenState extends State<SplashScreen>
 
               SizedBox(height: 8.h),
 
-              // Sottotitolo
               Text(
                 'Il tuo personal trainer digitale',
                 style: TextStyle(
@@ -147,7 +153,6 @@ class _SplashScreenState extends State<SplashScreen>
 
               SizedBox(height: 40.h),
 
-              // Loading indicator
               SizedBox(
                 width: 40.w,
                 height: 40.w,
@@ -164,6 +169,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
+// HomeScreen esistente (Dashboard) rimane uguale
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -218,10 +224,16 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
-              // TODO: Implementare notifiche
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Notifiche in arrivo!')),
               );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              // Logout con BLoC
+              context.read<AuthBloc>().logout();
             },
           ),
         ],
@@ -247,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================================
-// PAGINE PLACEHOLDER
+// PAGINE PLACEHOLDER (rimangono uguali ma con navigazione aggiornata)
 // ============================================================================
 
 class DashboardPage extends StatelessWidget {
@@ -320,6 +332,33 @@ class DashboardPage extends StatelessWidget {
               ],
             ),
           ),
+
+          // Quick Actions
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/workouts'),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('Inizia Allenamento'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/stats'),
+                  icon: const Icon(Icons.analytics),
+                  label: const Text('Vedi Statistiche'),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -391,7 +430,7 @@ class WorkoutsPage extends StatelessWidget {
             'Allenamenti',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          Text('In implementazione...'),
+          Text('Prossima implementazione...'),
         ],
       ),
     );
@@ -417,7 +456,7 @@ class StatsPage extends StatelessWidget {
             'Statistiche',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          Text('In implementazione...'),
+          Text('Prossima implementazione...'),
         ],
       ),
     );
@@ -429,21 +468,27 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.person,
             size: 64,
             color: Colors.grey,
           ),
-          SizedBox(height: 16),
-          Text(
+          const SizedBox(height: 16),
+          const Text(
             'Profilo',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          Text('In implementazione...'),
+          const Text('Prossima implementazione...'),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () => context.push('/profile'),
+            icon: const Icon(Icons.edit),
+            label: const Text('Modifica Profilo'),
+          ),
         ],
       ),
     );
