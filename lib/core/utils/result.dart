@@ -36,6 +36,45 @@ sealed class Result<T> {
       );
     }
   }
+
+  /// Fold pattern - esegue onSuccess o onFailure in base al risultato
+  R fold<R>({
+    required R Function(T data) onSuccess,
+    required R Function(Exception exception, String? message) onFailure,
+  }) {
+    if (this is Success<T>) {
+      final success = this as Success<T>;
+      return onSuccess(success.data);
+    } else if (this is Failure<T>) {
+      final failure = this as Failure<T>;
+      return onFailure(failure.exception, failure.message);
+    } else {
+      // Fallback case
+      return onFailure(Exception('Unknown result type'), 'Unknown result type');
+    }
+  }
+
+  /// Restituisce true se il risultato è un successo
+  bool get isSuccess => this is Success<T>;
+
+  /// Restituisce true se il risultato è un errore
+  bool get isFailure => this is Failure<T>;
+
+  /// Restituisce i dati se il risultato è un successo, null altrimenti
+  T? get dataOrNull {
+    if (this is Success<T>) {
+      return (this as Success<T>).data;
+    }
+    return null;
+  }
+
+  /// Restituisce l'eccezione se il risultato è un errore, null altrimenti
+  Exception? get exceptionOrNull {
+    if (this is Failure<T>) {
+      return (this as Failure<T>).exception;
+    }
+    return null;
+  }
 }
 
 /// Rappresenta un risultato di successo
@@ -81,64 +120,48 @@ final class Failure<T> extends Result<T> {
 
 /// Estensioni per il Result pattern
 extension ResultExtensions<T> on Result<T> {
-  /// Restituisce true se il risultato è un successo
-  bool get isSuccess => this is Success<T>;
-
-  /// Restituisce true se il risultato è un errore
-  bool get isFailure => this is Failure<T>;
-
-  /// Restituisce i dati se il risultato è un successo, null altrimenti
-  T? get dataOrNull => switch (this) {
-    Success<T>(data: final data) => data,
-    Failure<T>() => null,
-  };
-
-  /// Restituisce l'eccezione se il risultato è un errore, null altrimenti
-  Exception? get exceptionOrNull => switch (this) {
-    Success<T>() => null,
-    Failure<T>(exception: final exception) => exception,
-  };
-
-  /// Fold pattern - esegue onSuccess o onFailure in base al risultato
-  R fold<R>({
-    required R Function(T data) onSuccess,
-    required R Function(Exception exception, String? message) onFailure,
-  }) {
-    return switch (this) {
-      Success<T>(data: final data) => onSuccess(data),
-      Failure<T>(exception: final exception, message: final message) => onFailure(exception, message),
-    };
-  }
-
   /// Map - trasforma i dati se il risultato è un successo
   Result<R> map<R>(R Function(T data) transform) {
-    return switch (this) {
-      Success<T>(data: final data) => Success(transform(data)),
-      Failure<T>(exception: final exception, message: final message) => Failure(exception, message: message),
-    };
+    if (this is Success<T>) {
+      final success = this as Success<T>;
+      return Success(transform(success.data));
+    } else if (this is Failure<T>) {
+      final failure = this as Failure<T>;
+      return Failure(failure.exception, message: failure.message);
+    } else {
+      return Failure(Exception('Unknown result type'), message: 'Unknown result type');
+    }
   }
 
   /// FlatMap - trasforma i dati e può restituire un altro Result
   Result<R> flatMap<R>(Result<R> Function(T data) transform) {
-    return switch (this) {
-      Success<T>(data: final data) => transform(data),
-      Failure<T>(exception: final exception, message: final message) => Failure(exception, message: message),
-    };
+    if (this is Success<T>) {
+      final success = this as Success<T>;
+      return transform(success.data);
+    } else if (this is Failure<T>) {
+      final failure = this as Failure<T>;
+      return Failure(failure.exception, message: failure.message);
+    } else {
+      return Failure(Exception('Unknown result type'), message: 'Unknown result type');
+    }
   }
 
   /// GetOrElse - restituisce i dati o un valore di default
   T getOrElse(T defaultValue) {
-    return switch (this) {
-      Success<T>(data: final data) => data,
-      Failure<T>() => defaultValue,
-    };
+    if (this is Success<T>) {
+      return (this as Success<T>).data;
+    }
+    return defaultValue;
   }
 
   /// GetOrThrow - restituisce i dati o lancia l'eccezione
   T getOrThrow() {
-    return switch (this) {
-      Success<T>(data: final data) => data,
-      Failure<T>(exception: final exception) => throw exception,
-    };
+    if (this is Success<T>) {
+      return (this as Success<T>).data;
+    } else if (this is Failure<T>) {
+      throw (this as Failure<T>).exception;
+    } else {
+      throw Exception('Unknown result type');
+    }
   }
 }
