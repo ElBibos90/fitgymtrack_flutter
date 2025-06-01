@@ -12,9 +12,13 @@ import '../../features/auth/bloc/auth_bloc.dart';
 // Workout features
  import '../../features/workouts/repository/workout_repository.dart';
 // import '../../features/workouts/bloc/workout_plans_bloc.dart';
-// import '../../features/workouts/bloc/active_workout_bloc.dart';
 // import '../../features/exercises/bloc/exercises_bloc.dart';
 // import '../../features/stats/bloc/stats_bloc.dart';
+
+import '../../features/workouts/bloc/workout_bloc.dart';
+import '../../features/workouts/bloc/active_workout_bloc.dart';
+import '../../features/workouts/bloc/workout_history_bloc.dart';
+
 
 final getIt = GetIt.instance;
 
@@ -43,11 +47,24 @@ class DependencyInjection {
     ));
 
     // ============================================================================
+// ============================================================================
 // WORKOUT FEATURE
 // ============================================================================
 
     getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
       apiClient: getIt<ApiClient>(),
+    ));
+
+    getIt.registerFactory<WorkoutBloc>(() => WorkoutBloc(
+      workoutRepository: getIt<WorkoutRepository>(),
+    ));
+
+    getIt.registerFactory<ActiveWorkoutBloc>(() => ActiveWorkoutBloc(
+      workoutRepository: getIt<WorkoutRepository>(),
+    ));
+
+    getIt.registerFactory<WorkoutHistoryBloc>(() => WorkoutHistoryBloc(
+      workoutRepository: getIt<WorkoutRepository>(),
     ));
 
     // TODO: Uncomment when we create WorkoutRepository

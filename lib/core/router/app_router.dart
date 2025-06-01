@@ -8,6 +8,9 @@ import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
 import '../../shared/widgets/auth_wrapper.dart';
 import '../../main.dart'; // Per la Dashboard esistente
+import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
+import '../../features/workouts/presentation/screens/create_workout_screen.dart';
+
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -25,13 +28,12 @@ class AppRouter {
           path: '/splash',
           name: 'splash',
           builder: (context, state) {
-            // Controlla lo stato di autenticazione e reindirizza
             return BlocConsumer<AuthBloc, AuthState>(
               listener: (context, authState) {
                 if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
-                  context.go('/dashboard');
+                  context.go('/dashboard'); // ✅ DEVE ESSERE /dashboard
                 } else if (authState is AuthUnauthenticated || authState is AuthError) {
-                  context.go('/login');
+                  context.go('/login');   // ✅ DEVE ESSERE /login
                 }
               },
               builder: (context, authState) {
@@ -107,12 +109,63 @@ class AppRouter {
         ),
 
         GoRoute(
+          path: '/workouts/create',
+          name: 'create-workout',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const CreateWorkoutScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/workouts/edit/:id',
+          name: 'edit-workout',
+          builder: (context, state) {
+            final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            return AuthWrapper(
+              authenticatedChild: CreateWorkoutScreen(workoutId: workoutId),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/workouts/:id',
+          name: 'workout-details',
+          builder: (context, state) {
+            final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            return AuthWrapper(
+              authenticatedChild: Scaffold(
+                appBar: AppBar(title: Text('Workout Details $workoutId')),
+                body: const Center(child: Text('Workout Details - Coming Soon')),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
           path: '/workouts',
           name: 'workouts',
           builder: (context, state) {
             return AuthWrapper(
-              authenticatedChild: const Scaffold(
-                body: Center(child: Text('Workouts Screen - Coming Soon')),
+              authenticatedChild: const WorkoutPlansScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/workouts/:id/start',
+          name: 'start-workout',
+          builder: (context, state) {
+            final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            return AuthWrapper(
+              authenticatedChild: Scaffold(
+                appBar: AppBar(title: Text('Active Workout $workoutId')),
+                body: const Center(child: Text('Active Workout Screen - Coming Soon')),
               ),
               unauthenticatedChild: const LoginScreen(),
             );

@@ -1,92 +1,101 @@
-# 🚀 PROMPT TEMPLATE PER PROSSIMA CHAT
+# 🚀 PROMPT TEMPLATE PER PROSSIMA CHAT - FASE D FINALE
 
 ## 📋 **COPIA E INCOLLA QUESTO PROMPT:**
 
 ---
 
-**Continuiamo FitGymTrack Flutter migration. Abbiamo completato FASE A (Models) con successo!**
+**Continuiamo FitGymTrack Flutter migration. FASE D quasi completata - app funzionante al 95%!**
 
-**STATO ATTUALE:**
-- ✅ **FASE A COMPLETATA**: 4 file models creati, JSON serialization funzionante, 60+ classes
-- ✅ **App base funziona**: Auth system + GoRouter + Material Design 3  
-- ✅ **Zero errori**: flutter analyze pulito, build runner funzionante
-- ✅ **Models pronti**: Exercise, WorkoutPlan, ActiveWorkout, UserStats completi
+**STATO ATTUALE ECCELLENTE:**
+- ✅ **FASI A, B, C COMPLETATE**: Models, Data Layer, BLoC Layer al 100%
+- ✅ **FASE D PARZIALE**: WorkoutPlansScreen + CreateWorkoutScreen TESTATE e funzionanti  
+- ✅ **App produzione**: Stabile, BLoC reattivo, navigation perfetta, error handling enterprise
+- ✅ **Testing completato**: UI flows testati su device, zero crash, UX professionale
 
-**PROSSIMO OBIETTIVO - FASE B: DATA LAYER**
-- 🎯 **STEP 6**: WorkoutRepository implementation
-- 🎯 **STEP 7**: ApiClient con endpoint workout tipizzati  
-- 🎯 **STEP 8**: Dependency Injection completo
+**RISULTATI TESTATI PERSONALMENTE:**
+- 📱 WorkoutPlansScreen: Lista schede con empty/error states perfetti
+- ✏️ CreateWorkoutScreen: Form validation + esercizi management funzionanti
+- 🏗️ Architettura: Clean Architecture + BLoC pattern enterprise-level
+- 🔧 Stabilità: Zero errori, build system pulito, performance ottime
 
-**APPROCCIO**: Graduale step-by-step, testando compilazione ad ogni file
+**PROSSIMO OBIETTIVO - COMPLETARE FASE D:**
+- 🎯 **STEP 14**: ActiveWorkoutScreen (allenamento in corso con timer)
+- 🎯 **STEP 15**: WorkoutHistoryScreen (cronologia e statistiche)
 
-**FILES DA AGGIORNARE OGGI:**
-1. `lib/features/workouts/repository/workout_repository.dart` (nuovo file)
-2. `lib/core/network/api_client.dart` (aggiungere endpoint workout)
-3. `lib/core/di/dependency_injection.dart` (registrare WorkoutRepository)
+**APPROCCIO**: Continuare implementation graduale, test ogni screen
 
-**ALLEGATI:**
-- 📋 Documento di continuazione completo (stato progetto)
-- 📱 main.dart (se serve vedere configurazione app)
-- ⚙️ pubspec.yaml (se serve vedere dipendenze)
+**PRIORITÀ STEP 14 - ActiveWorkoutScreen:**
+- Timer allenamento + tempo recupero serie
+- Lista esercizi con progress tracking
+- Input peso/ripetizioni per ogni serie
+- Real-time updates con ActiveWorkoutBloc
+- Complete workout flow da start a finish
 
-**Ti allego il documento di continuazione che contiene tutto lo storico del progetto.**
+**ALLEGATI NECESSARI:**
+- 📋 Documento di continuazione AGGIORNATO con stato completo progetto
+- 📱 Screenshots test app funzionante (se richiesti)
+- ⚙️ File correnti implementazione (se serve vedere stato)
 
-**Procediamo con STEP 6: Implementazione WorkoutRepository!**
+**Ti allego il documento di continuazione aggiornato con tutto lo storico del progetto e i risultati di testing.**
+
+**Procediamo con STEP 14: ActiveWorkoutScreen implementation!**
 
 ---
 
 ## 📁 **FILES DA ALLEGARE:**
 
 ### **🔥 OBBLIGATORI:**
-1. **📋 project_continuation_doc.md** - Documento completo dello stato
-2. **📱 main.dart** - Setup app corrente (se richiesto)  
-3. **⚙️ pubspec.yaml** - Dipendenze correnti (se richiesto)
+1. **📋 project_continuation_doc.md** - Documento AGGIORNATO con stato completo
 
 ### **🎯 SE RICHIESTI DA CLAUDE:**
-4. **🌐 core/network/api_client.dart** - Per vedere endpoint esistenti
-5. **🔧 core/di/dependency_injection.dart** - Per vedere DI corrente
-6. **🏋️ features/workouts/models/workout_plan_models.dart** - Per vedere models
+2. **📱 Screenshots app** - Prove funzionamento UI testata
+3. **🏋️ active_workout_models.dart** - Per vedere models già implementati  
+4. **🔧 active_workout_bloc.dart** - Per vedere BLoC già pronto
+5. **🌐 workout_repository.dart** - Per vedere metodi già implementati
 
 ### **📋 STRATEGIA FILE SHARING:**
-- **Inizio chat**: Allego sempre il documento di continuazione
+- **Inizio chat**: Allego sempre documento di continuazione
 - **Durante sviluppo**: Claude chiede file specifici quando servono
-- **End implementazione**: Condivido i nuovi file creati
+- **End implementation**: Condivido nuove screen implementate
 
 ---
 
 ## 🎯 **ESEMPIO MESSAGGIO COMPLETO:**
 
 ```
-Continuiamo FitGymTrack Flutter migration. Abbiamo completato FASE A (Models) con successo!
+Continuiamo FitGymTrack Flutter migration. FASE D quasi completata!
 
 STATO ATTUALE:
-- ✅ FASE A COMPLETATA: 4 file models + JSON serialization
-- ✅ App base funziona: Auth + GoRouter perfetti
-- ✅ Zero errori: flutter analyze pulito
+- ✅ FASI A,B,C COMPLETATE: Architettura enterprise al 100%
+- ✅ App funzionante: WorkoutPlansScreen + CreateWorkoutScreen testate
+- ✅ BLoC pattern: State management reattivo e stabile
 
-PROSSIMO: FASE B - DATA LAYER
-- STEP 6: WorkoutRepository 
-- STEP 7: ApiClient workout endpoints
-- STEP 8: Dependency Injection
+PROSSIMO: STEP 14 - ActiveWorkoutScreen  
+- Timer allenamento real-time
+- Exercise progress tracking
+- Series input interface
+- Complete workout flow
 
-Allegato documento di continuazione completo.
-Procediamo con WorkoutRepository implementation!
+Allegato documento di continuazione AGGIORNATO.
+Procediamo con ActiveWorkoutScreen implementation!
 ```
 
 ---
 
 ## 🏆 **VANTAGGI QUESTO PROMPT:**
 
-✅ **Context completo** - Claude capisce subito dove siamo  
-✅ **Obiettivo chiaro** - Sa esattamente cosa implementare  
-✅ **Progressione logica** - Step-by-step approach confermato  
-✅ **Files pronti** - Sa quali file servono e quando  
-✅ **Success metrics** - Sa come testare che funzioni  
+✅ **Status chiarissimo** - Claude capisce dove siamo esattamente  
+✅ **Success stories** - Enfatizza che l'app è già funzionante  
+✅ **Obiettivo preciso** - Focus su ActiveWorkoutScreen specifica  
+✅ **Context completo** - Reference a architettura già implementata  
+✅ **Testing validation** - Conferma che tutto è stato testato  
 
 ---
 
-## 💪 **READY PER FASE B!**
+## 💪 **READY PER FASE D FINALE!**
 
-**Con questo prompt la prossima chat sarà super produttiva dal primo messaggio!** 
+**Con questo prompt la prossima chat partirà immediatamente produttiva!** 
 
-*La Fase A è stata un successo totale - ora dominiamo la Fase B!* 🚀✨
+**L'app è GIÀ FANTASTICA** - ora la rendiamo **COMPLETA** con le ultime 2 schermate! 
+
+*Da app parziale a PRODOTTO FINITO in una sessione!* 🚀✨

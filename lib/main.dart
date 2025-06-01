@@ -6,6 +6,8 @@ import 'core/di/dependency_injection.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'shared/theme/app_theme.dart';
+import 'features/workouts/bloc/workout_blocs.dart';
+import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +29,7 @@ class FitGymTrackApp extends StatelessWidget {
       builder: (context, child) {
         return MultiBlocProvider(
           providers: [
-            // Auth BLoCs
+            // AUTH BLOC PROVIDERS
             BlocProvider<AuthBloc>(
               create: (context) => getIt<AuthBloc>(),
             ),
@@ -36,6 +38,17 @@ class FitGymTrackApp extends StatelessWidget {
             ),
             BlocProvider<PasswordResetBloc>(
               create: (context) => getIt<PasswordResetBloc>(),
+            ),
+
+            // WORKOUT BLOC PROVIDERS - NUOVO!
+            BlocProvider<WorkoutBloc>(
+              create: (context) => getIt<WorkoutBloc>(),
+            ),
+            BlocProvider<ActiveWorkoutBloc>(
+              create: (context) => getIt<ActiveWorkoutBloc>(),
+            ),
+            BlocProvider<WorkoutHistoryBloc>(
+              create: (context) => getIt<WorkoutHistoryBloc>(),
             ),
           ],
           child: MaterialApp.router(
@@ -413,24 +426,8 @@ class WorkoutsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.fitness_center,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Allenamenti',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text('Prossima implementazione...'),
-        ],
-      ),
-    );
+    // ✅ MOSTRA DIRETTAMENTE LA SCHERMATA
+    return const WorkoutPlansScreen();
   }
 }
 
