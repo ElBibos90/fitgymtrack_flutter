@@ -27,6 +27,7 @@ class FitGymTrackApp extends StatelessWidget {
       builder: (context, child) {
         return MultiBlocProvider(
           providers: [
+            // Auth BLoCs
             BlocProvider<AuthBloc>(
               create: (context) => getIt<AuthBloc>(),
             ),

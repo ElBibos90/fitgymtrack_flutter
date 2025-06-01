@@ -1,10 +1,20 @@
+// lib/core/network/api_client.dart
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
+
+// Auth models
 import '../../features/auth/models/login_request.dart';
 import '../../features/auth/models/login_response.dart';
 import '../../features/auth/models/register_request.dart';
 import '../../features/auth/models/register_response.dart';
 import '../../features/auth/models/password_reset_models.dart';
+
+// TODO: Uncomment when we create the workout models
+// Workout models
+// import '../../features/exercises/models/exercise.dart';
+// import '../../features/workouts/models/workout_plan_models.dart';
+// import '../../features/workouts/models/active_workout_models.dart';
+// import '../../features/stats/models/user_stats_models.dart';
 
 part 'api_client.g.dart';
 
@@ -27,10 +37,6 @@ abstract class ApiClient {
       @Body() RegisterRequest registerRequest,
       );
 
-  // ============================================================================
-  // ENDPOINTS CHE RITORNANO Response<dynamic> - Senza fromJson
-  // ============================================================================
-
   @POST("/password_reset.php")
   Future<dynamic> requestPasswordReset(
       @Query("action") String action,
@@ -42,6 +48,24 @@ abstract class ApiClient {
       @Query("action") String action,
       @Body() PasswordResetConfirmRequest resetConfirmRequest,
       );
+
+  // ============================================================================
+  // TODO: WORKOUT ENDPOINTS - Uncomment when we create models
+  // ============================================================================
+
+  // @GET("/schede_standalone.php")
+  // Future<WorkoutPlansResponse> getWorkoutPlans(
+  //   @Query("user_id") int userId,
+  // );
+
+  // @POST("/schede_standalone.php")
+  // Future<WorkoutPlanResponse> createWorkoutPlan(
+  //   @Body() CreateWorkoutPlanRequest request,
+  // );
+
+  // ============================================================================
+  // GENERIC ENDPOINTS (keeping existing dynamic ones for now)
+  // ============================================================================
 
   @GET("/utente_profilo.php")
   Future<dynamic> getUserProfile();
