@@ -10,7 +10,7 @@ import '../../features/auth/bloc/auth_bloc.dart';
 
 // TODO: Uncomment when we create the physical files
 // Workout features
-// import '../../features/workouts/repository/workout_repository.dart';
+ import '../../features/workouts/repository/workout_repository.dart';
 // import '../../features/workouts/bloc/workout_plans_bloc.dart';
 // import '../../features/workouts/bloc/active_workout_bloc.dart';
 // import '../../features/exercises/bloc/exercises_bloc.dart';
@@ -40,6 +40,14 @@ class DependencyInjection {
     getIt.registerLazySingleton<AuthRepository>(() => AuthRepository(
       apiClient: getIt<ApiClient>(),
       sessionService: getIt<SessionService>(),
+    ));
+
+    // ============================================================================
+// WORKOUT FEATURE
+// ============================================================================
+
+    getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
+      apiClient: getIt<ApiClient>(),
     ));
 
     // TODO: Uncomment when we create WorkoutRepository

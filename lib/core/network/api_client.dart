@@ -9,6 +9,11 @@ import '../../features/auth/models/register_request.dart';
 import '../../features/auth/models/register_response.dart';
 import '../../features/auth/models/password_reset_models.dart';
 
+import '../../features/workouts/models/series_request_models.dart';
+import '../../features/exercises/models/exercises_response.dart';
+import '../../features/workouts/models/workout_response_types.dart';
+
+
 // TODO: Uncomment when we create the workout models
 // Workout models
 // import '../../features/exercises/models/exercise.dart';
@@ -110,5 +115,66 @@ abstract class ApiClient {
   Future<dynamic> updatePlan(
       @Body() Map<String, dynamic> request,
       @Query("action") String action,
+      );
+  // ============================================================================
+  // WORKOUT PLANS ENDPOINTS
+  // ============================================================================
+
+  @GET("/get_esercizi_standalone.php")
+  Future<dynamic> getAvailableExercises(
+      @Query("user_id") int userId,
+      );
+
+  // ============================================================================
+  // ACTIVE WORKOUT ENDPOINTS
+  // ============================================================================
+
+  @POST("/start_active_workout_standalone.php")
+  Future<dynamic> startWorkout(
+      @Body() Map<String, dynamic> request,
+      );
+
+  @GET("/get_completed_series_standalone.php")
+  Future<dynamic> getCompletedSeries(
+      @Query("allenamento_id") int allenamentoId,
+      );
+
+  @POST("/save_completed_series.php")
+  Future<dynamic> saveCompletedSeries(
+      @Body() Map<String, dynamic> request,
+      );
+
+  @POST("/complete_allenamento_standalone.php")
+  Future<dynamic> completeWorkout(
+      @Body() Map<String, dynamic> request,
+      );
+
+  // ============================================================================
+  // WORKOUT HISTORY ENDPOINTS
+  // ============================================================================
+
+  @GET("/get_allenamenti_standalone.php")
+  Future<dynamic> getWorkoutHistory(
+      @Query("user_id") int userId,
+      );
+
+  @GET("/get_completed_series_standalone.php")
+  Future<dynamic> getWorkoutSeriesDetail(
+      @Query("allenamento_id") int allenamentoId,
+      );
+
+  @POST("/delete_completed_series.php")
+  Future<dynamic> deleteCompletedSeries(
+      @Body() Map<String, dynamic> request,
+      );
+
+  @PUT("/update_completed_series.php")
+  Future<dynamic> updateCompletedSeries(
+      @Body() Map<String, dynamic> request,
+      );
+
+  @POST("/delete_allenamento_standalone.php")
+  Future<dynamic> deleteWorkoutFromHistory(
+      @Body() Map<String, dynamic> request,
       );
 }
