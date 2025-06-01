@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'core/di/dependency_injection.dart';
+import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'shared/theme/app_theme.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,13 +37,13 @@ class FitGymTrackApp extends StatelessWidget {
               create: (context) => getIt<PasswordResetBloc>(),
             ),
           ],
-          child: MaterialApp(
+          child: MaterialApp.router(
             title: 'FitGymTrack',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
-            home: const SplashScreen(),
+            routerConfig: AppRouter.createRouter(),
           ),
         );
       },
@@ -50,6 +51,7 @@ class FitGymTrackApp extends StatelessWidget {
   }
 }
 
+// SplashScreen che puoi usare nel GoRouter
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -81,13 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-      }
-    });
+    // Rimuovo la navigazione manuale - la gestisce il GoRouter
   }
 
   @override
@@ -169,7 +165,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// HomeScreen esistente (Dashboard) rimane uguale
+// HomeScreen per la dashboard (quando autenticato)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -259,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================================
-// PAGINE PLACEHOLDER (rimangono uguali ma con navigazione aggiornata)
+// PAGINE PLACEHOLDER
 // ============================================================================
 
 class DashboardPage extends StatelessWidget {
@@ -338,7 +334,7 @@ class DashboardPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => context.push('/workouts'),
+                  onPressed: () => context.go('/workouts'),
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Inizia Allenamento'),
                   style: ElevatedButton.styleFrom(
@@ -349,7 +345,7 @@ class DashboardPage extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => context.push('/stats'),
+                  onPressed: () => context.go('/stats'),
                   icon: const Icon(Icons.analytics),
                   label: const Text('Vedi Statistiche'),
                   style: OutlinedButton.styleFrom(
@@ -485,7 +481,7 @@ class ProfilePage extends StatelessWidget {
           const Text('Prossima implementazione...'),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.push('/profile'),
+            onPressed: () => context.go('/profile'),
             icon: const Icon(Icons.edit),
             label: const Text('Modifica Profilo'),
           ),

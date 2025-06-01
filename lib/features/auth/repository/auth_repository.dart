@@ -1,4 +1,3 @@
-// lib/features/auth/repository/auth_repository.dart
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
@@ -20,10 +19,6 @@ class AuthRepository {
   })  : _apiClient = apiClient,
         sessionService = sessionService;
 
-  // ============================================================================
-  // LOGIN
-  // ============================================================================
-
   Future<Result<LoginResponse>> login(String username, String password) async {
     try {
       developer.log('Tentativo di login per: $username', name: 'AuthRepository');
@@ -32,8 +27,6 @@ class AuthRepository {
         username: username,
         password: password,
       );
-
-      developer.log('Request: ${loginRequest.toJson()}', name: 'AuthRepository');
 
       final response = await _apiClient.login('login', loginRequest);
 
@@ -49,10 +42,6 @@ class AuthRepository {
       return Result.failure(_handleApiError(e));
     }
   }
-
-  // ============================================================================
-  // REGISTER
-  // ============================================================================
 
   Future<Result<RegisterResponse>> register(
       String username,
@@ -84,22 +73,18 @@ class AuthRepository {
     }
   }
 
-  // ============================================================================
-  // PASSWORD RESET
-  // ============================================================================
-
   Future<Result<PasswordResetResponse>> requestPasswordReset(String email) async {
     try {
       final resetRequest = PasswordResetRequest(email: email);
 
-      final response = await _apiClient.requestPasswordReset('request', resetRequest);
+      final responseData = await _apiClient.requestPasswordReset('request', resetRequest);
 
-      final responseBody = response.data;
-      developer.log('Password reset response: $responseBody', name: 'AuthRepository');
+      developer.log('Password reset response: $responseData', name: 'AuthRepository');
 
-      if (responseBody.toString().contains('<b>Warning</b>') ||
-          responseBody.toString().contains('<b>Fatal error</b>') ||
-          responseBody.toString().contains('<br />')) {
+      final responseBody = responseData.toString();
+      if (responseBody.contains('<b>Warning</b>') ||
+          responseBody.contains('<b>Fatal error</b>') ||
+          responseBody.contains('<br />')) {
 
         developer.log('Risposta contiene errori PHP: $responseBody', name: 'AuthRepository');
         return Result.success(PasswordResetResponse(
@@ -110,10 +95,10 @@ class AuthRepository {
 
       try {
         final Map<String, dynamic> jsonData;
-        if (responseBody is String) {
-          jsonData = jsonDecode(responseBody);
+        if (responseData is String) {
+          jsonData = jsonDecode(responseData);
         } else {
-          jsonData = responseBody as Map<String, dynamic>;
+          jsonData = responseData as Map<String, dynamic>;
         }
 
         final success = jsonData['success'] ?? false;
@@ -126,7 +111,7 @@ class AuthRepository {
           token: token,
         ));
       } catch (jsonEx) {
-        developer.log('Risposta non è JSON valido: $responseBody', name: 'AuthRepository', error: jsonEx);
+        developer.log('Risposta non è JSON valido: $responseData', name: 'AuthRepository', error: jsonEx);
         return Result.success(PasswordResetResponse(
           success: false,
           message: "Errore nel formato della risposta. Riprova più tardi.",
@@ -144,27 +129,21 @@ class AuthRepository {
       String newPassword,
       ) async {
     try {
-      developer.log(
-        'Tentativo di reset password con: code=$code, token=$token, lunghezza password=${newPassword.length}',
-        name: 'AuthRepository',
-      );
-
       final resetConfirmRequest = PasswordResetConfirmRequest(
         token: token,
         code: code,
         newPassword: newPassword,
       );
 
-      final response = await _apiClient.confirmPasswordReset('reset', resetConfirmRequest);
+      final responseData = await _apiClient.confirmPasswordReset('reset', resetConfirmRequest);
 
-      final responseBody = response.data;
-      developer.log('Reset password response: $responseBody', name: 'AuthRepository');
+      developer.log('Reset password response: $responseData', name: 'AuthRepository');
 
-      if (responseBody.toString().contains('<b>Warning</b>') ||
-          responseBody.toString().contains('<b>Fatal error</b>') ||
-          responseBody.toString().contains('<br />')) {
+      final responseBody = responseData.toString();
+      if (responseBody.contains('<b>Warning</b>') ||
+          responseBody.contains('<b>Fatal error</b>') ||
+          responseBody.contains('<br />')) {
 
-        developer.log('Risposta contiene errori PHP: $responseBody', name: 'AuthRepository');
         return Result.success(PasswordResetConfirmResponse(
           success: false,
           message: "Errore del server. Contatta l'amministratore del sistema.",
@@ -173,23 +152,20 @@ class AuthRepository {
 
       try {
         final Map<String, dynamic> jsonData;
-        if (responseBody is String) {
-          jsonData = jsonDecode(responseBody);
+        if (responseData is String) {
+          jsonData = jsonDecode(responseData);
         } else {
-          jsonData = responseBody as Map<String, dynamic>;
+          jsonData = responseData as Map<String, dynamic>;
         }
 
         final success = jsonData['success'] ?? false;
         final message = jsonData['message'] ?? '';
-
-        developer.log('Risposta parsata: success=$success, message=$message', name: 'AuthRepository');
 
         return Result.success(PasswordResetConfirmResponse(
           success: success,
           message: message,
         ));
       } catch (jsonEx) {
-        developer.log('Risposta non è JSON valido: $responseBody', name: 'AuthRepository', error: jsonEx);
         return Result.success(PasswordResetConfirmResponse(
           success: false,
           message: "Errore nel formato della risposta. Riprova più tardi.",
@@ -201,10 +177,6 @@ class AuthRepository {
     }
   }
 
-  // ============================================================================
-  // LOGOUT
-  // ============================================================================
-
   Future<Result<void>> logout() async {
     try {
       await sessionService.clearSession();
@@ -214,10 +186,6 @@ class AuthRepository {
     }
   }
 
-  // ============================================================================
-  // SESSION UTILITIES
-  // ============================================================================
-
   Future<bool> isAuthenticated() async {
     return await sessionService.isAuthenticated();
   }
@@ -225,10 +193,6 @@ class AuthRepository {
   Future<User?> getCurrentUser() async {
     return await sessionService.getUserData();
   }
-
-  // ============================================================================
-  // ERROR HANDLING
-  // ============================================================================
 
   AuthException _handleApiError(dynamic error) {
     if (error is DioException) {
@@ -265,10 +229,6 @@ class AuthRepository {
     return AuthException(error.toString());
   }
 }
-
-// ============================================================================
-// RESULT & EXCEPTION CLASSES
-// ============================================================================
 
 class Result<T> {
   final T? data;
