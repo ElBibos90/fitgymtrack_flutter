@@ -108,7 +108,7 @@ Map<String, dynamic> _$SaveCompletedSeriesRequestToJson(
 
 SeriesData _$SeriesDataFromJson(Map<String, dynamic> json) => SeriesData(
       schedaEsercizioId: (json['scheda_esercizio_id'] as num).toInt(),
-      peso: (json['peso'] as num).toDouble(),
+      peso: _parseWeight(json['peso']),
       ripetizioni: (json['ripetizioni'] as num).toInt(),
       completata: (json['completata'] as num?)?.toInt() ?? 1,
       tempoRecupero: (json['tempo_recupero'] as num?)?.toInt(),
@@ -120,7 +120,7 @@ SeriesData _$SeriesDataFromJson(Map<String, dynamic> json) => SeriesData(
 Map<String, dynamic> _$SeriesDataToJson(SeriesData instance) =>
     <String, dynamic>{
       'scheda_esercizio_id': instance.schedaEsercizioId,
-      'peso': instance.peso,
+      'peso': _weightToJson(instance.peso),
       'ripetizioni': instance.ripetizioni,
       'completata': instance.completata,
       'tempo_recupero': instance.tempoRecupero,
@@ -165,7 +165,7 @@ CompletedSeriesData _$CompletedSeriesDataFromJson(Map<String, dynamic> json) =>
     CompletedSeriesData(
       id: json['id'] as String,
       schedaEsercizioId: (json['scheda_esercizio_id'] as num).toInt(),
-      peso: (json['peso'] as num).toDouble(),
+      peso: _parseWeight(json['peso']),
       ripetizioni: (json['ripetizioni'] as num).toInt(),
       completata: (json['completata'] as num).toInt(),
       tempoRecupero: (json['tempo_recupero'] as num?)?.toInt(),
@@ -182,7 +182,7 @@ Map<String, dynamic> _$CompletedSeriesDataToJson(
     <String, dynamic>{
       'id': instance.id,
       'scheda_esercizio_id': instance.schedaEsercizioId,
-      'peso': instance.peso,
+      'peso': _weightToJson(instance.peso),
       'ripetizioni': instance.ripetizioni,
       'completata': instance.completata,
       'tempo_recupero': instance.tempoRecupero,

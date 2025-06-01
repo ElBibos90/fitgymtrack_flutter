@@ -1,6 +1,31 @@
+// lib/features/workouts/models/workout_plan_models.dart
 import 'package:json_annotation/json_annotation.dart';
 
 part 'workout_plan_models.g.dart';
+
+// FUNZIONI HELPER PER LA CONVERSIONE DEL PESO (A LIVELLO FILE)
+
+/// Converte il peso dal JSON (può essere stringa o numero) a double
+double _parseWeight(dynamic value) {
+  if (value == null) return 0.0;
+
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0; // Fallback se la stringa non è parsabile
+    }
+  }
+
+  return 0.0; // Fallback per tipi non supportati
+}
+
+/// Converte il peso a stringa per l'invio al server
+String _weightToJson(double value) {
+  return value.toStringAsFixed(2);
+}
 
 /// Rappresenta una scheda di allenamento
 @JsonSerializable()
@@ -20,6 +45,22 @@ class WorkoutPlan {
     this.esercizi = const [],
   });
 
+  WorkoutPlan copyWith({
+    int? id,
+    String? nome,
+    String? descrizione,
+    String? dataCreazione,
+    List<WorkoutExercise>? esercizi,
+  }) {
+    return WorkoutPlan(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      descrizione: descrizione ?? this.descrizione,
+      dataCreazione: dataCreazione ?? this.dataCreazione,
+      esercizi: esercizi ?? this.esercizi,
+    );
+  }
+
   factory WorkoutPlan.fromJson(Map<String, dynamic> json) => _$WorkoutPlanFromJson(json);
   Map<String, dynamic> toJson() => _$WorkoutPlanToJson(this);
 }
@@ -37,7 +78,14 @@ class WorkoutExercise {
   final String? descrizione;
   final int serie;
   final int ripetizioni;
+
+  @JsonKey(
+    name: 'peso',
+    fromJson: _parseWeight,
+    toJson: _weightToJson,
+  )
   final double peso;
+
   final int ordine;
   @JsonKey(name: 'tempo_recupero')
   final int tempoRecupero;
@@ -166,13 +214,23 @@ class CreateWorkoutPlanRequest {
   });
 
   factory CreateWorkoutPlanRequest.fromJson(Map<String, dynamic> json) => _$CreateWorkoutPlanRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$CreateWorkoutPlanRequestToJson(this);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'nome': nome,
+      if (descrizione != null) 'descrizione': descrizione,
+      'esercizi': esercizi.map((e) => e.toJson()).toList(),
+    };
+  }
 }
 
 /// Rappresenta un esercizio nella richiesta di creazione/modifica scheda
 @JsonSerializable()
 class WorkoutExerciseRequest {
   final int id;
+  @JsonKey(name: 'scheda_esercizio_id')
+  final int? schedaEsercizioId;
   final int serie;
   final int ripetizioni;
   final double peso;
@@ -187,6 +245,7 @@ class WorkoutExerciseRequest {
 
   const WorkoutExerciseRequest({
     required this.id,
+    this.schedaEsercizioId,
     required this.serie,
     required this.ripetizioni,
     required this.peso,
@@ -206,6 +265,8 @@ class WorkoutExerciseRequest {
 class UpdateWorkoutPlanRequest {
   @JsonKey(name: 'scheda_id')
   final int schedaId;
+  @JsonKey(name: 'user_id')
+  final int? userId;
   final String nome;
   final String? descrizione;
   final List<WorkoutExerciseRequest> esercizi;
@@ -213,6 +274,7 @@ class UpdateWorkoutPlanRequest {
 
   const UpdateWorkoutPlanRequest({
     required this.schedaId,
+    this.userId,
     required this.nome,
     this.descrizione,
     required this.esercizi,
@@ -220,7 +282,18 @@ class UpdateWorkoutPlanRequest {
   });
 
   factory UpdateWorkoutPlanRequest.fromJson(Map<String, dynamic> json) => _$UpdateWorkoutPlanRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$UpdateWorkoutPlanRequestToJson(this);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'action': 'update', // <--- AGGIUNTO!
+      'scheda_id': schedaId,
+      if (userId != null) 'user_id': userId,
+      'nome': nome,
+      'descrizione': descrizione ?? '', // <--- INVIA SEMPRE IL CAMPO DESCRIZIONE
+      'esercizi': esercizi.map((e) => e.toJson()).toList(),
+      if (rimuovi != null) 'rimuovi': rimuovi!.map((e) => e.toJson()).toList(),
+    };
+  }
 }
 
 /// Esercizio da rimuovere nella richiesta di modifica

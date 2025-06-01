@@ -652,9 +652,12 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<dynamic> updateWorkoutStandalone(Map<String, dynamic> workout) async {
+  Future<dynamic> updateWorkoutStandalone(
+    Map<String, dynamic> workout, {
+    String action = "update",
+  }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'action': action};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(workout);

@@ -1,5 +1,6 @@
 // lib/features/workouts/repository/workout_repository.dart
 import 'dart:developer' as developer;
+import 'dart:convert';
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/result.dart';
 import '../../exercises/models/exercises_response.dart';
@@ -27,7 +28,6 @@ class WorkoutRepository {
 
       final response = await _apiClient.getWorkouts(userId);
 
-      // response è già il JSON parsed diretto
       if (response != null && response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
 
@@ -82,7 +82,10 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Creating workout plan: ${request.nome}', name: 'WorkoutRepository');
 
-      final response = await _apiClient.createWorkoutStandalone(request.toJson());
+      final requestJson = request.toJson();
+      developer.log('Create Request JSON: ${jsonEncode(requestJson)}', name: 'WorkoutRepository');
+
+      final response = await _apiClient.createWorkoutStandalone(requestJson);
 
       if (response != null && response is Map<String, dynamic>) {
         return CreateWorkoutPlanResponse.fromJson(response);
@@ -97,7 +100,21 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Updating workout plan: ${request.schedaId}', name: 'WorkoutRepository');
 
-      final response = await _apiClient.updateWorkoutStandalone(request.toJson());
+      final requestJson = request.toJson();
+
+      developer.log('Update Request JSON: ${jsonEncode(requestJson)}', name: 'WorkoutRepository');
+      developer.log('Scheda ID: ${request.schedaId}', name: 'WorkoutRepository');
+      developer.log('User ID: ${request.userId}', name: 'WorkoutRepository');
+      developer.log('Nome: ${request.nome}', name: 'WorkoutRepository');
+      developer.log('Numero esercizi: ${request.esercizi.length}', name: 'WorkoutRepository');
+
+      final eserciziJson = requestJson['esercizi'] as List<dynamic>;
+      for (int i = 0; i < eserciziJson.length; i++) {
+        final esercizioJson = eserciziJson[i] as Map<String, dynamic>;
+        developer.log('Esercizio $i JSON: ${jsonEncode(esercizioJson)}', name: 'WorkoutRepository');
+      }
+
+      final response = await _apiClient.updateWorkoutStandalone(requestJson, action: "update");
 
       if (response != null && response is Map<String, dynamic>) {
         return UpdateWorkoutPlanResponse.fromJson(response);
@@ -160,7 +177,6 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       developer.log('Starting workout for user: $userId, scheda: $schedaId', name: 'WorkoutRepository');
 
-      // Genera session ID univoco
       final sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}_${userId}_$schedaId';
 
       final request = StartWorkoutRequest(

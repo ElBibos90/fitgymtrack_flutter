@@ -36,7 +36,7 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
       descrizione: json['descrizione'] as String?,
       serie: (json['serie'] as num?)?.toInt() ?? 3,
       ripetizioni: (json['ripetizioni'] as num?)?.toInt() ?? 10,
-      peso: (json['peso'] as num?)?.toDouble() ?? 0.0,
+      peso: json['peso'] == null ? 0.0 : _parseWeight(json['peso']),
       ordine: (json['ordine'] as num?)?.toInt() ?? 0,
       tempoRecupero: (json['tempo_recupero'] as num?)?.toInt() ?? 90,
       note: json['note'] as String?,
@@ -55,7 +55,7 @@ Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
       'descrizione': instance.descrizione,
       'serie': instance.serie,
       'ripetizioni': instance.ripetizioni,
-      'peso': instance.peso,
+      'peso': _weightToJson(instance.peso),
       'ordine': instance.ordine,
       'tempo_recupero': instance.tempoRecupero,
       'note': instance.note,
@@ -89,6 +89,7 @@ WorkoutExerciseRequest _$WorkoutExerciseRequestFromJson(
         Map<String, dynamic> json) =>
     WorkoutExerciseRequest(
       id: (json['id'] as num).toInt(),
+      schedaEsercizioId: (json['scheda_esercizio_id'] as num?)?.toInt(),
       serie: (json['serie'] as num).toInt(),
       ripetizioni: (json['ripetizioni'] as num).toInt(),
       peso: (json['peso'] as num).toDouble(),
@@ -103,6 +104,7 @@ Map<String, dynamic> _$WorkoutExerciseRequestToJson(
         WorkoutExerciseRequest instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'scheda_esercizio_id': instance.schedaEsercizioId,
       'serie': instance.serie,
       'ripetizioni': instance.ripetizioni,
       'peso': instance.peso,
@@ -117,6 +119,7 @@ UpdateWorkoutPlanRequest _$UpdateWorkoutPlanRequestFromJson(
         Map<String, dynamic> json) =>
     UpdateWorkoutPlanRequest(
       schedaId: (json['scheda_id'] as num).toInt(),
+      userId: (json['user_id'] as num?)?.toInt(),
       nome: json['nome'] as String,
       descrizione: json['descrizione'] as String?,
       esercizi: (json['esercizi'] as List<dynamic>)
@@ -133,6 +136,7 @@ Map<String, dynamic> _$UpdateWorkoutPlanRequestToJson(
         UpdateWorkoutPlanRequest instance) =>
     <String, dynamic>{
       'scheda_id': instance.schedaId,
+      'user_id': instance.userId,
       'nome': instance.nome,
       'descrizione': instance.descrizione,
       'esercizi': instance.esercizi,

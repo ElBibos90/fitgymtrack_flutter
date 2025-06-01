@@ -165,7 +165,10 @@ abstract class ApiClient {
   Future<dynamic> createWorkoutStandalone(@Body() Map<String, dynamic> workout);
 
   @PUT("/schede_standalone.php")
-  Future<dynamic> updateWorkoutStandalone(@Body() Map<String, dynamic> workout);
+  Future<dynamic> updateWorkoutStandalone(
+      @Body() Map<String, dynamic> workout,
+      {@Query("action") String action = "update"}
+      );
 
   @DELETE("/schede_standalone.php")
   Future<dynamic> deleteWorkoutStandalone(@Body() Map<String, dynamic> request);

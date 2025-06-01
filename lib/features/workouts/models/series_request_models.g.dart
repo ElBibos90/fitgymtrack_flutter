@@ -20,7 +20,7 @@ Map<String, dynamic> _$DeleteSeriesRequestToJson(
 UpdateSeriesRequest _$UpdateSeriesRequestFromJson(Map<String, dynamic> json) =>
     UpdateSeriesRequest(
       serieId: json['serie_id'] as String,
-      peso: (json['peso'] as num).toDouble(),
+      peso: _parseWeight(json['peso']),
       ripetizioni: (json['ripetizioni'] as num).toInt(),
       tempoRecupero: (json['tempo_recupero'] as num?)?.toInt(),
       note: json['note'] as String?,
@@ -30,7 +30,7 @@ Map<String, dynamic> _$UpdateSeriesRequestToJson(
         UpdateSeriesRequest instance) =>
     <String, dynamic>{
       'serie_id': instance.serieId,
-      'peso': instance.peso,
+      'peso': _weightToJson(instance.peso),
       'ripetizioni': instance.ripetizioni,
       'tempo_recupero': instance.tempoRecupero,
       'note': instance.note,

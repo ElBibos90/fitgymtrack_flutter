@@ -4,6 +4,28 @@ import 'workout_plan_models.dart';
 
 part 'active_workout_models.g.dart';
 
+/// Converte il peso dal JSON (può essere stringa o numero) a double
+double _parseWeight(dynamic value) {
+  if (value == null) return 0.0;
+
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0; // Fallback se la stringa non è parsabile
+    }
+  }
+
+  return 0.0; // Fallback per tipi non supportati
+}
+
+/// Converte il peso a stringa per l'invio al server
+String _weightToJson(double value) {
+  return value.toStringAsFixed(2);
+}
+
 /// Rappresenta una sessione di allenamento attiva
 @JsonSerializable()
 class ActiveWorkout {
@@ -127,7 +149,15 @@ class SaveCompletedSeriesRequest {
 class SeriesData {
   @JsonKey(name: 'scheda_esercizio_id')
   final int schedaEsercizioId;
+
+  // ✅ FIX: Gestisce peso come stringa dal server
+  @JsonKey(
+    name: 'peso',
+    fromJson: _parseWeight,
+    toJson: _weightToJson,
+  )
   final double peso;
+
   final int ripetizioni;
   final int completata;
   @JsonKey(name: 'tempo_recupero')
@@ -191,7 +221,15 @@ class CompletedSeriesData {
   final String id;
   @JsonKey(name: 'scheda_esercizio_id')
   final int schedaEsercizioId;
+
+  // ✅ FIX: Gestisce peso come stringa dal server
+  @JsonKey(
+    name: 'peso',
+    fromJson: _parseWeight,
+    toJson: _weightToJson,
+  )
   final double peso;
+
   final int ripetizioni;
   final int completata;
   @JsonKey(name: 'tempo_recupero')

@@ -29,6 +29,26 @@ class GetWorkoutPlans extends WorkoutEvent {
   List<Object> get props => [userId];
 }
 
+class GetWorkoutPlan extends WorkoutEvent {
+  final int workoutId;
+
+  const GetWorkoutPlan(this.workoutId);
+
+  @override
+  List<Object?> get props => [workoutId];
+}
+
+class WorkoutPlanLoaded extends WorkoutState {
+  final WorkoutPlan workoutPlan;
+
+  const WorkoutPlanLoaded(this.workoutPlan);
+
+  @override
+  List<Object?> get props => [workoutPlan];
+}
+
+
+
 /// Evento per caricare gli esercizi di una scheda specifica
 class GetWorkoutExercises extends WorkoutEvent {
   final int schedaId;
@@ -92,6 +112,20 @@ class GetWorkoutPlanDetails extends WorkoutEvent {
 
   @override
   List<Object> get props => [schedaId];
+}
+
+/// Evento per caricare i dettagli di una scheda quando abbiamo già i dati base
+class LoadWorkoutPlanWithData extends WorkoutEvent {
+  final WorkoutPlan workoutPlan;
+  final int schedaId;
+
+  const LoadWorkoutPlanWithData({
+    required this.workoutPlan,
+    required this.schedaId,
+  });
+
+  @override
+  List<Object> get props => [workoutPlan, schedaId];
 }
 
 // ============================================================================
@@ -257,6 +291,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     on<DeleteWorkoutPlan>(_onDeleteWorkoutPlan);
     on<ResetWorkoutState>(_onResetWorkoutState);
     on<GetWorkoutPlanDetails>(_onGetWorkoutPlanDetails);
+    on<LoadWorkoutPlanWithData>(_onLoadWorkoutPlanWithData);
   }
 
   /// Handler per caricamento schede allenamento
@@ -433,6 +468,39 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
+  /// Handler per caricamento dettagli completi di una scheda quando abbiamo già i dati base
+  Future<void> _onLoadWorkoutPlanWithData(
+      LoadWorkoutPlanWithData event,
+      Emitter<WorkoutState> emit,
+      ) async {
+    emit(const WorkoutLoadingWithMessage(message: 'Caricamento dettagli scheda...'));
+
+    developer.log('Loading workout plan with existing data: ${event.workoutPlan.nome}', name: 'WorkoutBloc');
+
+    final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
+
+    result.fold(
+      onSuccess: (exercises) {
+        developer.log('Successfully loaded workout plan with data', name: 'WorkoutBloc');
+
+        // Usa i dati reali della scheda passati come parametro
+        final workoutPlan = event.workoutPlan.copyWith(esercizi: exercises);
+
+        emit(WorkoutPlanDetailsLoaded(
+          workoutPlan: workoutPlan,
+          exercises: exercises,
+        ));
+      },
+      onFailure: (exception, message) {
+        developer.log('Error loading workout plan with data: $message', name: 'WorkoutBloc', error: exception);
+        emit(WorkoutError(
+          message: message ?? 'Errore nel caricamento dei dettagli della scheda',
+          exception: exception,
+        ));
+      },
+    );
+  }
+
   /// Handler per caricamento dettagli completi di una scheda
   Future<void> _onGetWorkoutPlanDetails(
       GetWorkoutPlanDetails event,
@@ -442,37 +510,72 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
 
     developer.log('Loading workout plan details: ${event.schedaId}', name: 'WorkoutBloc');
 
-    // Per ora implementazione semplificata - carica solo esercizi
-    // In futuro potremmo avere un endpoint specifico per i dettagli completi
-    final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
+    try {
+      // Carica gli esercizi della scheda
+      final exercisesResult = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
-    result.fold(
-      onSuccess: (exercises) {
-        developer.log('Successfully loaded workout plan details', name: 'WorkoutBloc');
+      exercisesResult.fold(
+        onSuccess: (exercises) async {
+          developer.log('Successfully loaded workout plan details', name: 'WorkoutBloc');
 
-        // Crea un WorkoutPlan placeholder per ora
-        // In una implementazione reale, dovremmo avere i dati della scheda
-        final workoutPlan = WorkoutPlan(
-          id: event.schedaId,
-          nome: 'Dettagli Scheda',
-          descrizione: null,
-          dataCreazione: null,
-          esercizi: exercises,
-        );
+          WorkoutPlan workoutPlan;
 
-        emit(WorkoutPlanDetailsLoaded(
-          workoutPlan: workoutPlan,
-          exercises: exercises,
-        ));
-      },
-      onFailure: (exception, message) {
-        developer.log('Error loading workout plan details: $message', name: 'WorkoutBloc', error: exception);
-        emit(WorkoutError(
-          message: message ?? 'Errore nel caricamento dei dettagli della scheda',
-          exception: exception,
-        ));
-      },
-    );
+          // Controlla se abbiamo i dati della scheda nel stato precedente
+          if (state is WorkoutPlansLoaded) {
+            WorkoutPlan? existingPlan;
+            try {
+              existingPlan = (state as WorkoutPlansLoaded).workoutPlans.firstWhere(
+                    (plan) => plan.id == event.schedaId,
+              );
+            } catch (e) {
+              existingPlan = null;
+            }
+
+            if (existingPlan != null) {
+              // Usa i dati reali della scheda
+              workoutPlan = existingPlan.copyWith(esercizi: exercises);
+              developer.log('Using real workout plan data: ${workoutPlan.nome}', name: 'WorkoutBloc');
+            } else {
+              // Fallback
+              workoutPlan = WorkoutPlan(
+                id: event.schedaId,
+                nome: 'Scheda ${event.schedaId}',
+                descrizione: null,
+                dataCreazione: null,
+                esercizi: exercises,
+              );
+            }
+          } else {
+            // Se non abbiamo lo stato delle schede, creiamo un placeholder
+            workoutPlan = WorkoutPlan(
+              id: event.schedaId,
+              nome: 'Scheda ${event.schedaId}',
+              descrizione: null,
+              dataCreazione: null,
+              esercizi: exercises,
+            );
+          }
+
+          emit(WorkoutPlanDetailsLoaded(
+            workoutPlan: workoutPlan,
+            exercises: exercises,
+          ));
+        },
+        onFailure: (exception, message) {
+          developer.log('Error loading workout plan details: $message', name: 'WorkoutBloc', error: exception);
+          emit(WorkoutError(
+            message: message ?? 'Errore nel caricamento dei dettagli della scheda',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      developer.log('Exception in _onGetWorkoutPlanDetails: $e', name: 'WorkoutBloc', error: e);
+      emit(WorkoutError(
+        message: 'Errore nell\'elaborazione dei dettagli della scheda',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per reset dello stato
@@ -521,6 +624,11 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
   /// Carica i dettagli completi di una scheda
   void loadWorkoutPlanDetails(int schedaId) {
     add(GetWorkoutPlanDetails(schedaId: schedaId));
+  }
+
+  /// Carica i dettagli di una scheda quando abbiamo già i dati base
+  void loadWorkoutPlanWithData(WorkoutPlan workoutPlan) {
+    add(LoadWorkoutPlanWithData(workoutPlan: workoutPlan, schedaId: workoutPlan.id));
   }
 
   /// Resetta lo stato del BLoC

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:developer' as developer;
 
 import '../../../../core/di/dependency_injection.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -41,7 +42,6 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
 
   Future<void> _initializeUserId() async {
     try {
-      // Prima prova a recuperare da SessionService
       final userId = await _sessionService.getCurrentUserId();
 
       if (userId != null) {
@@ -51,7 +51,6 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
         });
         _loadWorkoutPlans();
       } else {
-        // Se non c'è in SessionService, prova dall'AuthBloc
         final authState = context.read<AuthBloc>().state;
         if (authState is AuthAuthenticated) {
           setState(() {
@@ -66,11 +65,9 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
           });
           _loadWorkoutPlans();
         } else {
-          // Utente non autenticato
           setState(() {
             _isLoadingUserId = false;
           });
-          // Reindirizza al login
           if (mounted) {
             context.go('/login');
           }
@@ -138,7 +135,6 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
                 message: state.message,
                 isSuccess: true,
               );
-              // Ricarica la lista dopo eliminazione
               _loadWorkoutPlans();
             }
           },
@@ -204,14 +200,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
       );
     }
 
-    // Loading state o initial state
     if (state is WorkoutInitial) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    // Fallback
     return const SizedBox.shrink();
   }
 
@@ -220,6 +214,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   }
 
   void _navigateToEditWorkout(WorkoutPlan workoutPlan) {
+    developer.log('Navigating to edit workout: ${workoutPlan.nome} (ID: ${workoutPlan.id})', name: 'WorkoutPlansScreen');
+
+    // Usa il nuovo evento del BLoC per passare i dati reali della scheda
+    _workoutBloc.loadWorkoutPlanWithData(workoutPlan);
+
+    // Naviga alla schermata di modifica
     context.push('/workouts/edit/${workoutPlan.id}');
   }
 
