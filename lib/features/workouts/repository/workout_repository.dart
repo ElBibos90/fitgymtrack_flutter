@@ -22,6 +22,7 @@ class WorkoutRepository {
   // ============================================================================
 
   /// Recupera tutte le schede di allenamento dell'utente
+  /// 🔧 AGGIORNATO: Include conteggio esercizi tramite chiamate multiple
   Future<Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting workout plans for user: $userId', name: 'WorkoutRepository');
@@ -33,13 +34,53 @@ class WorkoutRepository {
 
         if (success) {
           final schedeList = response['schede'] as List<dynamic>? ?? [];
-          final workoutPlans = schedeList
+          final workoutPlansBasic = schedeList
               .cast<Map<String, dynamic>>()
               .map((json) => WorkoutPlan.fromJson(json))
               .toList();
 
-          developer.log('Successfully loaded ${workoutPlans.length} workout plans', name: 'WorkoutRepository');
-          return workoutPlans;
+          developer.log('Basic workout plans loaded: ${workoutPlansBasic.length}', name: 'WorkoutRepository');
+
+          // 🔧 NUOVO: Per ogni scheda, recuperiamo gli esercizi
+          final List<WorkoutPlan> completeWorkoutPlans = [];
+
+          for (final basicPlan in workoutPlansBasic) {
+            try {
+              // Chiamata per ottenere gli esercizi della scheda
+              final exercisesResult = await getWorkoutExercises(basicPlan.id);
+
+              List<WorkoutExercise> exercises = [];
+              exercisesResult.fold(
+                onSuccess: (fetchedExercises) {
+                  exercises = fetchedExercises;
+                  developer.log('Loaded ${exercises.length} exercises for plan ${basicPlan.nome}', name: 'WorkoutRepository');
+                },
+                onFailure: (exception, message) {
+                  // Se fallisce il caricamento esercizi, loggiamo ma continuiamo
+                  developer.log('Failed to load exercises for plan ${basicPlan.nome}: $message', name: 'WorkoutRepository');
+                  exercises = []; // Lista vuota come fallback
+                },
+              );
+
+              // Creiamo una nuova istanza con gli esercizi popolati
+              final completePlan = basicPlan.copyWith(esercizi: exercises);
+              completeWorkoutPlans.add(completePlan);
+
+            } catch (e) {
+              // Se c'è un errore, aggiungiamo la scheda senza esercizi
+              developer.log('Error loading exercises for plan ${basicPlan.nome}: $e', name: 'WorkoutRepository');
+              completeWorkoutPlans.add(basicPlan); // Mantiene esercizi = []
+            }
+          }
+
+          developer.log('Successfully loaded ${completeWorkoutPlans.length} complete workout plans', name: 'WorkoutRepository');
+
+          // Debug: Log conteggi esercizi
+          for (final plan in completeWorkoutPlans) {
+            developer.log('Plan "${plan.nome}": ${plan.esercizi.length} exercises', name: 'WorkoutRepository');
+          }
+
+          return completeWorkoutPlans;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento delle schede');
         }
@@ -50,6 +91,7 @@ class WorkoutRepository {
   }
 
   /// Recupera gli esercizi di una scheda specifica
+  /// (Metodo rimane invariato, già funzionante)
   Future<Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting exercises for workout: $schedaId', name: 'WorkoutRepository');
@@ -76,6 +118,10 @@ class WorkoutRepository {
       }
     });
   }
+
+  // ============================================================================
+  // RESTO DEI METODI RIMANGONO INVARIATI
+  // ============================================================================
 
   /// Crea una nuova scheda di allenamento
   Future<Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) async {

@@ -29,25 +29,8 @@ class GetWorkoutPlans extends WorkoutEvent {
   List<Object> get props => [userId];
 }
 
-class GetWorkoutPlan extends WorkoutEvent {
-  final int workoutId;
-
-  const GetWorkoutPlan(this.workoutId);
-
-  @override
-  List<Object?> get props => [workoutId];
-}
-
-class WorkoutPlanLoaded extends WorkoutState {
-  final WorkoutPlan workoutPlan;
-
-  const WorkoutPlanLoaded(this.workoutPlan);
-
-  @override
-  List<Object?> get props => [workoutPlan];
-}
-
-
+// RIMUOVIAMO GetWorkoutPlan - non serve più
+// class GetWorkoutPlan extends WorkoutEvent { ... } ❌ RIMOSSO
 
 /// Evento per caricare gli esercizi di una scheda specifica
 class GetWorkoutExercises extends WorkoutEvent {
@@ -292,6 +275,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     on<ResetWorkoutState>(_onResetWorkoutState);
     on<GetWorkoutPlanDetails>(_onGetWorkoutPlanDetails);
     on<LoadWorkoutPlanWithData>(_onLoadWorkoutPlanWithData);
+    // ❌ RIMOSSO: on<GetWorkoutPlan>(_onGetWorkoutPlan);
   }
 
   /// Handler per caricamento schede allenamento

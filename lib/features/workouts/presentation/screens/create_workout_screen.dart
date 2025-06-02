@@ -11,6 +11,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
+import '../../../../shared/widgets/workout_exercise_editor.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
@@ -50,18 +51,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     _workoutBloc = getIt<WorkoutBloc>();
     _sessionService = getIt<SessionService>();
     _initializeUserId();
-
-    // 👇 AGGIUNGI QUESTO BLOCCO
-    if (_isEditing && !_hasLoadedWorkoutData) {
-      _workoutBloc.add(GetWorkoutPlan(widget.workoutId!));
-    }
-  }
-
-  void _populateFields(WorkoutPlan workoutPlan) {
-    _nameController.text = workoutPlan.nome;
-    _descriptionController.text = workoutPlan.descrizione ?? '';
-    _selectedExercises = workoutPlan.esercizi;
-    _hasLoadedWorkoutData = true;
   }
 
   Future<void> _initializeUserId() async {
@@ -125,7 +114,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     if (!_hasLoadedWorkoutData && widget.workoutId != null) {
       _hasLoadedWorkoutData = true;
 
-      // Prima verifica se abbiamo già i dati delle schede nel BLoC
+      // ✅ SISTEMATO: Prima verifica se abbiamo già i dati delle schede nel BLoC
       final currentState = _workoutBloc.state;
       if (currentState is WorkoutPlansLoaded) {
         // Cerca la scheda nei dati già caricati
@@ -134,23 +123,45 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 (plan) => plan.id == widget.workoutId,
           );
 
-          developer.log('Found existing plan in state: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
+          developer.log('✅ Found existing plan in state: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
 
-          // Usa il nuovo evento che preserva i dati reali
-          _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+          // ✅ IMPORTANTE: Usa i dati reali della scheda
+          _populateFieldsFromWorkoutPlan(existingPlan);
+
+          // Poi carica gli esercizi se non ci sono già
+          if (existingPlan.esercizi.isEmpty) {
+            _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+          }
           return;
         } catch (e) {
-          developer.log('Plan not found in current state, loading details', name: 'CreateWorkoutScreen');
+          developer.log('⚠️ Plan not found in current state, loading from scratch', name: 'CreateWorkoutScreen');
         }
       }
 
-      // Fallback: carica i dettagli se non abbiamo i dati
-      _workoutBloc.loadWorkoutPlanDetails(widget.workoutId!);
+      // ✅ Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
+      developer.log('🔄 Loading workout plans first to get correct name...', name: 'CreateWorkoutScreen');
+      if (_currentUserId != null) {
+        _workoutBloc.loadWorkoutPlans(_currentUserId!);
+      }
+    }
+  }
+
+  /// ✅ NUOVO: Popola i campi con i dati reali della scheda
+  void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
+    developer.log('✅ Populating fields with real workout data: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
+
+    _nameController.text = workoutPlan.nome;
+    _descriptionController.text = workoutPlan.descrizione ?? '';
+
+    if (workoutPlan.esercizi.isNotEmpty) {
+      setState(() {
+        _selectedExercises = List.from(workoutPlan.esercizi);
+      });
     }
   }
 
   void _populateFieldsFromWorkoutData(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    developer.log('Populating fields with workout: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
+    developer.log('✅ Populating fields with workout: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -220,6 +231,20 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
               context.pop();
             } else if (state is WorkoutPlanDetailsLoaded) {
               _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
+            } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
+              // ✅ NUOVO: Quando si caricano le schede durante l'editing
+              try {
+                final existingPlan = state.workoutPlans.firstWhere(
+                      (plan) => plan.id == widget.workoutId,
+                );
+                developer.log('✅ Found plan after loading: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
+                _populateFieldsFromWorkoutPlan(existingPlan);
+
+                // Ora carica anche gli esercizi
+                _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+              } catch (e) {
+                developer.log('❌ Plan not found even after loading: ${e}', name: 'CreateWorkoutScreen');
+              }
             }
           },
           builder: (context, state) {
@@ -390,107 +415,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     return Column(
       children: [
         for (int i = 0; i < _selectedExercises.length; i++)
-          _buildExerciseCard(_selectedExercises[i], i),
-      ],
-    );
-  }
-
-  Widget _buildExerciseCard(WorkoutExercise exercise, int index) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppConfig.radiusM),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exercise.nome,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (exercise.gruppoMuscolare?.isNotEmpty == true) ...[
-                      SizedBox(height: 2.h),
-                      Text(
-                        exercise.gruppoMuscolare!,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: () => _removeExercise(index),
-                icon: const Icon(Icons.delete, color: AppColors.error),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
-            ],
+          WorkoutExerciseEditor(
+            key: ValueKey('exercise_${_selectedExercises[i].id}_$i'),
+            exercise: _selectedExercises[i],
+            onUpdate: (updatedExercise) => _updateExercise(i, updatedExercise),
+            onDelete: () => _removeExercise(i),
+            onMoveUp: i > 0 ? () => _moveExercise(i, i - 1) : null,
+            onMoveDown: i < _selectedExercises.length - 1 ? () => _moveExercise(i, i + 1) : null,
+            isFirst: i == 0,
+            isLast: i == _selectedExercises.length - 1,
           ),
-          SizedBox(height: 8.h),
-          Row(
-            children: [
-              _buildExerciseParameter('Serie', exercise.serie.toString()),
-              SizedBox(width: 16.w),
-              _buildExerciseParameter('Rip', exercise.ripetizioni.toString()),
-              SizedBox(width: 16.w),
-              _buildExerciseParameter('Peso', '${exercise.peso.toStringAsFixed(1)} kg'),
-              SizedBox(width: 16.w),
-              _buildExerciseParameter('Recupero', '${exercise.tempoRecupero}s'),
-            ],
-          ),
-          if (exercise.note?.isNotEmpty == true) ...[
-            SizedBox(height: 8.h),
-            Text(
-              'Note: ${exercise.note}',
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppColors.textSecondary,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExerciseParameter(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14.sp,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ],
     );
   }
@@ -544,6 +478,29 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         ),
       ],
     );
+  }
+
+  void _updateExercise(int index, WorkoutExercise updatedExercise) {
+    if (index >= 0 && index < _selectedExercises.length) {
+      setState(() {
+        _selectedExercises[index] = updatedExercise;
+      });
+    }
+  }
+
+  void _moveExercise(int fromIndex, int toIndex) {
+    if (fromIndex >= 0 && fromIndex < _selectedExercises.length &&
+        toIndex >= 0 && toIndex < _selectedExercises.length) {
+      setState(() {
+        final exercise = _selectedExercises.removeAt(fromIndex);
+        _selectedExercises.insert(toIndex, exercise);
+
+        // Aggiorna gli ordini
+        for (int i = 0; i < _selectedExercises.length; i++) {
+          _selectedExercises[i] = _selectedExercises[i].safeCopy(ordine: i + 1);
+        }
+      });
+    }
   }
 
   void _addExercise() {
@@ -601,18 +558,35 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _createWorkout() {
-    final exerciseRequests = _selectedExercises.map((exercise) => WorkoutExerciseRequest(
-      id: exercise.id,
-      schedaEsercizioId: null,
-      serie: exercise.serie,
-      ripetizioni: exercise.ripetizioni,
-      peso: exercise.peso,
-      ordine: exercise.ordine,
-      tempoRecupero: exercise.tempoRecupero,
-      note: exercise.note,
-      setType: exercise.setType,
-      linkedToPrevious: exercise.linkedToPreviousInt,
-    )).toList();
+    final exerciseRequests = _selectedExercises.map((exercise) {
+      // 🔧 DEBUG: Log tutti i valori prima del salvataggio
+      developer.log('Creating exercise: ${exercise.nome}', name: 'CreateWorkoutScreen');
+      developer.log('  - setType: "${exercise.setType}"', name: 'CreateWorkoutScreen');
+      developer.log('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}', name: 'CreateWorkoutScreen');
+      developer.log('  - isIsometricInt: ${exercise.isIsometricInt}', name: 'CreateWorkoutScreen');
+      developer.log('  - note: "${exercise.note}"', name: 'CreateWorkoutScreen');
+
+      return WorkoutExerciseRequest(
+        id: exercise.id,
+        schedaEsercizioId: null,
+        serie: exercise.serie,
+        ripetizioni: exercise.ripetizioni,
+        peso: exercise.peso,
+        ordine: exercise.ordine,
+        tempoRecupero: exercise.tempoRecupero,
+        note: exercise.note,
+        setType: exercise.setType,
+        linkedToPrevious: exercise.linkedToPreviousInt,
+      );
+    }).toList();
+
+    // 🔧 DEBUG: Log della richiesta finale
+    for (int i = 0; i < exerciseRequests.length; i++) {
+      final req = exerciseRequests[i];
+      developer.log('ExerciseRequest $i:', name: 'CreateWorkoutScreen');
+      developer.log('  - setType: "${req.setType}"', name: 'CreateWorkoutScreen');
+      developer.log('  - linkedToPrevious: ${req.linkedToPrevious}', name: 'CreateWorkoutScreen');
+    }
 
     final request = CreateWorkoutPlanRequest(
       userId: _currentUserId!,
@@ -644,15 +618,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         linkedToPrevious: exercise.linkedToPreviousInt,
       );
     }).toList();
-
-    for (int i = 0; i < exerciseRequests.length; i++) {
-      final req = exerciseRequests[i];
-      developer.log('ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}', name: 'CreateWorkoutScreen');
-
-      if (req.schedaEsercizioId == null) {
-        developer.log('ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!', name: 'CreateWorkoutScreen');
-      }
-    }
 
     final request = UpdateWorkoutPlanRequest(
       schedaId: widget.workoutId!,
