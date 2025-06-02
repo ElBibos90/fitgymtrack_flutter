@@ -12,12 +12,14 @@ import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../shared/widgets/workout_exercise_editor.dart';
+import '../../../../shared/widgets/exercise_selection_dialog.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
+import '../../../exercises/models/exercises_response.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
   final int? workoutId; // null per creazione, valorizzato per modifica
@@ -45,6 +47,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   List<WorkoutExercise> _selectedExercises = [];
 
+  // Stati per la selezione esercizi
+  List<ExerciseItem> _availableExercises = [];
+  bool _showExerciseDialog = false;
+  bool _isLoadingAvailableExercises = false;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +72,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
         if (_isEditing) {
           _loadWorkoutForEditing();
+        } else {
+          _loadAvailableExercises();
         }
       } else {
         final authState = context.read<AuthBloc>().state;
@@ -76,6 +85,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
           if (_isEditing) {
             _loadWorkoutForEditing();
+          } else {
+            _loadAvailableExercises();
           }
         } else if (authState is AuthLoginSuccess) {
           setState(() {
@@ -85,6 +96,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
           if (_isEditing) {
             _loadWorkoutForEditing();
+          } else {
+            _loadAvailableExercises();
           }
         } else {
           setState(() {
@@ -114,7 +127,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     if (!_hasLoadedWorkoutData && widget.workoutId != null) {
       _hasLoadedWorkoutData = true;
 
-      // ✅ SISTEMATO: Prima verifica se abbiamo già i dati delle schede nel BLoC
+      // Prima verifica se abbiamo già i dati delle schede nel BLoC
       final currentState = _workoutBloc.state;
       if (currentState is WorkoutPlansLoaded) {
         // Cerca la scheda nei dati già caricati
@@ -125,28 +138,33 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
           developer.log('✅ Found existing plan in state: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
 
-          // ✅ IMPORTANTE: Usa i dati reali della scheda
+          // Usa i dati reali della scheda
           _populateFieldsFromWorkoutPlan(existingPlan);
 
           // Poi carica gli esercizi se non ci sono già
           if (existingPlan.esercizi.isEmpty) {
             _workoutBloc.loadWorkoutPlanWithData(existingPlan);
           }
+
+          // Carica anche esercizi disponibili per il dialog
+          _loadAvailableExercises();
           return;
         } catch (e) {
           developer.log('⚠️ Plan not found in current state, loading from scratch', name: 'CreateWorkoutScreen');
         }
       }
 
-      // ✅ Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
+      // Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
       developer.log('🔄 Loading workout plans first to get correct name...', name: 'CreateWorkoutScreen');
       if (_currentUserId != null) {
         _workoutBloc.loadWorkoutPlans(_currentUserId!);
+        // Carica anche esercizi disponibili
+        _loadAvailableExercises();
       }
     }
   }
 
-  /// ✅ NUOVO: Popola i campi con i dati reali della scheda
+  /// Popola i campi con i dati reali della scheda
   void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
     developer.log('✅ Populating fields with real workout data: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
 
@@ -171,6 +189,46 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
   }
 
+  /// Carica esercizi disponibili per il dialog di selezione
+  void _loadAvailableExercises() {
+    if (_currentUserId != null) {
+      developer.log('Loading available exercises for user: $_currentUserId', name: 'CreateWorkoutScreen');
+      setState(() {
+        _isLoadingAvailableExercises = true;
+      });
+      _workoutBloc.loadAvailableExercises(_currentUserId!);
+    }
+  }
+
+  /// Gestisce la selezione di un esercizio dal dialog
+  void _onExerciseSelected(ExerciseItem exerciseItem) {
+    developer.log('Adding exercise from dialog: ${exerciseItem.nome}', name: 'CreateWorkoutScreen');
+
+    // Converte ExerciseItem a WorkoutExercise
+    final workoutExercise = WorkoutExercise(
+      id: exerciseItem.id,
+      schedaEsercizioId: null, // Nuovo esercizio
+      nome: exerciseItem.nome,
+      gruppoMuscolare: exerciseItem.gruppoMuscolare,
+      attrezzatura: exerciseItem.attrezzatura,
+      descrizione: exerciseItem.descrizione,
+      serie: exerciseItem.serieDefault ?? 3,
+      ripetizioni: exerciseItem.ripetizioniDefault ?? 10,
+      peso: exerciseItem.pesoDefault ?? 20.0,
+      ordine: _selectedExercises.length + 1,
+      tempoRecupero: 90,
+      note: null,
+      setType: 'normal',
+      linkedToPreviousInt: 0,
+      isIsometricInt: exerciseItem.isIsometric ? 1 : 0,
+    );
+
+    setState(() {
+      _selectedExercises.add(workoutExercise);
+      _showExerciseDialog = false;
+    });
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -183,78 +241,108 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _workoutBloc,
-      child: Scaffold(
-        appBar: CustomAppBar(
-          title: _isEditing ? 'Modifica Scheda' : 'Nuova Scheda',
-          actions: [
-            if (!_isLoadingUserId && _currentUserId != null)
-              TextButton(
-                onPressed: _saveWorkout,
-                child: Text(
-                  'Salva',
-                  style: TextStyle(
-                    color: AppColors.indigo600,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16.sp,
+      child: Stack(
+        children: [
+          Scaffold(
+            appBar: CustomAppBar(
+              title: _isEditing ? 'Modifica Scheda' : 'Nuova Scheda',
+              actions: [
+                if (!_isLoadingUserId && _currentUserId != null)
+                  TextButton(
+                    onPressed: _saveWorkout,
+                    child: Text(
+                      'Salva',
+                      style: TextStyle(
+                        color: AppColors.indigo600,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16.sp,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-          ],
-        ),
-        body: _isLoadingUserId
-            ? const Center(child: CircularProgressIndicator())
-            : _currentUserId == null
-            ? const Center(
-          child: Text('Errore: utente non autenticato'),
-        )
-            : BlocConsumer<WorkoutBloc, WorkoutState>(
-          listener: (context, state) {
-            if (state is WorkoutError) {
-              CustomSnackbar.show(
-                context,
-                message: state.message,
-                isSuccess: false,
-              );
-            } else if (state is WorkoutPlanCreated) {
-              CustomSnackbar.show(
-                context,
-                message: 'Scheda creata con successo!',
-                isSuccess: true,
-              );
-              context.pop();
-            } else if (state is WorkoutPlanUpdated) {
-              CustomSnackbar.show(
-                context,
-                message: 'Scheda aggiornata con successo!',
-                isSuccess: true,
-              );
-              context.pop();
-            } else if (state is WorkoutPlanDetailsLoaded) {
-              _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
-            } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
-              // ✅ NUOVO: Quando si caricano le schede durante l'editing
-              try {
-                final existingPlan = state.workoutPlans.firstWhere(
-                      (plan) => plan.id == widget.workoutId,
-                );
-                developer.log('✅ Found plan after loading: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
-                _populateFieldsFromWorkoutPlan(existingPlan);
+              ],
+            ),
+            body: _isLoadingUserId
+                ? const Center(child: CircularProgressIndicator())
+                : _currentUserId == null
+                ? const Center(
+              child: Text('Errore: utente non autenticato'),
+            )
+                : BlocConsumer<WorkoutBloc, WorkoutState>(
+              listener: (context, state) {
+                if (state is WorkoutError) {
+                  CustomSnackbar.show(
+                    context,
+                    message: state.message,
+                    isSuccess: false,
+                  );
+                } else if (state is WorkoutPlanCreated) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Scheda creata con successo!',
+                    isSuccess: true,
+                  );
+                  context.pop();
+                } else if (state is WorkoutPlanUpdated) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Scheda aggiornata con successo!',
+                    isSuccess: true,
+                  );
+                  context.pop();
+                } else if (state is WorkoutPlanDetailsLoaded) {
+                  _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
+                } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
+                  // Quando si caricano le schede durante l'editing
+                  try {
+                    final existingPlan = state.workoutPlans.firstWhere(
+                          (plan) => plan.id == widget.workoutId,
+                    );
+                    developer.log('✅ Found plan after loading: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
+                    _populateFieldsFromWorkoutPlan(existingPlan);
 
-                // Ora carica anche gli esercizi
-                _workoutBloc.loadWorkoutPlanWithData(existingPlan);
-              } catch (e) {
-                developer.log('❌ Plan not found even after loading: ${e}', name: 'CreateWorkoutScreen');
-              }
-            }
-          },
-          builder: (context, state) {
-            return LoadingOverlay(
-              isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
-              message: state is WorkoutLoadingWithMessage ? state.message : null,
-              child: _buildBody(context, state),
-            );
-          },
-        ),
+                    // Ora carica anche gli esercizi
+                    _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+
+                    // Carica esercizi disponibili se non l'abbiamo già fatto
+                    if (_availableExercises.isEmpty && !_isLoadingAvailableExercises) {
+                      _loadAvailableExercises();
+                    }
+                  } catch (e) {
+                    developer.log('❌ Plan not found even after loading: ${e}', name: 'CreateWorkoutScreen');
+                  }
+                } else if (state is AvailableExercisesLoaded) {
+                  // Gestisce il caricamento degli esercizi disponibili
+                  developer.log('✅ Available exercises loaded: ${state.availableExercises.length}', name: 'CreateWorkoutScreen');
+                  setState(() {
+                    _availableExercises = state.availableExercises;
+                    _isLoadingAvailableExercises = false;
+                  });
+                }
+              },
+              builder: (context, state) {
+                return LoadingOverlay(
+                  isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
+                  message: state is WorkoutLoadingWithMessage ? state.message : null,
+                  child: _buildBody(context, state),
+                );
+              },
+            ),
+          ),
+
+          // Dialog per selezione esercizi
+          if (_showExerciseDialog)
+            ExerciseSelectionDialog(
+              exercises: _availableExercises,
+              selectedExerciseIds: _selectedExercises.map((e) => e.id).toList(),
+              isLoading: _isLoadingAvailableExercises,
+              onExerciseSelected: _onExerciseSelected,
+              onDismissRequest: () {
+                setState(() {
+                  _showExerciseDialog = false;
+                });
+              },
+            ),
+        ],
       ),
     );
   }
@@ -342,9 +430,28 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: _addExercise,
-              icon: const Icon(Icons.add, size: 20),
-              label: const Text('Aggiungi'),
+              onPressed: () {
+                // Apre dialog selezione esercizi
+                if (_availableExercises.isNotEmpty) {
+                  setState(() {
+                    _showExerciseDialog = true;
+                  });
+                } else if (!_isLoadingAvailableExercises) {
+                  // Se non abbiamo esercizi e non stiamo caricando, riprova a caricare
+                  _loadAvailableExercises();
+                }
+              },
+              icon: _isLoadingAvailableExercises
+                  ? SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : const Icon(Icons.add, size: 20),
+              label: Text(_isLoadingAvailableExercises ? 'Caricamento...' : 'Aggiungi'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.indigo600,
                 foregroundColor: Colors.white,
@@ -503,21 +610,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     }
   }
 
-  void _addExercise() {
-    setState(() {
-      _selectedExercises.add(WorkoutExercise(
-        id: DateTime.now().millisecondsSinceEpoch,
-        nome: 'Nuovo Esercizio ${_selectedExercises.length + 1}',
-        gruppoMuscolare: 'Da definire',
-        serie: 3,
-        ripetizioni: 10,
-        peso: 20.0,
-        ordine: _selectedExercises.length + 1,
-        tempoRecupero: 90,
-      ));
-    });
-  }
-
   void _removeExercise(int index) {
     setState(() {
       _selectedExercises.removeAt(index);
@@ -559,7 +651,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   void _createWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
-      // 🔧 DEBUG: Log tutti i valori prima del salvataggio
+      // DEBUG: Log tutti i valori prima del salvataggio
       developer.log('Creating exercise: ${exercise.nome}', name: 'CreateWorkoutScreen');
       developer.log('  - setType: "${exercise.setType}"', name: 'CreateWorkoutScreen');
       developer.log('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}', name: 'CreateWorkoutScreen');
@@ -580,7 +672,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       );
     }).toList();
 
-    // 🔧 DEBUG: Log della richiesta finale
+    // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
       developer.log('ExerciseRequest $i:', name: 'CreateWorkoutScreen');
@@ -603,7 +695,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   void _updateWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
-      developer.log('Converting exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})', name: 'CreateWorkoutScreen');
+      // DEBUG: Log tutti i valori prima del salvataggio
+      developer.log('Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})', name: 'CreateWorkoutScreen');
+      developer.log('  - setType: "${exercise.setType}"', name: 'CreateWorkoutScreen');
+      developer.log('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}', name: 'CreateWorkoutScreen');
+      developer.log('  - isIsometricInt: ${exercise.isIsometricInt}', name: 'CreateWorkoutScreen');
+      developer.log('  - note: "${exercise.note}"', name: 'CreateWorkoutScreen');
 
       return WorkoutExerciseRequest(
         id: exercise.id,
@@ -618,6 +715,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         linkedToPrevious: exercise.linkedToPreviousInt,
       );
     }).toList();
+
+    // DEBUG: Log della richiesta finale
+    for (int i = 0; i < exerciseRequests.length; i++) {
+      final req = exerciseRequests[i];
+      developer.log('ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}', name: 'CreateWorkoutScreen');
+      developer.log('  - setType: "${req.setType}"', name: 'CreateWorkoutScreen');
+      developer.log('  - linkedToPrevious: ${req.linkedToPrevious}', name: 'CreateWorkoutScreen');
+
+      if (req.schedaEsercizioId == null) {
+        developer.log('ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!', name: 'CreateWorkoutScreen');
+      }
+    }
 
     final request = UpdateWorkoutPlanRequest(
       schedaId: widget.workoutId!,

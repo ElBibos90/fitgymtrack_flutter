@@ -3,10 +3,10 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'workout_plan_models.g.dart';
 
-// FUNZIONI HELPER PER LA CONVERSIONE DEL PESO (A LIVELLO FILE)
+// FUNZIONI HELPER ROBUSTE PER LA CONVERSIONE
 
-/// Converte il peso dal JSON (può essere stringa o numero) a double
-double _parseWeight(dynamic value) {
+/// Converte qualsiasi tipo a double in modo sicuro
+double _parseWeightSafe(dynamic value) {
   if (value == null) return 0.0;
 
   if (value is double) return value;
@@ -15,11 +15,33 @@ double _parseWeight(dynamic value) {
     try {
       return double.parse(value);
     } catch (e) {
-      return 0.0; // Fallback se la stringa non è parsabile
+      return 0.0;
     }
   }
 
-  return 0.0; // Fallback per tipi non supportati
+  return 0.0;
+}
+
+/// Converte qualsiasi tipo a int in modo sicuro
+int _parseIntSafe(dynamic value) {
+  if (value == null) return 0;
+
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    try {
+      return int.parse(value);
+    } catch (e) {
+      try {
+        // Prova come double prima
+        return double.parse(value).toInt();
+      } catch (e2) {
+        return 0;
+      }
+    }
+  }
+
+  return 0;
 }
 
 /// Converte il peso a stringa per l'invio al server
@@ -76,25 +98,36 @@ class WorkoutExercise {
   final String? gruppoMuscolare;
   final String? attrezzatura;
   final String? descrizione;
+
+  // 🔧 PARSING ROBUSTO per valori numerici
+  @JsonKey(fromJson: _parseIntSafe)
   final int serie;
+
+  @JsonKey(fromJson: _parseIntSafe)
   final int ripetizioni;
 
   @JsonKey(
     name: 'peso',
-    fromJson: _parseWeight,
+    fromJson: _parseWeightSafe,
     toJson: _weightToJson,
   )
   final double peso;
 
+  @JsonKey(fromJson: _parseIntSafe)
   final int ordine;
-  @JsonKey(name: 'tempo_recupero')
+
+  @JsonKey(name: 'tempo_recupero', fromJson: _parseIntSafe)
   final int tempoRecupero;
+
   final String? note;
+
   @JsonKey(name: 'set_type')
   final String setType;
-  @JsonKey(name: 'linked_to_previous')
+
+  @JsonKey(name: 'linked_to_previous', fromJson: _parseIntSafe)
   final int linkedToPreviousInt;
-  @JsonKey(name: 'is_isometric')
+
+  @JsonKey(name: 'is_isometric', fromJson: _parseIntSafe)
   final int isIsometricInt;
 
   const WorkoutExercise({
@@ -156,7 +189,35 @@ class WorkoutExercise {
     );
   }
 
-  factory WorkoutExercise.fromJson(Map<String, dynamic> json) => _$WorkoutExerciseFromJson(json);
+  factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
+    try {
+      return _$WorkoutExerciseFromJson(json);
+    } catch (e) {
+      // 🔧 DEBUG: Log dell'errore di parsing
+      print('❌ ERROR parsing WorkoutExercise: $e');
+      print('❌ JSON data: $json');
+
+      // Fallback con parsing manuale sicuro
+      return WorkoutExercise(
+        id: _parseIntSafe(json['id']),
+        schedaEsercizioId: _parseIntSafe(json['scheda_esercizio_id']),
+        nome: json['nome']?.toString() ?? 'Esercizio sconosciuto',
+        gruppoMuscolare: json['gruppo_muscolare']?.toString(),
+        attrezzatura: json['attrezzatura']?.toString(),
+        descrizione: json['descrizione']?.toString(),
+        serie: _parseIntSafe(json['serie']),
+        ripetizioni: _parseIntSafe(json['ripetizioni']),
+        peso: _parseWeightSafe(json['peso']),
+        ordine: _parseIntSafe(json['ordine']),
+        tempoRecupero: _parseIntSafe(json['tempo_recupero']),
+        note: json['note']?.toString(),
+        setType: json['set_type']?.toString() ?? 'normal',
+        linkedToPreviousInt: _parseIntSafe(json['linked_to_previous']),
+        isIsometricInt: _parseIntSafe(json['is_isometric']),
+      );
+    }
+  }
+
   Map<String, dynamic> toJson() => _$WorkoutExerciseToJson(this);
 }
 
@@ -285,11 +346,11 @@ class UpdateWorkoutPlanRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'action': 'update', // <--- AGGIUNTO!
+      'action': 'update',
       'scheda_id': schedaId,
       if (userId != null) 'user_id': userId,
       'nome': nome,
-      'descrizione': descrizione ?? '', // <--- INVIA SEMPRE IL CAMPO DESCRIZIONE
+      'descrizione': descrizione ?? '',
       'esercizi': esercizi.map((e) => e.toJson()).toList(),
       if (rimuovi != null) 'rimuovi': rimuovi!.map((e) => e.toJson()).toList(),
     };

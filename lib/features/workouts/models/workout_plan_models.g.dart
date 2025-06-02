@@ -34,15 +34,22 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
       gruppoMuscolare: json['gruppo_muscolare'] as String?,
       attrezzatura: json['attrezzatura'] as String?,
       descrizione: json['descrizione'] as String?,
-      serie: (json['serie'] as num?)?.toInt() ?? 3,
-      ripetizioni: (json['ripetizioni'] as num?)?.toInt() ?? 10,
-      peso: json['peso'] == null ? 0.0 : _parseWeight(json['peso']),
-      ordine: (json['ordine'] as num?)?.toInt() ?? 0,
-      tempoRecupero: (json['tempo_recupero'] as num?)?.toInt() ?? 90,
+      serie: json['serie'] == null ? 3 : _parseIntSafe(json['serie']),
+      ripetizioni:
+          json['ripetizioni'] == null ? 10 : _parseIntSafe(json['ripetizioni']),
+      peso: json['peso'] == null ? 0.0 : _parseWeightSafe(json['peso']),
+      ordine: json['ordine'] == null ? 0 : _parseIntSafe(json['ordine']),
+      tempoRecupero: json['tempo_recupero'] == null
+          ? 90
+          : _parseIntSafe(json['tempo_recupero']),
       note: json['note'] as String?,
       setType: json['set_type'] as String? ?? 'normal',
-      linkedToPreviousInt: (json['linked_to_previous'] as num?)?.toInt() ?? 0,
-      isIsometricInt: (json['is_isometric'] as num?)?.toInt() ?? 0,
+      linkedToPreviousInt: json['linked_to_previous'] == null
+          ? 0
+          : _parseIntSafe(json['linked_to_previous']),
+      isIsometricInt: json['is_isometric'] == null
+          ? 0
+          : _parseIntSafe(json['is_isometric']),
     );
 
 Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>

@@ -23,16 +23,18 @@ Map<String, dynamic> _$ExercisesResponseToJson(ExercisesResponse instance) =>
     };
 
 ExerciseItem _$ExerciseItemFromJson(Map<String, dynamic> json) => ExerciseItem(
-      id: (json['id'] as num).toInt(),
+      id: _parseIntSafe(json['id']),
       nome: json['nome'] as String,
       descrizione: json['descrizione'] as String?,
       gruppoMuscolare: json['gruppo_muscolare'] as String?,
       attrezzatura: json['attrezzatura'] as String?,
       immagineUrl: json['immagine_url'] as String?,
-      isIsometric: json['is_isometric'] as bool? ?? false,
-      serieDefault: (json['serie_default'] as num?)?.toInt(),
-      ripetizioniDefault: (json['ripetizioni_default'] as num?)?.toInt(),
-      pesoDefault: (json['peso_default'] as num?)?.toDouble(),
+      isIsometric: json['is_isometric'] == null
+          ? false
+          : _parseBoolSafe(json['is_isometric']),
+      serieDefault: _parseIntSafe(json['serie_default']),
+      ripetizioniDefault: _parseIntSafe(json['ripetizioni_default']),
+      pesoDefault: _parseDoubleSafe(json['peso_default']),
     );
 
 Map<String, dynamic> _$ExerciseItemToJson(ExerciseItem instance) =>

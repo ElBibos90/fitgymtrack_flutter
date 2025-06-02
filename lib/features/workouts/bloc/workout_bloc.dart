@@ -345,24 +345,32 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
 
     developer.log('Loading available exercises for user: ${event.userId}', name: 'WorkoutBloc');
 
-    final result = await _workoutRepository.getAvailableExercises(event.userId);
+    try {
+      final result = await _workoutRepository.getAvailableExercises(event.userId);
 
-    result.fold(
-      onSuccess: (exercises) {
-        developer.log('Successfully loaded ${exercises.length} available exercises', name: 'WorkoutBloc');
-        emit(AvailableExercisesLoaded(
-          availableExercises: exercises,
-          userId: event.userId,
-        ));
-      },
-      onFailure: (exception, message) {
-        developer.log('Error loading available exercises: $message', name: 'WorkoutBloc', error: exception);
-        emit(WorkoutError(
-          message: message ?? 'Errore nel caricamento degli esercizi disponibili',
-          exception: exception,
-        ));
-      },
-    );
+      result.fold(
+        onSuccess: (exercises) {
+          developer.log('Successfully loaded ${exercises.length} available exercises', name: 'WorkoutBloc');
+          emit(AvailableExercisesLoaded(
+            availableExercises: exercises,
+            userId: event.userId,
+          ));
+        },
+        onFailure: (exception, message) {
+          developer.log('Error loading available exercises: $message', name: 'WorkoutBloc', error: exception);
+          emit(WorkoutError(
+            message: message ?? 'Errore nel caricamento degli esercizi disponibili',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      developer.log('Exception in _onGetAvailableExercises: $e', name: 'WorkoutBloc', error: e);
+      emit(WorkoutError(
+        message: 'Errore nell\'elaborazione degli esercizi disponibili: ${e.toString()}',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per creazione scheda
@@ -461,28 +469,36 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
 
     developer.log('Loading workout plan with existing data: ${event.workoutPlan.nome}', name: 'WorkoutBloc');
 
-    final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
+    try {
+      final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
-    result.fold(
-      onSuccess: (exercises) {
-        developer.log('Successfully loaded workout plan with data', name: 'WorkoutBloc');
+      result.fold(
+        onSuccess: (exercises) {
+          developer.log('Successfully loaded workout plan with data: ${exercises.length} exercises', name: 'WorkoutBloc');
 
-        // Usa i dati reali della scheda passati come parametro
-        final workoutPlan = event.workoutPlan.copyWith(esercizi: exercises);
+          // Usa i dati reali della scheda passati come parametro
+          final workoutPlan = event.workoutPlan.copyWith(esercizi: exercises);
 
-        emit(WorkoutPlanDetailsLoaded(
-          workoutPlan: workoutPlan,
-          exercises: exercises,
-        ));
-      },
-      onFailure: (exception, message) {
-        developer.log('Error loading workout plan with data: $message', name: 'WorkoutBloc', error: exception);
-        emit(WorkoutError(
-          message: message ?? 'Errore nel caricamento dei dettagli della scheda',
-          exception: exception,
-        ));
-      },
-    );
+          emit(WorkoutPlanDetailsLoaded(
+            workoutPlan: workoutPlan,
+            exercises: exercises,
+          ));
+        },
+        onFailure: (exception, message) {
+          developer.log('Error loading workout plan with data: $message', name: 'WorkoutBloc', error: exception);
+          emit(WorkoutError(
+            message: message ?? 'Errore nel caricamento dei dettagli della scheda',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      developer.log('Exception in _onLoadWorkoutPlanWithData: $e', name: 'WorkoutBloc', error: e);
+      emit(WorkoutError(
+        message: 'Errore nell\'elaborazione dei dettagli della scheda: ${e.toString()}',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per caricamento dettagli completi di una scheda

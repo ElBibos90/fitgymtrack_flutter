@@ -43,3 +43,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+lib/features/exercises/models/exercises_response.g.dart
+lib/features/workouts/models/workout_plan_models.g.dart
