@@ -61,7 +61,7 @@ class WorkoutPlanCard extends StatelessWidget {
               ),
               // Menu actions
               PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuAction(value),
+                onSelected: (value) => _handleMenuAction(context, value),
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'details',
@@ -212,7 +212,8 @@ class WorkoutPlanCard extends StatelessWidget {
     );
   }
 
-  void _handleMenuAction(String action) {
+  // ✅ Gestione azioni del menu con conferma eliminazione
+  void _handleMenuAction(BuildContext context, String action) {
     switch (action) {
       case 'details':
         onTap?.call();
@@ -221,8 +222,72 @@ class WorkoutPlanCard extends StatelessWidget {
         onEdit?.call();
         break;
       case 'delete':
-        onDelete?.call();
+        _showDeleteConfirmationDialog(context);
         break;
+    }
+  }
+
+  // ✅ Dialog di conferma eliminazione
+  Future<void> _showDeleteConfirmationDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elimina Scheda'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sei sicuro di voler eliminare la scheda "${workoutPlan.nome}"?'),
+            SizedBox(height: AppConfig.spacingM.h),
+            Container(
+              padding: EdgeInsets.all(AppConfig.spacingS.w),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppConfig.radiusS.r),
+                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning,
+                    color: AppColors.error,
+                    size: 16.sp,
+                  ),
+                  SizedBox(width: AppConfig.spacingS.w),
+                  Expanded(
+                    child: Text(
+                      'Questa azione non può essere annullata.',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      onDelete?.call();
     }
   }
 

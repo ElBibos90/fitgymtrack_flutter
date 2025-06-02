@@ -1,4 +1,5 @@
 // lib/features/workouts/repository/workout_repository.dart
+
 import 'dart:developer' as developer;
 import 'dart:convert';
 import '../../../core/network/api_client.dart';
@@ -9,21 +10,22 @@ import '../models/active_workout_models.dart';
 import '../models/series_request_models.dart';
 import '../models/workout_response_types.dart';
 import '../../stats/models/user_stats_models.dart';
+import 'package:dio/dio.dart'; // ✅ NUOVO: Per gestire DELETE manualmente
 
-/// Repository unificato per tutte le operazioni workout
-/// Combina funzionalità di WorkoutRepository, ActiveWorkoutRepository e WorkoutHistoryRepository Android
 class WorkoutRepository {
   final ApiClient _apiClient;
+  final Dio _dio; // ✅ NUOVO: Riferimento diretto a Dio
 
-  WorkoutRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  WorkoutRepository({required ApiClient apiClient, required Dio dio})
+      : _apiClient = apiClient,
+        _dio = dio; // ✅ NUOVO: Inizializza Dio
 
   // ============================================================================
-  // WORKOUT PLANS MANAGEMENT (da WorkoutRepository Android)
+  // METODI ESISTENTI (invariati)
   // ============================================================================
 
-  /// Recupera tutte le schede di allenamento dell'utente
-  /// 🔧 AGGIORNATO: Include conteggio esercizi tramite chiamate multiple
   Future<Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) async {
+    // ... metodo invariato ...
     return await Result.tryCallAsync(() async {
       developer.log('Getting workout plans for user: $userId', name: 'WorkoutRepository');
 
@@ -41,12 +43,10 @@ class WorkoutRepository {
 
           developer.log('Basic workout plans loaded: ${workoutPlansBasic.length}', name: 'WorkoutRepository');
 
-          // 🔧 NUOVO: Per ogni scheda, recuperiamo gli esercizi
           final List<WorkoutPlan> completeWorkoutPlans = [];
 
           for (final basicPlan in workoutPlansBasic) {
             try {
-              // Chiamata per ottenere gli esercizi della scheda
               final exercisesResult = await getWorkoutExercises(basicPlan.id);
 
               List<WorkoutExercise> exercises = [];
@@ -56,26 +56,22 @@ class WorkoutRepository {
                   developer.log('Loaded ${exercises.length} exercises for plan ${basicPlan.nome}', name: 'WorkoutRepository');
                 },
                 onFailure: (exception, message) {
-                  // Se fallisce il caricamento esercizi, loggiamo ma continuiamo
                   developer.log('Failed to load exercises for plan ${basicPlan.nome}: $message', name: 'WorkoutRepository');
-                  exercises = []; // Lista vuota come fallback
+                  exercises = [];
                 },
               );
 
-              // Creiamo una nuova istanza con gli esercizi popolati
               final completePlan = basicPlan.copyWith(esercizi: exercises);
               completeWorkoutPlans.add(completePlan);
 
             } catch (e) {
-              // Se c'è un errore, aggiungiamo la scheda senza esercizi
               developer.log('Error loading exercises for plan ${basicPlan.nome}: $e', name: 'WorkoutRepository');
-              completeWorkoutPlans.add(basicPlan); // Mantiene esercizi = []
+              completeWorkoutPlans.add(basicPlan);
             }
           }
 
           developer.log('Successfully loaded ${completeWorkoutPlans.length} complete workout plans', name: 'WorkoutRepository');
 
-          // Debug: Log conteggi esercizi
           for (final plan in completeWorkoutPlans) {
             developer.log('Plan "${plan.nome}": ${plan.esercizi.length} exercises', name: 'WorkoutRepository');
           }
@@ -90,8 +86,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Recupera gli esercizi di una scheda specifica
-  /// (Metodo rimane invariato, già funzionante)
   Future<Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting exercises for workout: $schedaId', name: 'WorkoutRepository');
@@ -120,28 +114,38 @@ class WorkoutRepository {
   }
 
   // ============================================================================
-  // RESTO DEI METODI RIMANGONO INVARIATI
+  // ✅ FIX 1: DELETE SCHEDA con form-data nel body
   // ============================================================================
 
-  /// Crea una nuova scheda di allenamento
-  Future<Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) async {
+  Future<Result<DeleteWorkoutPlanResponse>> deleteWorkoutPlan(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      developer.log('Creating workout plan: ${request.nome}', name: 'WorkoutRepository');
+      developer.log('Deleting workout plan: $schedaId', name: 'WorkoutRepository');
 
-      final requestJson = request.toJson();
-      developer.log('Create Request JSON: ${jsonEncode(requestJson)}', name: 'WorkoutRepository');
+      // ✅ NUOVO: Richiesta DELETE manuale con form-data nel body
+      final response = await _dio.delete(
+        '/schede_standalone.php',
+        data: 'scheda_id=$schedaId', // Form-urlencoded nel body
+        options: Options(
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        ),
+      );
 
-      final response = await _apiClient.createWorkoutStandalone(requestJson);
+      developer.log('DELETE response: ${response.data}', name: 'WorkoutRepository');
 
-      if (response != null && response is Map<String, dynamic>) {
-        return CreateWorkoutPlanResponse.fromJson(response);
+      if (response.data != null && response.data is Map<String, dynamic>) {
+        return DeleteWorkoutPlanResponse.fromJson(response.data);
       } else {
         throw Exception('Formato risposta non valido');
       }
     });
   }
 
-  /// Aggiorna una scheda di allenamento esistente
+  // ============================================================================
+  // ✅ FIX 2: UPDATE con gestione corretta rimozioni
+  // ============================================================================
+
   Future<Result<UpdateWorkoutPlanResponse>> updateWorkoutPlan(UpdateWorkoutPlanRequest request) async {
     return await Result.tryCallAsync(() async {
       developer.log('Updating workout plan: ${request.schedaId}', name: 'WorkoutRepository');
@@ -153,6 +157,14 @@ class WorkoutRepository {
       developer.log('User ID: ${request.userId}', name: 'WorkoutRepository');
       developer.log('Nome: ${request.nome}', name: 'WorkoutRepository');
       developer.log('Numero esercizi: ${request.esercizi.length}', name: 'WorkoutRepository');
+
+      // ✅ NUOVO: Log degli esercizi da rimuovere
+      if (request.rimuovi != null && request.rimuovi!.isNotEmpty) {
+        developer.log('Esercizi da rimuovere: ${request.rimuovi!.length}', name: 'WorkoutRepository');
+        for (final toRemove in request.rimuovi!) {
+          developer.log('Rimuovi esercizio ID: ${toRemove.id} (questo è esercizio_id, non scheda_esercizio_id)', name: 'WorkoutRepository');
+        }
+      }
 
       final eserciziJson = requestJson['esercizi'] as List<dynamic>;
       for (int i = 0; i < eserciziJson.length; i++) {
@@ -170,23 +182,27 @@ class WorkoutRepository {
     });
   }
 
-  /// Elimina una scheda di allenamento
-  Future<Result<DeleteWorkoutPlanResponse>> deleteWorkoutPlan(int schedaId) async {
-    return await Result.tryCallAsync(() async {
-      developer.log('Deleting workout plan: $schedaId', name: 'WorkoutRepository');
+  // ============================================================================
+  // ALTRI METODI (invariati)
+  // ============================================================================
 
-      final request = {'scheda_id': schedaId};
-      final response = await _apiClient.deleteWorkoutStandalone(request);
+  Future<Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) async {
+    return await Result.tryCallAsync(() async {
+      developer.log('Creating workout plan: ${request.nome}', name: 'WorkoutRepository');
+
+      final requestJson = request.toJson();
+      developer.log('Create Request JSON: ${jsonEncode(requestJson)}', name: 'WorkoutRepository');
+
+      final response = await _apiClient.createWorkoutStandalone(requestJson);
 
       if (response != null && response is Map<String, dynamic>) {
-        return DeleteWorkoutPlanResponse.fromJson(response);
+        return CreateWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
       }
     });
   }
 
-  /// Recupera gli esercizi disponibili per creare/modificare schede
   Future<Result<List<ExerciseItem>>> getAvailableExercises(int userId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting available exercises for user: $userId', name: 'WorkoutRepository');
@@ -215,10 +231,9 @@ class WorkoutRepository {
   }
 
   // ============================================================================
-  // ACTIVE WORKOUTS MANAGEMENT (da ActiveWorkoutRepository Android)
+  // ACTIVE WORKOUTS MANAGEMENT (invariati)
   // ============================================================================
 
-  /// Inizia un nuovo allenamento
   Future<Result<StartWorkoutResponse>> startWorkout(int userId, int schedaId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Starting workout for user: $userId, scheda: $schedaId', name: 'WorkoutRepository');
@@ -241,7 +256,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Recupera le serie completate per un allenamento
   Future<Result<List<CompletedSeriesData>>> getCompletedSeries(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting completed series for workout: $allenamentoId', name: 'WorkoutRepository');
@@ -269,7 +283,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Salva una serie completata
   Future<Result<SaveCompletedSeriesResponse>> saveCompletedSeries(
       int allenamentoId,
       List<SeriesData> serie,
@@ -294,7 +307,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Completa un allenamento
   Future<Result<CompleteWorkoutResponse>> completeWorkout(
       int allenamentoId,
       int durataTotale, {
@@ -320,10 +332,9 @@ class WorkoutRepository {
   }
 
   // ============================================================================
-  // WORKOUT HISTORY MANAGEMENT (da WorkoutHistoryRepository Android)
+  // WORKOUT HISTORY MANAGEMENT (invariati)
   // ============================================================================
 
-  /// Recupera la cronologia degli allenamenti di un utente
   Future<Result<List<WorkoutHistory>>> getWorkoutHistory(int userId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting workout history for user: $userId', name: 'WorkoutRepository');
@@ -351,7 +362,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Recupera i dettagli delle serie per un allenamento specifico della cronologia
   Future<Result<List<CompletedSeriesData>>> getWorkoutSeriesDetail(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting series details for workout: $allenamentoId', name: 'WorkoutRepository');
@@ -379,7 +389,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Elimina una serie completata
   Future<Result<bool>> deleteCompletedSeries(String seriesId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Deleting completed series: $seriesId', name: 'WorkoutRepository');
@@ -396,7 +405,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Aggiorna una serie completata
   Future<Result<bool>> updateCompletedSeries(
       String seriesId,
       double weight,
@@ -426,7 +434,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Elimina un intero allenamento dalla cronologia
   Future<Result<bool>> deleteWorkout(int workoutId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Deleting workout: $workoutId', name: 'WorkoutRepository');
@@ -445,10 +452,9 @@ class WorkoutRepository {
   }
 
   // ============================================================================
-  // STATISTICS & ANALYTICS (bonus methods)
+  // STATISTICS & ANALYTICS (invariati)
   // ============================================================================
 
-  /// Recupera le statistiche dell'utente
   Future<Result<UserStats>> getUserStats(int userId) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting user stats for: $userId', name: 'WorkoutRepository');
@@ -471,7 +477,6 @@ class WorkoutRepository {
     });
   }
 
-  /// Recupera statistiche per un periodo specifico
   Future<Result<PeriodStats>> getPeriodStats(String period) async {
     return await Result.tryCallAsync(() async {
       developer.log('Getting period stats for: $period', name: 'WorkoutRepository');

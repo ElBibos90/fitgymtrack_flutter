@@ -2,6 +2,7 @@
 // Barrel file per esportare tutti i widget workout
 
 export 'workout_plan_card.dart';
+export 'exercise_editor_card.dart';
 
 // Quando aggiungeremo altri widget, li esporteremo qui:
 // export 'exercise_card.dart';

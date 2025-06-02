@@ -170,9 +170,6 @@ abstract class ApiClient {
       {@Query("action") String action = "update"}
       );
 
-  @DELETE("/schede_standalone.php")
-  Future<dynamic> deleteWorkoutStandalone(@Body() Map<String, dynamic> request);
-
   // ============================================================================
   // EXERCISES ENDPOINTS (GENERAL)
   // ============================================================================

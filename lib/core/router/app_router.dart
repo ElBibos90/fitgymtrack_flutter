@@ -1,3 +1,4 @@
+// lib/core/router/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +11,11 @@ import '../../shared/widgets/auth_wrapper.dart';
 import '../../main.dart'; // Per la Dashboard esistente
 import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
+import '../../features/workouts/presentation/screens/edit_workout_screen.dart';
 import '../../features/workouts/presentation/screens/active_workout_screen.dart';
+// ✅ AGGIUNTI: Import mancanti
+import '../../features/workouts/bloc/workout_bloc.dart';
+import '../../core/di/dependency_injection.dart';
 
 
 class AppRouter {
@@ -107,13 +112,22 @@ class AppRouter {
           },
         ),
 
+        // ✅ SEMPLIFICATO: Versione senza BlocProvider.value
         GoRoute(
           path: '/workouts/edit/:id',
           name: 'edit-workout',
           builder: (context, state) {
             final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            if (workoutId == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('ID scheda non valido'),
+                ),
+              );
+            }
+
             return AuthWrapper(
-              authenticatedChild: CreateWorkoutScreen(workoutId: workoutId),
+              authenticatedChild: EditWorkoutScreen(workoutId: workoutId),
               unauthenticatedChild: const LoginScreen(),
             );
           },
@@ -134,6 +148,7 @@ class AppRouter {
           },
         ),
 
+        // ✅ AGGIORNATO: Usa la nuova WorkoutPlansScreen
         GoRoute(
           path: '/workouts',
           name: 'workouts',
@@ -145,7 +160,6 @@ class AppRouter {
           },
         ),
 
-        // ✅ ROTTA SISTEMATA - Ora usa la schermata reale
         GoRoute(
           path: '/workouts/:id/start',
           name: 'start-workout',

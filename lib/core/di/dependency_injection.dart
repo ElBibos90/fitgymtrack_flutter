@@ -1,4 +1,5 @@
 // lib/core/di/dependency_injection.dart
+import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../services/session_service.dart';
 import '../network/dio_client.dart';
@@ -53,8 +54,10 @@ class DependencyInjection {
 
     getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
       apiClient: getIt<ApiClient>(),
+      dio: getIt<Dio>(), // ✅ NUOVO: Passa anche Dio
     ));
 
+// Resto invariato...
     getIt.registerFactory<WorkoutBloc>(() => WorkoutBloc(
       workoutRepository: getIt<WorkoutRepository>(),
     ));
@@ -66,13 +69,6 @@ class DependencyInjection {
     getIt.registerFactory<WorkoutHistoryBloc>(() => WorkoutHistoryBloc(
       workoutRepository: getIt<WorkoutRepository>(),
     ));
-
-    // TODO: Uncomment when we create WorkoutRepository
-    // Workout Repository
-    // getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
-    //   apiClient: getIt<ApiClient>(),
-    //   sessionService: getIt<SessionService>(),
-    // ));
 
     // ============================================================================
     // AUTH BLOCS
@@ -90,34 +86,6 @@ class DependencyInjection {
       authRepository: getIt<AuthRepository>(),
     ));
 
-    // TODO: Uncomment when we create the BLoC files
-    // ============================================================================
-    // WORKOUT BLOCS
-    // ============================================================================
-
-    // getIt.registerFactory<WorkoutPlansBloc>(() => WorkoutPlansBloc(
-    //   workoutRepository: getIt<WorkoutRepository>(),
-    // ));
-
-    // getIt.registerFactory<ActiveWorkoutBloc>(() => ActiveWorkoutBloc(
-    //   workoutRepository: getIt<WorkoutRepository>(),
-    // ));
-
-    // ============================================================================
-    // EXERCISE BLOCS
-    // ============================================================================
-
-    // getIt.registerFactory<ExercisesBloc>(() => ExercisesBloc(
-    //   workoutRepository: getIt<WorkoutRepository>(),
-    // ));
-
-    // ============================================================================
-    // STATS BLOCS
-    // ============================================================================
-
-    // getIt.registerFactory<StatsBloc>(() => StatsBloc(
-    //   workoutRepository: getIt<WorkoutRepository>(),
-    // ));
   }
 
   static void reset() {

@@ -9,7 +9,7 @@ import '../models/workout_response_types.dart';
 import '../../exercises/models/exercises_response.dart';
 
 // ============================================================================
-// WORKOUT EVENTS
+// WORKOUT EVENTS (aggiunta di nuovi eventi)
 // ============================================================================
 
 abstract class WorkoutEvent extends Equatable {
@@ -19,7 +19,7 @@ abstract class WorkoutEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Evento per caricare tutte le schede dell'utente
+// Eventi esistenti...
 class GetWorkoutPlans extends WorkoutEvent {
   final int userId;
 
@@ -29,10 +29,6 @@ class GetWorkoutPlans extends WorkoutEvent {
   List<Object> get props => [userId];
 }
 
-// RIMUOVIAMO GetWorkoutPlan - non serve più
-// class GetWorkoutPlan extends WorkoutEvent { ... } ❌ RIMOSSO
-
-/// Evento per caricare gli esercizi di una scheda specifica
 class GetWorkoutExercises extends WorkoutEvent {
   final int schedaId;
 
@@ -42,7 +38,6 @@ class GetWorkoutExercises extends WorkoutEvent {
   List<Object> get props => [schedaId];
 }
 
-/// Evento per caricare gli esercizi disponibili per creare/modificare schede
 class GetAvailableExercises extends WorkoutEvent {
   final int userId;
 
@@ -52,7 +47,6 @@ class GetAvailableExercises extends WorkoutEvent {
   List<Object> get props => [userId];
 }
 
-/// Evento per creare una nuova scheda
 class CreateWorkoutPlan extends WorkoutEvent {
   final CreateWorkoutPlanRequest request;
 
@@ -62,7 +56,6 @@ class CreateWorkoutPlan extends WorkoutEvent {
   List<Object> get props => [request];
 }
 
-/// Evento per aggiornare una scheda esistente
 class UpdateWorkoutPlan extends WorkoutEvent {
   final UpdateWorkoutPlanRequest request;
 
@@ -72,7 +65,6 @@ class UpdateWorkoutPlan extends WorkoutEvent {
   List<Object> get props => [request];
 }
 
-/// Evento per eliminare una scheda
 class DeleteWorkoutPlan extends WorkoutEvent {
   final int schedaId;
 
@@ -82,12 +74,10 @@ class DeleteWorkoutPlan extends WorkoutEvent {
   List<Object> get props => [schedaId];
 }
 
-/// Evento per resettare lo stato
 class ResetWorkoutState extends WorkoutEvent {
   const ResetWorkoutState();
 }
 
-/// Evento per caricare i dettagli di una scheda specifica (esercizi inclusi)
 class GetWorkoutPlanDetails extends WorkoutEvent {
   final int schedaId;
 
@@ -97,7 +87,6 @@ class GetWorkoutPlanDetails extends WorkoutEvent {
   List<Object> get props => [schedaId];
 }
 
-/// Evento per caricare i dettagli di una scheda quando abbiamo già i dati base
 class LoadWorkoutPlanWithData extends WorkoutEvent {
   final WorkoutPlan workoutPlan;
   final int schedaId;
@@ -111,8 +100,22 @@ class LoadWorkoutPlanWithData extends WorkoutEvent {
   List<Object> get props => [workoutPlan, schedaId];
 }
 
+// ✅ NUOVO EVENTO per refresh automatico
+class RefreshWorkoutPlansAfterOperation extends WorkoutEvent {
+  final int userId;
+  final String operation; // "create", "update", "delete"
+
+  const RefreshWorkoutPlansAfterOperation({
+    required this.userId,
+    required this.operation,
+  });
+
+  @override
+  List<Object> get props => [userId, operation];
+}
+
 // ============================================================================
-// WORKOUT STATES
+// WORKOUT STATES (mantenute le esistenti)
 // ============================================================================
 
 abstract class WorkoutState extends Equatable {
@@ -122,17 +125,14 @@ abstract class WorkoutState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Stato iniziale
 class WorkoutInitial extends WorkoutState {
   const WorkoutInitial();
 }
 
-/// Stato di caricamento
 class WorkoutLoading extends WorkoutState {
   const WorkoutLoading();
 }
 
-/// Stato di caricamento con messaggio personalizzato
 class WorkoutLoadingWithMessage extends WorkoutState {
   final String message;
 
@@ -142,7 +142,6 @@ class WorkoutLoadingWithMessage extends WorkoutState {
   List<Object> get props => [message];
 }
 
-/// Stato di successo con lista schede caricate
 class WorkoutPlansLoaded extends WorkoutState {
   final List<WorkoutPlan> workoutPlans;
   final int userId;
@@ -156,7 +155,6 @@ class WorkoutPlansLoaded extends WorkoutState {
   List<Object> get props => [workoutPlans, userId];
 }
 
-/// Stato di successo con esercizi di una scheda caricati
 class WorkoutExercisesLoaded extends WorkoutState {
   final List<WorkoutExercise> exercises;
   final int schedaId;
@@ -170,7 +168,6 @@ class WorkoutExercisesLoaded extends WorkoutState {
   List<Object> get props => [exercises, schedaId];
 }
 
-/// Stato di successo con esercizi disponibili caricati
 class AvailableExercisesLoaded extends WorkoutState {
   final List<ExerciseItem> availableExercises;
   final int userId;
@@ -184,7 +181,6 @@ class AvailableExercisesLoaded extends WorkoutState {
   List<Object> get props => [availableExercises, userId];
 }
 
-/// Stato di successo dopo creazione scheda
 class WorkoutPlanCreated extends WorkoutState {
   final CreateWorkoutPlanResponse response;
   final String message;
@@ -198,7 +194,6 @@ class WorkoutPlanCreated extends WorkoutState {
   List<Object> get props => [response, message];
 }
 
-/// Stato di successo dopo aggiornamento scheda
 class WorkoutPlanUpdated extends WorkoutState {
   final UpdateWorkoutPlanResponse response;
   final String message;
@@ -212,7 +207,6 @@ class WorkoutPlanUpdated extends WorkoutState {
   List<Object> get props => [response, message];
 }
 
-/// Stato di successo dopo eliminazione scheda
 class WorkoutPlanDeleted extends WorkoutState {
   final DeleteWorkoutPlanResponse response;
   final String message;
@@ -226,7 +220,6 @@ class WorkoutPlanDeleted extends WorkoutState {
   List<Object> get props => [response, message];
 }
 
-/// Stato di successo con dettagli completi di una scheda
 class WorkoutPlanDetailsLoaded extends WorkoutState {
   final WorkoutPlan workoutPlan;
   final List<WorkoutExercise> exercises;
@@ -240,7 +233,6 @@ class WorkoutPlanDetailsLoaded extends WorkoutState {
   List<Object> get props => [workoutPlan, exercises];
 }
 
-/// Stato di errore
 class WorkoutError extends WorkoutState {
   final String message;
   final Exception? exception;
@@ -255,11 +247,14 @@ class WorkoutError extends WorkoutState {
 }
 
 // ============================================================================
-// WORKOUT BLOC
+// WORKOUT BLOC (con fix del refresh automatico)
 // ============================================================================
 
 class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
   final WorkoutRepository _workoutRepository;
+
+  // ✅ Aggiungiamo il tracking dell'ultimo userId per il refresh automatico
+  int? _lastUserId;
 
   WorkoutBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
@@ -275,7 +270,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     on<ResetWorkoutState>(_onResetWorkoutState);
     on<GetWorkoutPlanDetails>(_onGetWorkoutPlanDetails);
     on<LoadWorkoutPlanWithData>(_onLoadWorkoutPlanWithData);
-    // ❌ RIMOSSO: on<GetWorkoutPlan>(_onGetWorkoutPlan);
+    on<RefreshWorkoutPlansAfterOperation>(_onRefreshWorkoutPlansAfterOperation);
   }
 
   /// Handler per caricamento schede allenamento
@@ -284,6 +279,9 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       Emitter<WorkoutState> emit,
       ) async {
     emit(const WorkoutLoading());
+
+    // ✅ Salva l'ultimo userId per refresh automatici
+    _lastUserId = event.userId;
 
     developer.log('Loading workout plans for user: ${event.userId}', name: 'WorkoutBloc');
 
@@ -307,7 +305,32 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
-  /// Handler per caricamento esercizi di una scheda
+  /// ✅ Handler per refresh automatico dopo operazioni
+  Future<void> _onRefreshWorkoutPlansAfterOperation(
+      RefreshWorkoutPlansAfterOperation event,
+      Emitter<WorkoutState> emit,
+      ) async {
+    developer.log('Auto-refreshing workout plans after ${event.operation}', name: 'WorkoutBloc');
+
+    // Ricarica silenziosamente le schede senza mostrare loading
+    final result = await _workoutRepository.getWorkoutPlans(event.userId);
+
+    result.fold(
+      onSuccess: (workoutPlans) {
+        developer.log('Successfully auto-refreshed ${workoutPlans.length} workout plans', name: 'WorkoutBloc');
+        emit(WorkoutPlansLoaded(
+          workoutPlans: workoutPlans,
+          userId: event.userId,
+        ));
+      },
+      onFailure: (exception, message) {
+        developer.log('Error auto-refreshing workout plans: $message', name: 'WorkoutBloc', error: exception);
+        // Non emettiamo errore per refresh automatico, manteniamo lo stato precedente
+      },
+    );
+  }
+
+  // Altri handler rimangono invariati...
   Future<void> _onGetWorkoutExercises(
       GetWorkoutExercises event,
       Emitter<WorkoutState> emit,
@@ -336,7 +359,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
-  /// Handler per caricamento esercizi disponibili
   Future<void> _onGetAvailableExercises(
       GetAvailableExercises event,
       Emitter<WorkoutState> emit,
@@ -373,7 +395,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     }
   }
 
-  /// Handler per creazione scheda
+  /// ✅ Handler per creazione scheda con refresh automatico
   Future<void> _onCreateWorkoutPlan(
       CreateWorkoutPlan event,
       Emitter<WorkoutState> emit,
@@ -391,6 +413,14 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           response: response,
           message: response.message,
         ));
+
+        // ✅ Refresh automatico delle schede dopo creazione
+        if (_lastUserId != null) {
+          add(RefreshWorkoutPlansAfterOperation(
+            userId: _lastUserId!,
+            operation: 'create',
+          ));
+        }
       },
       onFailure: (exception, message) {
         developer.log('Error creating workout plan: $message', name: 'WorkoutBloc', error: exception);
@@ -402,7 +432,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
-  /// Handler per aggiornamento scheda
+  /// ✅ Handler per aggiornamento scheda con refresh automatico
   Future<void> _onUpdateWorkoutPlan(
       UpdateWorkoutPlan event,
       Emitter<WorkoutState> emit,
@@ -420,6 +450,14 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           response: response,
           message: response.message,
         ));
+
+        // ✅ Refresh automatico delle schede dopo aggiornamento
+        if (_lastUserId != null) {
+          add(RefreshWorkoutPlansAfterOperation(
+            userId: _lastUserId!,
+            operation: 'update',
+          ));
+        }
       },
       onFailure: (exception, message) {
         developer.log('Error updating workout plan: $message', name: 'WorkoutBloc', error: exception);
@@ -431,7 +469,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
-  /// Handler per eliminazione scheda
+  /// ✅ Handler per eliminazione scheda con refresh automatico
   Future<void> _onDeleteWorkoutPlan(
       DeleteWorkoutPlan event,
       Emitter<WorkoutState> emit,
@@ -449,6 +487,14 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           response: response,
           message: response.message,
         ));
+
+        // ✅ Refresh automatico delle schede dopo eliminazione
+        if (_lastUserId != null) {
+          add(RefreshWorkoutPlansAfterOperation(
+            userId: _lastUserId!,
+            operation: 'delete',
+          ));
+        }
       },
       onFailure: (exception, message) {
         developer.log('Error deleting workout plan: $message', name: 'WorkoutBloc', error: exception);
@@ -460,7 +506,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     );
   }
 
-  /// Handler per caricamento dettagli completi di una scheda quando abbiamo già i dati base
+  // Altri handler rimangono invariati...
   Future<void> _onLoadWorkoutPlanWithData(
       LoadWorkoutPlanWithData event,
       Emitter<WorkoutState> emit,
@@ -476,7 +522,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         onSuccess: (exercises) {
           developer.log('Successfully loaded workout plan with data: ${exercises.length} exercises', name: 'WorkoutBloc');
 
-          // Usa i dati reali della scheda passati come parametro
           final workoutPlan = event.workoutPlan.copyWith(esercizi: exercises);
 
           emit(WorkoutPlanDetailsLoaded(
@@ -501,7 +546,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     }
   }
 
-  /// Handler per caricamento dettagli completi di una scheda
   Future<void> _onGetWorkoutPlanDetails(
       GetWorkoutPlanDetails event,
       Emitter<WorkoutState> emit,
@@ -511,7 +555,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     developer.log('Loading workout plan details: ${event.schedaId}', name: 'WorkoutBloc');
 
     try {
-      // Carica gli esercizi della scheda
       final exercisesResult = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
       exercisesResult.fold(
@@ -520,7 +563,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
 
           WorkoutPlan workoutPlan;
 
-          // Controlla se abbiamo i dati della scheda nel stato precedente
           if (state is WorkoutPlansLoaded) {
             WorkoutPlan? existingPlan;
             try {
@@ -532,11 +574,9 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
             }
 
             if (existingPlan != null) {
-              // Usa i dati reali della scheda
               workoutPlan = existingPlan.copyWith(esercizi: exercises);
               developer.log('Using real workout plan data: ${workoutPlan.nome}', name: 'WorkoutBloc');
             } else {
-              // Fallback
               workoutPlan = WorkoutPlan(
                 id: event.schedaId,
                 nome: 'Scheda ${event.schedaId}',
@@ -546,7 +586,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
               );
             }
           } else {
-            // Se non abbiamo lo stato delle schede, creiamo un placeholder
             workoutPlan = WorkoutPlan(
               id: event.schedaId,
               nome: 'Scheda ${event.schedaId}',
@@ -578,61 +617,61 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     }
   }
 
-  /// Handler per reset dello stato
   Future<void> _onResetWorkoutState(
       ResetWorkoutState event,
       Emitter<WorkoutState> emit,
       ) async {
     developer.log('Resetting workout state', name: 'WorkoutBloc');
+    _lastUserId = null; // ✅ Reset anche il tracking userId
     emit(const WorkoutInitial());
   }
 
   // ============================================================================
-  // PUBLIC METHODS (helper methods per semplificare l'uso)
+  // PUBLIC METHODS (aggiornati)
   // ============================================================================
 
-  /// Carica le schede di allenamento per un utente
   void loadWorkoutPlans(int userId) {
     add(GetWorkoutPlans(userId: userId));
   }
 
-  /// Carica gli esercizi di una scheda
   void loadWorkoutExercises(int schedaId) {
     add(GetWorkoutExercises(schedaId: schedaId));
   }
 
-  /// Carica gli esercizi disponibili
   void loadAvailableExercises(int userId) {
     add(GetAvailableExercises(userId: userId));
   }
 
-  /// Crea una nuova scheda
   void createWorkout(CreateWorkoutPlanRequest request) {
+    // ✅ Salva l'userId per il refresh automatico
+    _lastUserId = request.userId;
     add(CreateWorkoutPlan(request: request));
   }
 
-  /// Aggiorna una scheda esistente
   void updateWorkout(UpdateWorkoutPlanRequest request) {
+    // ✅ Salva l'userId per il refresh automatico
+    _lastUserId = request.userId;
     add(UpdateWorkoutPlan(request: request));
   }
 
-  /// Elimina una scheda
   void deleteWorkout(int schedaId) {
     add(DeleteWorkoutPlan(schedaId: schedaId));
   }
 
-  /// Carica i dettagli completi di una scheda
   void loadWorkoutPlanDetails(int schedaId) {
     add(GetWorkoutPlanDetails(schedaId: schedaId));
   }
 
-  /// Carica i dettagli di una scheda quando abbiamo già i dati base
   void loadWorkoutPlanWithData(WorkoutPlan workoutPlan) {
     add(LoadWorkoutPlanWithData(workoutPlan: workoutPlan, schedaId: workoutPlan.id));
   }
 
-  /// Resetta lo stato del BLoC
   void resetState() {
     add(const ResetWorkoutState());
+  }
+
+  // ✅ Nuovo metodo pubblico per refresh manuale
+  void refreshWorkoutPlans(int userId) {
+    add(RefreshWorkoutPlansAfterOperation(userId: userId, operation: 'manual'));
   }
 }
