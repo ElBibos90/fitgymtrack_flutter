@@ -105,6 +105,7 @@ WorkoutExerciseRequest _$WorkoutExerciseRequestFromJson(
       note: json['note'] as String?,
       setType: json['set_type'] as String? ?? 'normal',
       linkedToPrevious: (json['linked_to_previous'] as num?)?.toInt() ?? 0,
+      isIsometricInt: (json['is_isometric'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$WorkoutExerciseRequestToJson(
@@ -120,6 +121,7 @@ Map<String, dynamic> _$WorkoutExerciseRequestToJson(
       'note': instance.note,
       'set_type': instance.setType,
       'linked_to_previous': instance.linkedToPrevious,
+      'is_isometric': instance.isIsometricInt,
     };
 
 UpdateWorkoutPlanRequest _$UpdateWorkoutPlanRequestFromJson(

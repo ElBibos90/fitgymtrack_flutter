@@ -4,7 +4,6 @@ import 'package:json_annotation/json_annotation.dart';
 part 'workout_plan_models.g.dart';
 
 // FUNZIONI HELPER ROBUSTE PER LA CONVERSIONE
-
 /// Converte qualsiasi tipo a double in modo sicuro
 double _parseWeightSafe(dynamic value) {
   if (value == null) return 0.0;
@@ -303,6 +302,8 @@ class WorkoutExerciseRequest {
   final String setType;
   @JsonKey(name: 'linked_to_previous')
   final int linkedToPrevious;
+  @JsonKey(name: 'is_isometric')
+  final int isIsometricInt;
 
   const WorkoutExerciseRequest({
     required this.id,
@@ -315,6 +316,7 @@ class WorkoutExerciseRequest {
     this.note,
     this.setType = 'normal',
     this.linkedToPrevious = 0,
+    this.isIsometricInt = 0
   });
 
   factory WorkoutExerciseRequest.fromJson(Map<String, dynamic> json) => _$WorkoutExerciseRequestFromJson(json);

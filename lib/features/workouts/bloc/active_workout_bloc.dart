@@ -309,35 +309,47 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     emit(const ActiveWorkoutLoading(message: 'Avvio allenamento...'));
 
-    developer.log('Starting workout session - User: ${event.userId}, Scheda: ${event.schedaId}',
+    developer.log('🚀 Starting workout session - User: ${event.userId}, Scheda: ${event.schedaId}',
         name: 'ActiveWorkoutBloc');
 
-    final result = await _workoutRepository.startWorkout(event.userId, event.schedaId);
+    try {
+      final result = await _workoutRepository.startWorkout(event.userId, event.schedaId);
 
-    result.fold(
-      onSuccess: (response) {
-        developer.log('Workout session started successfully', name: 'ActiveWorkoutBloc');
-        final startTime = DateTime.now();
+      result.fold(
+        onSuccess: (response) {
+          developer.log('✅ Workout session started successfully: ${response.allenamentoId}',
+              name: 'ActiveWorkoutBloc');
+          final startTime = DateTime.now();
 
-        emit(WorkoutSessionStarted(
-          response: response,
-          userId: event.userId,
-          schedaId: event.schedaId,
-          startTime: startTime,
-        ));
+          emit(WorkoutSessionStarted(
+            response: response,
+            userId: event.userId,
+            schedaId: event.schedaId,
+            startTime: startTime,
+          ));
 
-        // Carica automaticamente gli esercizi della scheda
-        add(LoadWorkoutExercises(schedaId: event.schedaId));
-      },
-      onFailure: (exception, message) {
-        developer.log('Error starting workout session: $message',
-            name: 'ActiveWorkoutBloc', error: exception);
-        emit(ActiveWorkoutError(
-          message: message ?? 'Errore nell\'avvio dell\'allenamento',
-          exception: exception,
-        ));
-      },
-    );
+          // Carica automaticamente gli esercizi della scheda
+          developer.log('🔄 Loading exercises for scheda: ${event.schedaId}',
+              name: 'ActiveWorkoutBloc');
+          add(LoadWorkoutExercises(schedaId: event.schedaId));
+        },
+        onFailure: (exception, message) {
+          developer.log('❌ Error starting workout session: $message',
+              name: 'ActiveWorkoutBloc', error: exception);
+          emit(ActiveWorkoutError(
+            message: message ?? 'Errore nell\'avvio dell\'allenamento',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      developer.log('💥 Exception in _onStartWorkoutSession: $e',
+          name: 'ActiveWorkoutBloc', error: e);
+      emit(ActiveWorkoutError(
+        message: 'Errore critico nell\'avvio dell\'allenamento: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per caricare gli esercizi della scheda
@@ -347,51 +359,78 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     // Mantieni lo stato corrente se siamo già in workout attivo
     if (state is WorkoutSessionActive) {
+      developer.log('⚠️ Exercises already loaded, skipping...', name: 'ActiveWorkoutBloc');
       return; // Gli esercizi sono già caricati
     }
 
     emit(const ActiveWorkoutLoading(message: 'Caricamento esercizi...'));
 
-    developer.log('Loading exercises for workout: ${event.schedaId}', name: 'ActiveWorkoutBloc');
+    developer.log('📋 Loading exercises for workout: ${event.schedaId}', name: 'ActiveWorkoutBloc');
 
-    final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
+    try {
+      final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
-    result.fold(
-      onSuccess: (exercises) {
-        developer.log('Successfully loaded ${exercises.length} exercises', name: 'ActiveWorkoutBloc');
+      result.fold(
+        onSuccess: (exercises) {
+          developer.log('✅ Successfully loaded ${exercises.length} exercises',
+              name: 'ActiveWorkoutBloc');
 
-        // Se abbiamo una sessione avviata, crea lo stato attivo completo
-        if (state is WorkoutSessionStarted) {
-          final startedState = state as WorkoutSessionStarted;
+          // Log dettagli esercizi per debug
+          for (final exercise in exercises) {
+            developer.log('  - Exercise: ${exercise.nome} (ID: ${exercise.id})',
+                name: 'ActiveWorkoutBloc');
+          }
 
-          final activeWorkout = ActiveWorkout(
-            id: startedState.response.allenamentoId,
-            schedaId: startedState.schedaId,
-            dataAllenamento: startedState.startTime.toIso8601String(),
-            userId: startedState.userId,
-            esercizi: exercises,
-          );
+          // Se abbiamo una sessione avviata, crea lo stato attivo completo
+          if (state is WorkoutSessionStarted) {
+            final startedState = state as WorkoutSessionStarted;
 
-          emit(WorkoutSessionActive(
-            activeWorkout: activeWorkout,
-            exercises: exercises,
-            completedSeries: {},
-            elapsedTime: Duration.zero,
-            startTime: startedState.startTime,
+            final activeWorkout = ActiveWorkout(
+              id: startedState.response.allenamentoId,
+              schedaId: startedState.schedaId,
+              dataAllenamento: startedState.startTime.toIso8601String(),
+              userId: startedState.userId,
+              esercizi: exercises,
+            );
+
+            developer.log('🎯 Creating WorkoutSessionActive state', name: 'ActiveWorkoutBloc');
+
+            emit(WorkoutSessionActive(
+              activeWorkout: activeWorkout,
+              exercises: exercises,
+              completedSeries: {},
+              elapsedTime: Duration.zero,
+              startTime: startedState.startTime,
+            ));
+
+            // Carica le serie completate se esistono
+            developer.log('🔄 Loading completed series...', name: 'ActiveWorkoutBloc');
+            add(LoadCompletedSeries(allenamentoId: startedState.response.allenamentoId));
+          } else {
+            developer.log('⚠️ State is not WorkoutSessionStarted: $state',
+                name: 'ActiveWorkoutBloc');
+            emit(ActiveWorkoutError(
+              message: 'Stato inconsistente: sessione non avviata',
+            ));
+          }
+        },
+        onFailure: (exception, message) {
+          developer.log('❌ Error loading exercises: $message',
+              name: 'ActiveWorkoutBloc', error: exception);
+          emit(ActiveWorkoutError(
+            message: message ?? 'Errore nel caricamento degli esercizi',
+            exception: exception,
           ));
-
-          // Carica le serie completate se esistono
-          add(LoadCompletedSeries(allenamentoId: startedState.response.allenamentoId));
-        }
-      },
-      onFailure: (exception, message) {
-        developer.log('Error loading exercises: $message', name: 'ActiveWorkoutBloc', error: exception);
-        emit(ActiveWorkoutError(
-          message: message ?? 'Errore nel caricamento degli esercizi',
-          exception: exception,
-        ));
-      },
-    );
+        },
+      );
+    } catch (e) {
+      developer.log('💥 Exception in _onLoadWorkoutExercises: $e',
+          name: 'ActiveWorkoutBloc', error: e);
+      emit(ActiveWorkoutError(
+        message: 'Errore critico nel caricamento esercizi: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per caricare le serie completate

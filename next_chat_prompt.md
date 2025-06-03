@@ -1,101 +1,431 @@
-# 🚀 PROMPT TEMPLATE PER PROSSIMA CHAT - FASE D FINALE
+📋 DOCUMENTAZIONE COMPLETA - SISTEMA ACTIVE WORKOUT
+Per implementazione Flutter - Specifiche Complete di Funzionalità
 
-## 📋 **COPIA E INCOLLA QUESTO PROMPT:**
+🎯 PANORAMICA GENERALE
+Il sistema Active Workout è un'applicazione avanzata per la gestione di allenamenti in tempo reale con funzionalità sofisticate di tracking, analisi plateau, timer intelligenti e interfacce responsive.
 
----
+🏗️ ARCHITETTURA E STATI
+Stati Principali del Sistema
+kotlin// Stati dell'allenamento
+sealed class ActiveWorkoutState {
+    object Idle
+    object Loading  
+    data class Success(val workout: ActiveWorkout)
+    data class Error(val message: String)
+}
 
-**Continuiamo FitGymTrack Flutter migration. FASE D quasi completata - app funzionante al 95%!**
+// Stati delle serie completate
+sealed class CompletedSeriesState {
+    object Idle
+    object Loading
+    data class Success(val series: Map<Int, List<CompletedSeries>>)
+    data class Error(val message: String)
+}
 
-**STATO ATTUALE ECCELLENTE:**
-- ✅ **FASI A, B, C COMPLETATE**: Models, Data Layer, BLoC Layer al 100%
-- ✅ **FASE D PARZIALE**: WorkoutPlansScreen + CreateWorkoutScreen TESTATE e funzionanti  
-- ✅ **App produzione**: Stabile, BLoC reattivo, navigation perfetta, error handling enterprise
-- ✅ **Testing completato**: UI flows testati su device, zero crash, UX professionale
+// Altri stati: SaveSeriesState, CompleteWorkoutState
+Gestione Dati Persistenti
 
-**RISULTATI TESTATI PERSONALMENTE:**
-- 📱 WorkoutPlansScreen: Lista schede con empty/error states perfetti
-- ✏️ CreateWorkoutScreen: Form validation + esercizi management funzionanti
-- 🏗️ Architettura: Clean Architecture + BLoC pattern enterprise-level
-- 🔧 Stabilità: Zero errori, build system pulito, performance ottime
+Storage valori esercizi: Mappa exerciseValues: Map<Int, Pair<Float, Int>>
+Serie completate: Mappa per esercizio con lista delle serie
+Dati storici: Cache dell'ultimo allenamento per pre-popolamento valori
+Timer states: Gestione timer di recupero e isometrici
+Plateau detection: Cache e dismissioni
 
-**PROSSIMO OBIETTIVO - COMPLETARE FASE D:**
-- 🎯 **STEP 14**: ActiveWorkoutScreen (allenamento in corso con timer)
-- 🎯 **STEP 15**: WorkoutHistoryScreen (cronologia e statistiche)
 
-**APPROCCIO**: Continuare implementation graduale, test ogni screen
+🎮 MODALITÀ DI VISUALIZZAZIONE
+1. MODALITÀ MODERNA (ModernActiveWorkoutContent)
 
-**PRIORITÀ STEP 14 - ActiveWorkoutScreen:**
-- Timer allenamento + tempo recupero serie
-- Lista esercizi con progress tracking
-- Input peso/ripetizioni per ogni serie
-- Real-time updates con ActiveWorkoutBloc
-- Complete workout flow da start a finish
+Layout a lista scrollabile con card espandibili
+Separazione esercizi attivi/completati
+Indicatori di progresso per gruppo
+Timer di recupero overlay
 
-**ALLEGATI NECESSARI:**
-- 📋 Documento di continuazione AGGIORNATO con stato completo progetto
-- 📱 Screenshots test app funzionante (se richiesti)
-- ⚙️ File correnti implementazione (se serve vedere stato)
+2. MODALITÀ FULLSCREEN (FullscreenWorkoutContent)
 
-**Ti allego il documento di continuazione aggiornato con tutto lo storico del progetto e i risultati di testing.**
+RESPONSIVE DESIGN con 3 breakpoint:
 
-**Procediamo con STEP 14: ActiveWorkoutScreen implementation!**
+Small Screen (<600dp): Layout compatto scrollabile
+Medium Screen (600-800dp): Layout intermedio
+Large Screen (>800dp): Layout completo con navigation
 
----
 
-## 📁 **FILES DA ALLEGARE:**
 
-### **🔥 OBBLIGATORI:**
-1. **📋 project_continuation_doc.md** - Documento AGGIORNATO con stato completo
+Layout Small Screen Features:
 
-### **🎯 SE RICHIESTI DA CLAUDE:**
-2. **📱 Screenshots app** - Prove funzionamento UI testata
-3. **🏋️ active_workout_models.dart** - Per vedere models già implementati  
-4. **🔧 active_workout_bloc.dart** - Per vedere BLoC già pronto
-5. **🌐 workout_repository.dart** - Per vedere metodi già implementati
+Header compatto con progresso
+Tutto scrollabile con LazyColumn
+Mini navigation floating
+Controlli ultra-compatti (peso/reps in una riga)
+Timer isometrico semplificato
 
-### **📋 STRATEGIA FILE SHARING:**
-- **Inizio chat**: Allego sempre documento di continuazione
-- **Durante sviluppo**: Claude chiede file specifici quando servono
-- **End implementation**: Condivido nuove screen implementate
+Layout Large Screen Features:
 
----
+Header con barra progresso completa
+Contenuto fisso con navigazione swipe
+Navigation bar completa in fondo
+Controlli espansi
 
-## 🎯 **ESEMPIO MESSAGGIO COMPLETO:**
 
-```
-Continuiamo FitGymTrack Flutter migration. FASE D quasi completata!
+🏋️ GESTIONE ESERCIZI E GRUPPI
+Tipi di Esercizi
+1. Esercizi Singoli (Normal)
 
-STATO ATTUALE:
-- ✅ FASI A,B,C COMPLETATE: Architettura enterprise al 100%
-- ✅ App funzionante: WorkoutPlansScreen + CreateWorkoutScreen testate
-- ✅ BLoC pattern: State management reattivo e stabile
+Visualizzazione individuale
+Timer di recupero indipendente
+Progresso serie lineare
 
-PROSSIMO: STEP 14 - ActiveWorkoutScreen  
-- Timer allenamento real-time
-- Exercise progress tracking
-- Series input interface
-- Complete workout flow
+2. Superset
 
-Allegato documento di continuazione AGGIORNATO.
-Procediamo con ActiveWorkoutScreen implementation!
-```
+Raggruppamento: Esercizi con setType="superset" e linkedToPrevious=true
+Navigazione: Tabs per switch tra esercizi del gruppo
+Colore tema: Viola (PurplePrimary)
+Logica: Esecuzione alternata, timer solo alla fine del gruppo
+Progress: Progresso basato sul minimo completato nel gruppo
 
----
+3. Circuit
 
-## 🏆 **VANTAGGI QUESTO PROMPT:**
+Raggruppamento: Come superset ma setType="circuit"
+Colore tema: Blu (BluePrimary)
+Round indicator: Mostra "Round X/Y"
+Timer speciale: Timer isometrico integrato per esercizi isometrici
 
-✅ **Status chiarissimo** - Claude capisce dove siamo esattamente  
-✅ **Success stories** - Enfatizza che l'app è già funzionante  
-✅ **Obiettivo preciso** - Focus su ActiveWorkoutScreen specifica  
-✅ **Context completo** - Reference a architettura già implementata  
-✅ **Testing validation** - Conferma che tutto è stato testato  
+Algoritmo Raggruppamento Esercizi
+kotlinfun groupExercisesByType(exercises: List<WorkoutExercise>): List<List<WorkoutExercise>> {
+    // Raggruppa in base a setType e linkedToPrevious
+    // Crea gruppi consecutivi per superset/circuit
+}
 
----
+⏱️ SISTEMA TIMER AVANZATO
+1. Timer di Recupero
 
-## 💪 **READY PER FASE D FINALE!**
+Attivazione: Automatica dopo completamento serie
+Durata: Basata su exercise.tempoRecupero
+Suoni: Beep ultimi 3 secondi + suono finale
+Auto-navigazione: Passa al prossimo esercizio quando completato
+UI States:
 
-**Con questo prompt la prossima chat partirà immediatamente produttiva!** 
+Normale: Timer blu
+Ultimi 3 sec: Timer rosso lampeggiante
+Completato: Messaggio di transizione
 
-**L'app è GIÀ FANTASTICA** - ora la rendiamo **COMPLETA** con le ultime 2 schermate! 
 
-*Da app parziale a PRODOTTO FINITO in una sessione!* 🚀✨
+
+2. Timer Isometrico
+
+Attivazione: Solo per esercizi con isIsometric=true
+Durata: Basata su ripetizioni/secondi dell'esercizio
+Auto-completamento: Completa automaticamente la serie a fine timer
+Formato tempo: mm:ss
+Componenti:
+
+IsometricTimer: Versione completa
+CompactIsometricTimer: Versione per gruppi
+FullscreenIsometricTimerCompact: Versione fullscreen
+
+
+
+3. Timer Globale Allenamento
+
+Tracking: Durata totale dall'inizio
+Formato: mm:ss nel header
+Persistenza: Continua anche con app in background
+
+
+🎵 SISTEMA AUDIO
+SoundManager Integration
+kotlinenum class WorkoutSound {
+    SERIES_COMPLETE,      // Serie completata
+    TIMER_COMPLETE,       // Timer isometrico finito
+    REST_COMPLETE,        // Recupero finito
+    WORKOUT_COMPLETE,     // Allenamento completato
+    COUNTDOWN_BEEP       // Beep countdown (ultimi 3 sec)
+}
+Quando si attivano:
+
+Serie completata: Suono immediato
+Timer isometrico: Beep ultimi 3 sec + suono finale
+Recupero: Beep ultimi 3 sec + suono finale
+Allenamento completato: Fanfara
+
+
+📊 SISTEMA PLATEAU DETECTION
+PlateauDetector Logic
+kotlinclass PlateauDetector {
+    fun detectPlateau(
+        exerciseId: Int,
+        exerciseName: String,
+        currentWeight: Float,
+        currentReps: Int,
+        historicData: Map<Int, List<CompletedSeries>>,
+        minSessionsForPlateau: Int = 2
+    ): PlateauInfo?
+}
+Tipi di Plateau
+kotlinenum class PlateauType {
+    LIGHT_WEIGHT,    // Peso troppo basso
+    HEAVY_WEIGHT,    // Peso troppo alto  
+    LOW_REPS,        // Ripetizioni basse
+    HIGH_REPS,       // Ripetizioni alte
+    MODERATE         // Plateau moderato
+}
+Sistema Suggerimenti
+kotlindata class ProgressionSuggestion(
+    val type: SuggestionType,
+    val description: String,
+    val newWeight: Float,
+    val newReps: Int,
+    val confidence: Float  // 0.0-1.0
+)
+
+enum class SuggestionType {
+    INCREASE_WEIGHT,
+    INCREASE_REPS,  
+    ADVANCED_TECHNIQUE,
+    REDUCE_REST,
+    CHANGE_TEMPO
+}
+UI Plateau Components
+
+PlateauBadge: Indicatore discreto arancione
+PlateauDetailDialog: Dialog con dettagli e suggerimenti
+GroupPlateauDialog: Dialog per plateau multipli in superset/circuit
+Dismissione: Possibilità di ignorare plateau specifici
+
+
+🎨 INTERFACCIA UTENTE DETTAGLIATA
+Header Components
+ModernActiveWorkoutContent Header:
+
+Progresso lineare con percentuale
+Contatore esercizi (X/Y)
+Durata allenamento (mm:ss)
+Pulsante back con conferma
+
+FullscreenWorkoutContent Header:
+
+Progresso "Esercizio X di Y"
+Barra progresso animata
+Badge "🎉 Completato!" quando finito
+
+Navigation Systems
+Small Screen Mini Navigation:
+
+Surface floating in fondo
+Frecce sinistra/destra
+Pallini indicatori progresso (completati=blu, corrente=verde, futuri=grigio)
+
+Large Screen Navigation Bar:
+
+Pulsanti "Prec" e "Succ"
+Pallini cliccabili per jump diretto
+Disabilitazione intelligente
+
+Exercise Controls
+Weight/Reps Picker:
+
+WeightPickerDialog: Numeri interi + frazioni (0, 0.125, 0.25, etc.)
+RepsPickerDialog: Counter con +/- + valori comuni preimpostati
+Distinzione "Ripetizioni" vs "Secondi" per isometrici
+
+Value Display Cards:
+
+Card compatte con icone (💪 peso, 🔄 reps, ⏱️ secondi)
+Tap per aprire picker
+Formato peso con WeightFormatter.formatWeight()
+
+Series Progress
+Indicatori Serie:
+
+Pallini circolari: Verde=completate, Blu=corrente, Grigio=future
+Progress bar lineare per gruppi
+Contatori "X/Y serie"
+
+Complete Button States:
+
+Normale: "Completa Serie X"
+Allenamento finito: "🏁 Completa Allenamento!" (lampeggiante verde)
+Disabilitato: Timer attivo o serie già completate
+
+
+📱 RESPONSIVE DESIGN DETTAGLIATO
+Small Screen Optimizations
+
+Compact Controls: Peso+Reps+Serie in una riga
+Scrollable: Tutto in LazyColumn
+Mini Tabs: Superset tabs ultra-compatti
+Simplified Timer: Progress bar invece di cronometro grande
+Floating Navigation: Non occupa spazio fisso
+
+Medium/Large Screen Features
+
+Fixed Layout: Header+Content+Navigation fissi
+Swipe Navigation: Gesture orizzontali tra esercizi
+Expanded Controls: Card separate per ogni valore
+Full Timer Display: Timer isometrici con cronometro grande
+Rich Navigation: Navigation bar completa
+
+
+🔄 FLUSSI LOGICI COMPLESSI
+Completamento Serie
+kotlin// Sequenza completa quando si completa una serie:
+1. Salva serie nel database
+2. Aggiorna stato locale  
+3. Riproduce suono
+4. Controlla se superset/circuit → naviga al prossimo esercizio
+5. Avvia timer di recupero
+6. Ri-controlla plateau
+7. Prepara UI per prossima serie
+Navigazione Superset/Circuit
+kotlin// Logica di auto-navigazione nei gruppi:
+1. Completa serie esercizio corrente
+2. Se non ultimo del gruppo → passa al successivo
+3. Se ultimo del gruppo → torna al primo
+4. Se tutti completati → avvia timer di recupero
+5. A fine recupero → passa al gruppo successivo
+Auto-Navigation Flow
+kotlin// Timer di recupero intelligente:
+1. Timer finisce
+2. Controlla se esercizio corrente completato
+3. Se completato + ci sono altri esercizi → naviga automaticamente
+4. Se completato + è l'ultimo → mostra dialog completamento
+5. Se non completato → si ferma per continuare serie
+
+💾 GESTIONE DATI E PERSISTENZA
+Pre-loading Sistema
+
+Default Values: Carica peso/reps dall'esercizio
+Historic Values: Sovrascrive con dati ultimo allenamento
+Series Continuity: Mantiene valori tra serie dello stesso esercizio
+
+Cache Management
+
+ExerciseValues: Mappa peso/reps per esercizio
+CompletedSeries: Mappa serie completate per esercizio
+PlateauInfo: Cache plateau rilevati
+DismissedPlateaus: Set di plateau ignorati
+
+API Integration
+kotlin// Chiamate API principali:
+- startWorkout() → Inizia sessione
+- getWorkoutExercises() → Carica esercizi
+- saveCompletedSeries() → Salva ogni serie
+- completeWorkout() → Finalizza allenamento
+- getCompletedSeries() → Recupera serie esistenti
+
+🔧 COMPONENTI RIUTILIZZABILI
+Dialog Components
+
+WeightPickerDialog: Selezione peso con frazioni
+RepsPickerDialog: Selezione ripetizioni con common values
+ExitWorkoutDialog: Conferma uscita con warning
+CompleteWorkoutDialog: Conferma completamento
+PlateauDetailDialog: Dettagli plateau con suggerimenti
+
+Timer Components
+
+RecoveryTimer: Timer recupero tra serie
+IsometricTimer: Timer per esercizi isometrici
+CompactIsometricTimer: Versione compatta per gruppi
+
+Exercise Display Components
+
+ExerciseProgressItem: Item singolo esercizio
+SupersetGroupCard: Card per gruppi superset/circuit
+ModernWorkoutGroupCard: Versione moderna gruppi
+SequenceExerciseItem: Item in sequenza circuit
+
+UI Helper Components
+
+ValueChip: Chip per valori (peso/reps)
+SeriesButton: Pulsante numerato per serie
+PlateauBadge: Badge indicatore plateau
+WorkoutProgressIndicator: Indicatore progresso generale
+
+
+🎯 FUNZIONALITÀ AVANZATE
+Keep Screen On
+
+Attivazione automatica durante allenamento
+Flag WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+
+Swipe Gestures (Large Screen)
+
+detectHorizontalDragGestures per navigazione
+Threshold configurabile per sensibilità
+Supporto solo in modalità fullscreen
+
+Animation System
+
+Progress bar animate con animateFloatAsState
+Fade in/out per timer
+Slide transitions per cambio esercizio
+Blink animation per completamento allenamento
+
+Error Handling
+
+Retry automatico per chiamate API
+Graceful degradation senza dati storici
+Validazione input utente
+Messaggi errore user-friendly
+
+
+📊 ALGORITMI E CALCOLI
+Progresso Allenamento
+kotlinfun calculateWorkoutProgress(): Float {
+    val completedExercises = exercises.count { 
+        isExerciseCompleted(it.id, it.serie) 
+    }
+    return completedExercises.toFloat() / totalExercises.toFloat()
+}
+Grouping Algorithm
+kotlinfun groupExercisesByType(): List<List<WorkoutExercise>> {
+    // Raggruppa esercizi consecutivi con stesso setType e linkedToPrevious
+    // Crea liste separate per ogni gruppo (superset/circuit)
+}
+Plateau Detection Algorithm
+kotlin// Analizza dati storici per rilevare plateau:
+1. Confronta peso/reps attuali con sessioni precedenti
+2. Conta sessioni consecutive con stessi valori  
+3. Se >= minSessionsForPlateau → crea PlateauInfo
+4. Genera suggerimenti basati su tipo di plateau
+5. Calcola confidenza suggerimenti
+
+🏁 FLUSSO COMPLETAMENTO ALLENAMENTO
+Condizioni di Completamento
+kotlinval isAllWorkoutCompleted = exerciseGroups.all { group ->
+    group.all { exercise ->
+        val completedSeries = seriesMap[exercise.id] ?: emptyList()
+        completedSeries.size >= exercise.serie
+    }
+}
+Sequenza di Completamento
+
+Rilevamento: Controllo automatico dopo ogni serie
+UI Feedback: Pulsante lampeggiante + messaggio
+Dialog Conferma: "🎉 Fantastico! Hai completato tutti gli esercizi!"
+API Call: completeWorkout() con durata totale
+Suono: Fanfara di completamento
+Success Screen: Schermata riassuntiva con statistiche
+
+
+🔍 DETTAGLI IMPLEMENTATIVI CRITICI
+State Management
+
+Single Source of Truth: ViewModel centralizzato
+Reactive Updates: StateFlow per tutti gli stati
+Immutable Updates: Copy dei dati per evitare side effects
+
+Memory Management
+
+Lazy Loading: Carica solo dati necessari
+Cache Invalidation: Pulizia cache per nuovi allenamenti
+Coroutine Scoping: ViewModelScope per operazioni async
+
+Performance Optimizations
+
+Remember: Uso strategico di remember per valori calcolati
+LazyColumn: Per liste lunghe di esercizi
+Throttling: Limita chiamate API duplicate
+
+
+Questo documento copre tutte le funzionalità implementate nel sistema Active Workout. Ogni sezione contiene i dettagli necessari per una implementazione fedele in Flutter, mantenendo la stessa esperienza utente e logica di business sofisticata.

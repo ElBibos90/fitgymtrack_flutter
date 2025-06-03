@@ -1,167 +1,189 @@
 // lib/core/utils/result.dart
+import 'dart:developer' as developer;
 
-/// Result pattern simile a quello di Kotlin per gestire successo/errore
-/// Usato nei repository per wrappare le risposte API
-sealed class Result<T> {
-  const Result();
+/// Pattern Result per gestire operazioni async in modo sicuro
+/// Evita exceptions non gestite e fornisce un pattern consistente
+class Result<T> {
+  final T? _data;
+  final Exception? _exception;
+  final String? _message;
+  final bool _isSuccess;
+
+  const Result._({
+    T? data,
+    Exception? exception,
+    String? message,
+    required bool isSuccess,
+  })  : _data = data,
+        _exception = exception,
+        _message = message,
+        _isSuccess = isSuccess;
 
   /// Crea un Result di successo
-  static Result<T> success<T>(T data) => Success(data);
+  factory Result.success(T data) {
+    return Result._(data: data, isSuccess: true);
+  }
 
   /// Crea un Result di errore
-  static Result<T> failure<T>(Exception exception, {String? message}) =>
-      Failure(exception, message: message);
-
-  /// Crea un Result da una funzione che può lanciare eccezioni
-  static Result<T> tryCall<T>(T Function() operation) {
-    try {
-      return Success(operation());
-    } catch (e) {
-      return Failure(
-        e is Exception ? e : Exception(e.toString()),
-        message: e.toString(),
-      );
-    }
+  factory Result.error(String message, [Exception? exception]) {
+    return Result._(
+      message: message,
+      exception: exception,
+      isSuccess: false,
+    );
   }
 
-  /// Crea un Result asincrono da una Future che può lanciare eccezioni
-  static Future<Result<T>> tryCallAsync<T>(Future<T> Function() operation) async {
-    try {
-      final result = await operation();
-      return Success(result);
-    } catch (e) {
-      return Failure(
-        e is Exception ? e : Exception(e.toString()),
-        message: e.toString(),
-      );
-    }
-  }
+  /// Indica se l'operazione è andata a buon fine
+  bool get isSuccess => _isSuccess;
 
-  /// Fold pattern - esegue onSuccess o onFailure in base al risultato
+  /// Indica se l'operazione è fallita
+  bool get isFailure => !_isSuccess;
+
+  /// I dati di successo (null se fallito)
+  T? get data => _data;
+
+  /// L'eccezione (null se successo)
+  Exception? get exception => _exception;
+
+  /// Il messaggio di errore (null se successo)
+  String? get message => _message;
+
+  /// Pattern matching per gestire successo/fallimento
   R fold<R>({
     required R Function(T data) onSuccess,
-    required R Function(Exception exception, String? message) onFailure,
+    required R Function(Exception? exception, String? message) onFailure,
   }) {
-    if (this is Success<T>) {
-      final success = this as Success<T>;
-      return onSuccess(success.data);
-    } else if (this is Failure<T>) {
-      final failure = this as Failure<T>;
-      return onFailure(failure.exception, failure.message);
+    if (_isSuccess && _data != null) {
+      return onSuccess(_data as T);
     } else {
-      // Fallback case
-      return onFailure(Exception('Unknown result type'), 'Unknown result type');
+      return onFailure(_exception, _message);
     }
   }
 
-  /// Restituisce true se il risultato è un successo
-  bool get isSuccess => this is Success<T>;
-
-  /// Restituisce true se il risultato è un errore
-  bool get isFailure => this is Failure<T>;
-
-  /// Restituisce i dati se il risultato è un successo, null altrimenti
-  T? get dataOrNull {
-    if (this is Success<T>) {
-      return (this as Success<T>).data;
-    }
-    return null;
-  }
-
-  /// Restituisce l'eccezione se il risultato è un errore, null altrimenti
-  Exception? get exceptionOrNull {
-    if (this is Failure<T>) {
-      return (this as Failure<T>).exception;
-    }
-    return null;
-  }
-}
-
-/// Rappresenta un risultato di successo
-final class Success<T> extends Result<T> {
-  const Success(this.data);
-
-  final T data;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Success<T> && other.data == data;
-  }
-
-  @override
-  int get hashCode => data.hashCode;
-
-  @override
-  String toString() => 'Success($data)';
-}
-
-/// Rappresenta un risultato di errore
-final class Failure<T> extends Result<T> {
-  const Failure(this.exception, {this.message});
-
-  final Exception exception;
-  final String? message;
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Failure<T> &&
-        other.exception == exception &&
-        other.message == message;
-  }
-
-  @override
-  int get hashCode => Object.hash(exception, message);
-
-  @override
-  String toString() => 'Failure($exception${message != null ? ', $message' : ''})';
-}
-
-/// Estensioni per il Result pattern
-extension ResultExtensions<T> on Result<T> {
-  /// Map - trasforma i dati se il risultato è un successo
+  /// Trasforma i dati in caso di successo
   Result<R> map<R>(R Function(T data) transform) {
-    if (this is Success<T>) {
-      final success = this as Success<T>;
-      return Success(transform(success.data));
-    } else if (this is Failure<T>) {
-      final failure = this as Failure<T>;
-      return Failure(failure.exception, message: failure.message);
+    if (_isSuccess && _data != null) {
+      try {
+        final transformedData = transform(_data as T);
+        return Result.success(transformedData);
+      } catch (e) {
+        return Result.error(
+          'Errore nella trasformazione dei dati: $e',
+          e is Exception ? e : Exception(e.toString()),
+        );
+      }
     } else {
-      return Failure(Exception('Unknown result type'), message: 'Unknown result type');
+      return Result.error(_message ?? 'Operazione fallita', _exception);
     }
   }
 
-  /// FlatMap - trasforma i dati e può restituire un altro Result
-  Result<R> flatMap<R>(Result<R> Function(T data) transform) {
-    if (this is Success<T>) {
-      final success = this as Success<T>;
-      return transform(success.data);
-    } else if (this is Failure<T>) {
-      final failure = this as Failure<T>;
-      return Failure(failure.exception, message: failure.message);
+  /// Concatena operazioni async in caso di successo
+  Future<Result<R>> flatMap<R>(Future<Result<R>> Function(T data) transform) async {
+    if (_isSuccess && _data != null) {
+      try {
+        return await transform(_data as T);
+      } catch (e) {
+        return Result.error(
+          'Errore nella concatenazione: $e',
+          e is Exception ? e : Exception(e.toString()),
+        );
+      }
     } else {
-      return Failure(Exception('Unknown result type'), message: 'Unknown result type');
+      return Result.error(_message ?? 'Operazione fallita', _exception);
     }
   }
 
-  /// GetOrElse - restituisce i dati o un valore di default
-  T getOrElse(T defaultValue) {
-    if (this is Success<T>) {
-      return (this as Success<T>).data;
+  /// Helper per eseguire operazioni async con gestione errori automatica
+  static Future<Result<T>> tryCallAsync<T>(Future<T> Function() operation) async {
+    try {
+      developer.log('Executing async operation...', name: 'Result');
+      final result = await operation();
+      developer.log('Async operation completed successfully', name: 'Result');
+      return Result.success(result);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Async operation failed: $e',
+        name: 'Result',
+        error: e,
+        stackTrace: stackTrace,
+      );
+
+      // Gestione di diversi tipi di eccezioni
+      if (e is Exception) {
+        return Result.error(e.toString(), e);
+      } else {
+        return Result.error(
+          'Errore sconosciuto: $e',
+          Exception(e.toString()),
+        );
+      }
     }
-    return defaultValue;
   }
 
-  /// GetOrThrow - restituisce i dati o lancia l'eccezione
-  T getOrThrow() {
-    if (this is Success<T>) {
-      return (this as Success<T>).data;
-    } else if (this is Failure<T>) {
-      throw (this as Failure<T>).exception;
-    } else {
-      throw Exception('Unknown result type');
+  /// Helper per operazioni sincrone
+  static Result<T> tryCall<T>(T Function() operation) {
+    try {
+      final result = operation();
+      return Result.success(result);
+    } catch (e) {
+      developer.log('Sync operation failed: $e', name: 'Result', error: e);
+
+      if (e is Exception) {
+        return Result.error(e.toString(), e);
+      } else {
+        return Result.error(
+          'Errore sconosciuto: $e',
+          Exception(e.toString()),
+        );
+      }
     }
+  }
+
+  @override
+  String toString() {
+    if (_isSuccess) {
+      return 'Result.success(data: $_data)';
+    } else {
+      return 'Result.error(message: $_message, exception: $_exception)';
+    }
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Result<T> &&
+        other._isSuccess == _isSuccess &&
+        other._data == _data &&
+        other._message == _message &&
+        other._exception == _exception;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(_isSuccess, _data, _message, _exception);
+  }
+}
+
+/// Extension per Future<Result<T>> per operazioni più fluide
+extension FutureResultExtensions<T> on Future<Result<T>> {
+  /// Trasforma il risultato in caso di successo
+  Future<Result<R>> mapAsync<R>(R Function(T data) transform) async {
+    final result = await this;
+    return result.map(transform);
+  }
+
+  /// Concatena operazioni async
+  Future<Result<R>> flatMapAsync<R>(Future<Result<R>> Function(T data) transform) async {
+    final result = await this;
+    return result.flatMap(transform);
+  }
+
+  /// Gestisce il risultato con callbacks
+  Future<R> foldAsync<R>({
+    required R Function(T data) onSuccess,
+    required R Function(Exception? exception, String? message) onFailure,
+  }) async {
+    final result = await this;
+    return result.fold(onSuccess: onSuccess, onFailure: onFailure);
   }
 }
