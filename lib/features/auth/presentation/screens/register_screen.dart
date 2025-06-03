@@ -31,8 +31,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white, // Forza tema chiaro
+      backgroundColor: colorScheme.background,
       body: BlocConsumer<RegisterBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthRegisterSuccess) {
@@ -40,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
               ),
             );
             context.go('/login');
@@ -48,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Theme.of(context).colorScheme.error,
+                backgroundColor: colorScheme.error,
               ),
             );
           }
@@ -73,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: TextStyle(
                             fontSize: 28.sp,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.indigo600,
+                            color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                           ),
                         ),
                         SizedBox(height: 8.h),
@@ -81,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Crea il tuo account personale',
                           style: TextStyle(
                             fontSize: 16.sp,
-                            color: Colors.black.withOpacity(0.7),
+                            color: colorScheme.onBackground.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -178,8 +181,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: ElevatedButton(
                             onPressed: isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.indigo600,
-                              foregroundColor: Colors.white,
+                              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
@@ -189,8 +192,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ? SizedBox(
                               width: 24.w,
                               height: 24.w,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
+                              child: CircularProgressIndicator(
+                                color: isDark ? AppColors.backgroundDark : Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
@@ -212,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Text(
                             'Hai già un account? Accedi',
                             style: TextStyle(
-                              color: AppColors.indigo600,
+                              color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                               fontWeight: FontWeight.w500,
                               fontSize: 14.sp,
                             ),

@@ -16,6 +16,9 @@ class LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Stack(
       children: [
         child,
@@ -26,8 +29,15 @@ class LoadingOverlay extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.all(24.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface, // ✅ DINAMICO!
                   borderRadius: BorderRadius.circular(12.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.5 : 0.1),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -35,8 +45,8 @@ class LoadingOverlay extends StatelessWidget {
                     SizedBox(
                       width: 40.w,
                       height: 40.w,
-                      child: const CircularProgressIndicator(
-                        color: AppColors.indigo600,
+                      child: CircularProgressIndicator(
+                        color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600, // ✅ DINAMICO!
                         strokeWidth: 3,
                       ),
                     ),
@@ -47,7 +57,7 @@ class LoadingOverlay extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                          color: colorScheme.onSurface, // ✅ DINAMICO!
                         ),
                         textAlign: TextAlign.center,
                       ),

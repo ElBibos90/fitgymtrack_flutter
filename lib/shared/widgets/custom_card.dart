@@ -25,6 +25,8 @@ class CustomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     Widget cardContent = Container(
       padding: padding ?? EdgeInsets.all(AppConfig.spacingM.w),
       child: child,
@@ -34,7 +36,8 @@ class CustomCard extends StatelessWidget {
       margin: margin,
       child: Card(
         elevation: elevation ?? AppConfig.elevationS,
-        color: color ?? AppColors.surfaceLight,
+        color: color ?? colorScheme.surface, // ✅ DINAMICO!
+        surfaceTintColor: Colors.transparent, // ✅ RIMUOVE TINT MATERIAL 3
         shape: RoundedRectangleBorder(
           borderRadius: borderRadius ?? BorderRadius.circular(AppConfig.radiusM.r),
         ),

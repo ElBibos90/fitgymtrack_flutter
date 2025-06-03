@@ -22,29 +22,38 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return AppBar(
       title: Text(
         title,
         style: TextStyle(
           fontSize: 18.sp,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: colorScheme.onSurface, // ✅ DINAMICO!
         ),
       ),
       centerTitle: centerTitle,
-      backgroundColor: AppColors.surfaceLight,
+      backgroundColor: colorScheme.surface, // ✅ DINAMICO!
+      surfaceTintColor: Colors.transparent, // ✅ RIMUOVE TINT
       elevation: 0,
       leading: leading ?? (showBackButton && Navigator.canPop(context)
           ? IconButton(
         icon: Icon(
           Icons.arrow_back,
-          color: AppColors.textPrimary,
+          color: colorScheme.onSurface, // ✅ DINAMICO!
           size: 24.sp,
         ),
         onPressed: onBackPressed ?? () => Navigator.pop(context),
       )
           : null),
       actions: actions,
+      iconTheme: IconThemeData(
+        color: colorScheme.onSurface, // ✅ DINAMICO!
+      ),
+      actionsIconTheme: IconThemeData(
+        color: colorScheme.onSurface, // ✅ DINAMICO!
+      ),
     );
   }
 

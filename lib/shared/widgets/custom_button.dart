@@ -28,11 +28,14 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     final buttonHeight = _getButtonHeight();
     final textStyle = _getTextStyle();
-    final buttonStyle = _getButtonStyle();
+    final buttonStyle = _getButtonStyle(isDark, colorScheme);
 
-    Widget buttonChild = _buildButtonContent(textStyle);
+    Widget buttonChild = _buildButtonContent(textStyle, isDark);
 
     Widget button = SizedBox(
       height: buttonHeight,
@@ -62,12 +65,15 @@ class CustomButton extends StatelessWidget {
     );
   }
 
-  ButtonStyle _getButtonStyle() {
+  ButtonStyle _getButtonStyle(bool isDark, ColorScheme colorScheme) {
+    final primaryColor = isDark ? const Color(0xFF90CAF9) : AppColors.indigo600;
+    final onPrimaryColor = isDark ? AppColors.backgroundDark : Colors.white;
+
     switch (type) {
       case ButtonType.primary:
         return ElevatedButton.styleFrom(
-          backgroundColor: AppColors.indigo600,
-          foregroundColor: Colors.white,
+          backgroundColor: primaryColor,
+          foregroundColor: onPrimaryColor,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -84,15 +90,15 @@ class CustomButton extends StatelessWidget {
         );
       case ButtonType.outline:
         return OutlinedButton.styleFrom(
-          foregroundColor: AppColors.indigo600,
-          side: const BorderSide(color: AppColors.indigo600),
+          foregroundColor: primaryColor,
+          side: BorderSide(color: primaryColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConfig.radiusM),
           ),
         );
       case ButtonType.text:
         return TextButton.styleFrom(
-          foregroundColor: AppColors.indigo600,
+          foregroundColor: primaryColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConfig.radiusM),
           ),
@@ -100,16 +106,28 @@ class CustomButton extends StatelessWidget {
     }
   }
 
-  Widget _buildButtonContent(TextStyle textStyle) {
+  Widget _buildButtonContent(TextStyle textStyle, bool isDark) {
     if (isLoading) {
+      Color spinnerColor;
+      switch (type) {
+        case ButtonType.outline:
+        case ButtonType.text:
+          spinnerColor = isDark ? const Color(0xFF90CAF9) : AppColors.indigo600;
+          break;
+        case ButtonType.primary:
+          spinnerColor = isDark ? AppColors.backgroundDark : Colors.white;
+          break;
+        case ButtonType.secondary:
+          spinnerColor = Colors.white;
+          break;
+      }
+
       return SizedBox(
         width: 20.w,
         height: 20.w,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          color: type == ButtonType.outline || type == ButtonType.text
-              ? AppColors.indigo600
-              : Colors.white,
+          color: spinnerColor,
         ),
       );
     }

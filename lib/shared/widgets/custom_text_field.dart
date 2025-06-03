@@ -41,6 +41,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
@@ -53,24 +56,27 @@ class _CustomTextFieldState extends State<CustomTextField> {
       readOnly: widget.readOnly,
       style: TextStyle(
         fontSize: 16.sp,
-        color: Colors.black,
+        color: colorScheme.onSurface, // ✅ DINAMICO!
       ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: Colors.grey.shade400,
+          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+        ),
+        labelStyle: TextStyle(
+          color: colorScheme.onSurface.withOpacity(0.8), // ✅ DINAMICO!
         ),
         prefixIcon: Icon(
           widget.prefixIcon,
-          color: AppColors.indigo600,
+          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600, // ✅ DINAMICO!
           size: 20.sp,
         ),
         suffixIcon: widget.isPassword
             ? IconButton(
           icon: Icon(
             _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: Colors.grey.shade600,
+            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             size: 20.sp,
           ),
           onPressed: () {
@@ -83,37 +89,39 @@ class _CustomTextFieldState extends State<CustomTextField> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(
-            color: Colors.grey.shade300,
+            color: colorScheme.outline, // ✅ DINAMICO!
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(
-            color: Colors.grey.shade300,
+            color: colorScheme.outline, // ✅ DINAMICO!
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(
-            color: AppColors.indigo600,
+            color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600, // ✅ DINAMICO!
             width: 2.0,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(
-            color: Colors.red.shade400,
+            color: colorScheme.error, // ✅ DINAMICO!
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12.r),
           borderSide: BorderSide(
-            color: Colors.red.shade400,
+            color: colorScheme.error, // ✅ DINAMICO!
             width: 2.0,
           ),
         ),
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: isDark
+            ? const Color(0xFF2C2C2C) // ✅ TEMA SCURO
+            : const Color(0xFFF5F5F5), // ✅ TEMA CHIARO
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16.w,
           vertical: 16.h,

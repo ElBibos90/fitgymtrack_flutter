@@ -27,8 +27,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white, // Forza tema chiaro come nell'Android
+      backgroundColor: colorScheme.background,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoginSuccess) {
@@ -39,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: Theme.of(context).colorScheme.error,
+                backgroundColor: colorScheme.error,
               ),
             );
           }
@@ -57,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     SizedBox(height: 32.h),
 
-                    // Logo e Titolo (identico all'Android)
+                    // Logo e Titolo
                     Column(
                       children: [
                         Row(
@@ -68,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(
                                 fontSize: 32.sp,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.indigo600,
+                                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                               ),
                             ),
                             SizedBox(width: 8.w),
@@ -76,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 10.w,
                               height: 10.w,
                               decoration: BoxDecoration(
-                                color: AppColors.indigo600,
+                                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -87,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Accedi all\'area riservata',
                           style: TextStyle(
                             fontSize: 16.sp,
-                            color: Colors.black.withOpacity(0.7),
+                            color: colorScheme.onBackground.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -144,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Text(
                               'Password dimenticata?',
                               style: TextStyle(
-                                color: AppColors.indigo600,
+                                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14.sp,
                               ),
@@ -161,8 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: isLoading ? null : _handleLogin,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.indigo600,
-                              foregroundColor: Colors.white,
+                              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
@@ -172,8 +175,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? SizedBox(
                               width: 24.w,
                               height: 24.w,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
+                              child: CircularProgressIndicator(
+                                color: isDark ? AppColors.backgroundDark : Colors.white,
                                 strokeWidth: 2,
                               ),
                             )
@@ -202,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Divider
                         Container(
                           height: 1.h,
-                          color: Colors.black.withOpacity(0.1),
+                          color: colorScheme.onBackground.withOpacity(0.1),
                         ),
 
                         SizedBox(height: 16.h),
@@ -212,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Opzioni di registrazione',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.black.withOpacity(0.7),
+                            color: colorScheme.onBackground.withOpacity(0.7),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -222,10 +225,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Registrazione Card
                         Card(
                           elevation: 0,
+                          color: colorScheme.surface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
                             side: BorderSide(
-                              color: Colors.grey.withOpacity(0.2),
+                              color: colorScheme.outline.withOpacity(0.2),
                             ),
                           ),
                           child: InkWell(
@@ -239,12 +243,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     width: 40.w,
                                     height: 40.w,
                                     decoration: BoxDecoration(
-                                      color: AppColors.indigo600.withOpacity(0.1),
+                                      color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(8.r),
                                     ),
                                     child: Icon(
                                       Icons.person_add,
-                                      color: AppColors.indigo600,
+                                      color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                                       size: 20.sp,
                                     ),
                                   ),
@@ -258,13 +262,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                           style: TextStyle(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.bold,
+                                            color: colorScheme.onSurface,
                                           ),
                                         ),
                                         Text(
                                           'Registrati per gestire i tuoi allenamenti',
                                           style: TextStyle(
                                             fontSize: 12.sp,
-                                            color: Colors.black.withOpacity(0.6),
+                                            color: colorScheme.onSurface.withOpacity(0.6),
                                           ),
                                         ),
                                       ],
@@ -272,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   Icon(
                                     Icons.chevron_right,
-                                    color: AppColors.indigo600,
+                                    color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                                     size: 20.sp,
                                   ),
                                 ],
