@@ -17,7 +17,7 @@ import '../../../../core/di/dependency_injection.dart';
 
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
-import '../widgets/workout_widgets.dart';
+import '../../../../shared/widgets/workout_exercise_editor.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
   final int workoutId;
@@ -62,18 +62,47 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     super.dispose();
   }
 
-  // ✅ AGGIORNATO: Gestione caricamento più robusta
   void _loadWorkoutDetails() {
+    developer.log('🔄 Loading workout details for ID: ${widget.workoutId}', name: 'EditWorkoutScreen');
+
     // Controlla se i dati sono già disponibili nel BLoC
     final currentState = _workoutBloc.state;
+
     if (currentState is WorkoutPlanDetailsLoaded &&
         currentState.workoutPlan.id == widget.workoutId) {
       // ✅ Dati già disponibili, usali direttamente
+      developer.log('✅ Using existing loaded data', name: 'EditWorkoutScreen');
       _resetState(currentState.workoutPlan, currentState.exercises);
-    } else {
-      // ✅ Carica i dettagli dal server
-      _workoutBloc.loadWorkoutPlanDetails(widget.workoutId);
+      return;
     }
+
+    if (currentState is WorkoutPlansLoaded) {
+      // Controlla se la scheda è nella lista
+      try {
+        final existingPlan = currentState.workoutPlans.firstWhere(
+              (plan) => plan.id == widget.workoutId,
+        );
+        developer.log('✅ Found plan in loaded plans: ${existingPlan.nome}', name: 'EditWorkoutScreen');
+
+        // Se ha già gli esercizi, usa quelli
+        if (existingPlan.esercizi.isNotEmpty) {
+          _resetState(existingPlan, existingPlan.esercizi);
+          return;
+        } else {
+          // Carica solo gli esercizi
+          _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+          return;
+        }
+      } catch (e) {
+        developer.log('⚠️ Plan not found in current plans, loading details...', name: 'EditWorkoutScreen');
+      }
+    }
+
+    // ✅ Fallback: Carica i dettagli dal server
+    setState(() {
+      _isLoading = true;
+    });
+    _workoutBloc.loadWorkoutPlanDetails(widget.workoutId);
   }
 
   void _markAsChanged() {
@@ -180,6 +209,12 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       setState(() {
         final exercise = _exercises.removeAt(index);
         _exercises.insert(index - 1, exercise);
+
+        // Aggiorna gli ordini
+        for (int i = 0; i < _exercises.length; i++) {
+          _exercises[i] = _exercises[i].safeCopy(ordine: i + 1);
+        }
+
         _markAsChanged();
       });
     }
@@ -190,22 +225,32 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       setState(() {
         final exercise = _exercises.removeAt(index);
         _exercises.insert(index + 1, exercise);
+
+        // Aggiorna gli ordini
+        for (int i = 0; i < _exercises.length; i++) {
+          _exercises[i] = _exercises[i].safeCopy(ordine: i + 1);
+        }
+
         _markAsChanged();
       });
     }
   }
 
-  // ✅ AGGIORNATO: Reset stato migliorato
   void _resetState(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
+    developer.log('🔄 Resetting state with: ${workoutPlan.nome}', name: 'EditWorkoutScreen');
+
     _originalWorkoutPlan = workoutPlan;
     _exercises = List.from(exercises);
     _removedExercises = [];
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
+
     setState(() {
       _hasChanges = false;
-      _isLoading = false; // ✅ RESET loading locale
+      _isLoading = false; // ✅ SEMPRE reset loading
     });
+
+    developer.log('✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}', name: 'EditWorkoutScreen');
   }
 
   // ✅ AGGIORNATO: Gestione back migliorata
@@ -277,10 +322,16 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         ),
         body: BlocConsumer<WorkoutBloc, WorkoutState>(
           listener: (context, state) {
-            // ✅ AGGIORNATO: Gestione stati migliorata
+            // ✅ AGGIORNATO: Gestione stati migliorata con reset loading
             if (state is WorkoutPlanDetailsLoaded) {
+              setState(() {
+                _isLoading = false; // ✅ RESET loading su success
+              });
               _resetState(state.workoutPlan, state.exercises);
             } else if (state is WorkoutPlanUpdated) {
+              setState(() {
+                _isLoading = false; // ✅ RESET loading su success
+              });
               CustomSnackbar.show(
                 context,
                 message: 'Scheda aggiornata con successo',
@@ -293,17 +344,22 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 }
               });
             } else if (state is WorkoutError) {
+              setState(() {
+                _isLoading = false; // ✅ RESET loading su errore
+              });
               CustomSnackbar.show(
                 context,
                 message: state.message,
                 isSuccess: false,
               );
-              setState(() {
-                _isLoading = false; // ✅ RESET loading su errore
-              });
             } else if (state is WorkoutLoading || state is WorkoutLoadingWithMessage) {
               setState(() {
                 _isLoading = true; // ✅ SET loading
+              });
+            } else {
+              // ✅ AGGIUNTO: Reset loading per tutti gli altri stati
+              setState(() {
+                _isLoading = false;
               });
             }
           },
@@ -470,15 +526,16 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       itemBuilder: (context, index) {
         final exercise = _exercises[index];
 
-        return ExerciseEditorCard(
+        // ✅ NUOVO: Usa WorkoutExerciseEditor invece di ExerciseEditorCard
+        return WorkoutExerciseEditor(
+          key: ValueKey('exercise_${exercise.id}_$index'),
           exercise: exercise,
-          index: index,
-          isFirst: index == 0,
-          isLast: index == _exercises.length - 1,
           onUpdate: (updatedExercise) => _updateExercise(index, updatedExercise),
           onDelete: () => _removeExercise(index),
-          onMoveUp: () => _moveExerciseUp(index),
-          onMoveDown: () => _moveExerciseDown(index),
+          onMoveUp: index > 0 ? () => _moveExerciseUp(index) : null,
+          onMoveDown: index < _exercises.length - 1 ? () => _moveExerciseDown(index) : null,
+          isFirst: index == 0,
+          isLast: index == _exercises.length - 1,
         );
       },
     );

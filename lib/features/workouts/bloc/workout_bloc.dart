@@ -555,48 +555,70 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     developer.log('Loading workout plan details: ${event.schedaId}', name: 'WorkoutBloc');
 
     try {
+      // ✅ FIX: Prima assicuriamoci di avere le schede caricate
+      WorkoutPlan? workoutPlan;
+
+      // Controlla se abbiamo già i dati delle schede
+      if (state is WorkoutPlansLoaded) {
+        try {
+          workoutPlan = (state as WorkoutPlansLoaded).workoutPlans.firstWhere(
+                (plan) => plan.id == event.schedaId,
+          );
+          developer.log('✅ Found existing plan: ${workoutPlan.nome}', name: 'WorkoutBloc');
+        } catch (e) {
+          developer.log('⚠️ Plan not found in current state', name: 'WorkoutBloc');
+          workoutPlan = null;
+        }
+      }
+
+      // Se non abbiamo la scheda, dobbiamo caricarla prima
+      if (workoutPlan == null && _lastUserId != null) {
+        developer.log('🔄 Loading workout plans first to get real data...', name: 'WorkoutBloc');
+
+        // Carica le schede prima
+        final plansResult = await _workoutRepository.getWorkoutPlans(_lastUserId!);
+
+        plansResult.fold(
+          onSuccess: (plans) {
+            try {
+              workoutPlan = plans.firstWhere((plan) => plan.id == event.schedaId);
+              developer.log('✅ Found plan after loading: ${workoutPlan!.nome}', name: 'WorkoutBloc');
+            } catch (e) {
+              developer.log('❌ Plan still not found after loading', name: 'WorkoutBloc');
+              workoutPlan = null;
+            }
+          },
+          onFailure: (exception, message) {
+            developer.log('❌ Failed to load plans: $message', name: 'WorkoutBloc');
+            workoutPlan = null;
+          },
+        );
+      }
+
+      // Ora carica gli esercizi
       final exercisesResult = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
       exercisesResult.fold(
-        onSuccess: (exercises) async {
+        onSuccess: (exercises) {
           developer.log('Successfully loaded workout plan details', name: 'WorkoutBloc');
 
-          WorkoutPlan workoutPlan;
-
-          if (state is WorkoutPlansLoaded) {
-            WorkoutPlan? existingPlan;
-            try {
-              existingPlan = (state as WorkoutPlansLoaded).workoutPlans.firstWhere(
-                    (plan) => plan.id == event.schedaId,
-              );
-            } catch (e) {
-              existingPlan = null;
-            }
-
-            if (existingPlan != null) {
-              workoutPlan = existingPlan.copyWith(esercizi: exercises);
-              developer.log('Using real workout plan data: ${workoutPlan.nome}', name: 'WorkoutBloc');
-            } else {
-              workoutPlan = WorkoutPlan(
-                id: event.schedaId,
-                nome: 'Scheda ${event.schedaId}',
-                descrizione: null,
-                dataCreazione: null,
-                esercizi: exercises,
-              );
-            }
-          } else {
+          // Se ancora non abbiamo la scheda, usa un fallback MA con avviso
+          if (workoutPlan == null) {
+            developer.log('⚠️ Using fallback workout plan data', name: 'WorkoutBloc');
             workoutPlan = WorkoutPlan(
               id: event.schedaId,
-              nome: 'Scheda ${event.schedaId}',
-              descrizione: null,
+              nome: 'Scheda Sconosciuta #${event.schedaId}',
+              descrizione: 'Dati della scheda non disponibili',
               dataCreazione: null,
               esercizi: exercises,
             );
+          } else {
+            // Usa i dati reali
+            workoutPlan = workoutPlan!.copyWith(esercizi: exercises);
           }
 
           emit(WorkoutPlanDetailsLoaded(
-            workoutPlan: workoutPlan,
+            workoutPlan: workoutPlan!,
             exercises: exercises,
           ));
         },
