@@ -1024,17 +1024,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         top: false,
         child: Row(
           children: [
-            // Previous button - Compact
-            SizedBox(
-              width: 80.w,
-              child: CustomButton(
-                text: 'Prec',
-                onPressed: _currentExerciseIndex > 0
-                    ? () => _navigatePrevious(exercises)
-                    : null,
-                type: ButtonType.outline,
-                size: ButtonSize.small,
-                icon: const Icon(Icons.arrow_back, size: 16),
+            // Previous button - Icon only for space
+            IconButton(
+              onPressed: _currentExerciseIndex > 0
+                  ? () => _navigatePrevious(exercises)
+                  : null,
+              icon: Icon(
+                Icons.arrow_back,
+                color: _currentExerciseIndex > 0
+                    ? AppColors.indigo600
+                    : Colors.grey.shade400,
+                size: 28.sp,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: _currentExerciseIndex > 0
+                    ? AppColors.indigo600.withOpacity(0.1)
+                    : Colors.transparent,
+                minimumSize: Size(40.w, 40.h),
               ),
             ),
 
@@ -1060,17 +1066,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(width: AppConfig.spacingS.w),
 
-            // Next button - Compact
-            SizedBox(
-              width: 80.w,
-              child: CustomButton(
-                text: 'Succ',
-                onPressed: _currentExerciseIndex < exercises.length - 1
-                    ? () => _navigateNext(exercises)
-                    : null,
-                type: ButtonType.outline,
-                size: ButtonSize.small,
-                icon: const Icon(Icons.arrow_forward, size: 16),
+            // Next button - Icon only for space
+            IconButton(
+              onPressed: _currentExerciseIndex < exercises.length - 1
+                  ? () => _navigateNext(exercises)
+                  : null,
+              icon: Icon(
+                Icons.arrow_forward,
+                color: _currentExerciseIndex < exercises.length - 1
+                    ? AppColors.indigo600
+                    : Colors.grey.shade400,
+                size: 28.sp,
+              ),
+              style: IconButton.styleFrom(
+                backgroundColor: _currentExerciseIndex < exercises.length - 1
+                    ? AppColors.indigo600.withOpacity(0.1)
+                    : Colors.transparent,
+                minimumSize: Size(40.w, 40.h),
               ),
             ),
           ],
