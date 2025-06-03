@@ -21,6 +21,10 @@ import '../../bloc/active_workout_bloc.dart' as bloc;
 import '../../models/active_workout_models.dart' as models;
 import '../../models/workout_plan_models.dart';
 
+// ============================================================================
+// 🎯 MAIN ACTIVE WORKOUT SCREEN - FULLSCREEN ONLY
+// ============================================================================
+
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final int? allenamentoId;
@@ -41,40 +45,67 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   late bloc.ActiveWorkoutBloc _bloc;
   late SessionService _sessionService;
 
-  // 🎮 STATO FULLSCREEN
+  // 🎮 FULLSCREEN STATE
   int _currentExerciseIndex = 0;
   late PageController _pageController;
 
-  // ⏱️ TIMER SISTEMA
+  // ⏱️ TIMER SYSTEM
   Timer? _workoutTimer;
   Timer? _recoveryTimer;
   Duration _elapsedTime = Duration.zero;
   int _recoverySeconds = 0;
   bool _isRecoveryActive = false;
 
-  // 💾 DATI ALLENAMENTO
+  // 💾 EXERCISE DATA
   Map<int, double> _exerciseWeights = {};
   Map<int, int> _exerciseReps = {};
 
-  // 🎨 ANIMAZIONI
+  // 🎨 ANIMATIONS
   late AnimationController _progressAnimationController;
   late Animation<double> _progressAnimation;
+  late AnimationController _completionAnimationController;
 
   @override
   void initState() {
     super.initState();
 
-    print('🚨 ACTIVE WORKOUT SCREEN INIT STARTED'); // <-- AGGIUNGI QUESTA RIGA
-    developer.log('🎬 ActiveWorkoutScreen initState CALLED!', name: 'ActiveWorkoutScreen');
+    developer.log('🚀 ActiveWorkoutScreen 2.0 - Fullscreen Mode INIT', name: 'ActiveWorkoutScreen');
 
     _bloc = context.read<bloc.ActiveWorkoutBloc>();
     _sessionService = getIt<SessionService>();
     _pageController = PageController(initialPage: 0);
 
-    developer.log('🔗 BLoC obtained: ${_bloc.runtimeType}', name: 'ActiveWorkoutScreen');
-    developer.log('🔗 SessionService obtained: ${_sessionService.runtimeType}', name: 'ActiveWorkoutScreen');
+    _setupAnimations();
+    _setupKeepScreenOn();
+    _initializeWorkout();
+    _startWorkoutTimer();
+  }
 
-    // Animazioni
+  @override
+  void dispose() {
+    _workoutTimer?.cancel();
+    _recoveryTimer?.cancel();
+    _progressAnimationController.dispose();
+    _completionAnimationController.dispose();
+    _pageController.dispose();
+
+    // 📱 Restore normal system UI
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    super.dispose();
+  }
+
+  // ============================================================================
+  // 🏗️ SETUP METHODS
+  // ============================================================================
+
+  void _setupAnimations() {
     _progressAnimationController = AnimationController(
       duration: AppConfig.animationNormal,
       vsync: this,
@@ -87,49 +118,47 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       curve: AppConfig.animationCurve,
     ));
 
-    developer.log('🎨 Animations initialized', name: 'ActiveWorkoutScreen');
-
-    _initializeWorkout();
-    _startWorkoutTimer();
-
-    developer.log('✅ InitState completed', name: 'ActiveWorkoutScreen');
+    _completionAnimationController = AnimationController(
+      duration: AppConfig.animationSlow,
+      vsync: this,
+    );
   }
 
-  @override
-  void dispose() {
-    _workoutTimer?.cancel();
-    _recoveryTimer?.cancel();
-    _progressAnimationController.dispose();
-    _pageController.dispose();
-    super.dispose();
+  void _setupKeepScreenOn() {
+    // 📱 Keep screen on during workout
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Also prevent screen from turning off
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
   }
 
-  // 🚀 FIX: Metodo migliorato con gestione errori e reset
+  // ============================================================================
+  // 🚀 WORKOUT INITIALIZATION
+  // ============================================================================
+
   Future<void> _initializeWorkout() async {
-    developer.log('🚀 Initializing workout...', name: 'ActiveWorkoutScreen');
+    developer.log('🚀 Initializing fullscreen workout...', name: 'ActiveWorkoutScreen');
 
     final userId = await _sessionService.getCurrentUserId();
-    developer.log('👤 Current user ID: $userId', name: 'ActiveWorkoutScreen');
 
     if (userId != null) {
       if (widget.allenamentoId != null) {
         developer.log('🔄 Loading existing workout: ${widget.allenamentoId}', name: 'ActiveWorkoutScreen');
         _bloc.add(bloc.LoadCompletedSeries(allenamentoId: widget.allenamentoId!));
       } else {
-        developer.log('🆕 Starting new workout session - User: $userId, Scheda: ${widget.schedaId}', name: 'ActiveWorkoutScreen');
+        developer.log('🆕 Starting new fullscreen workout session', name: 'ActiveWorkoutScreen');
 
-        // 🚀 FIX: Resetta lo stato prima di iniziare
+        // Reset state before starting
         _bloc.add(const bloc.ResetActiveWorkoutState());
-
-        // Piccolo delay per assicurare che il reset sia processato
         await Future.delayed(const Duration(milliseconds: 100));
 
-        // Ora inizia il workout
+        // Start new workout
         _bloc.add(bloc.StartWorkoutSession(userId: userId, schedaId: widget.schedaId));
       }
     } else {
       developer.log('❌ No user ID found!', name: 'ActiveWorkoutScreen');
-      // Mostra errore o vai al login
       if (mounted) {
         CustomSnackbar.show(
           context,
@@ -141,33 +170,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  /// Inizializza i valori predefiniti per peso e ripetizioni
-  void _initializeDefaultValues(List<WorkoutExercise> exercises) {
-    for (final exercise in exercises) {
-      // Usa i valori dell'esercizio come default se non già impostati
-      if (!_exerciseWeights.containsKey(exercise.id)) {
-        _exerciseWeights[exercise.id] = exercise.peso;
-      }
-      if (!_exerciseReps.containsKey(exercise.id)) {
-        _exerciseReps[exercise.id] = exercise.ripetizioni;
-      }
-    }
-  }
-
-  /// Pre-popola con dati dall'ultimo allenamento (se disponibili)
-  void _preloadFromCompletedSeries(Map<int, List<models.CompletedSeriesData>> completedSeries) {
-    for (final entry in completedSeries.entries) {
-      final exerciseId = entry.key;
-      final series = entry.value;
-
-      if (series.isNotEmpty) {
-        // Usa i valori dell'ultima serie completata
-        final lastSeries = series.last;
-        _exerciseWeights[exerciseId] = lastSeries.peso;
-        _exerciseReps[exerciseId] = lastSeries.ripetizioni;
-      }
-    }
-  }
+  // ============================================================================
+  // ⏱️ TIMER SYSTEM
+  // ============================================================================
 
   void _startWorkoutTimer() {
     _workoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -196,14 +201,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
         if (_recoverySeconds <= 0) {
           _stopRecoveryTimer();
-          HapticFeedback.mediumImpact();
-          if (mounted) {
-            CustomSnackbar.show(
-              context,
-              message: 'Tempo di recupero terminato!',
-              isSuccess: true,
-            );
-          }
+          _showRecoveryCompleteNotification();
         }
       }
     });
@@ -217,7 +215,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     });
   }
 
-  // 🎯 NAVIGATION BETWEEN EXERCISES
+  void _showRecoveryCompleteNotification() {
+    HapticFeedback.mediumImpact();
+    if (mounted) {
+      CustomSnackbar.show(
+        context,
+        message: '⏰ Tempo di recupero terminato!',
+        isSuccess: true,
+      );
+    }
+  }
+
+  // ============================================================================
+  // 🧭 NAVIGATION SYSTEM
+  // ============================================================================
+
   void _navigateToExercise(int index, List<WorkoutExercise> exercises) {
     if (index >= 0 && index < exercises.length) {
       setState(() {
@@ -243,34 +255,38 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  // 💪 EXERCISE INPUT HANDLERS
-  Future<void> _showWeightPicker(int exerciseId, double currentWeight) async {
-    final weight = await showDialog<double>(
-      context: context,
-      builder: (context) => WeightPickerDialog(initialWeight: currentWeight),
-    );
+  // ============================================================================
+  // 💪 EXERCISE DATA MANAGEMENT
+  // ============================================================================
 
-    if (weight != null) {
-      setState(() {
-        _exerciseWeights[exerciseId] = weight;
-      });
+  void _initializeDefaultValues(List<WorkoutExercise> exercises) {
+    for (final exercise in exercises) {
+      if (!_exerciseWeights.containsKey(exercise.id)) {
+        _exerciseWeights[exercise.id] = exercise.peso;
+      }
+      if (!_exerciseReps.containsKey(exercise.id)) {
+        _exerciseReps[exercise.id] = exercise.ripetizioni;
+      }
     }
   }
 
-  Future<void> _showRepsPicker(int exerciseId, int currentReps) async {
-    final reps = await showDialog<int>(
-      context: context,
-      builder: (context) => RepsPickerDialog(initialReps: currentReps),
-    );
+  void _preloadFromCompletedSeries(Map<int, List<models.CompletedSeriesData>> completedSeries) {
+    for (final entry in completedSeries.entries) {
+      final exerciseId = entry.key;
+      final series = entry.value;
 
-    if (reps != null) {
-      setState(() {
-        _exerciseReps[exerciseId] = reps;
-      });
+      if (series.isNotEmpty) {
+        final lastSeries = series.last;
+        _exerciseWeights[exerciseId] = lastSeries.peso;
+        _exerciseReps[exerciseId] = lastSeries.ripetizioni;
+      }
     }
   }
 
-  // 🏋️ COMPLETE SERIES
+  // ============================================================================
+  // 🏋️ SERIES COMPLETION
+  // ============================================================================
+
   void _completeSeries(WorkoutExercise exercise, int seriesNumber) {
     final weight = _exerciseWeights[exercise.id] ?? exercise.peso;
     final reps = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
@@ -284,7 +300,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    // Crea SeriesData
+    // Create series data
     final seriesData = models.SeriesData(
       schedaEsercizioId: exercise.id,
       peso: weight,
@@ -293,10 +309,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       serieId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-    // Aggiunge serie locale per feedback immediato
+    // Add local series for immediate feedback
     _bloc.add(bloc.AddLocalSeries(exerciseId: exercise.id, seriesData: seriesData));
 
-    // Salva nel database (se abbiamo un allenamento attivo)
+    // Save to database
     final currentState = _bloc.state;
     if (currentState is bloc.WorkoutSessionActive) {
       final requestId = 'save_${DateTime.now().millisecondsSinceEpoch}';
@@ -307,19 +323,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       ));
     }
 
-    // Avvia timer di recupero
+    // Start recovery timer
     _startRecoveryTimer(seconds: exercise.tempoRecupero ?? 90);
 
     // Feedback
     HapticFeedback.lightImpact();
     CustomSnackbar.show(
       context,
-      message: 'Serie completata!',
+      message: '✅ Serie ${seriesNumber} completata!',
       isSuccess: true,
     );
   }
 
-  // 🏁 COMPLETE WORKOUT
+  // ============================================================================
+  // 🏁 WORKOUT COMPLETION
+  // ============================================================================
+
   Future<void> _completeWorkout(BuildContext context, int allenamentoId) async {
     final confirmed = await _showCompleteWorkoutDialog(context);
     if (confirmed == true) {
@@ -331,141 +350,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  Future<bool?> _showCompleteWorkoutDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('🎉 Completa Allenamento'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Fantastico! Sei sicuro di voler completare questo allenamento?'),
-            SizedBox(height: AppConfig.spacingM.h),
-            Text(
-              'Durata: ${Formatters.formatDuration(_elapsedTime)}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppColors.indigo600,
-                fontSize: 16.sp,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Continua'),
-          ),
-          ElevatedButton(
-            onPressed: () => context.pop(true),
-            child: const Text('🏁 Completa!'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<bool?> _showExitDialog(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Esci dall\'Allenamento'),
-        content: const Text(
-          'Sei sicuro di voler uscire? I progressi non salvati andranno persi.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(false),
-            child: const Text('Continua'),
-          ),
-          ElevatedButton(
-            onPressed: () => context.pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Esci'),
-          ),
-        ],
-      ),
-    );
-  }
+  // ============================================================================
+  // 🎨 UI BUILDERS
+  // ============================================================================
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.width < 600;
-
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
         if (!didPop) {
           final shouldExit = await _showExitDialog(context);
-          if (shouldExit == true && context.mounted) {
-            context.pop();
+          if (shouldExit == true) {
+            _handleWorkoutExit();
           }
         }
       },
       child: Scaffold(
-        appBar: CustomAppBar(
-          title: 'Allenamento Attivo',
-          showBackButton: false,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () async {
-              final shouldExit = await _showExitDialog(context);
-              if (shouldExit == true && context.mounted) {
-                context.pop();
-              }
-            },
-          ),
-        ),
-        // 🚀 FIX: BlocConsumer migliorato con buildWhen
+        backgroundColor: AppColors.backgroundDark,
         body: BlocConsumer<bloc.ActiveWorkoutBloc, bloc.ActiveWorkoutState>(
-          listener: (context, state) {
-            developer.log('🔄 State changed: ${state.runtimeType}', name: 'ActiveWorkoutScreen');
-
-            if (state is bloc.WorkoutSessionActive) {
-              developer.log('✅ Workout session is active with ${state.exercises.length} exercises', name: 'ActiveWorkoutScreen');
-              // Inizializza valori predefiniti quando i dati sono caricati
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  _initializeDefaultValues(state.exercises);
-                  _preloadFromCompletedSeries(state.completedSeries);
-                }
-              });
-            } else if (state is bloc.WorkoutSessionStarted) {
-              developer.log('🎯 Workout session started: ${state.response.allenamentoId}', name: 'ActiveWorkoutScreen');
-              // Non fare nulla qui, gli esercizi verranno caricati automaticamente dal BLoC
-            } else if (state is bloc.WorkoutSessionCompleted) {
-              developer.log('🏁 Workout completed!', name: 'ActiveWorkoutScreen');
-              CustomSnackbar.show(
-                context,
-                message: 'Allenamento completato con successo!',
-                isSuccess: true,
-              );
-              Future.delayed(const Duration(seconds: 2), () {
-                if (context.mounted) context.pop();
-              });
-            } else if (state is bloc.ActiveWorkoutError) {
-              developer.log('❌ Active workout error: ${state.message}', name: 'ActiveWorkoutScreen');
-              CustomSnackbar.show(
-                context,
-                message: state.message,
-                isSuccess: false,
-              );
-            } else if (state is bloc.ActiveWorkoutLoading) {
-              developer.log('⏳ Loading: ${state.message ?? "no message"}', name: 'ActiveWorkoutScreen');
-            }
-          },
+          listener: _handleBlocStateChanges,
           buildWhen: (previous, current) {
-            // Rebuild solo per stati che influenzano la UI
             return current is! bloc.ActiveWorkoutLoading ||
                 previous.runtimeType != current.runtimeType;
           },
           builder: (context, state) {
-            developer.log('🎨 Building UI for state: ${state.runtimeType}', name: 'ActiveWorkoutScreen');
-
             return LoadingOverlay(
               isLoading: state is bloc.ActiveWorkoutLoading,
               message: state is bloc.ActiveWorkoutLoading ? state.message : null,
-              child: _buildFullscreenContent(state, isSmallScreen),
+              child: _buildFullscreenContent(state),
             );
           },
         ),
@@ -473,27 +386,68 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildFullscreenContent(bloc.ActiveWorkoutState state, bool isSmallScreen) {
+  void _handleBlocStateChanges(BuildContext context, bloc.ActiveWorkoutState state) {
+    developer.log('🔄 State changed: ${state.runtimeType}', name: 'ActiveWorkoutScreen');
+
+    if (state is bloc.WorkoutSessionActive) {
+      developer.log('✅ Workout session is active with ${state.exercises.length} exercises', name: 'ActiveWorkoutScreen');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _initializeDefaultValues(state.exercises);
+          _preloadFromCompletedSeries(state.completedSeries);
+          _progressAnimationController.forward();
+        }
+      });
+    } else if (state is bloc.WorkoutSessionCompleted) {
+      developer.log('🏁 Workout completed!', name: 'ActiveWorkoutScreen');
+      CustomSnackbar.show(
+        context,
+        message: '🎉 Allenamento completato con successo!',
+        isSuccess: true,
+      );
+      // 🚀 FIX: Exit immediately after showing snackbar, no delay
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _handleWorkoutExit();
+        }
+      });
+    } else if (state is bloc.WorkoutSessionCancelled) {
+      developer.log('🚪 Workout cancelled!', name: 'ActiveWorkoutScreen');
+      // 🚀 FIX: Exit immediately after cancellation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.pop();
+        }
+      });
+    } else if (state is bloc.ActiveWorkoutError) {
+      developer.log('❌ Error: ${state.message}', name: 'ActiveWorkoutScreen');
+      CustomSnackbar.show(
+        context,
+        message: state.message,
+        isSuccess: false,
+      );
+    }
+  }
+
+  Widget _buildFullscreenContent(bloc.ActiveWorkoutState state) {
     if (state is bloc.WorkoutSessionActive) {
       final exercises = state.exercises;
       if (exercises.isEmpty) {
         return _buildEmptyState();
       }
 
-      _progressAnimationController.forward();
-
       return Column(
         children: [
-          // 📊 HEADER FISSO
-          _buildHeader(state, isSmallScreen),
+          // 📊 FIXED HEADER
+          _buildFullscreenHeader(state),
 
-          // 🎮 CONTENT AREA (UN ESERCIZIO)
+          // 🎮 MAIN CONTENT - PageView
           Expanded(
-            child: _buildExercisePageView(state, isSmallScreen),
+            child: _buildExercisePageView(state),
           ),
 
-          // 🧭 NAVIGATION FISSO
-          _buildNavigationBar(exercises, isSmallScreen, state),
+          // 🧭 FIXED NAVIGATION
+          _buildFullscreenNavigation(exercises, state),
         ],
       );
     }
@@ -501,25 +455,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return _buildLoadingOrErrorState(state);
   }
 
-  Widget _buildHeader(bloc.WorkoutSessionActive state, bool isSmallScreen) {
+  Widget _buildFullscreenHeader(bloc.WorkoutSessionActive state) {
     final exercises = state.exercises;
     final totalExercises = exercises.length;
-    final completedExercises = exercises.where((exercise) {
-      final completedSeries = state.completedSeries[exercise.id] ?? [];
-      return completedSeries.length >= exercise.serie;
-    }).length;
-
+    final completedExercises = _calculateCompletedExercises(state);
     final progress = totalExercises > 0 ? completedExercises / totalExercises : 0.0;
+    final isWorkoutComplete = completedExercises == totalExercises;
 
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConfig.spacingM.w : AppConfig.spacingL.w),
+      padding: EdgeInsets.all(AppConfig.spacingL.w),
       decoration: BoxDecoration(
-        color: AppColors.indigo600,
+        gradient: LinearGradient(
+          colors: [
+            AppColors.indigo600,
+            AppColors.indigo700,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
-            blurRadius: AppConfig.elevationS,
-            offset: const Offset(0, 2),
+            blurRadius: AppConfig.elevationM,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -527,30 +485,79 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         bottom: false,
         child: Column(
           children: [
-            // Progress text
+            // Top row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                // Close button
+                IconButton(
+                  onPressed: () async {
+                    final shouldExit = await _showExitDialog(context);
+                    if (shouldExit == true) {
+                      _handleWorkoutExit();
+                    }
+                  },
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
+
+                // Exercise counter
                 Text(
                   'Esercizio ${_currentExerciseIndex + 1} di $totalExercises',
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 16.sp : 18.sp,
+                    fontSize: 18.sp,
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+
+                // Complete workout button
+                if (isWorkoutComplete)
+                  IconButton(
+                    onPressed: () => _completeWorkout(context, state.activeWorkout.id),
+                    icon: Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.celebration,
+                        color: Colors.white,
+                        size: 24.sp,
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(width: 48.w),
+              ],
+            ),
+
+            SizedBox(height: AppConfig.spacingM.h),
+
+            // Timer and progress
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
                   Formatters.formatDuration(_elapsedTime),
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 18.sp : 20.sp,
+                    fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                  ),
+                ),
+
+                Text(
+                  '$completedExercises/$totalExercises completati',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: Colors.white.withOpacity(0.9),
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: AppConfig.spacingS.h),
+            SizedBox(height: AppConfig.spacingM.h),
 
             // Progress bar
             AnimatedBuilder(
@@ -559,35 +566,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 return LinearProgressIndicator(
                   value: progress * _progressAnimation.value,
                   backgroundColor: Colors.white.withOpacity(0.3),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                  minHeight: 6.h,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isWorkoutComplete ? AppColors.success : Colors.white,
+                  ),
+                  minHeight: 8.h,
                 );
               },
             ),
-
-            if (completedExercises == totalExercises) ...[
-              SizedBox(height: AppConfig.spacingS.h),
-              ElevatedButton.icon(
-                onPressed: () => _completeWorkout(context, state.activeWorkout.id),
-                icon: const Icon(Icons.celebration),
-                label: const Text('🏁 Completa Allenamento!'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppConfig.spacingL.w,
-                    vertical: AppConfig.spacingS.h,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildExercisePageView(bloc.WorkoutSessionActive state, bool isSmallScreen) {
+  Widget _buildExercisePageView(bloc.WorkoutSessionActive state) {
     final exercises = state.exercises;
 
     return PageView.builder(
@@ -602,54 +594,77 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         final exercise = exercises[index];
         final completedSeries = state.completedSeries[exercise.id] ?? [];
 
-        return _buildExerciseContent(exercise, completedSeries, isSmallScreen);
+        return _buildExerciseContent(exercise, completedSeries);
       },
     );
   }
 
-  Widget _buildExerciseContent(WorkoutExercise exercise, List<models.CompletedSeriesData> completedSeries, bool isSmallScreen) {
+  Widget _buildExerciseContent(WorkoutExercise exercise, List<models.CompletedSeriesData> completedSeries) {
     final currentWeight = _exerciseWeights[exercise.id] ?? exercise.peso;
     final currentReps = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
     final isCompleted = completedSeries.length >= exercise.serie;
     final nextSeriesNumber = completedSeries.length + 1;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(isSmallScreen ? AppConfig.spacingM.w : AppConfig.spacingL.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 🏋️ EXERCISE INFO
-          _buildExerciseInfo(exercise, completedSeries, isCompleted, isSmallScreen),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 🚀 FIX: Responsive layout based on screen height
+        final isSmallScreen = constraints.maxHeight < 600;
+        final spacing = isSmallScreen ? AppConfig.spacingM.h : AppConfig.spacingL.h;
+        final cardPadding = isSmallScreen ? AppConfig.spacingL.w : AppConfig.spacingXL.w;
 
-          SizedBox(height: AppConfig.spacingL.h),
+        return SingleChildScrollView(
+          padding: EdgeInsets.all(AppConfig.spacingM.w),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight - AppConfig.spacingM.h * 2,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 🏋️ EXERCISE INFO CARD - Compact
+                _buildCompactExerciseInfoCard(exercise, completedSeries, isCompleted, cardPadding),
 
-          // 💪 INPUT CONTROLS (se non completato)
-          if (!isCompleted) ...[
-            _buildInputControls(exercise, currentWeight, currentReps, nextSeriesNumber, isSmallScreen),
-            SizedBox(height: AppConfig.spacingL.h),
-          ],
+                SizedBox(height: spacing),
 
-          // ⏱️ RECOVERY TIMER
-          if (_isRecoveryActive) ...[
-            _buildRecoveryTimer(isSmallScreen),
-            SizedBox(height: AppConfig.spacingL.h),
-          ],
+                // 💪 INPUT CONTROLS (if not completed)
+                if (!isCompleted) ...[
+                  _buildCompactInputControls(exercise, currentWeight, currentReps, nextSeriesNumber, cardPadding, isSmallScreen),
+                  SizedBox(height: spacing),
+                ],
 
-          // ✅ COMPLETED SERIES
-          if (completedSeries.isNotEmpty) ...[
-            _buildCompletedSeries(completedSeries, isSmallScreen),
-          ],
-        ],
-      ),
+                // ⏱️ RECOVERY TIMER
+                if (_isRecoveryActive) ...[
+                  _buildCompactRecoveryTimer(cardPadding, isSmallScreen),
+                  SizedBox(height: spacing),
+                ],
+
+                // ✅ COMPLETED SERIES
+                if (completedSeries.isNotEmpty) ...[
+                  _buildCompactCompletedSeries(completedSeries, cardPadding),
+                ],
+
+                // 🏆 COMPLETION CELEBRATION
+                if (isCompleted) ...[
+                  SizedBox(height: spacing),
+                  _buildCompactCompletionCelebration(cardPadding),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildExerciseInfo(WorkoutExercise exercise, List<models.CompletedSeriesData> completedSeries, bool isCompleted, bool isSmallScreen) {
+  Widget _buildCompactExerciseInfoCard(WorkoutExercise exercise, List<models.CompletedSeriesData> completedSeries, bool isCompleted, double padding) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(AppConfig.spacingL.w),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: isCompleted ? AppColors.success.withOpacity(0.1) : AppColors.indigo600.withOpacity(0.1),
+        color: isCompleted
+            ? AppColors.success.withOpacity(0.1)
+            : AppColors.indigo600.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
         border: Border.all(
           color: isCompleted ? AppColors.success : AppColors.indigo600,
@@ -657,53 +672,56 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Exercise name - Responsive font size
+          Text(
+            exercise.nome,
+            style: TextStyle(
+              fontSize: 22.sp, // Reduced from 28.sp
+              fontWeight: FontWeight.bold,
+              color: isCompleted ? AppColors.success : AppColors.indigo600,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+
+          SizedBox(height: AppConfig.spacingM.h),
+
+          // Series counter and progress in row
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  exercise.nome,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 20.sp : 24.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? AppColors.success : AppColors.indigo600,
-                  ),
-                ),
-              ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: isCompleted ? AppColors.success : AppColors.indigo600,
-                  borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
+                  borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
                 ),
                 child: Text(
                   '${completedSeries.length}/${exercise.serie}',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14.sp,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+              ),
+
+              Text(
+                'Serie',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
 
-          if (exercise.descrizione?.isNotEmpty == true) ...[
-            SizedBox(height: AppConfig.spacingS.h),
-            Text(
-              exercise.descrizione!,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ],
-
           SizedBox(height: AppConfig.spacingM.h),
 
-          // Progress bar
+          // Compact progress bar
           LinearProgressIndicator(
             value: completedSeries.length / exercise.serie,
             backgroundColor: Colors.grey.shade300,
@@ -717,151 +735,102 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildInputControls(WorkoutExercise exercise, double currentWeight, int currentReps, int nextSeriesNumber, bool isSmallScreen) {
+  Widget _buildCompactInputControls(WorkoutExercise exercise, double currentWeight, int currentReps, int nextSeriesNumber, double padding, bool isSmallScreen) {
     return Container(
-      padding: EdgeInsets.all(AppConfig.spacingL.w),
+      width: double.infinity,
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.border, width: 2),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Serie $nextSeriesNumber',
             style: TextStyle(
-              fontSize: 18.sp,
+              fontSize: isSmallScreen ? 18.sp : 20.sp,
               fontWeight: FontWeight.bold,
               color: AppColors.indigo600,
             ),
           ),
 
-          SizedBox(height: AppConfig.spacingM.h),
+          SizedBox(height: AppConfig.spacingL.h),
 
-          // Input controls
-          if (isSmallScreen)
-            _buildCompactInputControls(exercise, currentWeight, currentReps, nextSeriesNumber)
-          else
-            _buildExpandedInputControls(exercise, currentWeight, currentReps, nextSeriesNumber),
+          // Compact weight and reps inputs
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactValueCard(
+                  label: 'Peso',
+                  value: Formatters.formatWeight(currentWeight),
+                  icon: Icons.fitness_center,
+                  onTap: () => _showWeightPicker(exercise.id, currentWeight),
+                ),
+              ),
+              SizedBox(width: AppConfig.spacingM.w),
+              Expanded(
+                child: _buildCompactValueCard(
+                  label: 'Reps',
+                  value: '$currentReps',
+                  icon: Icons.repeat,
+                  onTap: () => _showRepsPicker(exercise.id, currentReps),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: AppConfig.spacingL.h),
+
+          // Complete series button
+          CustomButton(
+            text: 'Completa Serie',
+            onPressed: _isRecoveryActive ? null : () => _completeSeries(exercise, nextSeriesNumber),
+            type: ButtonType.primary,
+            size: ButtonSize.medium,
+            isFullWidth: true,
+            icon: const Icon(Icons.check_circle, color: Colors.white, size: 20),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCompactInputControls(WorkoutExercise exercise, double currentWeight, int currentReps, int nextSeriesNumber) {
-    return Row(
-      children: [
-        // Weight
-        Expanded(
-          child: _buildValueCard(
-            label: 'Peso',
-            value: '${Formatters.formatWeight(currentWeight)}',
-            icon: Icons.fitness_center,
-            onTap: () => _showWeightPicker(exercise.id, currentWeight),
-          ),
-        ),
-        SizedBox(width: AppConfig.spacingS.w),
-
-        // Reps
-        Expanded(
-          child: _buildValueCard(
-            label: 'Reps',
-            value: '$currentReps',
-            icon: Icons.repeat,
-            onTap: () => _showRepsPicker(exercise.id, currentReps),
-          ),
-        ),
-        SizedBox(width: AppConfig.spacingS.w),
-
-        // Complete button
-        CustomButton(
-          text: 'Fatto',
-          onPressed: _isRecoveryActive ? null : () => _completeSeries(exercise, nextSeriesNumber),
-          type: ButtonType.primary,
-          size: ButtonSize.small,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExpandedInputControls(WorkoutExercise exercise, double currentWeight, int currentReps, int nextSeriesNumber) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildValueCard(
-                label: 'Peso (kg)',
-                value: Formatters.formatWeight(currentWeight),
-                icon: Icons.fitness_center,
-                onTap: () => _showWeightPicker(exercise.id, currentWeight),
-                isExpanded: true,
-              ),
-            ),
-            SizedBox(width: AppConfig.spacingM.w),
-            Expanded(
-              child: _buildValueCard(
-                label: 'Ripetizioni',
-                value: '$currentReps',
-                icon: Icons.repeat,
-                onTap: () => _showRepsPicker(exercise.id, currentReps),
-                isExpanded: true,
-              ),
-            ),
-          ],
-        ),
-
-        SizedBox(height: AppConfig.spacingL.h),
-
-        CustomButton(
-          text: 'Completa Serie $nextSeriesNumber',
-          onPressed: _isRecoveryActive ? null : () => _completeSeries(exercise, nextSeriesNumber),
-          type: ButtonType.primary,
-          isFullWidth: true,
-          icon: const Icon(Icons.check),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildValueCard({
+  Widget _buildCompactValueCard({
     required String label,
     required String value,
     required IconData icon,
     required VoidCallback onTap,
-    bool isExpanded = false,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
       child: Container(
-        padding: EdgeInsets.all(isExpanded ? AppConfig.spacingM.w : AppConfig.spacingS.w),
+        padding: EdgeInsets.all(AppConfig.spacingM.w),
         decoration: BoxDecoration(
           color: AppColors.indigo600.withOpacity(0.1),
           borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
-          border: Border.all(color: AppColors.indigo600.withOpacity(0.3)),
+          border: Border.all(color: AppColors.indigo600.withOpacity(0.3), width: 1),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               color: AppColors.indigo600,
-              size: isExpanded ? 24.sp : 20.sp,
+              size: 24.sp,
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: AppConfig.spacingXS.h),
             Text(
               label,
               style: TextStyle(
-                fontSize: isExpanded ? 12.sp : 10.sp,
+                fontSize: 12.sp,
                 color: AppColors.textSecondary,
               ),
             ),
             Text(
               value,
               style: TextStyle(
-                fontSize: isExpanded ? 16.sp : 14.sp,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 color: AppColors.indigo600,
               ),
@@ -872,14 +841,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildRecoveryTimer(bool isSmallScreen) {
+  Widget _buildCompactRecoveryTimer(double padding, bool isSmallScreen) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(AppConfig.spacingL.w),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: AppColors.warning.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
-        border: Border.all(color: AppColors.warning),
+        border: Border.all(color: AppColors.warning, width: 2),
       ),
       child: Column(
         children: [
@@ -893,7 +862,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
               SizedBox(width: AppConfig.spacingS.w),
               Text(
-                'Tempo di Recupero',
+                'Recupero',
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
@@ -908,7 +877,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           Text(
             '${_recoverySeconds}s',
             style: TextStyle(
-              fontSize: isSmallScreen ? 32.sp : 48.sp,
+              fontSize: isSmallScreen ? 36.sp : 48.sp,
               fontWeight: FontWeight.bold,
               color: AppColors.warning,
             ),
@@ -917,7 +886,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           SizedBox(height: AppConfig.spacingM.h),
 
           LinearProgressIndicator(
-            value: 1 - (_recoverySeconds / 90), // Assumendo 90s default
+            value: 1 - (_recoverySeconds / 90),
             backgroundColor: Colors.grey.shade300,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.warning),
             minHeight: 6.h,
@@ -927,27 +896,34 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           TextButton(
             onPressed: _stopRecoveryTimer,
-            child: const Text('Salta Recupero'),
+            child: Text(
+              'Salta',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.warning,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCompletedSeries(List<models.CompletedSeriesData> completedSeries, bool isSmallScreen) {
+  Widget _buildCompactCompletedSeries(List<models.CompletedSeriesData> completedSeries, double padding) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(AppConfig.spacingM.w),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: AppColors.success.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
-        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+        border: Border.all(color: AppColors.success.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Serie Completate',
+            'Completate (${completedSeries.length})',
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.bold,
@@ -957,15 +933,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           SizedBox(height: AppConfig.spacingS.h),
 
-          ...completedSeries.asMap().entries.map((entry) {
+          // Show max 3 recent series to save space
+          ...completedSeries.take(3).toList().asMap().entries.map((entry) {
             final index = entry.key;
             final series = entry.value;
             return Container(
               margin: EdgeInsets.only(bottom: 4.h),
-              padding: EdgeInsets.symmetric(
-                horizontal: AppConfig.spacingS.w,
-                vertical: 6.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: AppConfig.spacingS.w, vertical: 4.h),
               decoration: BoxDecoration(
                 color: AppColors.success.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(AppConfig.radiusS.r),
@@ -979,7 +953,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   ),
                   SizedBox(width: AppConfig.spacingS.w),
                   Text(
-                    'Serie ${index + 1}: ${Formatters.formatWeight(series.peso)} × ${series.ripetizioni}',
+                    '${Formatters.formatWeight(series.peso)} × ${series.ripetizioni}',
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: AppColors.success,
@@ -990,132 +964,181 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
             );
           }).toList(),
+
+          if (completedSeries.length > 3)
+            Text(
+              '+${completedSeries.length - 3} altre serie',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildNavigationBar(List<WorkoutExercise> exercises, bool isSmallScreen, bloc.WorkoutSessionActive state) {
+  Widget _buildCompactCompletionCelebration(double padding) {
     return Container(
-      padding: EdgeInsets.all(isSmallScreen ? AppConfig.spacingM.w : AppConfig.spacingL.w),
+      padding: EdgeInsets.all(padding),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.success.withOpacity(0.8),
+            AppColors.success,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.celebration,
+            color: Colors.white,
+            size: 32.sp,
+          ),
+          SizedBox(height: AppConfig.spacingS.h),
+          Text(
+            '🎉 Completato!',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullscreenNavigation(List<WorkoutExercise> exercises, bloc.WorkoutSessionActive state) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: AppConfig.spacingM.w, vertical: AppConfig.spacingM.h),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        border: Border(top: BorderSide(color: AppColors.border, width: 2)),
       ),
       child: SafeArea(
         top: false,
-        child: isSmallScreen
-            ? _buildMiniNavigation(exercises, state)
-            : _buildFullNavigation(exercises, state),
+        child: Row(
+          children: [
+            // Previous button - Compact
+            SizedBox(
+              width: 80.w,
+              child: CustomButton(
+                text: 'Prec',
+                onPressed: _currentExerciseIndex > 0
+                    ? () => _navigatePrevious(exercises)
+                    : null,
+                type: ButtonType.outline,
+                size: ButtonSize.small,
+                icon: const Icon(Icons.arrow_back, size: 16),
+              ),
+            ),
+
+            SizedBox(width: AppConfig.spacingS.w),
+
+            // Exercise indicators
+            Expanded(
+              child: Container(
+                height: 40.h,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Show max 7 indicators to avoid overflow
+                    if (exercises.length <= 7)
+                      ...exercises.asMap().entries.map((entry) =>
+                          _buildExerciseIndicator(entry.key, entry.value, state, exercises))
+                    else
+                      ..._buildCompactIndicators(exercises, state),
+                  ],
+                ),
+              ),
+            ),
+
+            SizedBox(width: AppConfig.spacingS.w),
+
+            // Next button - Compact
+            SizedBox(
+              width: 80.w,
+              child: CustomButton(
+                text: 'Succ',
+                onPressed: _currentExerciseIndex < exercises.length - 1
+                    ? () => _navigateNext(exercises)
+                    : null,
+                type: ButtonType.outline,
+                size: ButtonSize.small,
+                icon: const Icon(Icons.arrow_forward, size: 16),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMiniNavigation(List<WorkoutExercise> exercises, bloc.WorkoutSessionActive state) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          onPressed: _currentExerciseIndex > 0
-              ? () => _navigatePrevious(exercises)
+  Widget _buildExerciseIndicator(int index, WorkoutExercise exercise, bloc.WorkoutSessionActive state, List<WorkoutExercise> exercises) {
+    final completedSeries = state.completedSeries[exercise.id] ?? [];
+    final isCompleted = completedSeries.length >= exercise.serie;
+    final isCurrent = index == _currentExerciseIndex;
+
+    return GestureDetector(
+      onTap: () => _navigateToExercise(index, exercises),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 3.w),
+        width: isCurrent ? 16.w : 12.w,
+        height: isCurrent ? 16.w : 12.w,
+        decoration: BoxDecoration(
+          color: isCompleted
+              ? AppColors.success
+              : isCurrent
+              ? AppColors.indigo600
+              : Colors.grey.shade300,
+          shape: BoxShape.circle,
+          border: isCurrent
+              ? Border.all(color: Colors.white, width: 2)
               : null,
-          icon: const Icon(Icons.arrow_back),
         ),
-
-        // Progress dots
-        Row(
-          children: exercises.asMap().entries.map((entry) {
-            final index = entry.key;
-            final exercise = entry.value;
-            final completedSeries = state.completedSeries[exercise.id] ?? [];
-            final isCompleted = completedSeries.length >= exercise.serie;
-            final isCurrent = index == _currentExerciseIndex;
-
-            return Container(
-              margin: EdgeInsets.symmetric(horizontal: 2.w),
-              width: 8.w,
-              height: 8.w,
-              decoration: BoxDecoration(
-                color: isCompleted
-                    ? AppColors.success
-                    : isCurrent
-                    ? AppColors.indigo600
-                    : Colors.grey.shade300,
-                shape: BoxShape.circle,
-              ),
-            );
-          }).toList(),
-        ),
-
-        IconButton(
-          onPressed: _currentExerciseIndex < exercises.length - 1
-              ? () => _navigateNext(exercises)
-              : null,
-          icon: const Icon(Icons.arrow_forward),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildFullNavigation(List<WorkoutExercise> exercises, bloc.WorkoutSessionActive state) {
-    return Row(
-      children: [
-        CustomButton(
-          text: 'Precedente',
-          onPressed: _currentExerciseIndex > 0
-              ? () => _navigatePrevious(exercises)
-              : null,
-          type: ButtonType.outline,
-          icon: const Icon(Icons.arrow_back),
+  List<Widget> _buildCompactIndicators(List<WorkoutExercise> exercises, bloc.WorkoutSessionActive state) {
+    // For many exercises, show: [•] [•] [•] 3/10 [•] [•] [•]
+    return [
+      if (_currentExerciseIndex > 0) Icon(Icons.more_horiz, color: Colors.grey, size: 16.sp),
+      _buildExerciseIndicator(_currentExerciseIndex, exercises[_currentExerciseIndex], state, exercises),
+      SizedBox(width: AppConfig.spacingS.w),
+      Text(
+        '${_currentExerciseIndex + 1}/${exercises.length}',
+        style: TextStyle(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
         ),
+      ),
+      SizedBox(width: AppConfig.spacingS.w),
+      if (_currentExerciseIndex < exercises.length - 1) Icon(Icons.more_horiz, color: Colors.grey, size: 16.sp),
+    ];
+  }
 
-        Expanded(
-          child: Wrap(
-            alignment: WrapAlignment.center,
-            children: exercises.asMap().entries.map((entry) {
-              final index = entry.key;
-              final exercise = entry.value;
-              final completedSeries = state.completedSeries[exercise.id] ?? [];
-              final isCompleted = completedSeries.length >= exercise.serie;
-              final isCurrent = index == _currentExerciseIndex;
+  // ============================================================================
+  // 🔧 HELPER METHODS
+  // ============================================================================
 
-              return GestureDetector(
-                onTap: () => _navigateToExercise(index, exercises),
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  width: 12.w,
-                  height: 12.w,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? AppColors.success
-                        : isCurrent
-                        ? AppColors.indigo600
-                        : Colors.grey.shade300,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        CustomButton(
-          text: 'Successivo',
-          onPressed: _currentExerciseIndex < exercises.length - 1
-              ? () => _navigateNext(exercises)
-              : null,
-          type: ButtonType.outline,
-          icon: const Icon(Icons.arrow_forward),
-        ),
-      ],
-    );
+  int _calculateCompletedExercises(bloc.WorkoutSessionActive state) {
+    return state.exercises.where((exercise) {
+      final completedSeries = state.completedSeries[exercise.id] ?? [];
+      return completedSeries.length >= exercise.serie;
+    }).length;
   }
 
   Widget _buildLoadingOrErrorState(bloc.ActiveWorkoutState state) {
     if (state is bloc.ActiveWorkoutError) {
       return _buildErrorState(state.message);
     }
-
     return _buildLoadingState();
   }
 
@@ -1200,9 +1223,207 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       ),
     );
   }
+
+  // ============================================================================
+  // 💬 DIALOG METHODS
+  // ============================================================================
+
+  Future<bool?> _showExitDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.error),
+            SizedBox(width: AppConfig.spacingS.w),
+            const Text('Esci dall\'Allenamento'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Sei sicuro di voler uscire? L\'allenamento corrente verrà annullato.',
+            ),
+            SizedBox(height: AppConfig.spacingM.h),
+            Container(
+              padding: EdgeInsets.all(AppConfig.spacingM.w),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.error, size: 20.sp),
+                  SizedBox(width: AppConfig.spacingS.w),
+                  Expanded(
+                    child: Text(
+                      'I progressi non salvati andranno persi',
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Continua Allenamento'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('🚪 Esci'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleWorkoutExit() {
+    // 🚀 FIX: Only pop if still mounted and not already processing exit
+    if (!mounted) return;
+
+    developer.log('🚪 Handling workout exit...', name: 'ActiveWorkoutScreen');
+
+    // Cancel timers
+    _workoutTimer?.cancel();
+    _recoveryTimer?.cancel();
+
+    // Reset system UI
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    // Cancel workout if active
+    final currentState = _bloc.state;
+    if (currentState is bloc.WorkoutSessionActive) {
+      _bloc.add(bloc.CancelWorkoutSession(allenamentoId: currentState.activeWorkout.id));
+    }
+
+    // Exit immediately - check if we can pop
+    try {
+      if (mounted && Navigator.of(context).canPop()) {
+        context.pop();
+      }
+    } catch (e) {
+      developer.log('⚠️ Could not pop: $e', name: 'ActiveWorkoutScreen');
+      // Try alternative exit method
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
+  }
+
+  Future<bool?> _showCompleteWorkoutDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.celebration, color: AppColors.success),
+            SizedBox(width: AppConfig.spacingS.w),
+            const Text('Completa Allenamento'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Fantastico! Sei sicuro di voler completare questo allenamento?'),
+            SizedBox(height: AppConfig.spacingM.h),
+            Container(
+              padding: EdgeInsets.all(AppConfig.spacingM.w),
+              decoration: BoxDecoration(
+                color: AppColors.indigo600.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Durata: ${Formatters.formatDuration(_elapsedTime)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.indigo600,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                  SizedBox(height: AppConfig.spacingS.h),
+                  Text(
+                    'Hai completato tutti gli esercizi!',
+                    style: TextStyle(
+                      color: AppColors.success,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(false),
+            child: const Text('Continua'),
+          ),
+          ElevatedButton(
+            onPressed: () => context.pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+            ),
+            child: const Text('🏁 Completa!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // 🎛️ INPUT DIALOGS
+  // ============================================================================
+
+  Future<void> _showWeightPicker(int exerciseId, double currentWeight) async {
+    final weight = await showDialog<double>(
+      context: context,
+      builder: (context) => WeightPickerDialog(initialWeight: currentWeight),
+    );
+
+    if (weight != null && mounted) {
+      setState(() {
+        _exerciseWeights[exerciseId] = weight;
+      });
+    }
+  }
+
+  Future<void> _showRepsPicker(int exerciseId, int currentReps) async {
+    final reps = await showDialog<int>(
+      context: context,
+      builder: (context) => RepsPickerDialog(initialReps: currentReps),
+    );
+
+    if (reps != null && mounted) {
+      setState(() {
+        _exerciseReps[exerciseId] = reps;
+      });
+    }
+  }
 }
 
+// ============================================================================
 // 🎛️ WEIGHT PICKER DIALOG
+// ============================================================================
+
 class WeightPickerDialog extends StatefulWidget {
   final double initialWeight;
 
@@ -1242,14 +1463,17 @@ class _WeightPickerDialogState extends State<WeightPickerDialog> {
 
           SizedBox(height: AppConfig.spacingL.h),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
             children: [
               _buildWeightButton('-5', () => _adjustWeight(-5)),
+              _buildWeightButton('-2.5', () => _adjustWeight(-2.5)),
               _buildWeightButton('-1', () => _adjustWeight(-1)),
               _buildWeightButton('-0.5', () => _adjustWeight(-0.5)),
               _buildWeightButton('+0.5', () => _adjustWeight(0.5)),
               _buildWeightButton('+1', () => _adjustWeight(1)),
+              _buildWeightButton('+2.5', () => _adjustWeight(2.5)),
               _buildWeightButton('+5', () => _adjustWeight(5)),
             ],
           ),
@@ -1272,8 +1496,8 @@ class _WeightPickerDialogState extends State<WeightPickerDialog> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        minimumSize: Size(40.w, 40.h),
-        padding: EdgeInsets.zero,
+        minimumSize: Size(50.w, 40.h),
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
       ),
       child: Text(label),
     );
@@ -1286,7 +1510,10 @@ class _WeightPickerDialogState extends State<WeightPickerDialog> {
   }
 }
 
+// ============================================================================
 // 🔢 REPS PICKER DIALOG
+// ============================================================================
+
 class RepsPickerDialog extends StatefulWidget {
   final int initialReps;
 
@@ -1336,9 +1563,8 @@ class _RepsPickerDialogState extends State<RepsPickerDialog> {
             ],
           ),
 
-          SizedBox(height: AppConfig.spacingM.h),
+          SizedBox(height: AppConfig.spacingL.h),
 
-          // Common values
           Text(
             'Valori comuni:',
             style: TextStyle(
@@ -1351,14 +1577,15 @@ class _RepsPickerDialogState extends State<RepsPickerDialog> {
 
           Wrap(
             spacing: 8.w,
-            children: [5, 8, 10, 12, 15, 20].map((reps) {
+            children: [5, 8, 10, 12, 15, 20, 25].map((reps) {
+              final isSelected = _selectedReps == reps;
               return ElevatedButton(
                 onPressed: () => setState(() => _selectedReps = reps),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _selectedReps == reps
+                  backgroundColor: isSelected
                       ? AppColors.indigo600
                       : Colors.grey.shade200,
-                  foregroundColor: _selectedReps == reps
+                  foregroundColor: isSelected
                       ? Colors.white
                       : AppColors.textPrimary,
                 ),
