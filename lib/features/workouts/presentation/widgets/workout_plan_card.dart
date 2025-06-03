@@ -25,6 +25,9 @@ class WorkoutPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return CustomCard(
       onTap: onTap,
       elevation: AppConfig.elevationS,
@@ -43,7 +46,7 @@ class WorkoutPlanCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface, // ✅ DINAMICO!
                       ),
                     ),
                     if (workoutPlan.dataCreazione != null) ...[
@@ -52,7 +55,7 @@ class WorkoutPlanCard extends StatelessWidget {
                         'Creata il ${_formatDate(workoutPlan.dataCreazione!)}',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                     ],
@@ -83,20 +86,20 @@ class WorkoutPlanCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
                         Icon(Icons.delete, size: 20, color: AppColors.error),
-                        SizedBox(width: 8),
-                        Text('Elimina', style: TextStyle(color: AppColors.error)),
+                        const SizedBox(width: 8),
+                        const Text('Elimina', style: TextStyle(color: AppColors.error)),
                       ],
                     ),
                   ),
                 ],
                 child: Icon(
                   Icons.more_vert,
-                  color: AppColors.textSecondary,
+                  color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                   size: 24.sp,
                 ),
               ),
@@ -110,7 +113,7 @@ class WorkoutPlanCard extends StatelessWidget {
               workoutPlan.descrizione!,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: AppColors.textSecondary,
+                color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
                 height: 1.3,
               ),
               maxLines: 2,
@@ -124,12 +127,14 @@ class WorkoutPlanCard extends StatelessWidget {
           Row(
             children: [
               _buildStatChip(
+                context,
                 icon: Icons.fitness_center,
                 label: '${workoutPlan.esercizi.length} Esercizi',
-                color: AppColors.indigo600,
+                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
               ),
               SizedBox(width: 8.w),
               _buildStatChip(
+                context,
                 icon: Icons.timer,
                 label: '${_calculateEstimatedDuration()} min',
                 color: AppColors.green600,
@@ -148,8 +153,8 @@ class WorkoutPlanCard extends StatelessWidget {
                   icon: const Icon(Icons.play_arrow, size: 20),
                   label: const Text('Inizia Allenamento'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.indigo600,
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -162,8 +167,8 @@ class WorkoutPlanCard extends StatelessWidget {
               OutlinedButton(
                 onPressed: onEdit,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.indigo600,
-                  side: const BorderSide(color: AppColors.indigo600),
+                  foregroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  side: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppConfig.radiusM),
                   ),
@@ -178,11 +183,12 @@ class WorkoutPlanCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
+  Widget _buildStatChip(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required Color color,
+      }) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(

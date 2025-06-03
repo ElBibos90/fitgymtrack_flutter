@@ -117,6 +117,9 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return CustomCard(
       margin: EdgeInsets.only(bottom: AppConfig.spacingS.h),
       child: Column(
@@ -130,14 +133,14 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                 width: 30.w,
                 height: 30.w,
                 decoration: BoxDecoration(
-                  color: AppColors.indigo600,
+                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                   borderRadius: BorderRadius.circular(15.r),
                 ),
                 child: Center(
                   child: Text(
                     '${widget.index + 1}',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isDark ? AppColors.backgroundDark : Colors.white,
                       fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
                     ),
@@ -157,7 +160,7 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: colorScheme.onSurface, // ✅ DINAMICO!
                       ),
                     ),
                     if (widget.exercise.gruppoMuscolare != null) ...[
@@ -166,7 +169,7 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                         widget.exercise.gruppoMuscolare!,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                     ],
@@ -178,7 +181,10 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
               if (!widget.isFirst) ...[
                 IconButton(
                   onPressed: widget.onMoveUp,
-                  icon: const Icon(Icons.keyboard_arrow_up),
+                  icon: Icon(
+                    Icons.keyboard_arrow_up,
+                    color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                  ),
                   iconSize: 20.sp,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -186,7 +192,10 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
               if (!widget.isLast) ...[
                 IconButton(
                   onPressed: widget.onMoveDown,
-                  icon: const Icon(Icons.keyboard_arrow_down),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                  ),
                   iconSize: 20.sp,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -201,6 +210,7 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                 },
                 icon: Icon(
                   _isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                 ),
                 iconSize: 20.sp,
               ),
@@ -232,15 +242,21 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                       SizedBox(height: 4.h),
                       TextFormField(
                         controller: _serieController,
                         keyboardType: TextInputType.number,
+                        style: TextStyle(
+                          color: colorScheme.onSurface, // ✅ DINAMICO!
+                        ),
                         decoration: InputDecoration(
                           hintText: '3',
+                          hintStyle: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+                          ),
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
@@ -263,15 +279,21 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                       SizedBox(height: 4.h),
                       TextFormField(
                         controller: _ripetizioniController,
                         keyboardType: TextInputType.number,
+                        style: TextStyle(
+                          color: colorScheme.onSurface, // ✅ DINAMICO!
+                        ),
                         decoration: InputDecoration(
                           hintText: '10',
+                          hintStyle: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+                          ),
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
@@ -299,15 +321,21 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                       SizedBox(height: 4.h),
                       TextFormField(
                         controller: _pesoController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        style: TextStyle(
+                          color: colorScheme.onSurface, // ✅ DINAMICO!
+                        ),
                         decoration: InputDecoration(
                           hintText: '0.0',
+                          hintStyle: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+                          ),
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
@@ -330,15 +358,21 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                         style: TextStyle(
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                         ),
                       ),
                       SizedBox(height: 4.h),
                       TextFormField(
                         controller: _tempoRecuperoController,
                         keyboardType: TextInputType.number,
+                        style: TextStyle(
+                          color: colorScheme.onSurface, // ✅ DINAMICO!
+                        ),
                         decoration: InputDecoration(
                           hintText: '90',
+                          hintStyle: TextStyle(
+                            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+                          ),
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.w,
@@ -363,15 +397,21 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                   ),
                 ),
                 SizedBox(height: 4.h),
                 TextFormField(
                   controller: _noteController,
                   maxLines: 2,
+                  style: TextStyle(
+                    color: colorScheme.onSurface, // ✅ DINAMICO!
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Aggiungi note per questo esercizio...',
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+                    ),
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12.w,
@@ -387,15 +427,15 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
 
             Row(
               children: [
-                _buildCompactStat('Serie', widget.exercise.serie.toString()),
+                _buildCompactStat(context, 'Serie', widget.exercise.serie.toString()),
                 SizedBox(width: AppConfig.spacingM.w),
-                _buildCompactStat('Rip', widget.exercise.ripetizioni.toString()),
+                _buildCompactStat(context, 'Rip', widget.exercise.ripetizioni.toString()),
                 if (widget.exercise.peso > 0) ...[
                   SizedBox(width: AppConfig.spacingM.w),
-                  _buildCompactStat('Peso', '${widget.exercise.peso.toStringAsFixed(1)} kg'),
+                  _buildCompactStat(context, 'Peso', '${widget.exercise.peso.toStringAsFixed(1)} kg'),
                 ],
                 SizedBox(width: AppConfig.spacingM.w),
-                _buildCompactStat('Rec', '${widget.exercise.tempoRecupero}s'),
+                _buildCompactStat(context, 'Rec', '${widget.exercise.tempoRecupero}s'),
               ],
             ),
           ],
@@ -404,7 +444,9 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
     );
   }
 
-  Widget _buildCompactStat(String label, String value) {
+  Widget _buildCompactStat(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -412,7 +454,7 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
           label,
           style: TextStyle(
             fontSize: 10.sp,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -420,7 +462,7 @@ class _ExerciseEditorCardState extends State<ExerciseEditorCard> {
           value,
           style: TextStyle(
             fontSize: 12.sp,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface, // ✅ DINAMICO!
             fontWeight: FontWeight.bold,
           ),
         ),

@@ -266,7 +266,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 child: Text(
                   'Salva',
                   style: TextStyle(
-                    color: AppColors.indigo600,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF90CAF9)
+                        : AppColors.indigo600, // ✅ DINAMICO!
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -335,18 +337,21 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   Widget _buildEditForm() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Form(
       key: _formKey,
       child: Column(
         children: [
-          // Header con informazioni base
+          // Header con informazioni base ✅ SISTEMATO!
           Container(
             padding: EdgeInsets.all(AppConfig.spacingM.w),
             decoration: BoxDecoration(
-              color: AppColors.backgroundLight,
+              color: colorScheme.surface, // ✅ DINAMICO!
               border: Border(
                 bottom: BorderSide(
-                  color: AppColors.border,
+                  color: colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
                   width: 1,
                 ),
               ),
@@ -355,9 +360,28 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: colorScheme.onSurface, // ✅ DINAMICO!
+                  ),
+                  decoration: InputDecoration(
                     labelText: 'Nome scheda *',
                     hintText: 'Es. Scheda Forza, Allenamento Gambe...',
+                    labelStyle: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
+                    ),
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.5), // ✅ DINAMICO!
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: colorScheme.outline, // ✅ DINAMICO!
+                      ),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                      ),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -370,9 +394,28 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 SizedBox(height: AppConfig.spacingM.h),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: colorScheme.onSurface, // ✅ DINAMICO!
+                  ),
+                  decoration: InputDecoration(
                     labelText: 'Descrizione',
                     hintText: 'Descrizione opzionale della scheda',
+                    labelStyle: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
+                    ),
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withOpacity(0.5), // ✅ DINAMICO!
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: colorScheme.outline, // ✅ DINAMICO!
+                      ),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                      ),
+                    ),
                   ),
                   maxLines: 2,
                   onChanged: (_) => _markAsChanged(),
@@ -393,16 +436,16 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             Container(
               padding: EdgeInsets.all(AppConfig.spacingM.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface, // ✅ DINAMICO!
                 border: Border(
                   top: BorderSide(
-                    color: AppColors.border,
+                    color: colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
                     width: 1,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.shadow,
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), // ✅ DINAMICO!
                     blurRadius: AppConfig.elevationM,
                     offset: const Offset(0, -2),
                   ),
@@ -442,6 +485,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   Widget _buildEmptyExercisesState() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -449,7 +495,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           Icon(
             Icons.fitness_center,
             size: 64.sp,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
           ),
           SizedBox(height: AppConfig.spacingL.h),
           Text(
@@ -457,7 +503,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface, // ✅ DINAMICO!
             ),
           ),
           SizedBox(height: AppConfig.spacingS.h),
@@ -465,7 +511,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             'Aggiungi esercizi per completare la scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             ),
           ),
           SizedBox(height: AppConfig.spacingXL.h),
@@ -486,6 +532,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   Widget _buildErrorState(WorkoutError state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -509,7 +557,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             state.message,
             style: TextStyle(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             ),
             textAlign: TextAlign.center,
           ),

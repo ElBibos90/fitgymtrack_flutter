@@ -113,13 +113,18 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: colorScheme.surface, // ✅ DINAMICO!
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
-          color: _isEditing ? AppColors.indigo600 : AppColors.border,
+          color: _isEditing
+              ? (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600)
+              : colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
           width: _isEditing ? 2 : 1,
         ),
       ),
@@ -127,23 +132,28 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header con nome esercizio e azioni
-          _buildHeader(),
+          _buildHeader(context),
 
           // Parametri (view o edit mode)
           if (_isEditing)
-            _buildEditMode()
+            _buildEditMode(context)
           else
-            _buildViewMode(),
+            _buildViewMode(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: _isEditing ? AppColors.indigo600.withOpacity(0.05) : Colors.transparent,
+        color: _isEditing
+            ? (isDark ? const Color(0xFF90CAF9).withOpacity(0.05) : AppColors.indigo600.withOpacity(0.05))
+            : Colors.transparent,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppConfig.radiusM),
           topRight: Radius.circular(AppConfig.radiusM),
@@ -161,14 +171,18 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   icon: Icon(Icons.keyboard_arrow_up, size: 20.sp),
                   constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
                   padding: EdgeInsets.zero,
-                  color: widget.isFirst ? AppColors.textSecondary : AppColors.indigo600,
+                  color: widget.isFirst
+                      ? colorScheme.onSurface.withOpacity(0.3)
+                      : (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
                 ),
                 IconButton(
                   onPressed: widget.isLast ? null : widget.onMoveDown,
                   icon: Icon(Icons.keyboard_arrow_down, size: 20.sp),
                   constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
                   padding: EdgeInsets.zero,
-                  color: widget.isLast ? AppColors.textSecondary : AppColors.indigo600,
+                  color: widget.isLast
+                      ? colorScheme.onSurface.withOpacity(0.3)
+                      : (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
                 ),
               ],
             ),
@@ -185,7 +199,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: colorScheme.onSurface, // ✅ DINAMICO!
                   ),
                 ),
                 if (widget.exercise.gruppoMuscolare?.isNotEmpty == true) ...[
@@ -194,7 +208,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     widget.exercise.gruppoMuscolare!,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -239,7 +253,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           ] else ...[
             IconButton(
               onPressed: () => setState(() => _isEditing = true),
-              icon: Icon(Icons.edit, color: AppColors.indigo600, size: 20.sp),
+              icon: Icon(
+                  Icons.edit,
+                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  size: 20.sp
+              ),
               constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
             ),
             IconButton(
@@ -253,7 +271,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
   }
 
-  Widget _buildViewMode() {
+  Widget _buildViewMode(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -262,13 +282,14 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           // Parametri principali in griglia
           Row(
             children: [
-              _buildViewParameter('Serie', widget.exercise.serie.toString()),
+              _buildViewParameter(context, 'Serie', widget.exercise.serie.toString()),
               _buildViewParameter(
+                  context,
                   _isIsometric ? 'Secondi' : 'Ripetizioni',
                   widget.exercise.ripetizioni.toString()
               ),
-              _buildViewParameter('Peso', '${widget.exercise.peso.toStringAsFixed(1)} kg'),
-              _buildViewParameter('Recupero', '${widget.exercise.tempoRecupero}s'),
+              _buildViewParameter(context, 'Peso', '${widget.exercise.peso.toStringAsFixed(1)} kg'),
+              _buildViewParameter(context, 'Recupero', '${widget.exercise.tempoRecupero}s'),
             ],
           ),
 
@@ -279,9 +300,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               width: double.infinity,
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppColors.backgroundLight,
+                color: colorScheme.surface.withOpacity(0.5), // ✅ DINAMICO!
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: AppColors.border.withOpacity(0.5)),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.3)), // ✅ DINAMICO!
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +312,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
+                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -299,7 +320,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     widget.exercise.note!,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: AppColors.textPrimary,
+                      color: colorScheme.onSurface, // ✅ DINAMICO!
                     ),
                   ),
                 ],
@@ -319,7 +340,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                       AppColors.warning
                   ),
                 if (_isIsometric)
-                  _buildIndicator('⏱️ Isometrico', AppColors.indigo600),
+                  _buildIndicator('⏱️ Isometrico', Theme.of(context).brightness == Brightness.dark ? const Color(0xFF90CAF9) : AppColors.indigo600),
               ],
             ),
           ],
@@ -328,7 +349,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
   }
 
-  Widget _buildViewParameter(String label, String value) {
+  Widget _buildViewParameter(BuildContext context, String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -337,7 +360,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
             label,
             style: TextStyle(
               fontSize: 12.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -346,7 +369,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
             value,
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface, // ✅ DINAMICO!
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -374,7 +397,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
   }
 
-  Widget _buildEditMode() {
+  Widget _buildEditMode(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -383,9 +408,10 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           // Parametri principali
           Row(
             children: [
-              Expanded(child: _buildEditField('Serie', _serieController, false)),
+              Expanded(child: _buildEditField(context, 'Serie', _serieController, false)),
               SizedBox(width: 12.w),
               Expanded(child: _buildEditField(
+                  context,
                   _isIsometric ? 'Secondi' : 'Ripetizioni',
                   _repsController,
                   false
@@ -397,16 +423,16 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
           Row(
             children: [
-              Expanded(child: _buildEditField('Peso (kg)', _weightController, true)),
+              Expanded(child: _buildEditField(context, 'Peso (kg)', _weightController, true)),
               SizedBox(width: 12.w),
-              Expanded(child: _buildEditField('Recupero (s)', _recoveryController, false)),
+              Expanded(child: _buildEditField(context, 'Recupero (s)', _recoveryController, false)),
             ],
           ),
 
           SizedBox(height: 16.h),
 
           // Set Type Dropdown
-          _buildSetTypeDropdown(),
+          _buildSetTypeDropdown(context),
 
           SizedBox(height: 16.h),
 
@@ -418,13 +444,19 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   child: CheckboxListTile(
                     title: Text(
                       'Collegato al precedente',
-                      style: TextStyle(fontSize: 14.sp),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: colorScheme.onSurface, // ✅ DINAMICO!
+                      ),
                     ),
                     subtitle: Text(
                       _selectedSetType == 'superset'
                           ? 'Esegui subito dopo l\'esercizio precedente'
                           : 'Parte del circuito precedente',
-                      style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                      ),
                     ),
                     value: _linkedToPrevious,
                     onChanged: (value) => setState(() => _linkedToPrevious = value ?? false),
@@ -442,11 +474,17 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                 child: CheckboxListTile(
                   title: Text(
                     'Esercizio isometrico',
-                    style: TextStyle(fontSize: 14.sp),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: colorScheme.onSurface, // ✅ DINAMICO!
+                    ),
                   ),
                   subtitle: Text(
                     'Mantieni la posizione per i secondi indicati',
-                    style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                    ),
                   ),
                   value: _isIsometric,
                   onChanged: (value) => setState(() => _isIsometric = value ?? false),
@@ -460,13 +498,15 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           SizedBox(height: 16.h),
 
           // Note field
-          _buildNotesField(),
+          _buildNotesField(context),
         ],
       ),
     );
   }
 
-  Widget _buildEditField(String label, TextEditingController controller, bool isDecimal) {
+  Widget _buildEditField(BuildContext context, String label, TextEditingController controller, bool isDecimal) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -474,7 +514,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -484,16 +524,20 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           keyboardType: isDecimal
               ? const TextInputType.numberWithOptions(decimal: true)
               : TextInputType.number,
+          style: TextStyle(
+            color: colorScheme.onSurface, // ✅ DINAMICO!
+          ),
           decoration: InputDecoration(
             isDense: true,
             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppColors.indigo600),
+              borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF90CAF9) : AppColors.indigo600),
             ),
           ),
         ),
@@ -501,7 +545,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
   }
 
-  Widget _buildSetTypeDropdown() {
+  Widget _buildSetTypeDropdown(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     const setTypes = [
       ('normal', 'Normale'),
       ('superset', 'Superset'),
@@ -518,19 +564,22 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           'Tipo di Serie',
           style: TextStyle(
             fontSize: 12.sp,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             fontWeight: FontWeight.w500,
           ),
         ),
         SizedBox(height: 4.h),
         DropdownButtonFormField<String>(
           value: _selectedSetType,
+          style: TextStyle(
+            color: colorScheme.onSurface, // ✅ DINAMICO!
+          ),
           decoration: InputDecoration(
             isDense: true,
             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
             ),
           ),
           items: setTypes.map((type) => DropdownMenuItem(
@@ -551,7 +600,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
   }
 
-  Widget _buildNotesField() {
+  Widget _buildNotesField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -559,7 +610,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
           'Note (opzionale)',
           style: TextStyle(
             fontSize: 12.sp,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -567,17 +618,24 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
         TextFormField(
           controller: _notesController,
           maxLines: 3,
+          style: TextStyle(
+            color: colorScheme.onSurface, // ✅ DINAMICO!
+          ),
           decoration: InputDecoration(
             hintText: 'Aggiungi note per questo esercizio...',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+            ),
             isDense: true,
             contentPadding: EdgeInsets.all(12.w),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: AppColors.indigo600),
+              borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF90CAF9) : AppColors.indigo600),
             ),
           ),
         ),
@@ -586,6 +644,8 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
   }
 
   Color _getSetTypeColor() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     switch (_selectedSetType) {
       case 'superset':
         return AppColors.warning;
@@ -598,7 +658,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       case 'circuit':
         return Colors.green;
       default:
-        return AppColors.indigo600;
+        return isDark ? const Color(0xFF90CAF9) : AppColors.indigo600;
     }
   }
 

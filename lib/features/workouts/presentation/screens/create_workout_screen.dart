@@ -253,7 +253,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                     child: Text(
                       'Salva',
                       style: TextStyle(
-                        color: AppColors.indigo600,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF90CAF9)
+                            : AppColors.indigo600, // ✅ DINAMICO!
                         fontWeight: FontWeight.w600,
                         fontSize: 16.sp,
                       ),
@@ -368,6 +370,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildBasicInfoSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -376,7 +380,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: colorScheme.onSurface, // ✅ DINAMICO!
           ),
         ),
         SizedBox(height: 16.h),
@@ -414,6 +418,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildExercisesSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -425,7 +432,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: colorScheme.onSurface, // ✅ DINAMICO!
                 ),
               ),
             ),
@@ -447,14 +454,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 height: 20.w,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Colors.white,
+                  color: isDark ? AppColors.backgroundDark : Colors.white,
                 ),
               )
                   : const Icon(Icons.add, size: 20),
               label: Text(_isLoadingAvailableExercises ? 'Caricamento...' : 'Aggiungi'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.indigo600,
-                foregroundColor: Colors.white,
+                backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -475,14 +482,17 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildEmptyExercisesState() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: AppColors.indigo600.withOpacity(0.05),
+        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.05),
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
-          color: AppColors.indigo600.withOpacity(0.2),
+          color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.2),
           style: BorderStyle.solid,
         ),
       ),
@@ -491,7 +501,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           Icon(
             Icons.fitness_center,
             size: 48.sp,
-            color: AppColors.indigo600.withOpacity(0.5),
+            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.5),
           ),
           SizedBox(height: 12.h),
           Text(
@@ -499,7 +509,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: colorScheme.onSurface, // ✅ DINAMICO!
             ),
           ),
           SizedBox(height: 4.h),
@@ -509,7 +519,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 : 'Aggiungi degli esercizi per creare la tua scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textSecondary,
+              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
             ),
             textAlign: TextAlign.center,
           ),
@@ -537,6 +547,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildActionButtons() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         SizedBox(
@@ -545,8 +558,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           child: ElevatedButton(
             onPressed: _saveWorkout,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.indigo600,
-              foregroundColor: Colors.white,
+              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -568,8 +581,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           child: OutlinedButton(
             onPressed: () => context.pop(),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              side: BorderSide(color: AppColors.border),
+              foregroundColor: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+              side: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
               ),
