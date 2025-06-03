@@ -137,8 +137,6 @@ class RemoveLocalSeries extends ActiveWorkoutEvent {
   List<Object> get props => [exerciseId, seriesId];
 }
 
-/// 🚀 EVENTO DEPRECATO: UpdateCompletedSeriesData rimosso per evitare conflitti
-
 // ============================================================================
 // ACTIVE WORKOUT STATES
 // ============================================================================
@@ -226,6 +224,16 @@ class WorkoutSessionActive extends ActiveWorkoutState {
   }
 }
 
+/// 🚀 NUOVO: Stato temporaneo per salvare serie senza loading
+class SeriesSaving extends ActiveWorkoutState {
+  final String message;
+
+  const SeriesSaving({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
 /// Stato con serie salvata con successo
 class SeriesSaved extends ActiveWorkoutState {
   final SaveCompletedSeriesResponse response;
@@ -304,7 +312,6 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     on<UpdateWorkoutTimer>(_onUpdateWorkoutTimer);
     on<AddLocalSeries>(_onAddLocalSeries);
     on<RemoveLocalSeries>(_onRemoveLocalSeries);
-    // UpdateCompletedSeriesData rimosso per evitare conflitti
 
     developer.log('✅ [INIT] ActiveWorkoutBloc event handlers registered', name: 'ActiveWorkoutBloc');
   }
@@ -455,82 +462,122 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     // Questo previene lo stato inconsistente
   }
 
-  /// Handler per caricare le serie completate
+  /// 🚀 FIX: Handler per caricare le serie completate - NON SOVRASCRIVE LO STATO LOCALE
   Future<void> _onLoadCompletedSeries(
       LoadCompletedSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    developer.log('Loading completed series for workout: ${event.allenamentoId}',
-        name: 'ActiveWorkoutBloc');
+    developer.log('📊 [EVENT] LoadCompletedSeries received - Workout: ${event.allenamentoId}', name: 'ActiveWorkoutBloc');
 
-    final result = await _workoutRepository.getCompletedSeries(event.allenamentoId);
+    // ✅ NON emettere loading se siamo già in WorkoutSessionActive
+    if (state is! WorkoutSessionActive) {
+      developer.log('⚠️ [WARNING] LoadCompletedSeries called but not in active session', name: 'ActiveWorkoutBloc');
+      return;
+    }
 
-    result.fold(
-      onSuccess: (completedSeriesList) {
-        developer.log('Successfully loaded ${completedSeriesList.length} completed series',
-            name: 'ActiveWorkoutBloc');
+    final activeState = state as WorkoutSessionActive;
 
-        // Organizza le serie per esercizio
-        final Map<int, List<CompletedSeriesData>> seriesByExercise = {};
-        for (final series in completedSeriesList) {
-          final exerciseId = series.schedaEsercizioId;
-          if (!seriesByExercise.containsKey(exerciseId)) {
-            seriesByExercise[exerciseId] = [];
+    try {
+      final result = await _workoutRepository.getCompletedSeries(event.allenamentoId);
+
+      result.fold(
+        onSuccess: (completedSeriesList) {
+          developer.log('✅ [API] Successfully loaded ${completedSeriesList.length} completed series from server',
+              name: 'ActiveWorkoutBloc');
+
+          // Organizza le serie per esercizio
+          final Map<int, List<CompletedSeriesData>> seriesByExercise = {};
+          for (final series in completedSeriesList) {
+            final exerciseId = series.schedaEsercizioId;
+            if (!seriesByExercise.containsKey(exerciseId)) {
+              seriesByExercise[exerciseId] = [];
+            }
+            seriesByExercise[exerciseId]!.add(series);
           }
-          seriesByExercise[exerciseId]!.add(series);
-        }
 
-        // Aggiorna lo stato se siamo in workout attivo
-        if (state is WorkoutSessionActive) {
-          final activeState = state as WorkoutSessionActive;
-          emit(activeState.copyWith(completedSeries: seriesByExercise));
-        }
-      },
-      onFailure: (exception, message) {
-        developer.log('Error loading completed series: $message',
-            name: 'ActiveWorkoutBloc', error: exception);
-        // Non emettiamo errore per questo, è normale che non ci siano serie all'inizio
-      },
-    );
+          // 🚀 FIX: MERGE con stato locale invece di sovrascrivere
+          final Map<int, List<CompletedSeriesData>> mergedSeries = Map<int, List<CompletedSeriesData>>.from(activeState.completedSeries);
+
+          // Aggiorna solo se ci sono più serie dal server
+          for (final entry in seriesByExercise.entries) {
+            final exerciseId = entry.key;
+            final serverSeries = entry.value;
+            final localSeries = mergedSeries[exerciseId] ?? [];
+
+            // Se il server ha più serie di quelle locali, usa quelle del server
+            if (serverSeries.length > localSeries.length) {
+              mergedSeries[exerciseId] = serverSeries;
+              developer.log('🔄 [MERGE] Updated exercise $exerciseId: ${serverSeries.length} series from server',
+                  name: 'ActiveWorkoutBloc');
+            } else {
+              developer.log('✅ [MERGE] Keeping local state for exercise $exerciseId: ${localSeries.length} local vs ${serverSeries.length} server',
+                  name: 'ActiveWorkoutBloc');
+            }
+          }
+
+          // Emetti solo se ci sono cambiamenti
+          if (mergedSeries.toString() != activeState.completedSeries.toString()) {
+            emit(activeState.copyWith(completedSeries: mergedSeries));
+            developer.log('🔄 [STATE] Updated completed series state', name: 'ActiveWorkoutBloc');
+          } else {
+            developer.log('✅ [STATE] No changes needed, keeping current state', name: 'ActiveWorkoutBloc');
+          }
+        },
+        onFailure: (exception, message) {
+          developer.log('⚠️ [WARNING] Error loading completed series: $message (This is normal for new workouts)',
+              name: 'ActiveWorkoutBloc', error: exception);
+          // Non emettiamo errore per questo, è normale che non ci siano serie all'inizio
+        },
+      );
+    } catch (e) {
+      developer.log('💥 [EXCEPTION] Exception in LoadCompletedSeries: $e',
+          name: 'ActiveWorkoutBloc', error: e);
+      // Non emettere errore, mantieni lo stato corrente
+    }
   }
 
-  /// Handler per aggiornare le serie completate (RIMOSSO per evitare conflitti)
-
-  /// Handler per salvare una serie completata
+  /// 🚀 FIX: Handler per salvare una serie completata - NON CAMBIARE STATO
   Future<void> _onSaveCompletedSeries(
       SaveCompletedSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    developer.log('Saving completed series for workout: ${event.allenamentoId}',
+    developer.log('💾 [BLOC] SaveCompletedSeries received - Workout: ${event.allenamentoId}, Series: ${event.serie.length}',
         name: 'ActiveWorkoutBloc');
 
-    final result = await _workoutRepository.saveCompletedSeries(
-      event.allenamentoId,
-      event.serie,
-      event.requestId,
-    );
+    try {
+      final result = await _workoutRepository.saveCompletedSeries(
+        event.allenamentoId,
+        event.serie,
+        event.requestId,
+      );
 
-    result.fold(
-      onSuccess: (response) {
-        developer.log('Successfully saved completed series', name: 'ActiveWorkoutBloc');
+      result.fold(
+        onSuccess: (response) {
+          developer.log('✅ [BLOC] Successfully saved completed series', name: 'ActiveWorkoutBloc');
 
-        emit(SeriesSaved(
-          response: response,
-          message: response.message,
-        ));
+          // 🚀 FIX: NON emettere SeriesSaved - rimani in WorkoutSessionActive!
+          // Il salvataggio è avvenuto con successo, ma non cambiamo stato
+          developer.log('✅ [BLOC] Series saved but keeping current state', name: 'ActiveWorkoutBloc');
 
-        // Ricarica le serie completate per aggiornare lo stato
-        add(LoadCompletedSeries(allenamentoId: event.allenamentoId));
-      },
-      onFailure: (exception, message) {
-        developer.log('Error saving completed series: $message',
-            name: 'ActiveWorkoutBloc', error: exception);
-        emit(ActiveWorkoutError(
-          message: message ?? 'Errore nel salvataggio della serie',
-          exception: exception,
-        ));
-      },
-    );
+          // Non emettere nulla - rimaniamo nello stato corrente
+        },
+        onFailure: (exception, message) {
+          developer.log('❌ [BLOC] Error saving completed series: $message',
+              name: 'ActiveWorkoutBloc', error: exception);
+          emit(ActiveWorkoutError(
+            message: message ?? 'Errore nel salvataggio della serie',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      developer.log('💥 [BLOC] Exception in SaveCompletedSeries: $e',
+          name: 'ActiveWorkoutBloc', error: e);
+      emit(ActiveWorkoutError(
+        message: 'Errore critico nel salvataggio: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   /// Handler per completare l'allenamento
@@ -540,7 +587,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     emit(const ActiveWorkoutLoading(message: 'Completamento allenamento...'));
 
-    developer.log('Completing workout session: ${event.allenamentoId}', name: 'ActiveWorkoutBloc');
+    developer.log('🏁 [EVENT] Completing workout session: ${event.allenamentoId}', name: 'ActiveWorkoutBloc');
 
     final result = await _workoutRepository.completeWorkout(
       event.allenamentoId,
@@ -550,7 +597,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
     result.fold(
       onSuccess: (response) {
-        developer.log('Successfully completed workout session', name: 'ActiveWorkoutBloc');
+        developer.log('✅ [API] Successfully completed workout session', name: 'ActiveWorkoutBloc');
 
         emit(WorkoutSessionCompleted(
           response: response,
@@ -559,7 +606,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         ));
       },
       onFailure: (exception, message) {
-        developer.log('Error completing workout session: $message',
+        developer.log('❌ [ERROR] Error completing workout session: $message',
             name: 'ActiveWorkoutBloc', error: exception);
         emit(ActiveWorkoutError(
           message: message ?? 'Errore nel completamento dell\'allenamento',
@@ -576,20 +623,20 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     emit(const ActiveWorkoutLoading(message: 'Annullamento allenamento...'));
 
-    developer.log('Cancelling workout session: ${event.allenamentoId}', name: 'ActiveWorkoutBloc');
+    developer.log('🚪 [EVENT] Cancelling workout session: ${event.allenamentoId}', name: 'ActiveWorkoutBloc');
 
     final result = await _workoutRepository.deleteWorkout(event.allenamentoId);
 
     result.fold(
       onSuccess: (success) {
-        developer.log('Successfully cancelled workout session', name: 'ActiveWorkoutBloc');
+        developer.log('✅ [API] Successfully cancelled workout session', name: 'ActiveWorkoutBloc');
 
         emit(const WorkoutSessionCancelled(
           message: 'Allenamento annullato con successo',
         ));
       },
       onFailure: (exception, message) {
-        developer.log('Error cancelling workout session: $message',
+        developer.log('❌ [ERROR] Error cancelling workout session: $message',
             name: 'ActiveWorkoutBloc', error: exception);
         emit(ActiveWorkoutError(
           message: message ?? 'Errore nell\'annullamento dell\'allenamento',
@@ -610,14 +657,19 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     }
   }
 
-  /// Handler per aggiungere serie locale
+  /// 🚀 FIX: Handler per aggiungere serie locale - CON LOGGING INTENSIVO
   Future<void> _onAddLocalSeries(
       AddLocalSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
+    developer.log('📋 [BLOC] AddLocalSeries - Exercise: ${event.exerciseId}', name: 'ActiveWorkoutBloc');
+
     if (state is WorkoutSessionActive) {
       final activeState = state as WorkoutSessionActive;
+      developer.log('✅ [BLOC] Currently in active state with ${activeState.exercises.length} exercises', name: 'ActiveWorkoutBloc');
+
       final updatedSeries = Map<int, List<CompletedSeriesData>>.from(activeState.completedSeries);
+      developer.log('📊 [BLOC] Current series map has ${updatedSeries.keys.length} exercises', name: 'ActiveWorkoutBloc');
 
       // Converti SeriesData in CompletedSeriesData per l'UI
       final completedSeries = CompletedSeriesData(
@@ -634,10 +686,22 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       if (!updatedSeries.containsKey(event.exerciseId)) {
         updatedSeries[event.exerciseId] = [];
+        developer.log('🆕 [BLOC] Created new series list for exercise ${event.exerciseId}', name: 'ActiveWorkoutBloc');
       }
-      updatedSeries[event.exerciseId]!.add(completedSeries);
 
-      emit(activeState.copyWith(completedSeries: updatedSeries));
+      final previousCount = updatedSeries[event.exerciseId]!.length;
+      updatedSeries[event.exerciseId]!.add(completedSeries);
+      final newCount = updatedSeries[event.exerciseId]!.length;
+
+      developer.log('✅ [BLOC] Added local series for exercise ${event.exerciseId}: ${previousCount} -> ${newCount}', name: 'ActiveWorkoutBloc');
+      developer.log('📊 [BLOC] Total series map now has ${updatedSeries.keys.length} exercises', name: 'ActiveWorkoutBloc');
+
+      // Emit new state
+      final newState = activeState.copyWith(completedSeries: updatedSeries);
+      emit(newState);
+      developer.log('🔄 [BLOC] Emitted new WorkoutSessionActive state', name: 'ActiveWorkoutBloc');
+    } else {
+      developer.log('⚠️ [BLOC] AddLocalSeries called but not in active session: ${state.runtimeType}', name: 'ActiveWorkoutBloc');
     }
   }
 
@@ -666,7 +730,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ResetActiveWorkoutState event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    developer.log('Resetting active workout state', name: 'ActiveWorkoutBloc');
+    developer.log('🔄 [EVENT] Resetting active workout state', name: 'ActiveWorkoutBloc');
     emit(const ActiveWorkoutInitial());
   }
 
