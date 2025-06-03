@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -20,6 +20,13 @@ import '../../../../core/di/dependency_injection.dart';
 import '../../bloc/active_workout_bloc.dart' as bloc;
 import '../../models/active_workout_models.dart' as models;
 import '../../models/workout_plan_models.dart';
+
+// 🛠️ Helper function for logging
+void _log(String message, {String name = 'ActiveWorkoutScreen'}) {
+  if (kDebugMode) {
+    debugPrint('[$name] $message');
+  }
+}
 
 // ============================================================================
 // 🎯 MAIN ACTIVE WORKOUT SCREEN - FULLSCREEN ONLY
@@ -72,7 +79,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void initState() {
     super.initState();
 
-    developer.log('🚀 ActiveWorkoutScreen 2.0 - Fullscreen Mode INIT', name: 'ActiveWorkoutScreen');
+    //_log('🚀 ActiveWorkoutScreen 2.0 - Fullscreen Mode INIT');
 
     _bloc = context.read<bloc.ActiveWorkoutBloc>();
     _sessionService = getIt<SessionService>();
@@ -142,16 +149,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   Future<void> _initializeWorkout() async {
-    developer.log('🚀 Initializing fullscreen workout...', name: 'ActiveWorkoutScreen');
+    //_log('🚀 Initializing fullscreen workout...');
 
     final userId = await _sessionService.getCurrentUserId();
 
     if (userId != null) {
       if (widget.allenamentoId != null) {
-        developer.log('🔄 Loading existing workout: ${widget.allenamentoId}', name: 'ActiveWorkoutScreen');
+        //_log('🔄 Loading existing workout: ${widget.allenamentoId}');
         _bloc.add(bloc.LoadCompletedSeries(allenamentoId: widget.allenamentoId!));
       } else {
-        developer.log('🆕 Starting new fullscreen workout session', name: 'ActiveWorkoutScreen');
+        //_log('🆕 Starting new fullscreen workout session');
 
         // Reset state before starting
         _bloc.add(const bloc.ResetActiveWorkoutState());
@@ -161,7 +168,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         _bloc.add(bloc.StartWorkoutSession(userId: userId, schedaId: widget.schedaId));
       }
     } else {
-      developer.log('❌ No user ID found!', name: 'ActiveWorkoutScreen');
+      //_log('❌ No user ID found!');
       if (mounted) {
         CustomSnackbar.show(
           context,
@@ -291,12 +298,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _completeSeries(WorkoutExercise exercise, int seriesNumber) {
-    print('🚨 COMPLETESERIES CALLED - Exercise: ${exercise.id}, Series: $seriesNumber');
-    print('🚨 BLOC STATE: ${_bloc.state.runtimeType}'); // <-- AGGIUNGIAMO QUESTO!
+    //_log('🚨 COMPLETESERIES CALLED - Exercise: ${exercise.id}, Series: $seriesNumber');
+    //_log('🚨 BLOC STATE: ${_bloc.state.runtimeType}'); // <-- AGGIUNGIAMO QUESTO!
 
     // 🚀 FIX: Prevent multiple saves
     if (_isSavingSeries) {
-      print('🚨 ALREADY SAVING - BLOCKING REQUEST');
+      //_log('🚨 ALREADY SAVING - BLOCKING REQUEST');
       return;
     }
 
@@ -312,7 +319,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    print('🚨 SETTING SAVING FLAG TO TRUE');
+    //_log('🚨 SETTING SAVING FLAG TO TRUE');
     setState(() {
       _isSavingSeries = true;
     });
@@ -326,33 +333,33 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       serieId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-    print('🚨 ADDING LOCAL SERIES');
+    //_log('🚨 ADDING LOCAL SERIES');
     _bloc.add(bloc.AddLocalSeries(exerciseId: exercise.id, seriesData: seriesData));
 
     // 🚀 FIX: Check state immediately and skip server save if needed
     Future.delayed(const Duration(milliseconds: 200), () {
-      print('🚨 DELAYED SAVE STARTED');
+      //_log('🚨 DELAYED SAVE STARTED');
       final currentState = _bloc.state;
-      print('🚨 BLOC STATE IN DELAYED: ${currentState.runtimeType}'); // <-- E QUESTO!
+      //_log('🚨 BLOC STATE IN DELAYED: ${currentState.runtimeType}'); // <-- E QUESTO!
 
       if (currentState is bloc.WorkoutSessionActive) {
         final requestId = 'save_${DateTime.now().millisecondsSinceEpoch}';
-        print('🚨 SENDING SAVE REQUEST: $requestId');
+        //_log('🚨 SENDING SAVE REQUEST: $requestId');
         _bloc.add(bloc.SaveCompletedSeries(
           allenamentoId: currentState.activeWorkout.id,
           serie: [seriesData],
           requestId: requestId,
         ));
       } else {
-        print('🚨 NOT IN ACTIVE STATE - SKIPPING SERVER SAVE');
+        //_log('🚨 NOT IN ACTIVE STATE - SKIPPING SERVER SAVE');
         // 🚀 NEW: Still reset flag and show success even if server save is skipped
       }
 
       // 🚀 ALWAYS reset flag after 2 seconds
       Timer(const Duration(seconds: 2), () {
-        print('🚨 TIMER RESET TRIGGERED');
+        //_log('🚨 TIMER RESET TRIGGERED');
         if (mounted && _isSavingSeries) {
-          print('🚨 RESETTING SAVING FLAG TO FALSE');
+          //_log('🚨 RESETTING SAVING FLAG TO FALSE');
           setState(() {
             _isSavingSeries = false;
           });
@@ -381,7 +388,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       isSuccess: true,
     );
 
-    print('🚨 COMPLETESERIES FINISHED');
+    //_log('🚨 COMPLETESERIES FINISHED');
   }
 
   // ============================================================================
@@ -421,12 +428,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           listener: _handleBlocStateChanges,
           buildWhen: (previous, current) {
             // 🚀 FIX: Improved buildWhen logic with debug
-            developer.log('🔄 [UI] buildWhen: ${previous.runtimeType} -> ${current.runtimeType}, isSaving: $_isSavingSeries',
-                name: 'ActiveWorkoutScreen');
+            //_log('🔄 [UI] buildWhen: ${previous.runtimeType} -> ${current.runtimeType}, isSaving: $_isSavingSeries');
 
             if (current is bloc.SeriesSaved) {
               // Don't rebuild on SeriesSaved - the listener will handle it
-              developer.log('✅ [UI] SeriesSaved - not rebuilding UI, listener will handle', name: 'ActiveWorkoutScreen');
+              //_log('✅ [UI] SeriesSaved - not rebuilding UI, listener will handle');
               return false;
             }
 
@@ -434,30 +440,28 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 previous is bloc.WorkoutSessionActive &&
                 _isSavingSeries) {
               // Don't show loading if we're just saving a series
-              developer.log('⚠️ [UI] Preventing loading during series save', name: 'ActiveWorkoutScreen');
+              //_log('⚠️ [UI] Preventing loading during series save');
               return false;
             }
 
-            developer.log('✅ [UI] Allowing UI rebuild', name: 'ActiveWorkoutScreen');
+            //_log('✅ [UI] Allowing UI rebuild');
             return true;
           },
           builder: (context, state) {
             // 🚀 FIX: Don't show loading overlay when saving series
             final shouldShowLoading = state is bloc.ActiveWorkoutLoading && !_isSavingSeries;
 
-            developer.log('🎨 [UI] Building with state: ${state.runtimeType}, showLoading: $shouldShowLoading, isSaving: $_isSavingSeries',
-                name: 'ActiveWorkoutScreen');
+            //_log('🎨 [UI] Building with state: ${state.runtimeType}, showLoading: $shouldShowLoading, isSaving: $_isSavingSeries');
 
             // 🚀 SUPER FIX: Force reset flag if API succeeded but state didn't change
             if (_isSavingSeries && state is bloc.WorkoutSessionActive) {
-              developer.log('🚨 [UI] EMERGENCY: Saving flag still true but in active state - forcing reset!',
-                  name: 'ActiveWorkoutScreen');
+              //_log('🚨 [UI] EMERGENCY: Saving flag still true but in active state - forcing reset!');
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted && _isSavingSeries) {
                   setState(() {
                     _isSavingSeries = false;
                   });
-                  developer.log('🔧 [UI] EMERGENCY: Force reset _isSavingSeries to false', name: 'ActiveWorkoutScreen');
+                  //_log('🔧 [UI] EMERGENCY: Force reset _isSavingSeries to false');
                 }
               });
             }
@@ -474,11 +478,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleBlocStateChanges(BuildContext context, bloc.ActiveWorkoutState state) {
-    print('🚨 LISTENER STATE CHANGED: ${state.runtimeType}'); // <-- TRACE DEGLI STATI
+    //_log('🚨 LISTENER STATE CHANGED: ${state.runtimeType}'); // <-- TRACE DEGLI STATI
 
     if (state is bloc.WorkoutSessionActive) {
-      print('🚨 LISTENER: WorkoutSessionActive with ${state.exercises.length} exercises');
-      print('🚨 LISTENER: Completed series: ${state.completedSeries.keys.length} exercises have series');
+      //_log('🚨 LISTENER: WorkoutSessionActive with ${state.exercises.length} exercises');
+      //_log('🚨 LISTENER: Completed series: ${state.completedSeries.keys.length} exercises have series');
 
       // 🚀 FIX: Force update UI on active state changes
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -493,7 +497,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       });
     } else if (state is bloc.SeriesSaved) {
       // 🚀 REMOVED: Questo stato non dovrebbe più essere emesso
-      print('🚨 LISTENER: SeriesSaved (questo non dovrebbe succedere!)');
+      //_log('🚨 LISTENER: SeriesSaved (questo non dovrebbe succedere!)');
 
       // Reset saving flag se per caso arriva ancora
       setState(() {
@@ -508,7 +512,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       );
 
     } else if (state is bloc.WorkoutSessionCompleted) {
-      print('🚨 LISTENER: WorkoutSessionCompleted');
+      //_log('🚨 LISTENER: WorkoutSessionCompleted');
       CustomSnackbar.show(
         context,
         message: '🎉 Allenamento completato con successo!',
@@ -520,21 +524,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         }
       });
     } else if (state is bloc.WorkoutSessionCancelled) {
-      print('🚨 LISTENER: WorkoutSessionCancelled');
+      //_log('🚨 LISTENER: WorkoutSessionCancelled');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           context.pop();
         }
       });
     } else if (state is bloc.ActiveWorkoutError) {
-      print('🚨 LISTENER: ActiveWorkoutError - ${state.message}');
+      //_log('🚨 LISTENER: ActiveWorkoutError - ${state.message}');
 
       // Reset saving flag on error
       if (_isSavingSeries) {
         setState(() {
           _isSavingSeries = false;
         });
-        print('🚨 LISTENER: Reset _isSavingSeries flag due to error');
+        //_log('🚨 LISTENER: Reset _isSavingSeries flag due to error');
       }
 
       CustomSnackbar.show(
@@ -553,9 +557,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
 
       // 🚀 FIX: Log current state for debugging
-      developer.log('🎨 [UI] Building content with ${exercises.length} exercises', name: 'ActiveWorkoutScreen');
-      developer.log('📊 [UI] Series counts: ${state.completedSeries.map((k, v) => MapEntry(k, v.length))}',
-          name: 'ActiveWorkoutScreen');
+      //_log('🎨 [UI] Building content with ${exercises.length} exercises');
+      //_log('📊 [UI] Series counts: ${state.completedSeries.map((k, v) => MapEntry(k, v.length))}');
 
       return Column(
         children: [
@@ -584,8 +587,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final isWorkoutComplete = completedExercises == totalExercises;
 
     // 🚀 FIX: Debug logging for header calculations
-    developer.log('📊 [HEADER] Total: $totalExercises, Completed: $completedExercises, Progress: $progress',
-        name: 'ActiveWorkoutScreen');
+    //_log('📊 [HEADER] Total: $totalExercises, Completed: $completedExercises, Progress: $progress');
 
     return Container(
       padding: EdgeInsets.all(AppConfig.spacingL.w),
@@ -720,8 +722,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         final completedSeries = state.completedSeries[exercise.id] ?? [];
 
         // 🚀 FIX: Debug logging for exercise content
-        developer.log('🏋️ [EXERCISE] ${exercise.nome}: ${completedSeries.length}/${exercise.serie} series',
-            name: 'ActiveWorkoutScreen');
+        //_log('🏋️ [EXERCISE] ${exercise.nome}: ${completedSeries.length}/${exercise.serie} series');
 
         return _buildExerciseContent(exercise, completedSeries);
       },
@@ -735,8 +736,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final nextSeriesNumber = completedSeries.length + 1;
 
     // 🚀 FIX: Debug logging for exercise content
-    developer.log('🎨 [CONTENT] Exercise ${exercise.id}: completed=${completedSeries.length}, target=${exercise.serie}, isCompleted=$isCompleted',
-        name: 'ActiveWorkoutScreen');
+    //_log('🎨 [CONTENT] Exercise ${exercise.id}: completed=${completedSeries.length}, target=${exercise.serie}, isCompleted=$isCompleted');
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -870,8 +870,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   Widget _buildCompactInputControls(WorkoutExercise exercise, double currentWeight, int currentReps, int nextSeriesNumber, double padding, bool isSmallScreen) {
     // 🚀 FIX: Debug logging for input controls
-    developer.log('🎛️ [INPUT] Exercise ${exercise.id}: isSaving=$_isSavingSeries, isRecovery=$_isRecoveryActive',
-        name: 'ActiveWorkoutScreen');
+    //_log('🎛️ [INPUT] Exercise ${exercise.id}: isSaving=$_isSavingSeries, isRecovery=$_isRecoveryActive');
 
     return Container(
       width: double.infinity,
@@ -1279,22 +1278,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   int _calculateCompletedExercises(bloc.WorkoutSessionActive state) {
-    developer.log('🧮 [CALC] Starting calculation with ${state.exercises.length} total exercises',
-        name: 'ActiveWorkoutScreen');
+    //_log('🧮 [CALC] Starting calculation with ${state.exercises.length} total exercises');
 
     final completed = state.exercises.where((exercise) {
       final completedSeries = state.completedSeries[exercise.id] ?? [];
       final isCompleted = completedSeries.length >= exercise.serie;
 
       // 🚀 FIX: Debug logging for completion calculation
-      developer.log('🧮 [CALC] Exercise ${exercise.id} (${exercise.nome}): ${completedSeries.length}/${exercise.serie} series = $isCompleted',
-          name: 'ActiveWorkoutScreen');
+      //_log('🧮 [CALC] Exercise ${exercise.id} (${exercise.nome}): ${completedSeries.length}/${exercise.serie} series = $isCompleted');
 
       return isCompleted;
     }).length;
 
-    developer.log('🧮 [CALC] FINAL RESULT: $completed/${state.exercises.length} exercises completed',
-        name: 'ActiveWorkoutScreen');
+    //_log('🧮 [CALC] FINAL RESULT: $completed/${state.exercises.length} exercises completed');
 
     return completed;
   }
@@ -1456,7 +1452,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // 🚀 FIX: Only pop if still mounted and not already processing exit
     if (!mounted) return;
 
-    developer.log('🚪 Handling workout exit...', name: 'ActiveWorkoutScreen');
+    //_log('🚪 Handling workout exit...');
 
     // Cancel timers
     _workoutTimer?.cancel();
@@ -1483,7 +1479,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         context.pop();
       }
     } catch (e) {
-      developer.log('⚠️ Could not pop: $e', name: 'ActiveWorkoutScreen');
+      //_log('⚠️ Could not pop: $e');
       // Try alternative exit method
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
