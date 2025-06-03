@@ -11,7 +11,8 @@ import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  // 🚨 TEST LINE - se vedi questo log, i file sono aggiornati
+  print('🚨 MAIN STARTED - Files are updated!');
   await DependencyInjection.init();
 
   runApp(const FitGymTrackApp());

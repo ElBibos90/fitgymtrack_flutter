@@ -64,6 +64,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void initState() {
     super.initState();
 
+    print('🚨 ACTIVE WORKOUT SCREEN INIT STARTED'); // <-- AGGIUNGI QUESTA RIGA
     developer.log('🎬 ActiveWorkoutScreen initState CALLED!', name: 'ActiveWorkoutScreen');
 
     _bloc = context.read<bloc.ActiveWorkoutBloc>();
@@ -103,6 +104,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     super.dispose();
   }
 
+  // 🚀 FIX: Metodo migliorato con gestione errori e reset
   Future<void> _initializeWorkout() async {
     developer.log('🚀 Initializing workout...', name: 'ActiveWorkoutScreen');
 
@@ -115,10 +117,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         _bloc.add(bloc.LoadCompletedSeries(allenamentoId: widget.allenamentoId!));
       } else {
         developer.log('🆕 Starting new workout session - User: $userId, Scheda: ${widget.schedaId}', name: 'ActiveWorkoutScreen');
+
+        // 🚀 FIX: Resetta lo stato prima di iniziare
+        _bloc.add(const bloc.ResetActiveWorkoutState());
+
+        // Piccolo delay per assicurare che il reset sia processato
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        // Ora inizia il workout
         _bloc.add(bloc.StartWorkoutSession(userId: userId, schedaId: widget.schedaId));
       }
     } else {
       developer.log('❌ No user ID found!', name: 'ActiveWorkoutScreen');
+      // Mostra errore o vai al login
+      if (mounted) {
+        CustomSnackbar.show(
+          context,
+          message: 'Sessione scaduta. Effettua nuovamente il login.',
+          isSuccess: false,
+        );
+        context.go('/login');
+      }
     }
   }
 
@@ -397,6 +416,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             },
           ),
         ),
+        // 🚀 FIX: BlocConsumer migliorato con buildWhen
         body: BlocConsumer<bloc.ActiveWorkoutBloc, bloc.ActiveWorkoutState>(
           listener: (context, state) {
             developer.log('🔄 State changed: ${state.runtimeType}', name: 'ActiveWorkoutScreen');
@@ -404,10 +424,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             if (state is bloc.WorkoutSessionActive) {
               developer.log('✅ Workout session is active with ${state.exercises.length} exercises', name: 'ActiveWorkoutScreen');
               // Inizializza valori predefiniti quando i dati sono caricati
-              _initializeDefaultValues(state.exercises);
-              _preloadFromCompletedSeries(state.completedSeries);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _initializeDefaultValues(state.exercises);
+                  _preloadFromCompletedSeries(state.completedSeries);
+                }
+              });
             } else if (state is bloc.WorkoutSessionStarted) {
               developer.log('🎯 Workout session started: ${state.response.allenamentoId}', name: 'ActiveWorkoutScreen');
+              // Non fare nulla qui, gli esercizi verranno caricati automaticamente dal BLoC
             } else if (state is bloc.WorkoutSessionCompleted) {
               developer.log('🏁 Workout completed!', name: 'ActiveWorkoutScreen');
               CustomSnackbar.show(
@@ -428,6 +453,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             } else if (state is bloc.ActiveWorkoutLoading) {
               developer.log('⏳ Loading: ${state.message ?? "no message"}', name: 'ActiveWorkoutScreen');
             }
+          },
+          buildWhen: (previous, current) {
+            // Rebuild solo per stati che influenzano la UI
+            return current is! bloc.ActiveWorkoutLoading ||
+                previous.runtimeType != current.runtimeType;
           },
           builder: (context, state) {
             developer.log('🎨 Building UI for state: ${state.runtimeType}', name: 'ActiveWorkoutScreen');

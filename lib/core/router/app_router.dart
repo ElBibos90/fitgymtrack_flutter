@@ -14,7 +14,7 @@ import '../../features/workouts/presentation/screens/create_workout_screen.dart'
 import '../../features/workouts/presentation/screens/edit_workout_screen.dart';
 import '../../features/workouts/presentation/screens/active_workout_screen.dart';
 // ✅ AGGIUNTI: Import mancanti
-import '../../features/workouts/bloc/workout_bloc.dart';
+import '../../features/workouts/bloc/active_workout_bloc.dart';
 import '../../core/di/dependency_injection.dart';
 
 
@@ -160,6 +160,7 @@ class AppRouter {
           },
         ),
 
+        // 🚀 FIX PRINCIPALE: Fornisce il BLoC nel contesto giusto
         GoRoute(
           path: '/workouts/:id/start',
           name: 'start-workout',
@@ -174,9 +175,13 @@ class AppRouter {
             }
 
             return AuthWrapper(
-              authenticatedChild: ActiveWorkoutScreen(
-                schedaId: workoutId,
-                // allenamentoId è null per iniziare nuovo allenamento
+              authenticatedChild: BlocProvider.value(
+                // ✅ FIX: Fornisce l'istanza del BLoC nel contesto corretto
+                value: getIt<ActiveWorkoutBloc>(),
+                child: ActiveWorkoutScreen(
+                  schedaId: workoutId,
+                  // allenamentoId è null per iniziare nuovo allenamento
+                ),
               ),
               unauthenticatedChild: const LoginScreen(),
             );
