@@ -315,7 +315,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _logImportant('⏱️ [ISOMETRIC STOP] Timer stopped and state cleared');
   }
 
-  void _showIsometricCompleteNotification() {
+  void _showIsometricCompleteNotification({int? exerciseIdToComplete}) {
     HapticFeedback.mediumImpact();
     if (mounted) {
       CustomSnackbar.show(
@@ -323,7 +323,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         message: '🔥 Tempo isometrico completato!',
         isSuccess: true,
       );
-      _completeIsometricSeries();
+      _completeIsometricSeries(exerciseIdToComplete);
     }
   }
 
@@ -415,10 +415,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final weight = _exerciseWeights[exercise.id] ?? exercise.peso;
     final reps = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
 
-    if (weight <= 0 || reps <= 0) {
+    // 🚀 MIGLIORATO: Permetti peso = 0 per esercizi a corpo libero
+    if (weight < 0 || reps <= 0) {
       CustomSnackbar.show(
         context,
-        message: 'Inserisci peso e ripetizioni validi',
+        message: weight < 0
+            ? 'Il peso non può essere negativo'
+            : 'Inserisci ripetizioni/secondi validi',
         isSuccess: false,
       );
       return;
