@@ -20,7 +20,7 @@ import '../../../../core/di/dependency_injection.dart';
 import '../../bloc/active_workout_bloc.dart' as bloc;
 import '../../models/active_workout_models.dart' as models;
 import '../../models/workout_plan_models.dart';
-import '../../models/exercise_group_models.dart'; // 🚀 NUOVO IMPORT
+import '../../models/exercise_group_models.dart';
 
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutScreen'}) {
@@ -38,7 +38,7 @@ void _logImportant(String message, {String name = 'ActiveWorkoutScreen'}) {
 }
 
 // ============================================================================
-// 🎯 MAIN ACTIVE WORKOUT SCREEN - FULLSCREEN WITH GROUPING
+// 🎯 MAIN ACTIVE WORKOUT SCREEN - FULLSCREEN WITH IMPROVED UI
 // ============================================================================
 
 class ActiveWorkoutScreen extends StatefulWidget {
@@ -62,9 +62,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   late SessionService _sessionService;
 
   // 🎮 FULLSCREEN STATE - AGGIORNATO PER GRUPPI
-  int _currentGroupIndex = 0;              // 🚀 NUOVO: Index del gruppo corrente
+  int _currentGroupIndex = 0;
   late PageController _pageController;
-  List<ExerciseGroup> _exerciseGroups = []; // 🚀 NUOVO: Lista dei gruppi
+  List<ExerciseGroup> _exerciseGroups = [];
 
   // ⏱️ TIMER SYSTEM
   Timer? _workoutTimer;
@@ -73,7 +73,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   int _recoverySeconds = 0;
   bool _isRecoveryActive = false;
 
-  // 💾 EXERCISE DATA - Mantenuto per compatibilità
+  // 💾 EXERCISE DATA
   Map<int, double> _exerciseWeights = {};
   Map<int, int> _exerciseReps = {};
 
@@ -88,14 +88,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   late Animation<double> _progressAnimation;
   late AnimationController _completionAnimationController;
 
-  // 🚀 NEW: Track if we're currently saving a series
+  // Track if we're currently saving a series
   bool _isSavingSeries = false;
 
   @override
   void initState() {
     super.initState();
-
-    // _log('🚀 ActiveWorkoutScreen 2.0 - FASE B: Fullscreen Mode with Grouping INIT'); // Commentato
 
     _bloc = context.read<bloc.ActiveWorkoutBloc>();
     _sessionService = getIt<SessionService>();
@@ -111,7 +109,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void dispose() {
     _workoutTimer?.cancel();
     _recoveryTimer?.cancel();
-    _isometricTimer?.cancel();                    // 🚀 NUOVO
+    _isometricTimer?.cancel();
     _progressAnimationController.dispose();
     _completionAnimationController.dispose();
     _pageController.dispose();
@@ -152,9 +150,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _setupKeepScreenOn() {
-    // 📱 Keep screen on during workout
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    // Also prevent screen from turning off
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -162,30 +158,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🚀 WORKOUT INITIALIZATION - AGGIORNATO PER GRUPPI
+  // 🚀 WORKOUT INITIALIZATION
   // ============================================================================
 
   Future<void> _initializeWorkout() async {
-    // _log('🚀 Initializing fullscreen workout with grouping...'); // Commentato
-
     final userId = await _sessionService.getCurrentUserId();
 
     if (userId != null) {
       if (widget.allenamentoId != null) {
-        // _log('🔄 Loading existing workout: ${widget.allenamentoId}'); // Commentato
         _bloc.add(bloc.LoadCompletedSeries(allenamentoId: widget.allenamentoId!));
       } else {
-        // _log('🆕 Starting new fullscreen workout session with grouping'); // Commentato
-
-        // Reset state before starting
         _bloc.add(const bloc.ResetActiveWorkoutState());
         await Future.delayed(const Duration(milliseconds: 100));
-
-        // Start new workout
         _bloc.add(bloc.StartWorkoutSession(userId: userId, schedaId: widget.schedaId));
       }
     } else {
-      _logImportant('❌ No user ID found!'); // Solo log importante
+      _logImportant('❌ No user ID found!');
       if (mounted) {
         CustomSnackbar.show(
           context,
@@ -198,41 +186,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🚀 NUOVO: EXERCISE GROUPING LOGIC
+  // 🚀 EXERCISE GROUPING LOGIC
   // ============================================================================
 
   void _initializeExerciseGroups(List<WorkoutExercise> exercises) {
-    // 🚀 FIX: Non ricreare i gruppi se già esistono
     if (_exerciseGroups.isNotEmpty) {
       _logImportant('⚠️ [GROUPING] Groups already exist, skipping recreation');
       return;
     }
 
     _exerciseGroups = ExerciseGroupingUtils.groupExercises(exercises);
-
-    _logImportant('✅ [GROUPING] Created ${_exerciseGroups.length} groups'); // Solo log importante
-    // for (int i = 0; i < _exerciseGroups.length; i++) {
-    //   final group = _exerciseGroups[i];
-    //   _log('  Group $i: ${group.displayName} (${group.type}, ${group.exercises.length} exercises)');
-    // }
-
-    // Log statistiche solo se necessario
-    // final stats = ExerciseGroupingUtils.getGroupingStats(_exerciseGroups);
-    // _log('📊 [GROUPING] Stats: $stats');
+    _logImportant('✅ [GROUPING] Created ${_exerciseGroups.length} groups');
   }
 
   ExerciseGroup? _getCurrentGroup() {
     if (_currentGroupIndex >= 0 && _currentGroupIndex < _exerciseGroups.length) {
-      final group = _exerciseGroups[_currentGroupIndex];
-      // _logImportant('🔍 [GET_GROUP] Current group index: $_currentGroupIndex, group: ${group.displayName}'); // Solo quando necessario
-      return group;
+      return _exerciseGroups[_currentGroupIndex];
     }
     _logImportant('🔍 [GET_GROUP] Invalid group index: $_currentGroupIndex, total groups: ${_exerciseGroups.length}');
     return null;
   }
 
   // ============================================================================
-  // ⏱️ TIMER SYSTEM - Invariato
+  // ⏱️ TIMER SYSTEM
   // ============================================================================
 
   void _startWorkoutTimer() {
@@ -288,10 +264,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🔥 NUOVO: TIMER ISOMETRICO SYSTEM
+  // 🔥 TIMER ISOMETRICO SYSTEM
   // ============================================================================
 
   void _startIsometricTimer({required int seconds, required int exerciseId}) {
+    _logImportant('⏱️ [ISOMETRIC START] Starting timer: ${seconds}s for exercise $exerciseId');
+
     _stopIsometricTimer();
 
     setState(() {
@@ -300,7 +278,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _currentIsometricExerciseId = exerciseId;
     });
 
-    _logImportant('⏱️ [ISOMETRIC] Starting timer: ${seconds}s for exercise $exerciseId'); // Solo log importante
+    _logImportant('⏱️ [ISOMETRIC START] Timer state set - seconds: $_isometricSeconds, active: $_isIsometricTimerActive, exerciseId: $_currentIsometricExerciseId');
 
     _isometricTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -309,20 +287,32 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         });
 
         if (_isometricSeconds <= 0) {
+          _logImportant('⏱️ [ISOMETRIC TIMER] Timer reached 0, stopping...');
+
+          // 🚀 FIX: Salva l'ID PRIMA di fermare il timer
+          final exerciseIdToComplete = _currentIsometricExerciseId;
           _stopIsometricTimer();
-          _showIsometricCompleteNotification();
+          _showIsometricCompleteNotification(exerciseIdToComplete: exerciseIdToComplete);
         }
+      } else {
+        _logImportant('❌ [ISOMETRIC TIMER] Widget not mounted, canceling timer');
+        timer.cancel();
       }
     });
   }
 
   void _stopIsometricTimer() {
+    _logImportant('⏱️ [ISOMETRIC STOP] Stopping isometric timer...');
+    _logImportant('⏱️ [ISOMETRIC STOP] Previous state - active: $_isIsometricTimerActive, exerciseId: $_currentIsometricExerciseId');
+
     _isometricTimer?.cancel();
     setState(() {
       _isIsometricTimerActive = false;
       _isometricSeconds = 0;
       _currentIsometricExerciseId = null;
     });
+
+    _logImportant('⏱️ [ISOMETRIC STOP] Timer stopped and state cleared');
   }
 
   void _showIsometricCompleteNotification() {
@@ -333,14 +323,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         message: '🔥 Tempo isometrico completato!',
         isSuccess: true,
       );
-
-      // 🔥 NUOVO: Auto-completa la serie isometrica
       _completeIsometricSeries();
     }
   }
 
   // ============================================================================
-  // 🧭 NAVIGATION SYSTEM - AGGIORNATO PER GRUPPI
+  // 🧭 NAVIGATION SYSTEM
   // ============================================================================
 
   void _navigateToGroup(int groupIndex) {
@@ -368,8 +356,24 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
+  // 🚀 NUOVO: Navigazione tra esercizi del gruppo
+  void _navigateToExerciseInGroup(int exerciseIndex) {
+    final currentGroup = _getCurrentGroup();
+    if (currentGroup == null) return;
+
+    if (exerciseIndex >= 0 && exerciseIndex < currentGroup.exercises.length) {
+      final updatedGroup = currentGroup.copyWith(
+        currentExerciseIndex: exerciseIndex,
+      );
+
+      setState(() {
+        _exerciseGroups[_currentGroupIndex] = updatedGroup;
+      });
+    }
+  }
+
   // ============================================================================
-  // 💪 EXERCISE DATA MANAGEMENT - Invariato
+  // 💪 EXERCISE DATA MANAGEMENT
   // ============================================================================
 
   void _initializeDefaultValues(List<WorkoutExercise> exercises) {
@@ -397,15 +401,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🏋️ SERIES COMPLETION - AGGIORNATO PER ESERCIZI SINGOLI + ISOMETRICO
+  // 🏋️ SERIES COMPLETION
   // ============================================================================
 
   void _completeSeries(WorkoutExercise exercise, int seriesNumber) {
-    _logImportant('🚨 COMPLETESERIES CALLED - Exercise: ${exercise.id} (${exercise.nome}), Series: $seriesNumber'); // Solo log importante
+    _logImportant('🚨 COMPLETESERIES CALLED - Exercise: ${exercise.id} (${exercise.nome}), Series: $seriesNumber');
 
-    // 🚀 FIX: Prevent multiple saves
     if (_isSavingSeries) {
-      _logImportant('🚨 ALREADY SAVING - BLOCKING REQUEST'); // Solo log importante
+      _logImportant('🚨 ALREADY SAVING - BLOCKING REQUEST');
       return;
     }
 
@@ -421,35 +424,39 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    // 🔥 NUOVO: Se l'esercizio è isometrico, avvia il timer
     if (exercise.isIsometric) {
-      _logImportant('🔥 [ISOMETRIC] Exercise ${exercise.nome} is isometric, starting timer: ${exercise.ripetizioni}s'); // Solo log importante
-      _startIsometricTimer(seconds: exercise.ripetizioni, exerciseId: exercise.id);
+      final selectedSeconds = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
+      _logImportant('🔥 [ISOMETRIC] Exercise ${exercise.nome} is isometric, starting timer: ${selectedSeconds}s');
+      _startIsometricTimer(seconds: selectedSeconds, exerciseId: exercise.id);
 
-      // Non salvare subito la serie, aspetta che il timer finisca
       CustomSnackbar.show(
         context,
-        message: '🔥 Timer isometrico avviato: ${exercise.ripetizioni}s',
+        message: '🔥 Timer isometrico avviato: ${selectedSeconds}s - Mantieni la posizione!',
         isSuccess: true,
       );
       return;
     }
 
-    // Per esercizi normali, procedi con il salvataggio immediato
     _saveSingleSeries(exercise, seriesNumber, weight, reps);
   }
 
   void _saveSingleSeries(WorkoutExercise exercise, int seriesNumber, double weight, int reps) {
-    _logImportant('💾 [SAVE] Saving series for exercise: ${exercise.id}, series: $seriesNumber'); // Solo log importante
+    _logImportant('💾 [SAVE] === STARTING SAVE PROCESS ===');
+    _logImportant('💾 [SAVE] Exercise: ${exercise.id} (${exercise.nome})');
+    _logImportant('💾 [SAVE] Series: $seriesNumber, Weight: $weight, Reps: $reps');
+    _logImportant('💾 [SAVE] Current saving state: $_isSavingSeries');
+
+    if (_isSavingSeries) {
+      _logImportant('❌ [SAVE] Already saving, blocking request');
+      return;
+    }
 
     setState(() {
       _isSavingSeries = true;
     });
 
-    // 🚀 FIX: Flag per tracciare se dobbiamo navigare
-    bool shouldNavigateAfterSave = true;
+    _logImportant('💾 [SAVE] Set saving state to true');
 
-    // Create series data
     final seriesData = models.SeriesData(
       schedaEsercizioId: exercise.id,
       peso: weight,
@@ -458,51 +465,44 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       serieId: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-    // _log('🚨 ADDING LOCAL SERIES'); // Commentato
-    _bloc.add(bloc.AddLocalSeries(exerciseId: exercise.id, seriesData: seriesData));
+    _logImportant('💾 [SAVE] Created SeriesData: schedaEsercizioId=${seriesData.schedaEsercizioId}, peso=${seriesData.peso}, reps=${seriesData.ripetizioni}');
 
-    // Save to server after delay
+    _bloc.add(bloc.AddLocalSeries(exerciseId: exercise.id, seriesData: seriesData));
+    _logImportant('💾 [SAVE] Added local series to bloc');
+
     Future.delayed(const Duration(milliseconds: 200), () {
-      // _log('🚨 DELAYED SAVE STARTED'); // Commentato
+      _logImportant('💾 [SAVE] Delayed save starting...');
       final currentState = _bloc.state;
+      _logImportant('💾 [SAVE] Current bloc state: ${currentState.runtimeType}');
 
       if (currentState is bloc.WorkoutSessionActive) {
         final requestId = 'save_${DateTime.now().millisecondsSinceEpoch}';
-        // _log('🚨 SENDING SAVE REQUEST: $requestId'); // Commentato
+        _logImportant('💾 [SAVE] Sending SaveCompletedSeries with requestId: $requestId');
         _bloc.add(bloc.SaveCompletedSeries(
           allenamentoId: currentState.activeWorkout.id,
           serie: [seriesData],
           requestId: requestId,
         ));
+        _logImportant('💾 [SAVE] SaveCompletedSeries event sent to bloc');
       } else {
-        // _log('🚨 NOT IN ACTIVE STATE - SKIPPING SERVER SAVE'); // Commentato
+        _logImportant('❌ [SAVE] Not in active state, skipping server save');
       }
 
-      // 🚀 FIX: Reset flag e navigazione SEMPRE dopo 2 secondi
       Timer(const Duration(seconds: 2), () {
-        _logImportant('🚨 TIMER RESET TRIGGERED'); // Solo log importante
-        _logImportant('🚨 shouldNavigate=$shouldNavigateAfterSave, mounted=$mounted'); // Debug
+        _logImportant('💾 [SAVE] Reset timer triggered');
 
         if (mounted) {
           setState(() {
             _isSavingSeries = false;
           });
+          _logImportant('💾 [SAVE] Reset saving state to false');
 
-          // 🚀 FIX: Navigazione SEMPRE se shouldNavigateAfterSave è true
-          if (shouldNavigateAfterSave) {
-            _logImportant('🔄 [NAVIGATION] About to call navigation in 100ms');
-            Future.delayed(const Duration(milliseconds: 100), () {
-              _logImportant('🔄 [NAVIGATION] Delayed navigation triggered, mounted=$mounted');
-              if (mounted) {
-                _logImportant('🔄 [NAVIGATION] Calling _handlePostSeriesNavigation()');
-                _handlePostSeriesNavigation();
-              } else {
-                _logImportant('🔄 [NAVIGATION] Widget not mounted, skipping navigation');
-              }
-            });
-          } else {
-            _logImportant('🔄 [NAVIGATION] Navigation disabled, skipping');
-          }
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              _logImportant('💾 [SAVE] About to call post-series navigation');
+              _handlePostSeriesNavigation();
+            }
+          });
 
           setState(() {});
 
@@ -512,16 +512,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             isSuccess: true,
             duration: const Duration(seconds: 1),
           );
-        } else {
-          _logImportant('🚨 TIMER RESET: Widget not mounted');
+          _logImportant('💾 [SAVE] === SAVE PROCESS COMPLETED ===');
         }
       });
     });
 
-    // Start recovery timer using exercise recovery time
     _startRecoveryTimer(seconds: exercise.tempoRecupero ?? 90);
 
-    // Feedback
     HapticFeedback.lightImpact();
     CustomSnackbar.show(
       context,
@@ -530,13 +527,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Gestisce la navigazione automatica dopo il completamento di una serie
   void _handlePostSeriesNavigation() {
     _logImportant('🔄 [NAVIGATION] === STARTING POST-SERIES NAVIGATION ===');
 
     final currentGroup = _getCurrentGroup();
-    _logImportant('🔄 [NAVIGATION] Current group: ${currentGroup?.displayName ?? "NULL"}');
-
     if (currentGroup == null) {
       _logImportant('🔄 [NAVIGATION] No current group found - EXITING');
       return;
@@ -547,66 +541,66 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    _logImportant('🔄 [NAVIGATION] Group type: ${currentGroup.type}, exercises: ${currentGroup.exercises.length}');
-    _logImportant('🔄 [NAVIGATION] Current exercise index: ${currentGroup.currentExerciseIndex}');
-
-    // 🚀 FIX: Per superset/circuit, passa sempre al prossimo esercizio dopo ogni serie
     final nextExerciseIndex = (currentGroup.currentExerciseIndex + 1) % currentGroup.exercises.length;
 
-    _logImportant('🔄 [NAVIGATION] Moving from exercise ${currentGroup.currentExerciseIndex} to ${nextExerciseIndex}');
-
-    // Aggiorna il gruppo con il nuovo esercizio corrente
     final updatedGroup = currentGroup.copyWith(
       currentExerciseIndex: nextExerciseIndex,
     );
 
-    _logImportant('🔄 [NAVIGATION] Updated group created, updating _exerciseGroups[${_currentGroupIndex}]');
     _exerciseGroups[_currentGroupIndex] = updatedGroup;
 
-    // Force UI update con setState separato
     if (mounted) {
-      _logImportant('🔄 [NAVIGATION] Calling setState to update UI');
-      setState(() {
-        // Forza l'aggiornamento dell'UI
-      });
+      setState(() {});
 
-      // Show notification about next exercise
       final nextExercise = updatedGroup.currentExercise;
-      _logImportant('🔄 [NAVIGATION] Navigation completed to: ${nextExercise.nome}');
-
       CustomSnackbar.show(
         context,
         message: '➡️ Prossimo: ${nextExercise.nome}',
         isSuccess: true,
         duration: const Duration(seconds: 1),
       );
-
-      _logImportant('🔄 [NAVIGATION] === NAVIGATION COMPLETED SUCCESSFULLY ===');
-    } else {
-      _logImportant('🔄 [NAVIGATION] Widget not mounted during setState - FAILED');
     }
   }
 
-  // 🔥 NUOVO: Completa serie isometrica (chiamato quando il timer finisce)
-  void _completeIsometricSeries() {
-    if (_currentIsometricExerciseId == null) return;
+  void _completeIsometricSeries([int? exerciseIdToComplete]) {
+    _logImportant('🔥 [ISOMETRIC COMPLETE] Starting completion process...');
+
+    // 🚀 FIX: Usa l'ID passato come parametro o fallback all'ID corrente
+    final targetExerciseId = exerciseIdToComplete ?? _currentIsometricExerciseId;
+
+    if (targetExerciseId == null) {
+      _logImportant('❌ [ISOMETRIC COMPLETE] No exercise ID available (passed: $exerciseIdToComplete, current: $_currentIsometricExerciseId)');
+      return;
+    }
+
+    _logImportant('🔥 [ISOMETRIC COMPLETE] Using exercise ID: $targetExerciseId');
 
     final currentGroup = _getCurrentGroup();
-    if (currentGroup == null) return;
+    if (currentGroup == null) {
+      _logImportant('❌ [ISOMETRIC COMPLETE] No current group found');
+      return;
+    }
 
     final exercise = currentGroup.exercises.firstWhere(
-          (e) => e.id == _currentIsometricExerciseId,
+          (e) => e.id == targetExerciseId,
       orElse: () => currentGroup.currentExercise,
     );
 
+    _logImportant('🔥 [ISOMETRIC COMPLETE] Found exercise: ${exercise.nome} (ID: ${exercise.id})');
+
     final currentState = _bloc.state;
-    if (currentState is! bloc.WorkoutSessionActive) return;
+    if (currentState is! bloc.WorkoutSessionActive) {
+      _logImportant('❌ [ISOMETRIC COMPLETE] Bloc not in active state: ${currentState.runtimeType}');
+      return;
+    }
 
     final seriesNumber = currentGroup.getCurrentExerciseCompletedSeries(currentState.completedSeries) + 1;
     final weight = _exerciseWeights[exercise.id] ?? exercise.peso;
     final reps = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
 
-    _log('🔥 [ISOMETRIC] Completing isometric series for ${exercise.nome}');
+    _logImportant('🔥 [ISOMETRIC COMPLETE] Completing series $seriesNumber with weight: $weight, reps: $reps');
+    _logImportant('🔥 [ISOMETRIC COMPLETE] About to call _saveSingleSeries()');
+
     _saveSingleSeries(exercise, seriesNumber, weight, reps);
   }
 
@@ -626,7 +620,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🎨 UI BUILDERS - AGGIORNATI PER GRUPPI
+  // 🎨 UI BUILDERS - MAIN BUILD METHOD
   // ============================================================================
 
   @override
@@ -646,37 +640,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         body: BlocConsumer<bloc.ActiveWorkoutBloc, bloc.ActiveWorkoutState>(
           listener: _handleBlocStateChanges,
           buildWhen: (previous, current) {
-            // _log('🔄 [UI] buildWhen: ${previous.runtimeType} -> ${current.runtimeType}, isSaving: $_isSavingSeries'); // Commentato
-
             if (current is bloc.SeriesSaved) {
-              // _log('✅ [UI] SeriesSaved - not rebuilding UI, listener will handle'); // Commentato
               return false;
             }
 
             if (current is bloc.ActiveWorkoutLoading &&
                 previous is bloc.WorkoutSessionActive &&
                 _isSavingSeries) {
-              // _log('⚠️ [UI] Preventing loading during series save'); // Commentato
               return false;
             }
 
-            // _log('✅ [UI] Allowing UI rebuild'); // Commentato
             return true;
           },
           builder: (context, state) {
             final shouldShowLoading = state is bloc.ActiveWorkoutLoading && !_isSavingSeries;
 
-            // _log('🎨 [UI] Building with state: ${state.runtimeType}, showLoading: $shouldShowLoading, isSaving: $_isSavingSeries'); // Commentato
-
-            // 🚀 SUPER FIX: Force reset flag if API succeeded but state didn't change
             if (_isSavingSeries && state is bloc.WorkoutSessionActive) {
-              // _log('🚨 [UI] EMERGENCY: Saving flag still true but in active state - forcing reset!'); // Commentato
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted && _isSavingSeries) {
                   setState(() {
                     _isSavingSeries = false;
                   });
-                  // _log('🔧 [UI] EMERGENCY: Force reset _isSavingSeries to false'); // Commentato
                 }
               });
             }
@@ -693,34 +677,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleBlocStateChanges(BuildContext context, bloc.ActiveWorkoutState state) {
-    // _log('🚨 LISTENER STATE CHANGED: ${state.runtimeType}'); // Commentato
-
     if (state is bloc.WorkoutSessionActive) {
-      // _log('🚨 LISTENER: WorkoutSessionActive with ${state.exercises.length} exercises'); // Commentato
-
-      // 🚀 NUOVO: Inizializza i gruppi di esercizi
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _initializeExerciseGroups(state.exercises);
           _initializeDefaultValues(state.exercises);
           _preloadFromCompletedSeries(state.completedSeries);
           _progressAnimationController.forward();
-
-          // Force rebuild to update counters if needed
           setState(() {});
         }
       });
     } else if (state is bloc.SeriesSaved) {
-      // Reset saving flag se per caso arriva ancora
       setState(() {
         _isSavingSeries = false;
       });
-
-      // 🔥 NUOVO: Se era un esercizio isometrico, completa ora la serie
-      if (_isIsometricTimerActive && _currentIsometricExerciseId != null) {
-        // _log('🔥 [ISOMETRIC] Series saved, but isometric timer still active - completing isometric series'); // Commentato
-        _completeIsometricSeries();
-      }
 
       CustomSnackbar.show(
         context,
@@ -730,7 +700,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       );
 
     } else if (state is bloc.WorkoutSessionCompleted) {
-      _logImportant('🚨 LISTENER: WorkoutSessionCompleted'); // Solo log importante
+      _logImportant('🚨 LISTENER: WorkoutSessionCompleted');
       CustomSnackbar.show(
         context,
         message: '🎉 Allenamento completato con successo!',
@@ -742,21 +712,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         }
       });
     } else if (state is bloc.WorkoutSessionCancelled) {
-      _logImportant('🚨 LISTENER: WorkoutSessionCancelled'); // Solo log importante
+      _logImportant('🚨 LISTENER: WorkoutSessionCancelled');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           context.pop();
         }
       });
     } else if (state is bloc.ActiveWorkoutError) {
-      _logImportant('🚨 LISTENER: ActiveWorkoutError - ${state.message}'); // Solo log importante
+      _logImportant('🚨 LISTENER: ActiveWorkoutError - ${state.message}');
 
-      // Reset saving flag on error
       if (_isSavingSeries) {
         setState(() {
           _isSavingSeries = false;
         });
-        _logImportant('🚨 LISTENER: Reset _isSavingSeries flag due to error'); // Solo log importante
       }
 
       CustomSnackbar.show(
@@ -773,11 +741,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         return _buildEmptyState();
       }
 
-      _log('🎨 [UI] Building content with ${_exerciseGroups.length} groups');
-
       return Column(
         children: [
-          // 📊 FIXED HEADER - AGGIORNATO PER GRUPPI
+          // 📊 FIXED HEADER
           _buildFullscreenHeader(state),
 
           // 🎮 MAIN CONTENT - PageView FOR GROUPS
@@ -785,7 +751,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             child: _buildGroupPageView(state),
           ),
 
-          // 🧭 FIXED NAVIGATION - AGGIORNATO PER GRUPPI
+          // 🧭 FIXED NAVIGATION
           _buildFullscreenNavigation(state),
         ],
       );
@@ -799,8 +765,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final completedGroups = _calculateCompletedGroups(state);
     final progress = totalGroups > 0 ? completedGroups / totalGroups : 0.0;
     final isWorkoutComplete = completedGroups == totalGroups;
-
-    _log('📊 [HEADER] Total Groups: $totalGroups, Completed: $completedGroups, Progress: $progress');
 
     return Container(
       padding: EdgeInsets.all(AppConfig.spacingL.w),
@@ -840,7 +804,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   icon: const Icon(Icons.close, color: Colors.white),
                 ),
 
-                // 🚀 AGGIORNATO: Group counter
+                // Group counter
                 Text(
                   'Gruppo ${_currentGroupIndex + 1} di $totalGroups',
                   style: TextStyle(
@@ -887,7 +851,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   ),
                 ),
 
-                // 🚀 AGGIORNATO: Group progress
                 Text(
                   '$completedGroups/$totalGroups gruppi completati',
                   style: TextStyle(
@@ -920,7 +883,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: PageView per gruppi invece che esercizi singoli
   Widget _buildGroupPageView(bloc.WorkoutSessionActive state) {
     return PageView.builder(
       controller: _pageController,
@@ -932,22 +894,144 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       itemCount: _exerciseGroups.length,
       itemBuilder: (context, index) {
         final group = _exerciseGroups[index];
-        _log('🏋️ [GROUP] Building group ${index}: ${group.displayName} (${group.type})');
-
         return _buildGroupContent(group, state.completedSeries);
       },
     );
   }
 
-  // 🚀 NUOVO: Content per un gruppo di esercizi - MOSTRA SOLO ESERCIZIO CORRENTE
+  // ============================================================================
+  // 🚀 NUOVO: BARRA DI NAVIGAZIONE ESERCIZI MIGLIORATA
+  // ============================================================================
+
+  Widget _buildExerciseNavigationBar(ExerciseGroup group, Map<int, List<models.CompletedSeriesData>> completedSeries) {
+    // Solo per gruppi multi-esercizio
+    if (group.isSingleExercise) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppConfig.spacingL.h),
+      padding: EdgeInsets.all(AppConfig.spacingM.w),
+      decoration: BoxDecoration(
+        color: _getGroupColor(group.type).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
+        border: Border.all(
+          color: _getGroupColor(group.type).withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con tipo di gruppo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                group.displayName,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: _getGroupColor(group.type),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: _getGroupColor(group.type).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  group.type.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: _getGroupColor(group.type),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: AppConfig.spacingM.h),
+
+          // Lista esercizi navigabili
+          SizedBox(
+            height: 50.h,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: group.exercises.length,
+              itemBuilder: (context, index) {
+                final exercise = group.exercises[index];
+                final isCurrentExercise = index == group.currentExerciseIndex;
+                final exerciseCompletedSeries = completedSeries[exercise.id]?.length ?? 0;
+                final exerciseIsCompleted = exerciseCompletedSeries >= exercise.serie;
+
+                return GestureDetector(
+                  onTap: () => _navigateToExerciseInGroup(index),
+                  child: Container(
+                    margin: EdgeInsets.only(right: AppConfig.spacingS.w),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppConfig.spacingM.w,
+                      vertical: AppConfig.spacingS.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isCurrentExercise
+                          ? _getGroupColor(group.type)
+                          : exerciseIsCompleted
+                          ? AppColors.success.withOpacity(0.8)
+                          : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
+                      border: isCurrentExercise
+                          ? Border.all(color: Colors.white, width: 2)
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          exercise.nome,
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isCurrentExercise || exerciseIsCompleted
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          '$exerciseCompletedSeries/${exercise.serie}',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: isCurrentExercise || exerciseIsCompleted
+                                ? Colors.white.withOpacity(0.9)
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // 🎨 GROUP CONTENT - AGGIORNATO CON BARRA NAVIGAZIONE
+  // ============================================================================
+
   Widget _buildGroupContent(ExerciseGroup group, Map<int, List<models.CompletedSeriesData>> completedSeries) {
     final isCompleted = group.isCompleted(completedSeries);
-    final currentExercise = group.currentExercise;  // 🚀 NUOVO: Solo esercizio corrente
+    final currentExercise = group.currentExercise;
     final currentCompletedSeries = group.getCurrentExerciseCompletedSeries(completedSeries);
-    final currentGroupSeriesNumber = group.getCurrentGroupSeriesNumber(completedSeries);  // 🚀 FIX: Serie del gruppo
-    final totalSeries = currentExercise.serie;
-
-    // _log('🎨 [GROUP CONTENT] Group: ${group.displayName}, currentExercise: ${currentExercise.nome}, groupSeries=${currentGroupSeriesNumber}, exerciseCompleted=${currentCompletedSeries}/${totalSeries}'); // Commentato
+    final currentGroupSeriesNumber = group.getCurrentGroupSeriesNumber(completedSeries);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -965,35 +1049,33 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 🚀 NUOVO: Group info card con esercizio corrente
-                _buildGroupInfoCardWithCurrentExercise(group, completedSeries, isCompleted, cardPadding),
+                // 🚀 Barra di navigazione esercizi (solo per gruppi multi-esercizio)
+                _buildExerciseNavigationBar(group, completedSeries),
 
-                SizedBox(height: spacing),
-
-                // 🔥 NUOVO: Timer isometrico se attivo per questo esercizio
+                // Timer isometrico se attivo
                 if (_isIsometricTimerActive && _currentIsometricExerciseId == currentExercise.id) ...[
                   _buildIsometricTimer(currentExercise, cardPadding, isSmallScreen),
                   SizedBox(height: spacing),
                 ],
 
-                // 💪 CURRENT EXERCISE CONTROLS (if not completed)
+                // Current exercise controls (if not completed)
                 if (!isCompleted) ...[
-                  _buildCurrentExerciseControls(group, currentExercise, currentGroupSeriesNumber, cardPadding, isSmallScreen),  // 🚀 FIX: Usa serie del gruppo
+                  _buildCurrentExerciseControls(group, currentExercise, currentGroupSeriesNumber, cardPadding, isSmallScreen),
                   SizedBox(height: spacing),
                 ],
 
-                // ⏱️ RECOVERY TIMER
+                // Recovery timer
                 if (_isRecoveryActive) ...[
                   _buildCompactRecoveryTimer(cardPadding, isSmallScreen),
                   SizedBox(height: spacing),
                 ],
 
-                // ✅ CURRENT EXERCISE COMPLETED SERIES
+                // Current exercise completed series
                 if (currentCompletedSeries > 0) ...[
                   _buildCurrentExerciseCompletedSeries(currentExercise, completedSeries, cardPadding),
                 ],
 
-                // 🏆 COMPLETION CELEBRATION
+                // Group completion celebration
                 if (isCompleted) ...[
                   SizedBox(height: spacing),
                   _buildGroupCompletionCelebration(group, cardPadding),
@@ -1006,12 +1088,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Group info card con focus sull'esercizio corrente
+  // ============================================================================
+  // 🎨 RESTO DEI WIDGET BUILDERS - MANTENUTI INVARIATI
+  // ============================================================================
+
   Widget _buildGroupInfoCardWithCurrentExercise(ExerciseGroup group, Map<int, List<models.CompletedSeriesData>> completedSeries, bool isCompleted, double padding) {
     final currentExercise = group.currentExercise;
     final currentCompletedSeries = group.getCurrentExerciseCompletedSeries(completedSeries);
     final totalGroupSeries = group.getCompletedSeries(completedSeries);
-    final currentGroupSeries = group.getCurrentGroupSeriesNumber(completedSeries);  // 🚀 FIX: Serie corrente del gruppo
+    final currentGroupSeries = group.getCurrentGroupSeriesNumber(completedSeries);
 
     return Container(
       width: double.infinity,
@@ -1028,56 +1113,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       ),
       child: Column(
         children: [
-          // Group name and current exercise indicator
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      group.displayName,
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isCompleted ? AppColors.success : _getGroupColor(group.type),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (!group.isSingleExercise) ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        '${group.currentExerciseIndex + 1}/${group.exercises.length}',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (group.type != 'normal')
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: _getGroupColor(group.type).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    group.type.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: _getGroupColor(group.type),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          SizedBox(height: AppConfig.spacingL.h),
-
           // Current exercise name
           Container(
             width: double.infinity,
@@ -1100,7 +1135,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
 
-                // 🔥 NUOVO: Indicatore isometrico
                 if (currentExercise.isIsometric) ...[
                   SizedBox(height: 4.h),
                   Container(
@@ -1125,9 +1159,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           SizedBox(height: AppConfig.spacingM.h),
 
-          // 🚀 FIX: Mostra informazioni corrette per il gruppo
           if (group.isSingleExercise) ...[
-            // Per esercizi singoli, mostra il progresso dell'esercizio
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1166,7 +1198,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               minHeight: 6.h,
             ),
           ] else ...[
-            // Per gruppi, mostra il progresso del gruppo
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1177,7 +1208,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     borderRadius: BorderRadius.circular(AppConfig.radiusM.r),
                   ),
                   child: Text(
-                    'Serie ${currentGroupSeries}',  // 🚀 FIX: Mostra la serie corrente del gruppo
+                    'Serie ${currentGroupSeries}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16.sp,
@@ -1231,8 +1262,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🔥 NUOVO: Timer isometrico
   Widget _buildIsometricTimer(WorkoutExercise exercise, double padding, bool isSmallScreen) {
+    // 🚀 MIGLIORATO: Usa il valore selezionato dall'utente per calcolare il progresso
+    final selectedSeconds = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(padding),
@@ -1276,7 +1309,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           SizedBox(height: AppConfig.spacingM.h),
 
-          // Progress bar (countdown)
           LinearProgressIndicator(
             value: 1 - (_isometricSeconds / exercise.ripetizioni),
             backgroundColor: Colors.grey.shade300,
@@ -1299,8 +1331,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
               TextButton.icon(
                 onPressed: () {
+                  _logImportant('🔥 [ISOMETRIC MANUAL] User manually completed isometric exercise');
+                  final exerciseIdToComplete = _currentIsometricExerciseId;
                   _stopIsometricTimer();
-                  _completeIsometricSeries();
+                  _completeIsometricSeries(exerciseIdToComplete);
                 },
                 icon: Icon(Icons.check_circle, color: AppColors.success),
                 label: Text(
@@ -1315,8 +1349,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Controls per l'esercizio corrente
   Widget _buildCurrentExerciseControls(ExerciseGroup group, WorkoutExercise currentExercise, int groupSeriesNumber, double padding, bool isSmallScreen) {
+    // 🚀 NUOVO: Ottieni il valore selezionato dall'utente per l'esercizio corrente
+    final selectedReps = _exerciseReps[currentExercise.id] ?? currentExercise.ripetizioni;
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(padding),
@@ -1328,7 +1364,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       child: Column(
         children: [
           Text(
-            'Serie ${groupSeriesNumber}',  // 🚀 FIX: Usa il numero di serie del gruppo
+            'Serie ${groupSeriesNumber}',
             style: TextStyle(
               fontSize: isSmallScreen ? 18.sp : 20.sp,
               fontWeight: FontWeight.bold,
@@ -1338,21 +1374,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           SizedBox(height: AppConfig.spacingL.h),
 
-          // Current exercise controls
           _buildExerciseInGroupCard(currentExercise, group),
 
           SizedBox(height: AppConfig.spacingL.h),
 
-          // Complete series button
           CustomButton(
             text: _isSavingSeries
                 ? 'Salvando...'
                 : currentExercise.isIsometric
-                ? 'Avvia Timer (${currentExercise.ripetizioni}s)'
-                : 'Completa Serie ${groupSeriesNumber}',  // 🚀 FIX: Mostra numero serie del gruppo
+                ? 'Avvia Timer (${selectedReps}s)'
+                : 'Completa Serie ${groupSeriesNumber}',
             onPressed: _isRecoveryActive || _isSavingSeries || _isIsometricTimerActive
                 ? null
-                : () => _completeSeries(currentExercise, groupSeriesNumber),  // 🚀 FIX: Passa numero serie del gruppo
+                : () => _completeSeries(currentExercise, groupSeriesNumber),
             type: ButtonType.primary,
             size: ButtonSize.medium,
             isFullWidth: true,
@@ -1368,7 +1402,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Completed series per l'esercizio corrente
   Widget _buildCurrentExerciseCompletedSeries(WorkoutExercise currentExercise, Map<int, List<models.CompletedSeriesData>> completedSeries, double padding) {
     final exerciseSeries = completedSeries[currentExercise.id] ?? [];
 
@@ -1440,50 +1473,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Controls per esercizi del gruppo
-  Widget _buildGroupExercisesControls(ExerciseGroup group, Map<int, List<models.CompletedSeriesData>> completedSeries, int nextSeriesNumber, double padding, bool isSmallScreen) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConfig.radiusL.r),
-        border: Border.all(color: AppColors.border, width: 2),
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Serie $nextSeriesNumber',
-            style: TextStyle(
-              fontSize: isSmallScreen ? 18.sp : 20.sp,
-              fontWeight: FontWeight.bold,
-              color: _getGroupColor(group.type),
-            ),
-          ),
-
-          SizedBox(height: AppConfig.spacingL.h),
-
-          // Esercizi del gruppo
-          ...group.exercises.map((exercise) => _buildExerciseInGroupCard(exercise, group)).toList(),
-
-          SizedBox(height: AppConfig.spacingL.h),
-
-          // Complete series button
-          CustomButton(
-            text: _isSavingSeries ? 'Salvando...' : 'Completa Serie ${nextSeriesNumber}',
-            onPressed: _isRecoveryActive || _isSavingSeries ? null : () => _completeGroupSeries(group, nextSeriesNumber),
-            type: ButtonType.primary,
-            size: ButtonSize.medium,
-            isFullWidth: true,
-            isLoading: _isSavingSeries,
-            icon: _isSavingSeries ? null : const Icon(Icons.check_circle, color: Colors.white, size: 20),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 🚀 NUOVO: Card per esercizio all'interno di un gruppo
   Widget _buildExerciseInGroupCard(WorkoutExercise exercise, ExerciseGroup group) {
     final currentWeight = _exerciseWeights[exercise.id] ?? exercise.peso;
     final currentReps = _exerciseReps[exercise.id] ?? exercise.ripetizioni;
@@ -1499,7 +1488,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Exercise name
           Text(
             exercise.nome,
             style: TextStyle(
@@ -1511,7 +1499,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
           SizedBox(height: AppConfig.spacingS.h),
 
-          // Weight and reps controls
           Row(
             children: [
               Expanded(
@@ -1525,9 +1512,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               SizedBox(width: AppConfig.spacingM.w),
               Expanded(
                 child: _buildCompactValueCard(
-                  label: 'Reps',
+                  label: exercise.isIsometric ? 'Secondi' : 'Reps',
                   value: '$currentReps',
-                  icon: Icons.repeat,
+                  icon: exercise.isIsometric ? Icons.timer : Icons.repeat,
                   onTap: () => _showRepsPicker(exercise.id, currentReps),
                 ),
               ),
@@ -1536,17 +1523,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         ],
       ),
     );
-  }
-
-  // ============================================================================
-  // 🎨 UI HELPER METHODS - Alcuni mantenuti, altri adattati
-  // ============================================================================
-
-  // 🚀 STUB: Metodo obsoleto per compatibilità (non dovrebbe essere chiamato con la nuova logica)
-  void _completeGroupSeries(ExerciseGroup group, int seriesNumber) {
-    _log('⚠️ [DEPRECATED] _completeGroupSeries called - should not happen with new logic');
-    // Con la nuova logica, completa solo l'esercizio corrente
-    _completeSeries(group.currentExercise, seriesNumber);
   }
 
   Widget _buildCompactValueCard({
@@ -1663,14 +1639,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 NUOVO: Completed series per gruppo - RIMOSSO (non più usato con la nuova logica)
-  Widget _buildGroupCompletedSeries(ExerciseGroup group, Map<int, List<models.CompletedSeriesData>> completedSeries, double padding) {
-    // Questo metodo non è più utilizzato con la nuova logica
-    // che mostra solo l'esercizio corrente
-    return const SizedBox.shrink();
-  }
-
-  // 🚀 NUOVO: Group completion celebration
   Widget _buildGroupCompletionCelebration(ExerciseGroup group, double padding) {
     return Container(
       padding: EdgeInsets.all(padding),
@@ -1705,7 +1673,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  // 🚀 AGGIORNATO: Navigation per gruppi
   Widget _buildFullscreenNavigation(bloc.WorkoutSessionActive state) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: AppConfig.spacingM.w, vertical: AppConfig.spacingM.h),
@@ -1717,7 +1684,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         top: false,
         child: Row(
           children: [
-            // Previous button
             IconButton(
               onPressed: _currentGroupIndex > 0 ? _navigatePrevious : null,
               icon: Icon(
@@ -1737,14 +1703,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(width: AppConfig.spacingS.w),
 
-            // Group indicators
             Expanded(
               child: Container(
                 height: 40.h,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Show max 7 indicators to avoid overflow
                     if (_exerciseGroups.length <= 7)
                       ..._exerciseGroups.asMap().entries.map((entry) =>
                           _buildGroupIndicator(entry.key, entry.value, state))
@@ -1757,7 +1721,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(width: AppConfig.spacingS.w),
 
-            // Next button
             IconButton(
               onPressed: _currentGroupIndex < _exerciseGroups.length - 1 ? _navigateNext : null,
               icon: Icon(
@@ -1824,19 +1787,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🔧 HELPER METHODS - AGGIORNATI PER GRUPPI
+  // 🔧 HELPER METHODS
   // ============================================================================
 
   int _calculateCompletedGroups(bloc.WorkoutSessionActive state) {
-    // _log('🧮 [CALC] Starting group calculation with ${_exerciseGroups.length} total groups'); // Commentato
-
     final completed = _exerciseGroups.where((group) {
-      final isCompleted = group.isCompleted(state.completedSeries);
-      // _log('🧮 [CALC] Group ${group.displayName}: $isCompleted'); // Commentato
-      return isCompleted;
+      return group.isCompleted(state.completedSeries);
     }).length;
 
-    // _log('🧮 [CALC] FINAL RESULT: $completed/${_exerciseGroups.length} groups completed'); // Commentato
     return completed;
   }
 
@@ -1851,10 +1809,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         return AppColors.indigo600;
     }
   }
-
-  // ============================================================================
-  // 🔧 ALTRI HELPER METHODS - Mantenuti invariati
-  // ============================================================================
 
   Widget _buildLoadingOrErrorState(bloc.ActiveWorkoutState state) {
     if (state is bloc.ActiveWorkoutError) {
@@ -1946,7 +1900,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 💬 DIALOG METHODS - Invariati
+  // 💬 DIALOG METHODS
   // ============================================================================
 
   Future<bool?> _showExitDialog(BuildContext context) {
@@ -2012,13 +1966,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _handleWorkoutExit() {
     if (!mounted) return;
 
-    _logImportant('🚪 Handling workout exit...'); // Solo log importante
+    _logImportant('🚪 Handling workout exit...');
 
-    // Cancel timers
     _workoutTimer?.cancel();
     _recoveryTimer?.cancel();
 
-    // Reset system UI
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -2027,19 +1979,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       DeviceOrientation.landscapeRight,
     ]);
 
-    // Cancel workout if active
     final currentState = _bloc.state;
     if (currentState is bloc.WorkoutSessionActive) {
       _bloc.add(bloc.CancelWorkoutSession(allenamentoId: currentState.activeWorkout.id));
     }
 
-    // Exit immediately
     try {
       if (mounted && Navigator.of(context).canPop()) {
         context.pop();
       }
     } catch (e) {
-      _logImportant('⚠️ Could not pop: $e'); // Solo log importante
+      _logImportant('⚠️ Could not pop: $e');
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
@@ -2109,7 +2059,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🎛️ INPUT DIALOGS - Invariati
+  // 🎛️ INPUT DIALOGS
   // ============================================================================
 
   Future<void> _showWeightPicker(int exerciseId, double currentWeight) async {
@@ -2126,9 +2076,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Future<void> _showRepsPicker(int exerciseId, int currentReps) async {
+    // 🚀 MIGLIORATO: Determina se l'esercizio è isometrico per il titolo del dialog
+    final currentGroup = _getCurrentGroup();
+    final exercise = currentGroup?.exercises.firstWhere((e) => e.id == exerciseId);
+    final isIsometric = exercise?.isIsometric ?? false;
+
     final reps = await showDialog<int>(
       context: context,
-      builder: (context) => RepsPickerDialog(initialReps: currentReps),
+      builder: (context) => RepsPickerDialog(
+        initialReps: currentReps,
+        isIsometric: isIsometric,
+      ),
     );
 
     if (reps != null && mounted) {
@@ -2140,7 +2098,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 }
 
 // ============================================================================
-// 🎛️ WEIGHT PICKER DIALOG - Invariato
+// 🎛️ WEIGHT PICKER DIALOG
 // ============================================================================
 
 class WeightPickerDialog extends StatefulWidget {
@@ -2230,15 +2188,17 @@ class _WeightPickerDialogState extends State<WeightPickerDialog> {
 }
 
 // ============================================================================
-// 🔢 REPS PICKER DIALOG - Invariato
+// 🔢 REPS PICKER DIALOG
 // ============================================================================
 
 class RepsPickerDialog extends StatefulWidget {
   final int initialReps;
+  final bool isIsometric;
 
   const RepsPickerDialog({
     super.key,
     required this.initialReps,
+    this.isIsometric = false,
   });
 
   @override
@@ -2257,7 +2217,7 @@ class _RepsPickerDialogState extends State<RepsPickerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Seleziona Ripetizioni'),
+      title: Text(widget.isIsometric ? 'Seleziona Secondi' : 'Seleziona Ripetizioni'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -2285,7 +2245,7 @@ class _RepsPickerDialogState extends State<RepsPickerDialog> {
           SizedBox(height: AppConfig.spacingL.h),
 
           Text(
-            'Valori comuni:',
+            widget.isIsometric ? 'Valori comuni (secondi):' : 'Valori comuni:',
             style: TextStyle(
               fontSize: 14.sp,
               color: AppColors.textSecondary,
@@ -2296,7 +2256,7 @@ class _RepsPickerDialogState extends State<RepsPickerDialog> {
 
           Wrap(
             spacing: 8.w,
-            children: [5, 8, 10, 12, 15, 20, 25].map((reps) {
+            children: (widget.isIsometric ? [10, 15, 20, 30, 45, 60, 90] : [5, 8, 10, 12, 15, 20, 25]).map((reps) {
               final isSelected = _selectedReps == reps;
               return ElevatedButton(
                 onPressed: () => setState(() => _selectedReps = reps),
