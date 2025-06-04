@@ -21,6 +21,9 @@ import '../../bloc/active_workout_bloc.dart' as bloc;
 import '../../models/active_workout_models.dart' as models;
 import '../../models/workout_plan_models.dart';
 import '../../models/exercise_group_models.dart';
+import '../widgets/active_workout_timer_controls.dart';
+import '../widgets/active_workout_exercise_page_view.dart';
+import '../widgets/active_workout_navigation_bar.dart';
 
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutScreen'}) {
@@ -744,18 +747,48 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         return _buildEmptyState();
       }
 
+      final completedGroups = _calculateCompletedGroups(state);
+
       return Column(
         children: [
-          // 📊 FIXED HEADER
-          _buildFullscreenHeader(state),
-
-          // 🎮 MAIN CONTENT - PageView FOR GROUPS
-          Expanded(
-            child: _buildGroupPageView(state),
+          ActiveWorkoutTimerControls(
+            elapsedTime: _elapsedTime,
+            currentGroupIndex: _currentGroupIndex,
+            totalGroups: _exerciseGroups.length,
+            completedGroups: completedGroups,
+            progressAnimation: _progressAnimation,
+            onExit: () async {
+              final shouldExit = await _showExitDialog(context);
+              if (shouldExit == true) {
+                _handleWorkoutExit();
+              }
+            },
+            onComplete: completedGroups == _exerciseGroups.length
+                ? () => _completeWorkout(context, state.activeWorkout.id)
+                : null,
           ),
-
-          // 🧭 FIXED NAVIGATION
-          _buildFullscreenNavigation(state),
+          Expanded(
+            child: ActiveWorkoutExercisePageView(
+              controller: _pageController,
+              groups: _exerciseGroups,
+              completedSeries: state.completedSeries,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentGroupIndex = index;
+                });
+              },
+              itemBuilder: (group, completed) =>
+                  _buildGroupContent(group, completed),
+            ),
+          ),
+          ActiveWorkoutNavigationBar(
+            currentGroupIndex: _currentGroupIndex,
+            groups: _exerciseGroups,
+            completedSeries: state.completedSeries,
+            onPrevious: _navigatePrevious,
+            onNext: _navigateNext,
+            onGroupSelected: _navigateToGroup,
+          ),
         ],
       );
     }
@@ -763,144 +796,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return _buildLoadingOrErrorState(state);
   }
 
-  Widget _buildFullscreenHeader(bloc.WorkoutSessionActive state) {
-    final totalGroups = _exerciseGroups.length;
-    final completedGroups = _calculateCompletedGroups(state);
-    final progress = totalGroups > 0 ? completedGroups / totalGroups : 0.0;
-    final isWorkoutComplete = completedGroups == totalGroups;
-
-    return Container(
-      padding: EdgeInsets.all(AppConfig.spacingL.w),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.indigo600,
-            AppColors.indigo700,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: AppConfig.elevationM,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // Top row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Close button
-                IconButton(
-                  onPressed: () async {
-                    final shouldExit = await _showExitDialog(context);
-                    if (shouldExit == true) {
-                      _handleWorkoutExit();
-                    }
-                  },
-                  icon: const Icon(Icons.close, color: Colors.white),
-                ),
-
-                // Group counter
-                Text(
-                  'Gruppo ${_currentGroupIndex + 1} di $totalGroups',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                // Complete workout button
-                if (isWorkoutComplete)
-                  IconButton(
-                    onPressed: () => _completeWorkout(context, state.activeWorkout.id),
-                    icon: Container(
-                      padding: EdgeInsets.all(8.w),
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.celebration,
-                        color: Colors.white,
-                        size: 24.sp,
-                      ),
-                    ),
-                  )
-                else
-                  SizedBox(width: 48.w),
-              ],
-            ),
-
-            SizedBox(height: AppConfig.spacingM.h),
-
-            // Timer and progress
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  Formatters.formatDuration(_elapsedTime),
-                  style: TextStyle(
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-
-                Text(
-                  '$completedGroups/$totalGroups gruppi completati',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: AppConfig.spacingM.h),
-
-            // Progress bar
-            AnimatedBuilder(
-              animation: _progressAnimation,
-              builder: (context, child) {
-                return LinearProgressIndicator(
-                  value: progress * _progressAnimation.value,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isWorkoutComplete ? AppColors.success : Colors.white,
-                  ),
-                  minHeight: 8.h,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupPageView(bloc.WorkoutSessionActive state) {
-    return PageView.builder(
-      controller: _pageController,
-      onPageChanged: (index) {
-        setState(() {
-          _currentGroupIndex = index;
-        });
-      },
-      itemCount: _exerciseGroups.length,
-      itemBuilder: (context, index) {
-        final group = _exerciseGroups[index];
-        return _buildGroupContent(group, state.completedSeries);
-      },
-    );
-  }
 
   // ============================================================================
   // 🚀 NUOVO: BARRA DI NAVIGAZIONE ESERCIZI MIGLIORATA
@@ -1676,118 +1571,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildFullscreenNavigation(bloc.WorkoutSessionActive state) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppConfig.spacingM.w, vertical: AppConfig.spacingM.h),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 2)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: _currentGroupIndex > 0 ? _navigatePrevious : null,
-              icon: Icon(
-                Icons.arrow_back,
-                color: _currentGroupIndex > 0
-                    ? AppColors.indigo600
-                    : Colors.grey.shade400,
-                size: 28.sp,
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: _currentGroupIndex > 0
-                    ? AppColors.indigo600.withOpacity(0.1)
-                    : Colors.transparent,
-                minimumSize: Size(40.w, 40.h),
-              ),
-            ),
-
-            SizedBox(width: AppConfig.spacingS.w),
-
-            Expanded(
-              child: Container(
-                height: 40.h,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (_exerciseGroups.length <= 7)
-                      ..._exerciseGroups.asMap().entries.map((entry) =>
-                          _buildGroupIndicator(entry.key, entry.value, state))
-                    else
-                      ..._buildCompactGroupIndicators(state),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(width: AppConfig.spacingS.w),
-
-            IconButton(
-              onPressed: _currentGroupIndex < _exerciseGroups.length - 1 ? _navigateNext : null,
-              icon: Icon(
-                Icons.arrow_forward,
-                color: _currentGroupIndex < _exerciseGroups.length - 1
-                    ? AppColors.indigo600
-                    : Colors.grey.shade400,
-                size: 28.sp,
-              ),
-              style: IconButton.styleFrom(
-                backgroundColor: _currentGroupIndex < _exerciseGroups.length - 1
-                    ? AppColors.indigo600.withOpacity(0.1)
-                    : Colors.transparent,
-                minimumSize: Size(40.w, 40.h),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupIndicator(int index, ExerciseGroup group, bloc.WorkoutSessionActive state) {
-    final isCompleted = group.isCompleted(state.completedSeries);
-    final isCurrent = index == _currentGroupIndex;
-
-    return GestureDetector(
-      onTap: () => _navigateToGroup(index),
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 3.w),
-        width: isCurrent ? 16.w : 12.w,
-        height: isCurrent ? 16.w : 12.w,
-        decoration: BoxDecoration(
-          color: isCompleted
-              ? AppColors.success
-              : isCurrent
-              ? _getGroupColor(group.type)
-              : Colors.grey.shade300,
-          shape: BoxShape.circle,
-          border: isCurrent
-              ? Border.all(color: Colors.white, width: 2)
-              : null,
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildCompactGroupIndicators(bloc.WorkoutSessionActive state) {
-    return [
-      if (_currentGroupIndex > 0) Icon(Icons.more_horiz, color: Colors.grey, size: 16.sp),
-      _buildGroupIndicator(_currentGroupIndex, _exerciseGroups[_currentGroupIndex], state),
-      SizedBox(width: AppConfig.spacingS.w),
-      Text(
-        '${_currentGroupIndex + 1}/${_exerciseGroups.length}',
-        style: TextStyle(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      SizedBox(width: AppConfig.spacingS.w),
-      if (_currentGroupIndex < _exerciseGroups.length - 1) Icon(Icons.more_horiz, color: Colors.grey, size: 16.sp),
-    ];
-  }
 
   // ============================================================================
   // 🔧 HELPER METHODS
