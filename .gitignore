@@ -45,3 +45,8 @@ app.*.map.json
 /android/app/release
 lib/features/exercises/models/exercises_response.g.dart
 lib/features/workouts/models/workout_plan_models.g.dart
+
+# Local debug and screenshot files
+debug_completo.txt
+flutter_01.png
+flutter_02.png
