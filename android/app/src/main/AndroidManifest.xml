@@ -1,9 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.fitgymtrack_flutter">
     <!-- Allow the application to access the network in all build variants -->
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="fitgymtrack_flutter"
-        android:name="${applicationName}"
+        android:name="io.flutter.app.FlutterApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
