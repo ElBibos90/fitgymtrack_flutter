@@ -1,15 +1,18 @@
 // lib/shared/widgets/isometric_timer_popup.dart
 // 🔥 Timer per Esercizi Isometrici - Conta secondi di tenuta
+// 🔊 AUDIO: beep_countdown.mp3 negli ultimi 3s, timer_complete.mp3 al termine
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 
 /// 🔥 Isometric Timer Popup - Timer per esercizi isometrici
 /// ✅ Mostra countdown per la tenuta isometrica
 /// ✅ Al termine completa automaticamente la serie
 /// ✅ Design coerente con Recovery Timer
+/// 🔊 AUDIO: beep_countdown.mp3 negli ultimi 3s, timer_complete.mp3 al termine
 class IsometricTimerPopup extends StatefulWidget {
   final int initialSeconds;
   final bool isActive;
@@ -41,6 +44,10 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   bool _isPaused = false;
   bool _isDismissed = false;
 
+  // 🔊 Audio management
+  late AudioPlayer _audioPlayer;
+  bool _hasPlayedCompletionSound = false;
+
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _pulseController;
@@ -55,6 +62,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   void initState() {
     super.initState();
     _remainingSeconds = widget.initialSeconds;
+    _audioPlayer = AudioPlayer();
     _initializeAnimations();
     if (widget.isActive) {
       _startTimer();
@@ -64,6 +72,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     _slideController.dispose();
     _pulseController.dispose();
     _progressController.dispose();
@@ -117,6 +126,58 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
     _slideController.forward();
   }
 
+  // 🔊 Audio methods
+  Future<void> _playCountdownBeep() async {
+    try {
+      debugPrint("🔊 [ISOMETRIC AUDIO] Playing countdown beep");
+      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
+    } catch (e) {
+      debugPrint("🔊 [ISOMETRIC AUDIO] Error playing countdown beep: $e");
+    }
+  }
+
+  Future<void> _playCompletionSound() async {
+    try {
+      if (!_hasPlayedCompletionSound) {
+        debugPrint("🔊 [ISOMETRIC AUDIO] Playing completion sound");
+        _hasPlayedCompletionSound = true;
+
+        // 🔧 FIX: Aspetta che l'audio finisca davvero
+        await _audioPlayer.play(AssetSource('audio/timer_complete.mp3'));
+
+        // Piccolo delay extra per sicurezza
+        await Future.delayed(const Duration(milliseconds: 900));
+
+        debugPrint("🔊 [ISOMETRIC AUDIO] Completion sound finished");
+      }
+    } catch (e) {
+      debugPrint("🔊 [ISOMETRIC AUDIO] Error playing completion sound: $e");
+    }
+  }
+
+  // 🔧 FIX: Gestisce audio + callback + dismiss in sequenza
+  Future<void> _playCompletionSoundAndFinish() async {
+    try {
+      // Play completion sound e aspetta che finisca
+      await _playCompletionSound();
+
+      // Callback di completamento
+      widget.onIsometricComplete();
+
+      // Dismiss popup
+      if (mounted && !_isDismissed) {
+        _dismissPopup();
+      }
+    } catch (e) {
+      debugPrint("🔊 [ISOMETRIC AUDIO] Error in completion sequence: $e");
+      // Fallback: chiama comunque il callback
+      widget.onIsometricComplete();
+      if (mounted && !_isDismissed) {
+        _dismissPopup();
+      }
+    }
+  }
+
   void _startTimer() {
     if (_isDismissed) return;
 
@@ -132,9 +193,14 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
 
-          // Pulse negli ultimi 5 secondi (più lungo per isometrico)
+          // 🔊 Audio + Pulse negli ultimi 5 secondi (più lungo per isometrico)
           if (_remainingSeconds <= 5 && _remainingSeconds > 0) {
             _pulseController.repeat(reverse: true);
+
+            // 🔊 Play countdown beep negli ultimi 3 secondi
+            if (_remainingSeconds <= 3) {
+              _playCountdownBeep();
+            }
 
             // Haptic feedback più intenso negli ultimi secondi
             if (_remainingSeconds <= 3) {
@@ -154,11 +220,8 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
             HapticFeedback.heavyImpact();
           });
 
-          // Callback di completamento
-          widget.onIsometricComplete();
-
-          // Auto-dismiss dopo completamento
-          _dismissPopup();
+          // 🔧 FIX: Play audio e aspetta, poi callback e dismiss
+          _playCompletionSoundAndFinish();
         }
       });
     });
@@ -250,10 +313,24 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                   // Header con nome esercizio
                   Row(
                     children: [
-                      Icon(
-                        Icons.fitness_center,
-                        color: _getTimerColor(),
-                        size: 24.sp,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.fitness_center,
+                            color: _getTimerColor(),
+                            size: 24.sp,
+                          ),
+                          // 🔊 Audio indicator negli ultimi 3 secondi
+                          if (_remainingSeconds <= 3 && !_isPaused) ...[
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.volume_up,
+                              color: _getTimerColor(),
+                              size: 18.sp,
+                            ),
+                          ],
+                        ],
                       ),
                       SizedBox(width: 12.w),
                       Expanded(
@@ -331,11 +408,22 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                                 );
                               },
                             ),
-                            // Icona centrale
-                            Icon(
-                              Icons.timer,
-                              color: _getTimerColor(),
-                              size: 24.sp,
+                            // Icona centrale con audio indicator
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.timer,
+                                  color: _getTimerColor(),
+                                  size: 24.sp,
+                                ),
+                                if (_remainingSeconds <= 3 && !_isPaused)
+                                  Icon(
+                                    Icons.volume_up,
+                                    color: _getTimerColor(),
+                                    size: 12.sp,
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -458,15 +546,28 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                         color: _getTimerColor().withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: Text(
-                        _remainingSeconds <= 3
-                            ? '🔥 Tieni ancora!'
-                            : '💪 Quasi fatto!',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: _getTimerColor(),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_remainingSeconds <= 3) ...[
+                            Icon(
+                              Icons.volume_up,
+                              color: _getTimerColor(),
+                              size: 16.sp,
+                            ),
+                            SizedBox(width: 6.w),
+                          ],
+                          Text(
+                            _remainingSeconds <= 3
+                                ? '🔥 Tieni ancora!'
+                                : '💪 Quasi fatto!',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: _getTimerColor(),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

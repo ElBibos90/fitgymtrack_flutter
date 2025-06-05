@@ -70,8 +70,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # 🔧 FIX: Commentiamo assets fino a quando non li creiamo fisicamente
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
-  #   - assets/audio/
+  # 🔊 AUDIO ASSETS per timer feedback
+  assets:
+    - assets/audio/

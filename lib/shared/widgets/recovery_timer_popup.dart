@@ -1,10 +1,11 @@
 // lib/shared/widgets/recovery_timer_popup.dart
 // 🚀 Recovery Timer come Popup - Non invasivo e elegante
-// ✅ IMPROVED: Better readability for timer text
+// ✅ IMPROVED: Better readability for timer text + Audio feedback
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 
 /// 🚀 Recovery Timer Popup - Elegante e non invasivo
@@ -13,6 +14,7 @@ import 'dart:async';
 /// ✅ Posizionamento smart (in basso)
 /// ✅ Animazioni fluide
 /// ✅ IMPROVED: Timer text readability
+/// 🔊 AUDIO: beep_countdown.mp3 negli ultimi 3s, timer_complete.mp3 al termine
 class RecoveryTimerPopup extends StatefulWidget {
   final int initialSeconds;
   final bool isActive;
@@ -44,6 +46,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   bool _isPaused = false;
   bool _isDismissed = false;
 
+  // 🔊 Audio management
+  late AudioPlayer _audioPlayer;
+  bool _hasPlayedCompletionSound = false;
+
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _pulseController;
@@ -58,6 +64,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   void initState() {
     super.initState();
     _remainingSeconds = widget.initialSeconds;
+    _audioPlayer = AudioPlayer();
     _initializeAnimations();
     if (widget.isActive) {
       _startTimer();
@@ -67,6 +74,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     _slideController.dispose();
     _pulseController.dispose();
     _progressController.dispose();
@@ -120,6 +128,58 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     _slideController.forward();
   }
 
+  // 🔊 Audio methods
+  Future<void> _playCountdownBeep() async {
+    try {
+      debugPrint("🔊 [RECOVERY AUDIO] Playing countdown beep");
+      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
+    } catch (e) {
+      debugPrint("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
+    }
+  }
+
+  Future<void> _playCompletionSound() async {
+    try {
+      if (!_hasPlayedCompletionSound) {
+        debugPrint("🔊 [RECOVERY AUDIO] Playing completion sound");
+        _hasPlayedCompletionSound = true;
+
+        // 🔧 FIX: Aspetta che l'audio finisca davvero
+        await _audioPlayer.play(AssetSource('audio/timer_complete.mp3'));
+
+        // Piccolo delay extra per sicurezza
+        await Future.delayed(const Duration(milliseconds: 900));
+
+        debugPrint("🔊 [RECOVERY AUDIO] Completion sound finished");
+      }
+    } catch (e) {
+      debugPrint("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
+    }
+  }
+
+  // 🔧 FIX: Gestisce audio + callback + dismiss in sequenza
+  Future<void> _playCompletionSoundAndFinish() async {
+    try {
+      // Play completion sound e aspetta che finisca
+      await _playCompletionSound();
+
+      // Callback di completamento
+      widget.onTimerComplete();
+
+      // Dismiss popup
+      if (mounted && !_isDismissed) {
+        _dismissPopup();
+      }
+    } catch (e) {
+      debugPrint("🔊 [RECOVERY AUDIO] Error in completion sequence: $e");
+      // Fallback: chiama comunque il callback
+      widget.onTimerComplete();
+      if (mounted && !_isDismissed) {
+        _dismissPopup();
+      }
+    }
+  }
+
   void _startTimer() {
     if (_isDismissed) return;
 
@@ -135,9 +195,12 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
 
-          // Pulse negli ultimi 3 secondi
+          // 🔊 Audio + Pulse negli ultimi 3 secondi
           if (_remainingSeconds <= 3 && _remainingSeconds > 0) {
             _pulseController.repeat(reverse: true);
+
+            // 🔊 Play countdown beep
+            _playCountdownBeep();
 
             // Haptic feedback più intenso negli ultimi secondi
             if (_remainingSeconds <= 3) {
@@ -152,11 +215,8 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
           // Haptic feedback finale
           HapticFeedback.heavyImpact();
 
-          // Callback di completamento
-          widget.onTimerComplete();
-
-          // Auto-dismiss dopo completamento
-          _dismissPopup();
+          // 🔧 FIX: Play audio e aspetta, poi callback e dismiss
+          _playCompletionSoundAndFinish();
         }
       });
     });
@@ -248,10 +308,24 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                   // Header con nome esercizio e dismiss
                   Row(
                     children: [
-                      Icon(
-                        Icons.timer,
-                        color: _getTimerColor(),
-                        size: 20.sp,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.timer,
+                            color: _getTimerColor(),
+                            size: 20.sp,
+                          ),
+                          // 🔊 Audio indicator negli ultimi 3 secondi
+                          if (_remainingSeconds <= 3 && !_isPaused) ...[
+                            SizedBox(width: 4.w),
+                            Icon(
+                              Icons.volume_up,
+                              color: _getTimerColor(),
+                              size: 16.sp,
+                            ),
+                          ],
+                        ],
                       ),
                       SizedBox(width: 8.w),
                       Expanded(
@@ -417,15 +491,28 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                         color: _getTimerColor().withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
-                      child: Text(
-                        _remainingSeconds <= 3
-                            ? '🔥 Ultimi secondi!'
-                            : '⚡ Quasi pronto!',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: _getTimerColor(),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_remainingSeconds <= 3) ...[
+                            Icon(
+                              Icons.volume_up,
+                              color: _getTimerColor(),
+                              size: 14.sp,
+                            ),
+                            SizedBox(width: 4.w),
+                          ],
+                          Text(
+                            _remainingSeconds <= 3
+                                ? '🔥 Ultimi secondi!'
+                                : '⚡ Quasi pronto!',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: _getTimerColor(),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
