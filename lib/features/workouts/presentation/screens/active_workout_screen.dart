@@ -17,10 +17,14 @@ import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
 /// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING
+/// ✅ STEP 4 COMPLETATO + Dark Theme + Dialogs + Complete Button
 /// ✅ Una schermata per esercizio/gruppo - Design pulito e minimale
 /// ✅ Raggruppamento automatico superset/circuit
 /// ✅ Recovery timer come popup non invasivo
 /// ✅ Navigazione tra gruppi logici
+/// 🌙 Dark theme support
+/// 🚪 Dialog conferma uscita
+/// ✅ Pulsante completa allenamento lampeggiante
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -53,8 +57,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _pulseController;
+  late AnimationController _completeButtonController; // 🆕 Per animazione pulsante
   late Animation<Offset> _slideAnimation;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _completeButtonAnimation; // 🆕 Animazione lampeggiante
 
   // 🚀 STEP 4: Exercise grouping for superset/circuit
   List<List<WorkoutExercise>> _exerciseGroups = [];
@@ -72,6 +78,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   String _currentStatus = "Inizializzazione...";
   int? _userId;
 
+  // 🆕 Dialog state
+  bool _showExitDialog = false;
+  bool _showCompleteDialog = false;
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +96,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _workoutTimer?.cancel();
     _slideController.dispose();
     _pulseController.dispose();
+    _completeButtonController.dispose(); // 🆕
     _pageController.dispose();
     _stopRecoveryTimer();
     super.dispose();
@@ -106,6 +117,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       vsync: this,
     );
 
+    // 🆕 Animation per pulsante completa allenamento
+    _completeButtonController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -119,6 +136,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       end: 1.05,
     ).animate(CurvedAnimation(
       parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // 🆕 Animazione lampeggiante per pulsante completa
+    _completeButtonAnimation = Tween<double>(
+      begin: 0.7,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _completeButtonController,
       curve: Curves.easeInOut,
     ));
 
@@ -161,6 +187,43 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           isSuccess: false,
         );
       }
+    }
+  }
+
+  // ============================================================================
+  // 🆕 DIALOG METHODS
+  // ============================================================================
+
+  void _showExitConfirmDialog() {
+    setState(() {
+      _showExitDialog = true;
+    });
+  }
+
+  void _showCompleteConfirmDialog() {
+    setState(() {
+      _showCompleteDialog = true;
+    });
+  }
+
+  void _handleExitConfirmed() {
+    debugPrint("🚪 [EXIT] User confirmed exit - cancelling workout");
+
+    // Cancella l'allenamento via BLoC se è attivo
+    final currentState = context.read<ActiveWorkoutBloc>().state;
+    if (currentState is WorkoutSessionActive) {
+      _activeWorkoutBloc.cancelWorkout(currentState.activeWorkout.id);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _handleCompleteConfirmed() {
+    debugPrint("✅ [COMPLETE] User confirmed completion");
+
+    final currentState = context.read<ActiveWorkoutBloc>().state;
+    if (currentState is WorkoutSessionActive) {
+      _handleCompleteWorkout(currentState);
     }
   }
 
@@ -211,6 +274,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
     }
     return true;
+  }
+
+  /// 🆕 Determina se TUTTO l'allenamento è completato
+  bool _isWorkoutFullyCompleted(WorkoutSessionActive state) {
+    for (final group in _exerciseGroups) {
+      if (!_isGroupCompleted(state, group)) {
+        return false;
+      }
+    }
+    return _exerciseGroups.isNotEmpty; // Almeno un gruppo deve esistere
   }
 
   /// Trova il prossimo esercizio incompleto nel gruppo corrente
@@ -420,7 +493,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Check if workout is completed
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && _isWorkoutCompleted(state)) {
-        _handleCompleteWorkout(state);
+        // 🆕 Avvia animazione pulsante completa quando tutto è finito
+        _completeButtonController.repeat(reverse: true);
       }
     });
   }
@@ -485,6 +559,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     debugPrint("🚀 [SINGLE EXERCISE] Completing workout");
 
     _stopWorkoutTimer();
+    _completeButtonController.stop(); // 🆕 Stop animazione
 
     final durationMinutes = _elapsedTime.inMinutes;
     _activeWorkoutBloc.completeWorkout(
@@ -521,12 +596,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Color _getExerciseTypeColor(WorkoutExercise exercise) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (exercise.setType == "superset") {
       return Colors.purple;
     } else if (exercise.setType == "circuit") {
       return Colors.orange;
     }
-    return Colors.blue;
+    return colorScheme.primary;
   }
 
   // ============================================================================
@@ -539,29 +616,51 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return _buildInitializingScreen();
     }
 
-    return BlocListener<ActiveWorkoutBloc, ActiveWorkoutState>(
-      bloc: _activeWorkoutBloc,
-      listener: _handleBlocStateChanges,
-      child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _showExitConfirmDialog();
+        }
+      },
+      child: BlocListener<ActiveWorkoutBloc, ActiveWorkoutState>(
         bloc: _activeWorkoutBloc,
-        builder: (context, state) {
-          return Scaffold(
-            backgroundColor: Colors.grey[50],
-            appBar: _buildAppBar(state),
-            body: _buildBody(state),
-          );
-        },
+        listener: _handleBlocStateChanges,
+        child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
+          bloc: _activeWorkoutBloc,
+          builder: (context, state) {
+            return Stack(
+              children: [
+                Scaffold(
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  appBar: _buildAppBar(state),
+                  body: _buildBody(state),
+                ),
+
+                // 🆕 Dialog di conferma uscita
+                if (_showExitDialog)
+                  _buildExitDialog(),
+
+                // 🆕 Dialog di completamento allenamento
+                if (_showCompleteDialog)
+                  _buildCompleteDialog(),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildInitializingScreen() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
         title: const Text('Caricamento...'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
       ),
       body: Center(
         child: Column(
@@ -573,12 +672,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 width: 80.w,
                 height: 80.w,
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(40.r),
                 ),
                 child: Icon(
                   Icons.fitness_center,
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   size: 40.sp,
                 ),
               ),
@@ -588,7 +687,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               _currentStatus,
               style: TextStyle(
                 fontSize: 16.sp,
-                color: Colors.grey[700],
+                color: colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
@@ -596,8 +695,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             SizedBox(
               width: 200.w,
               child: LinearProgressIndicator(
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                backgroundColor: colorScheme.surfaceVariant,
+                valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
               ),
             ),
           ],
@@ -607,39 +706,77 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   PreferredSizeWidget _buildAppBar(ActiveWorkoutState state) {
+    final colorScheme = Theme.of(context).colorScheme;
+    bool isWorkoutFullyCompleted = false;
+
+    // 🆕 Check if workout is fully completed for button animation
+    if (state is WorkoutSessionActive && _exerciseGroups.isNotEmpty) {
+      isWorkoutFullyCompleted = _isWorkoutFullyCompleted(state);
+
+      // Start/stop animation based on completion status
+      if (isWorkoutFullyCompleted && !_completeButtonController.isAnimating) {
+        _completeButtonController.repeat(reverse: true);
+      } else if (!isWorkoutFullyCompleted && _completeButtonController.isAnimating) {
+        _completeButtonController.stop();
+        _completeButtonController.reset();
+      }
+    }
+
     return AppBar(
-      title: Text(
-        'Allenamento',
-        style: TextStyle(fontSize: 18.sp),
-      ),
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-      elevation: 0,
-      centerTitle: false,
-      actions: [
-        // Workout Timer
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-          margin: EdgeInsets.only(right: 16.w),
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(20.r),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Allenamento',
+            style: TextStyle(fontSize: 18.sp),
           ),
-          child: Text(
+          Text(
             _formatDuration(_elapsedTime),
             style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              fontSize: 12.sp,
+              color: colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
-        ),
-        // Menu
-        IconButton(
-          icon: Icon(Icons.more_vert, size: 24.sp),
-          onPressed: () {
-            // TODO: Show menu
-          },
+        ],
+      ),
+      backgroundColor: colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+      centerTitle: false,
+      leading: IconButton(
+        icon: Icon(Icons.arrow_back, size: 24.sp),
+        onPressed: _showExitConfirmDialog,
+      ),
+      actions: [
+        // 🆕 Pulsante Completa Allenamento con animazione
+        Container(
+          margin: EdgeInsets.only(right: 16.w),
+          child: AnimatedBuilder(
+            animation: _completeButtonAnimation,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: isWorkoutFullyCompleted
+                      ? Colors.green.withOpacity(0.2)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.done,
+                    size: 24.sp,
+                    color: isWorkoutFullyCompleted
+                        ? Colors.green
+                        : colorScheme.onSurface,
+                  ),
+                  onPressed: _showCompleteConfirmDialog,
+                  style: IconButton.styleFrom(
+                    padding: EdgeInsets.all(8.w),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -688,12 +825,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildLoadingContent() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: Colors.blue,
+            color: colorScheme.primary,
             strokeWidth: 3,
           ),
           SizedBox(height: 16.h),
@@ -701,7 +840,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             'Caricamento allenamento...',
             style: TextStyle(
               fontSize: 16.sp,
-              color: Colors.grey[600],
+              color: colorScheme.onBackground,
             ),
           ),
         ],
@@ -771,6 +910,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   /// Build page for single exercise
   Widget _buildSingleExercisePage(WorkoutSessionActive state, WorkoutExercise exercise) {
+    final colorScheme = Theme.of(context).colorScheme;
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedSeries = _getCompletedSeriesCount(state, exerciseId);
     final isCompleted = _isExerciseCompleted(state, exercise);
@@ -810,7 +950,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               style: TextStyle(
                 fontSize: 28.sp,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
@@ -821,11 +961,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: colorScheme.shadow.withOpacity(0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -837,7 +977,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     'Serie',
                     style: TextStyle(
                       fontSize: 16.sp,
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -846,7 +986,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     style: TextStyle(
                       fontSize: 32.sp,
                       fontWeight: FontWeight.bold,
-                      color: isCompleted ? Colors.green : Colors.blue,
+                      color: isCompleted ? Colors.green : exerciseColor,
                     ),
                   ),
                   SizedBox(height: 16.h),
@@ -860,8 +1000,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                         height: 12.w,
                         decoration: BoxDecoration(
                           color: i < completedSeries
-                              ? Colors.blue
-                              : Colors.grey[300],
+                              ? exerciseColor
+                              : colorScheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(6.r),
                         ),
                       );
@@ -881,7 +1021,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     'Peso',
                     '${exercise.peso.toStringAsFixed(0)} kg',
                     Icons.fitness_center,
-                    Colors.blue,
+                    exerciseColor,
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -907,7 +1047,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     ? null
                     : () => _handleCompleteSeries(state, exercise),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted ? Colors.green : Colors.blue,
+                  backgroundColor: isCompleted ? Colors.green : exerciseColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
@@ -935,6 +1075,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   /// 🚀 STEP 4: Build page for multiple exercises (superset/circuit) with TABS
   Widget _buildMultiExercisePage(WorkoutSessionActive state, List<WorkoutExercise> group) {
+    final colorScheme = Theme.of(context).colorScheme;
     final groupType = group.first.setType; // superset or circuit
     final groupColor = _getExerciseTypeColor(group.first);
     final isGroupComplete = _isGroupCompleted(state, group);
@@ -980,7 +1121,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             Container(
               height: 50.h,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(25.r),
               ),
               child: Row(
@@ -1045,7 +1186,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
-                                color: isSelected ? Colors.white : Colors.grey[700],
+                                color: isSelected ? Colors.white : colorScheme.onSurface,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1068,7 +1209,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               style: TextStyle(
                 fontSize: 28.sp,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1079,11 +1220,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: colorScheme.shadow.withOpacity(0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -1095,7 +1236,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     'Serie',
                     style: TextStyle(
                       fontSize: 16.sp,
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -1119,7 +1260,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                         decoration: BoxDecoration(
                           color: i < completedSeries
                               ? groupColor
-                              : Colors.grey[300],
+                              : colorScheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(6.r),
                         ),
                       );
@@ -1215,14 +1356,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildParameterCard(String label, String value, IconData icon, Color color) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1240,7 +1383,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             label,
             style: TextStyle(
               fontSize: 14.sp,
-              color: Colors.grey[600],
+              color: colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           SizedBox(height: 4.h),
@@ -1249,7 +1392,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
         ],
@@ -1258,16 +1401,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildBottomNavigation(WorkoutSessionActive state) {
+    final colorScheme = Theme.of(context).colorScheme;
     final canPrev = _canGoToPrevious();
     final canNext = _canGoToNext();
 
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -1283,8 +1427,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               child: ElevatedButton(
                 onPressed: canPrev ? _goToPreviousGroup : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canPrev ? Colors.grey[600] : Colors.grey[300],
-                  foregroundColor: Colors.white,
+                  backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceVariant,
+                  foregroundColor: canPrev ? colorScheme.onSecondary : colorScheme.onSurfaceVariant,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -1311,8 +1455,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   height: 8.w,
                   decoration: BoxDecoration(
                     color: index == _currentGroupIndex
-                        ? Colors.blue
-                        : Colors.grey[300],
+                        ? colorScheme.primary
+                        : colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 );
@@ -1328,8 +1472,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               child: ElevatedButton(
                 onPressed: canNext ? _goToNextGroup : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: canNext ? Colors.blue : Colors.grey[300],
-                  foregroundColor: Colors.white,
+                  backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceVariant,
+                  foregroundColor: canNext ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
@@ -1351,6 +1495,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildNoExercisesContent() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1366,7 +1512,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: colorScheme.onBackground,
             ),
           ),
           SizedBox(height: 24.h),
@@ -1380,6 +1526,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildCompletedContent(WorkoutSessionCompleted state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(24.w),
@@ -1406,7 +1554,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               'Tempo Totale: ${_formatDuration(state.totalDuration)}',
               style: TextStyle(
                 fontSize: 18.sp,
-                color: Colors.grey[600],
+                color: colorScheme.onBackground,
               ),
             ),
             SizedBox(height: 32.h),
@@ -1438,6 +1586,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildErrorContent(ActiveWorkoutError state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(24.w),
@@ -1463,7 +1613,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               state.message,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Colors.grey[600],
+                color: colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1482,8 +1632,174 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildDefaultContent() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
-      child: CircularProgressIndicator(color: Colors.blue),
+      child: CircularProgressIndicator(color: colorScheme.primary),
+    );
+  }
+
+  // ============================================================================
+  // 🆕 DIALOG WIDGETS
+  // ============================================================================
+
+  Widget _buildExitDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: Card(
+          margin: EdgeInsets.all(32.w),
+          color: colorScheme.surface,
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.warning,
+                  size: 48.sp,
+                  color: Colors.orange,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Uscire dall\'allenamento?',
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'L\'allenamento verrà cancellato e tutti i progressi andranno persi.',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _showExitDialog = false;
+                          });
+                        },
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(color: colorScheme.primary),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _showExitDialog = false;
+                          });
+                          _handleExitConfirmed();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Esci'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompleteDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      color: Colors.black.withOpacity(0.5),
+      child: Center(
+        child: Card(
+          margin: EdgeInsets.all(32.w),
+          color: colorScheme.surface,
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  size: 48.sp,
+                  color: Colors.green,
+                ),
+                SizedBox(height: 16.h),
+                Text(
+                  'Completare l\'allenamento?',
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'L\'allenamento verrà salvato con il tempo di ${_formatDuration(_elapsedTime)}.',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 24.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _showCompleteDialog = false;
+                          });
+                        },
+                        child: Text(
+                          'Annulla',
+                          style: TextStyle(color: colorScheme.primary),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _showCompleteDialog = false;
+                          });
+                          _handleCompleteConfirmed();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Completa'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1515,12 +1831,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       debugPrint("🚀 [SINGLE EXERCISE] Workout completed");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
+      _completeButtonController.stop(); // 🆕 Stop animazione
     }
 
     if (state is WorkoutSessionCancelled) {
       debugPrint("🚀 [SINGLE EXERCISE] Workout cancelled");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
+      _completeButtonController.stop(); // 🆕 Stop animazione
 
       CustomSnackbar.show(
         context,
