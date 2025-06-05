@@ -9,10 +9,13 @@ import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 
+// ✅ IMPORT PER TEST API 34 vs 35 - STEP 5
+import 'test/simple_workout_test_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 🚨 TEST LINE - se vedi questo log, i file sono aggiornati
-  print('🚨 MAIN STARTED - Files are updated!');
+  print('🚨 MAIN STARTED - Files are updated for Step 5!');
   await DependencyInjection.init();
 
   runApp(const FitGymTrackApp());
@@ -422,13 +425,94 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
+// ✅ WORKOUTS PAGE CON PULSANTE TEST STEP 5
 class WorkoutsPage extends StatelessWidget {
   const WorkoutsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // ✅ MOSTRA DIRETTAMENTE LA SCHERMATA
-    return const WorkoutPlansScreen();
+    return Scaffold(
+      body: Column(
+        children: [
+          // 🎯 PULSANTE TEST API 34 vs 35 - STEP 5
+          Container(
+            width: double.infinity,
+            margin: EdgeInsets.all(16.w),
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.purple[50],
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: Colors.purple[300]!, width: 2),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.architecture,
+                      color: Colors.purple[700],
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        '🎯 STEP 5: BLoC Pattern Test',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      debugPrint('🎯 [DEBUG] Step 5 test button pressed - navigating to SimpleWorkoutTestScreen');
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SimpleWorkoutTestScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple[600],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text(
+                      'TEST PROGRESSIVE v5 (Step 4 + 5)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'STEP 5: Testa BLoC + Repository + DI vs setState + HTTP.\nSe fallisce → problema architetturale.',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.purple[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+
+          // ✅ SCHERMATA WORKOUTS NORMALE
+          const Expanded(
+            child: WorkoutPlansScreen(),
+          ),
+        ],
+      ),
+    );
   }
 }
 
