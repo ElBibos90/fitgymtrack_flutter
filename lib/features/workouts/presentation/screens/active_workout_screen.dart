@@ -8,6 +8,8 @@ import 'dart:async';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../shared/widgets/recovery_timer_popup.dart';
+import '../../../../shared/widgets/isometric_timer_popup.dart';
+import '../../../../shared/widgets/parameter_edit_dialog.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
@@ -72,6 +74,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   bool _isRecoveryTimerActive = false;
   int _recoverySeconds = 0;
   String? _currentRecoveryExerciseName;
+
+  // 🔥 Isometric timer popup state
+  bool _isIsometricTimerActive = false;
+  int _isometricSeconds = 0;
+  String? _currentIsometricExerciseName;
+  WorkoutExercise? _pendingIsometricExercise;
+
+  // ✏️ Modified parameters storage
+  Map<int, double> _modifiedWeights = {};
+  Map<int, int> _modifiedReps = {};
 
   // UI state
   bool _isInitialized = false;
@@ -387,6 +399,114 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
+  // 🔥 ISOMETRIC TIMER METHODS
+  // ============================================================================
+
+  void _startIsometricTimer(WorkoutExercise exercise) {
+    final seconds = _getEffectiveReps(exercise); // Usa ripetizioni modificate o originali
+
+    debugPrint("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
+
+    setState(() {
+      _isIsometricTimerActive = true;
+      _isometricSeconds = seconds;
+      _currentIsometricExerciseName = exercise.nome;
+      _pendingIsometricExercise = exercise;
+    });
+  }
+
+  void _onIsometricTimerComplete() {
+    debugPrint("✅ [ISOMETRIC] Isometric timer completed!");
+
+    // Completa automaticamente la serie
+    if (_pendingIsometricExercise != null) {
+      final state = _getCurrentState();
+      if (state != null) {
+        _handleCompleteSeries(state, _pendingIsometricExercise!);
+      }
+    }
+
+    setState(() {
+      _isIsometricTimerActive = false;
+      _isometricSeconds = 0;
+      _currentIsometricExerciseName = null;
+      _pendingIsometricExercise = null;
+    });
+
+    CustomSnackbar.show(
+      context,
+      message: "🔥 Tenuta isometrica completata! 💪",
+      isSuccess: true,
+    );
+  }
+
+  void _onIsometricTimerCancelled() {
+    debugPrint("❌ [ISOMETRIC] Isometric timer cancelled");
+
+    setState(() {
+      _isIsometricTimerActive = false;
+      _isometricSeconds = 0;
+      _currentIsometricExerciseName = null;
+      _pendingIsometricExercise = null;
+    });
+
+    CustomSnackbar.show(
+      context,
+      message: "Tenuta isometrica annullata",
+      isSuccess: false,
+    );
+  }
+
+  // ============================================================================
+  // ✏️ PARAMETER EDITING METHODS
+  // ============================================================================
+
+  void _editExerciseParameters(WorkoutExercise exercise) {
+    final currentWeight = _getEffectiveWeight(exercise);
+    final currentReps = _getEffectiveReps(exercise);
+
+    showDialog(
+      context: context,
+      builder: (context) => ParameterEditDialog(
+        initialWeight: currentWeight,
+        initialReps: currentReps,
+        exerciseName: exercise.nome,
+        isIsometric: exercise.isIsometric,
+        onSave: (weight, reps) {
+          _saveModifiedParameters(exercise, weight, reps);
+        },
+      ),
+    );
+  }
+
+  void _saveModifiedParameters(WorkoutExercise exercise, double weight, int reps) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    setState(() {
+      _modifiedWeights[exerciseId] = weight;
+      _modifiedReps[exerciseId] = reps;
+    });
+
+    debugPrint("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
+
+    CustomSnackbar.show(
+      context,
+      message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
+      isSuccess: true,
+    );
+  }
+
+  double _getEffectiveWeight(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    return _modifiedWeights[exerciseId] ?? exercise.peso;
+  }
+
+  int _getEffectiveReps(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    return _modifiedReps[exerciseId] ?? exercise.ripetizioni;
+  }
+
+  // ============================================================================
   // WORKOUT LOGIC
   // ============================================================================
 
@@ -452,14 +572,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     debugPrint("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
 
-    // Create series data
+    // ✏️ Usa parametri modificati se disponibili
+    final effectiveWeight = _getEffectiveWeight(exercise);
+    final effectiveReps = _getEffectiveReps(exercise);
+
+    // Create series data with effective parameters
     final seriesData = SeriesData(
       schedaEsercizioId: exerciseId,
-      peso: exercise.peso,
-      ripetizioni: exercise.ripetizioni,
+      peso: effectiveWeight,
+      ripetizioni: effectiveReps,
       completata: 1,
       tempoRecupero: exercise.tempoRecupero,
-      note: 'Completata da Single Exercise Screen',
+      note: exercise.isIsometric
+          ? 'Tenuta isometrica completata da Single Exercise Screen'
+          : 'Completata da Single Exercise Screen',
       serieNumber: completedCount + 1,
       serieId: 'series_${DateTime.now().millisecondsSinceEpoch}',
     );
@@ -478,11 +604,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Show success feedback
     CustomSnackbar.show(
       context,
-      message: "Serie ${completedCount + 1} completata! 💪",
+      message: exercise.isIsometric
+          ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
+          : "Serie ${completedCount + 1} completata! 💪",
       isSuccess: true,
     );
 
-    // Start recovery timer
+    // Start recovery timer (for both normal and isometric exercises)
     if (exercise.tempoRecupero > 0) {
       _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
     }
@@ -814,6 +942,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               _stopRecoveryTimer();
             },
           ),
+
+        // 🔥 Isometric Timer Popup Overlay
+        if (_isIsometricTimerActive && _currentIsometricExerciseName != null)
+          IsometricTimerPopup(
+            initialSeconds: _isometricSeconds,
+            isActive: _isIsometricTimerActive,
+            exerciseName: _currentIsometricExerciseName!,
+            onIsometricComplete: _onIsometricTimerComplete,
+            onIsometricCancelled: _onIsometricTimerCancelled,
+            onIsometricDismissed: () {
+              setState(() {
+                _isIsometricTimerActive = false;
+                _pendingIsometricExercise = null;
+              });
+            },
+          ),
       ],
     );
   }
@@ -1033,18 +1177,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 Expanded(
                   child: _buildParameterCard(
                     'Peso',
-                    '${exercise.peso.toStringAsFixed(0)} kg',
+                    '${_getEffectiveWeight(exercise).toStringAsFixed(1)} kg',
                     Icons.fitness_center,
                     exerciseColor,
+                    onTap: () => _editExerciseParameters(exercise),
+                    isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id),
                   ),
                 ),
                 SizedBox(width: 16.w),
                 Expanded(
                   child: _buildParameterCard(
-                    'Ripetizioni',
-                    '${exercise.ripetizioni}',
-                    Icons.repeat,
-                    Colors.green,
+                    exercise.isIsometric ? 'Secondi' : 'Ripetizioni',
+                    '${_getEffectiveReps(exercise)}',
+                    exercise.isIsometric ? Icons.timer : Icons.repeat,
+                    exercise.isIsometric ? Colors.deepPurple : Colors.green,
+                    onTap: () => _editExerciseParameters(exercise),
+                    isModified: _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
                   ),
                 ),
               ],
@@ -1052,30 +1200,47 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Complete Series Button
+            // Complete Series Button (conditional for isometric)
             SizedBox(
               width: double.infinity,
               height: 56.h,
               child: ElevatedButton(
                 onPressed: isCompleted
                     ? null
+                    : exercise.isIsometric
+                    ? () => _startIsometricTimer(exercise)
                     : () => _handleCompleteSeries(state, exercise),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted ? Colors.green : exerciseColor,
+                  backgroundColor: isCompleted
+                      ? Colors.green
+                      : exercise.isIsometric
+                      ? Colors.deepPurple
+                      : exerciseColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   elevation: isCompleted ? 0 : 2,
                 ),
-                child: Text(
-                  isCompleted
-                      ? '✅ Esercizio Completato'
-                      : 'Completa Serie ${completedSeries + 1}',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (exercise.isIsometric && !isCompleted) ...[
+                      Icon(Icons.timer, size: 20.sp),
+                      SizedBox(width: 8.w),
+                    ],
+                    Text(
+                      isCompleted
+                          ? '✅ Esercizio Completato'
+                          : exercise.isIsometric
+                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(exercise)}s'
+                          : 'Completa Serie ${completedSeries + 1}',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1176,7 +1341,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  exIsCompleted ? Icons.check_circle : Icons.fitness_center,
+                                  exIsCompleted
+                                      ? Icons.check_circle
+                                      : exercise.isIsometric
+                                      ? Icons.timer
+                                      : Icons.fitness_center,
                                   color: isSelected ? Colors.white : groupColor,
                                   size: 16.sp,
                                 ),
@@ -1292,18 +1461,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 Expanded(
                   child: _buildParameterCard(
                     'Peso',
-                    '${currentExercise.peso.toStringAsFixed(0)} kg',
+                    '${_getEffectiveWeight(currentExercise).toStringAsFixed(1)} kg',
                     Icons.fitness_center,
                     groupColor,
+                    onTap: () => _editExerciseParameters(currentExercise),
+                    isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
                   ),
                 ),
                 SizedBox(width: 16.w),
                 Expanded(
                   child: _buildParameterCard(
-                    'Ripetizioni',
-                    '${currentExercise.ripetizioni}',
-                    Icons.repeat,
-                    groupColor,
+                    currentExercise.isIsometric ? 'Secondi' : 'Ripetizioni',
+                    '${_getEffectiveReps(currentExercise)}',
+                    currentExercise.isIsometric ? Icons.timer : Icons.repeat,
+                    currentExercise.isIsometric ? Colors.deepPurple : groupColor,
+                    onTap: () => _editExerciseParameters(currentExercise),
+                    isModified: _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
                   ),
                 ),
               ],
@@ -1311,30 +1484,47 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Complete Series Button (Same as single exercise)
+            // Complete Series Button (conditional for isometric)
             SizedBox(
               width: double.infinity,
               height: 56.h,
               child: ElevatedButton(
                 onPressed: isCompleted
                     ? null
+                    : currentExercise.isIsometric
+                    ? () => _startIsometricTimer(currentExercise)
                     : () => _handleCompleteSeries(state, currentExercise),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted ? Colors.green : groupColor,
+                  backgroundColor: isCompleted
+                      ? Colors.green
+                      : currentExercise.isIsometric
+                      ? Colors.deepPurple
+                      : groupColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   elevation: isCompleted ? 0 : 2,
                 ),
-                child: Text(
-                  isCompleted
-                      ? '✅ Esercizio Completato'
-                      : 'Completa Serie ${completedSeries + 1}',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (currentExercise.isIsometric && !isCompleted) ...[
+                      Icon(Icons.timer, size: 20.sp),
+                      SizedBox(width: 8.w),
+                    ],
+                    Text(
+                      isCompleted
+                          ? '✅ Esercizio Completato'
+                          : currentExercise.isIsometric
+                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(currentExercise)}s'
+                          : 'Completa Serie ${completedSeries + 1}',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1369,47 +1559,93 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildParameterCard(String label, String value, IconData icon, Color color) {
+  Widget _buildParameterCard(
+      String label,
+      String value,
+      IconData icon,
+      Color color, {
+        VoidCallback? onTap,
+        bool isModified = false,
+      }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 32.sp,
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: colorScheme.onSurface.withOpacity(0.7),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+          ],
+          border: isModified ? Border.all(
+            color: Colors.orange,
+            width: 2,
+          ) : null,
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  color: color,
+                  size: 32.sp,
+                ),
+                if (isModified) ...[
+                  SizedBox(width: 8.w),
+                  Icon(
+                    Icons.edit,
+                    color: Colors.orange,
+                    size: 16.sp,
+                  ),
+                ],
+                if (onTap != null && !isModified) ...[
+                  SizedBox(width: 8.w),
+                  Icon(
+                    Icons.edit,
+                    color: colorScheme.onSurface.withOpacity(0.3),
+                    size: 16.sp,
+                  ),
+                ],
+              ],
             ),
-          ),
-        ],
+            SizedBox(height: 8.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+                color: isModified ? Colors.orange : colorScheme.onSurface,
+              ),
+            ),
+            if (isModified) ...[
+              SizedBox(height: 4.h),
+              Text(
+                'Modificato',
+                style: TextStyle(
+                  fontSize: 10.sp,
+                  color: Colors.orange,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
