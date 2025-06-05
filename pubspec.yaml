@@ -17,6 +17,8 @@ dependencies:
   flutter_screenutil: ^5.9.0
   cached_network_image: ^3.3.1
 
+  wakelock_plus: ^1.2.0
+
   # State Management
   flutter_bloc: ^8.1.5
   equatable: ^2.0.5

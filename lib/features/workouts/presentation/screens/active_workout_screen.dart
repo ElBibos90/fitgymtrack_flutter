@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -61,6 +62,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   String _currentStatus = "Inizializzazione...";
   int _currentExerciseIndex = 0;
 
+  // 🧪 STEP 1A: Only Wakelock (no SystemChrome)
+  bool _isWakelockEnabled = false;
+  bool _keepScreenOn = true; // User preference
+
   // User session
   int? _userId;
 
@@ -78,6 +83,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _workoutTimer?.cancel();
     _pulseController.dispose();
     _slideController.dispose();
+    // 🧪 STEP 1A: Cleanup only wakelock
+    _disableWakelock();
     super.dispose();
   }
 
@@ -143,6 +150,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Start workout
       _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
 
+      // 🧪 STEP 1A: Enable only wakelock (no SystemChrome)
+      if (_keepScreenOn) {
+        await _enableWakelock();
+      }
+
       setState(() {
         _isInitialized = true;
         _currentStatus = "Allenamento avviato";
@@ -164,6 +176,55 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         );
       }
     }
+  }
+
+  // ============================================================================
+  // 🧪 STEP 1A: WAKELOCK ONLY (no SystemChrome)
+  // ============================================================================
+
+  Future<void> _enableWakelock() async {
+    try {
+      debugPrint("🧪 [WAKELOCK] Enabling wakelock...");
+
+      if (!_isWakelockEnabled) {
+        await WakelockPlus.enable();
+        _isWakelockEnabled = true;
+        debugPrint("🧪 [WAKELOCK] ✅ Wakelock enabled - screen will stay on");
+        setState(() {});
+      }
+
+    } catch (e) {
+      debugPrint("🧪 [WAKELOCK] ❌ Error enabling wakelock: $e");
+      // Don't throw - this shouldn't block the workout
+    }
+  }
+
+  Future<void> _disableWakelock() async {
+    try {
+      debugPrint("🧪 [WAKELOCK] Disabling wakelock...");
+
+      if (_isWakelockEnabled) {
+        await WakelockPlus.disable();
+        _isWakelockEnabled = false;
+        debugPrint("🧪 [WAKELOCK] ✅ Wakelock disabled - normal screen timeout");
+      }
+
+    } catch (e) {
+      debugPrint("🧪 [WAKELOCK] ❌ Error disabling wakelock: $e");
+      // Don't throw - app should continue working
+    }
+  }
+
+  Future<void> _toggleWakelock() async {
+    _keepScreenOn = !_keepScreenOn;
+
+    if (_keepScreenOn && !_isWakelockEnabled) {
+      await _enableWakelock();
+    } else if (!_keepScreenOn && _isWakelockEnabled) {
+      await _disableWakelock();
+    }
+
+    setState(() {});
   }
 
   // ============================================================================
@@ -446,6 +507,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       foregroundColor: Colors.white,
       elevation: 0,
       actions: [
+        // 🧪 STEP 1A: Only wakelock control
+        IconButton(
+          icon: Icon(
+            _isWakelockEnabled ? Icons.screen_lock_rotation : Icons.screen_lock_rotation_outlined,
+            size: 24.sp,
+          ),
+          onPressed: _toggleWakelock,
+          tooltip: _isWakelockEnabled ? 'Disabilita schermo sempre acceso' : 'Mantieni schermo acceso',
+        ),
         if (state is WorkoutSessionActive) ...[
           IconButton(
             icon: Icon(Icons.pause, size: 24.sp),
@@ -531,6 +601,28 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               color: Colors.white.withOpacity(0.9),
             ),
           ),
+          // 🧪 STEP 1A: Show wakelock status
+          if (_isWakelockEnabled) ...[
+            SizedBox(height: 8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.screen_lock_rotation,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 16.sp,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  'Screen Always On',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -1283,6 +1375,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is WorkoutSessionCompleted) {
       debugPrint("🚀 [ACTIVE WORKOUT] Workout completed");
       _stopWorkoutTimer();
+      // 🧪 STEP 1A: Disable wakelock when workout completes
+      _disableWakelock();
 
       // Show completion dialog
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -1315,6 +1409,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is WorkoutSessionCancelled) {
       debugPrint("🚀 [ACTIVE WORKOUT] Workout cancelled");
       _stopWorkoutTimer();
+      // 🧪 STEP 1A: Disable wakelock when workout is cancelled
+      _disableWakelock();
 
       CustomSnackbar.show(
         context,
