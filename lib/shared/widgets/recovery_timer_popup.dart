@@ -1,5 +1,6 @@
 // lib/shared/widgets/recovery_timer_popup.dart
 // 🚀 Recovery Timer come Popup - Non invasivo e elegante
+// ✅ IMPROVED: Better readability for timer text
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,7 @@ import 'dart:async';
 /// ✅ Dismissibile e con controlli
 /// ✅ Posizionamento smart (in basso)
 /// ✅ Animazioni fluide
+/// ✅ IMPROVED: Timer text readability
 class RecoveryTimerPopup extends StatefulWidget {
   final int initialSeconds;
   final bool isActive;
@@ -284,21 +286,21 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
 
                   SizedBox(height: 12.h),
 
-                  // Timer principale con progress circle
+                  // 🆕 IMPROVED: Timer principale con layout separato
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Progress Circle
+                      // Progress Circle (più piccolo)
                       SizedBox(
-                        width: 60.w,
-                        height: 60.w,
+                        width: 50.w,
+                        height: 50.w,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
                             // Background circle
                             CircularProgressIndicator(
                               value: 1.0,
-                              strokeWidth: 4,
+                              strokeWidth: 3,
                               backgroundColor: Colors.grey[200],
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 Colors.grey[200]!,
@@ -310,7 +312,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                               builder: (context, child) {
                                 return CircularProgressIndicator(
                                   value: _progressAnimation.value,
-                                  strokeWidth: 4,
+                                  strokeWidth: 3,
                                   backgroundColor: Colors.transparent,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     _getTimerColor(),
@@ -318,20 +320,34 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                                 );
                               },
                             ),
-                            // Timer text
-                            Text(
-                              _formatTime(_remainingSeconds),
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: _getTimerColor(),
-                              ),
-                            ),
                           ],
                         ),
                       ),
 
-                      SizedBox(width: 24.w),
+                      SizedBox(width: 20.w),
+
+                      // 🆕 Timer text separato (più leggibile)
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: _getTimerColor().withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: _getTimerColor().withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _formatTime(_remainingSeconds),
+                          style: TextStyle(
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.bold,
+                            color: _getTimerColor(),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(width: 20.w),
 
                       // Controls
                       Row(
@@ -343,11 +359,12 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                             icon: Icon(
                               _isPaused ? Icons.play_arrow : Icons.pause,
                               color: _getTimerColor(),
-                              size: 24.sp,
+                              size: 20.sp,
                             ),
                             style: IconButton.styleFrom(
                               backgroundColor: _getTimerColor().withOpacity(0.1),
-                              padding: EdgeInsets.all(8.w),
+                              padding: EdgeInsets.all(6.w),
+                              minimumSize: Size(32.w, 32.w),
                             ),
                           ),
 
@@ -359,11 +376,12 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                             icon: Icon(
                               Icons.skip_next,
                               color: Colors.grey[600],
-                              size: 24.sp,
+                              size: 20.sp,
                             ),
                             style: IconButton.styleFrom(
                               backgroundColor: Colors.grey[100],
-                              padding: EdgeInsets.all(8.w),
+                              padding: EdgeInsets.all(6.w),
+                              minimumSize: Size(32.w, 32.w),
                             ),
                           ),
                         ],

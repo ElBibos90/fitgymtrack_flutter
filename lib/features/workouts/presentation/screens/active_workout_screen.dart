@@ -307,7 +307,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         // Set to first incomplete exercise in the new group
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
         }
       });
       _pageController.animateToPage(
@@ -326,7 +326,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         // Set to first incomplete exercise in the new group
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
         }
       });
       _pageController.animateToPage(
@@ -500,27 +500,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   /// 🚀 STEP 4: Handle automatic rotation between exercises in superset/circuit
+  /// ✅ FIXED: Sequential rotation logic
   void _handleAutoRotation(WorkoutSessionActive state) {
     if (_currentGroupIndex >= _exerciseGroups.length) return;
 
     final currentGroup = _exerciseGroups[_currentGroupIndex];
     if (currentGroup.length <= 1) return; // No rotation needed for single exercises
 
-    // Find next exercise in rotation
-    final nextExerciseIndex = _findNextExerciseInRotation(state, currentGroup);
+    // Check if the group is fully completed
+    if (_isGroupCompleted(state, currentGroup)) {
+      return;
+    }
+
+    // Find next exercise in sequential rotation
+    final nextExerciseIndex = _findNextExerciseInSequentialRotation(state, currentGroup);
 
     if (nextExerciseIndex != _currentExerciseInGroup) {
-      // Auto-switch to next exercise in 1 second
-      Future.delayed(const Duration(milliseconds: 1000), () {
+      // Auto-switch to next exercise in 1.5 seconds
+      Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           setState(() {
             _currentExerciseInGroup = nextExerciseIndex;
           });
 
           final nextExercise = currentGroup[_currentExerciseInGroup];
+          final groupType = currentGroup.first.setType;
+
           CustomSnackbar.show(
             context,
-            message: "🔄 Prossimo: ${nextExercise.nome}",
+            message: "🔄 ${groupType.toUpperCase()}: ${nextExercise.nome}",
             isSuccess: true,
           );
         }
@@ -528,26 +536,32 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  /// Find next exercise in rotation (first incomplete, or first if all completed at same level)
-  int _findNextExerciseInRotation(WorkoutSessionActive? state, List<WorkoutExercise> group) {
+  /// 🆕 SEQUENTIAL ROTATION: Passa al prossimo esercizio in ordine
+  /// Se sono all'ultimo, torna al primo. Continua finché tutto il gruppo è completato.
+  int _findNextExerciseInSequentialRotation(WorkoutSessionActive? state, List<WorkoutExercise> group) {
     if (state == null) return 0;
 
-    // Find the exercise with minimum completed series (round-robin style)
-    int minCompletedSeries = 999;
-    int nextIndex = 0;
+    // Prossimo esercizio in sequenza (sequential, non round-robin basato su serie)
+    int nextIndex = (_currentExerciseInGroup + 1) % group.length;
 
-    for (int i = 0; i < group.length; i++) {
-      final exercise = group[i];
+    // Se il prossimo esercizio è già completato, cerca il primo esercizio incompleto
+    for (int attempts = 0; attempts < group.length; attempts++) {
+      final exercise = group[nextIndex];
       final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
       final completedCount = _getCompletedSeriesCount(state, exerciseId);
 
-      if (completedCount < minCompletedSeries && completedCount < exercise.serie) {
-        minCompletedSeries = completedCount;
-        nextIndex = i;
+      // Se questo esercizio non è ancora completato, selezionalo
+      if (completedCount < exercise.serie) {
+        return nextIndex;
       }
+
+      // Altrimenti, passa al prossimo
+      nextIndex = (nextIndex + 1) % group.length;
     }
 
-    return nextIndex;
+    // Se arriviamo qui, tutti gli esercizi sono completati
+    debugPrint("🎉 [AUTO-ROTATION] All exercises in group are completed!");
+    return _currentExerciseInGroup; // Rimani dove sei
   }
 
   WorkoutSessionActive? _getCurrentState() {
@@ -862,7 +876,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Initialize to first incomplete exercise in the current group
       if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
         final currentGroup = _exerciseGroups[_currentGroupIndex];
-        _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), currentGroup);
+        _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), currentGroup);
       }
     }
 
@@ -878,7 +892,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 // Set to first incomplete exercise in the new group
                 if (index < _exerciseGroups.length) {
                   final newGroup = _exerciseGroups[index];
-                  _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+                  _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
                 }
               });
               _stopRecoveryTimer();
