@@ -2,13 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'dart:async';
 import 'dart:io';
 
 // Core imports
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
+import '../../../../shared/widgets/recovery_timer_widget.dart'; // 🚀 STEP 2
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
@@ -17,11 +17,13 @@ import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
-/// 🚀 NUOVA ActiveWorkoutScreen - REFACTORING COMPLETO
+/// 🚀 ActiveWorkoutScreen - VERSIONE BASE FUNZIONANTE
 /// ✅ Architettura BLoC (testata e funzionante)
 /// ✅ Compatibile API 34 + API 35
 /// ✅ UI moderna e responsiva
 /// ✅ Gestione stati robusta
+/// ❌ NO SystemChrome (causa crash su API 34)
+/// ⏳ Prossimo: STEP 2 (Rest Timer) o altri features
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -62,9 +64,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   String _currentStatus = "Inizializzazione...";
   int _currentExerciseIndex = 0;
 
-  // 🧪 STEP 1A: Only Wakelock (no SystemChrome)
-  bool _isWakelockEnabled = false;
-  bool _keepScreenOn = true; // User preference
+  // 🚀 STEP 2: Recovery Timer State
+  bool _isRecoveryTimerActive = false;
+  int _recoverySeconds = 0;
+  String? _currentRecoveryExerciseName;
 
   // User session
   int? _userId;
@@ -83,8 +86,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _workoutTimer?.cancel();
     _pulseController.dispose();
     _slideController.dispose();
-    // 🧪 STEP 1A: Cleanup only wakelock
-    _disableWakelock();
+    // 🚀 STEP 2: Stop recovery timer
+    _stopRecoveryTimer();
     super.dispose();
   }
 
@@ -150,11 +153,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Start workout
       _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
 
-      // 🧪 STEP 1A: Enable only wakelock (no SystemChrome)
-      if (_keepScreenOn) {
-        await _enableWakelock();
-      }
-
       setState(() {
         _isInitialized = true;
         _currentStatus = "Allenamento avviato";
@@ -179,52 +177,44 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🧪 STEP 1A: WAKELOCK ONLY (no SystemChrome)
+  // 🚀 STEP 2: RECOVERY TIMER MANAGEMENT
   // ============================================================================
 
-  Future<void> _enableWakelock() async {
-    try {
-      debugPrint("🧪 [WAKELOCK] Enabling wakelock...");
+  void _startRecoveryTimer(int seconds, String exerciseName) {
+    debugPrint("🔄 [RECOVERY] Starting recovery timer: $seconds seconds for $exerciseName");
 
-      if (!_isWakelockEnabled) {
-        await WakelockPlus.enable();
-        _isWakelockEnabled = true;
-        debugPrint("🧪 [WAKELOCK] ✅ Wakelock enabled - screen will stay on");
-        setState(() {});
-      }
-
-    } catch (e) {
-      debugPrint("🧪 [WAKELOCK] ❌ Error enabling wakelock: $e");
-      // Don't throw - this shouldn't block the workout
-    }
+    setState(() {
+      _isRecoveryTimerActive = true;
+      _recoverySeconds = seconds;
+      _currentRecoveryExerciseName = exerciseName;
+    });
   }
 
-  Future<void> _disableWakelock() async {
-    try {
-      debugPrint("🧪 [WAKELOCK] Disabling wakelock...");
+  void _stopRecoveryTimer() {
+    debugPrint("⏹️ [RECOVERY] Recovery timer stopped");
 
-      if (_isWakelockEnabled) {
-        await WakelockPlus.disable();
-        _isWakelockEnabled = false;
-        debugPrint("🧪 [WAKELOCK] ✅ Wakelock disabled - normal screen timeout");
-      }
-
-    } catch (e) {
-      debugPrint("🧪 [WAKELOCK] ❌ Error disabling wakelock: $e");
-      // Don't throw - app should continue working
-    }
+    setState(() {
+      _isRecoveryTimerActive = false;
+      _recoverySeconds = 0;
+      _currentRecoveryExerciseName = null;
+    });
   }
 
-  Future<void> _toggleWakelock() async {
-    _keepScreenOn = !_keepScreenOn;
+  void _onRecoveryTimerComplete() {
+    debugPrint("✅ [RECOVERY] Recovery completed!");
 
-    if (_keepScreenOn && !_isWakelockEnabled) {
-      await _enableWakelock();
-    } else if (!_keepScreenOn && _isWakelockEnabled) {
-      await _disableWakelock();
-    }
+    setState(() {
+      _isRecoveryTimerActive = false;
+      _recoverySeconds = 0;
+      _currentRecoveryExerciseName = null;
+    });
 
-    setState(() {});
+    // Mostra feedback positivo
+    CustomSnackbar.show(
+      context,
+      message: "Recupero completato! Pronto per la prossima serie 💪",
+      isSuccess: true,
+    );
   }
 
   // ============================================================================
@@ -340,6 +330,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       message: "Serie ${completedCount + 1} completata! 💪",
       isSuccess: true,
     );
+
+    // 🚀 STEP 2: Auto-start recovery timer
+    if (exercise.tempoRecupero > 0) {
+      _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
+    }
 
     // Check if workout is completed
     setState(() {
@@ -507,15 +502,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       foregroundColor: Colors.white,
       elevation: 0,
       actions: [
-        // 🧪 STEP 1A: Only wakelock control
-        IconButton(
-          icon: Icon(
-            _isWakelockEnabled ? Icons.screen_lock_rotation : Icons.screen_lock_rotation_outlined,
-            size: 24.sp,
-          ),
-          onPressed: _toggleWakelock,
-          tooltip: _isWakelockEnabled ? 'Disabilita schermo sempre acceso' : 'Mantieni schermo acceso',
-        ),
         if (state is WorkoutSessionActive) ...[
           IconButton(
             icon: Icon(Icons.pause, size: 24.sp),
@@ -548,6 +534,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             children: [
               _buildTimerCard(),
               SizedBox(height: 20.h),
+              // 🚀 STEP 2: Recovery Timer Widget
+              if (_isRecoveryTimerActive) ...[
+                RecoveryTimerWidget(
+                  initialSeconds: _recoverySeconds,
+                  isActive: _isRecoveryTimerActive,
+                  exerciseName: _currentRecoveryExerciseName,
+                  onTimerComplete: _onRecoveryTimerComplete,
+                  onTimerStopped: _stopRecoveryTimer,
+                ),
+                SizedBox(height: 20.h),
+              ],
               _buildStateContent(state),
               SizedBox(height: 100.h), // Space for bottom actions
             ],
@@ -601,28 +598,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               color: Colors.white.withOpacity(0.9),
             ),
           ),
-          // 🧪 STEP 1A: Show wakelock status
-          if (_isWakelockEnabled) ...[
-            SizedBox(height: 8.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.screen_lock_rotation,
-                  color: Colors.white.withOpacity(0.8),
-                  size: 16.sp,
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  'Screen Always On',
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -1375,8 +1350,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is WorkoutSessionCompleted) {
       debugPrint("🚀 [ACTIVE WORKOUT] Workout completed");
       _stopWorkoutTimer();
-      // 🧪 STEP 1A: Disable wakelock when workout completes
-      _disableWakelock();
+      // 🚀 STEP 2: Stop recovery timer on completion
+      _stopRecoveryTimer();
 
       // Show completion dialog
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -1409,8 +1384,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is WorkoutSessionCancelled) {
       debugPrint("🚀 [ACTIVE WORKOUT] Workout cancelled");
       _stopWorkoutTimer();
-      // 🧪 STEP 1A: Disable wakelock when workout is cancelled
-      _disableWakelock();
+      // 🚀 STEP 2: Stop recovery timer on cancellation
+      _stopRecoveryTimer();
 
       CustomSnackbar.show(
         context,
