@@ -7,7 +7,7 @@ import 'dart:async';
 // Core imports
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
-import '../../../../shared/widgets/recovery_timer_widget.dart';
+import '../../../../shared/widgets/recovery_timer_popup.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
@@ -16,12 +16,11 @@ import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
-/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED DESIGN
-/// ✅ Una schermata per esercizio - Design pulito e minimale
-/// ✅ Navigazione discreta in fondo
-/// ✅ Focus completo sull'esercizio corrente
-/// ✅ Supporto superset integrato
-/// ✅ UI responsiva e moderna
+/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING
+/// ✅ Una schermata per esercizio/gruppo - Design pulito e minimale
+/// ✅ Raggruppamento automatico superset/circuit
+/// ✅ Recovery timer come popup non invasivo
+/// ✅ Navigazione tra gruppi logici
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -57,11 +56,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _pulseAnimation;
 
-  // Navigation state
-  int _currentExerciseIndex = 0;
+  // 🚀 STEP 4: Exercise grouping for superset/circuit
+  List<List<WorkoutExercise>> _exerciseGroups = [];
+  int _currentGroupIndex = 0;
+  int _currentExerciseInGroup = 0; // Track which exercise in the current group
   PageController _pageController = PageController();
 
-  // Recovery timer state
+  // Recovery timer popup state
   bool _isRecoveryTimerActive = false;
   int _recoverySeconds = 0;
   String? _currentRecoveryExerciseName;
@@ -164,16 +165,80 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
+  // 🚀 STEP 4: EXERCISE GROUPING FOR SUPERSET/CIRCUIT
+  // ============================================================================
+
+  /// Raggruppa gli esercizi in base al campo linked_to_previous
+  List<List<WorkoutExercise>> _groupExercises(List<WorkoutExercise> exercises) {
+    List<List<WorkoutExercise>> groups = [];
+    List<WorkoutExercise> currentGroup = [];
+
+    for (int i = 0; i < exercises.length; i++) {
+      final exercise = exercises[i];
+
+      // Nuovo gruppo se linked_to_previous = 0 (non collegato al precedente)
+      if (exercise.linkedToPreviousInt == 0) {
+        // Salva il gruppo precedente se non vuoto
+        if (currentGroup.isNotEmpty) {
+          groups.add(List.from(currentGroup));
+          currentGroup.clear();
+        }
+        currentGroup.add(exercise);
+      } else {
+        // Esercizio collegato al precedente - aggiunge al gruppo corrente
+        currentGroup.add(exercise);
+      }
+    }
+
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groups.add(currentGroup);
+    }
+
+    debugPrint("🚀 [GROUPING] Created ${groups.length} exercise groups:");
+    for (int i = 0; i < groups.length; i++) {
+      debugPrint("  Group $i: ${groups[i].map((e) => e.nome).join(', ')}");
+    }
+
+    return groups;
+  }
+
+  /// Determina se un gruppo è completato (tutti gli esercizi del gruppo)
+  bool _isGroupCompleted(WorkoutSessionActive state, List<WorkoutExercise> group) {
+    for (final exercise in group) {
+      if (!_isExerciseCompleted(state, exercise)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Trova il prossimo esercizio incompleto nel gruppo corrente
+  WorkoutExercise? _getNextIncompleteExerciseInGroup(WorkoutSessionActive state, List<WorkoutExercise> group) {
+    for (final exercise in group) {
+      if (!_isExerciseCompleted(state, exercise)) {
+        return exercise;
+      }
+    }
+    return null; // Tutti completati
+  }
+
+  // ============================================================================
   // NAVIGATION METHODS
   // ============================================================================
 
-  void _goToPreviousExercise(List<WorkoutExercise> exercises) {
-    if (_currentExerciseIndex > 0) {
+  void _goToPreviousGroup() {
+    if (_currentGroupIndex > 0) {
       setState(() {
-        _currentExerciseIndex--;
+        _currentGroupIndex--;
+        // Set to first incomplete exercise in the new group
+        if (_currentGroupIndex < _exerciseGroups.length) {
+          final newGroup = _exerciseGroups[_currentGroupIndex];
+          _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+        }
       });
       _pageController.animateToPage(
-        _currentExerciseIndex,
+        _currentGroupIndex,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -181,13 +246,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  void _goToNextExercise(List<WorkoutExercise> exercises) {
-    if (_currentExerciseIndex < exercises.length - 1) {
+  void _goToNextGroup() {
+    if (_currentGroupIndex < _exerciseGroups.length - 1) {
       setState(() {
-        _currentExerciseIndex++;
+        _currentGroupIndex++;
+        // Set to first incomplete exercise in the new group
+        if (_currentGroupIndex < _exerciseGroups.length) {
+          final newGroup = _exerciseGroups[_currentGroupIndex];
+          _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+        }
       });
       _pageController.animateToPage(
-        _currentExerciseIndex,
+        _currentGroupIndex,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -196,19 +266,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   bool _canGoToPrevious() {
-    return _currentExerciseIndex > 0;
+    return _currentGroupIndex > 0;
   }
 
-  bool _canGoToNext(List<WorkoutExercise> exercises) {
-    return _currentExerciseIndex < exercises.length - 1;
+  bool _canGoToNext() {
+    return _currentGroupIndex < _exerciseGroups.length - 1;
   }
 
   // ============================================================================
-  // RECOVERY TIMER METHODS
+  // RECOVERY TIMER POPUP METHODS
   // ============================================================================
 
   void _startRecoveryTimer(int seconds, String exerciseName) {
-    debugPrint("🔄 [RECOVERY] Starting recovery timer: $seconds seconds for $exerciseName");
+    debugPrint("🔄 [RECOVERY POPUP] Starting recovery timer: $seconds seconds for $exerciseName");
 
     setState(() {
       _isRecoveryTimerActive = true;
@@ -218,7 +288,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _stopRecoveryTimer() {
-    debugPrint("⏹️ [RECOVERY] Recovery timer stopped");
+    debugPrint("⏹️ [RECOVERY POPUP] Recovery timer stopped");
 
     setState(() {
       _isRecoveryTimerActive = false;
@@ -228,7 +298,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onRecoveryTimerComplete() {
-    debugPrint("✅ [RECOVERY] Recovery completed!");
+    debugPrint("✅ [RECOVERY POPUP] Recovery completed!");
 
     setState(() {
       _isRecoveryTimerActive = false;
@@ -286,8 +356,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   bool _isWorkoutCompleted(WorkoutSessionActive state) {
-    for (final exercise in state.exercises) {
-      if (!_isExerciseCompleted(state, exercise)) {
+    for (final group in _exerciseGroups) {
+      if (!_isGroupCompleted(state, group)) {
         return false;
       }
     }
@@ -344,12 +414,71 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
     }
 
+    // 🚀 STEP 4: Handle auto-rotation for superset/circuit
+    _handleAutoRotation(state);
+
     // Check if workout is completed
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && _isWorkoutCompleted(state)) {
         _handleCompleteWorkout(state);
       }
     });
+  }
+
+  /// 🚀 STEP 4: Handle automatic rotation between exercises in superset/circuit
+  void _handleAutoRotation(WorkoutSessionActive state) {
+    if (_currentGroupIndex >= _exerciseGroups.length) return;
+
+    final currentGroup = _exerciseGroups[_currentGroupIndex];
+    if (currentGroup.length <= 1) return; // No rotation needed for single exercises
+
+    // Find next exercise in rotation
+    final nextExerciseIndex = _findNextExerciseInRotation(state, currentGroup);
+
+    if (nextExerciseIndex != _currentExerciseInGroup) {
+      // Auto-switch to next exercise in 1 second
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          setState(() {
+            _currentExerciseInGroup = nextExerciseIndex;
+          });
+
+          final nextExercise = currentGroup[_currentExerciseInGroup];
+          CustomSnackbar.show(
+            context,
+            message: "🔄 Prossimo: ${nextExercise.nome}",
+            isSuccess: true,
+          );
+        }
+      });
+    }
+  }
+
+  /// Find next exercise in rotation (first incomplete, or first if all completed at same level)
+  int _findNextExerciseInRotation(WorkoutSessionActive? state, List<WorkoutExercise> group) {
+    if (state == null) return 0;
+
+    // Find the exercise with minimum completed series (round-robin style)
+    int minCompletedSeries = 999;
+    int nextIndex = 0;
+
+    for (int i = 0; i < group.length; i++) {
+      final exercise = group[i];
+      final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+      final completedCount = _getCompletedSeriesCount(state, exerciseId);
+
+      if (completedCount < minCompletedSeries && completedCount < exercise.serie) {
+        minCompletedSeries = completedCount;
+        nextIndex = i;
+      }
+    }
+
+    return nextIndex;
+  }
+
+  WorkoutSessionActive? _getCurrentState() {
+    final currentState = context.read<ActiveWorkoutBloc>().state;
+    return currentState is WorkoutSessionActive ? currentState : null;
   }
 
   void _handleCompleteWorkout(WorkoutSessionActive state) {
@@ -383,8 +512,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   String _getExerciseTypeLabel(WorkoutExercise exercise) {
-    // 🚀 SUPERSET SUPPORT: Detect if exercise is part of superset
-    if (exercise.linkedToPrevious) {
+    if (exercise.setType == "superset") {
       return "Superset";
     } else if (exercise.setType == "circuit") {
       return "Circuit";
@@ -393,7 +521,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Color _getExerciseTypeColor(WorkoutExercise exercise) {
-    if (exercise.linkedToPrevious) {
+    if (exercise.setType == "superset") {
       return Colors.purple;
     } else if (exercise.setType == "circuit") {
       return Colors.orange;
@@ -518,6 +646,28 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildBody(ActiveWorkoutState state) {
+    return Stack(
+      children: [
+        // Main content
+        _buildMainContent(state),
+
+        // Recovery Timer Popup Overlay
+        if (_isRecoveryTimerActive)
+          RecoveryTimerPopup(
+            initialSeconds: _recoverySeconds,
+            isActive: _isRecoveryTimerActive,
+            exerciseName: _currentRecoveryExerciseName,
+            onTimerComplete: _onRecoveryTimerComplete,
+            onTimerStopped: _stopRecoveryTimer,
+            onTimerDismissed: () {
+              _stopRecoveryTimer();
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildMainContent(ActiveWorkoutState state) {
     if (state is ActiveWorkoutLoading) {
       return _buildLoadingContent();
     }
@@ -564,36 +714,40 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return _buildNoExercisesContent();
     }
 
+    // 🚀 STEP 4: Group exercises if not already grouped
+    if (_exerciseGroups.isEmpty) {
+      _exerciseGroups = _groupExercises(state.exercises);
+      if (_currentGroupIndex >= _exerciseGroups.length) {
+        _currentGroupIndex = 0;
+      }
+      // Initialize to first incomplete exercise in the current group
+      if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
+        final currentGroup = _exerciseGroups[_currentGroupIndex];
+        _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), currentGroup);
+      }
+    }
+
     return Column(
       children: [
-        // Recovery Timer (if active)
-        if (_isRecoveryTimerActive) ...[
-          Container(
-            margin: EdgeInsets.all(16.w),
-            child: RecoveryTimerWidget(
-              initialSeconds: _recoverySeconds,
-              isActive: _isRecoveryTimerActive,
-              exerciseName: _currentRecoveryExerciseName,
-              onTimerComplete: _onRecoveryTimerComplete,
-              onTimerStopped: _stopRecoveryTimer,
-            ),
-          ),
-        ],
-
-        // Exercise PageView
+        // Exercise Groups PageView
         Expanded(
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
-                _currentExerciseIndex = index;
+                _currentGroupIndex = index;
+                // Set to first incomplete exercise in the new group
+                if (index < _exerciseGroups.length) {
+                  final newGroup = _exerciseGroups[index];
+                  _currentExerciseInGroup = _findNextExerciseInRotation(_getCurrentState(), newGroup);
+                }
               });
               _stopRecoveryTimer();
             },
-            itemCount: state.exercises.length,
+            itemCount: _exerciseGroups.length,
             itemBuilder: (context, index) {
-              final exercise = state.exercises[index];
-              return _buildExercisePage(state, exercise, index);
+              final group = _exerciseGroups[index];
+              return _buildGroupPage(state, group, index);
             },
           ),
         ),
@@ -604,7 +758,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
-  Widget _buildExercisePage(WorkoutSessionActive state, WorkoutExercise exercise, int index) {
+  /// 🚀 STEP 4: Build page for a group of exercises (single, superset, or circuit)
+  Widget _buildGroupPage(WorkoutSessionActive state, List<WorkoutExercise> group, int groupIndex) {
+    if (group.length == 1) {
+      // Single exercise (normal)
+      return _buildSingleExercisePage(state, group.first);
+    } else {
+      // Multiple exercises (superset/circuit)
+      return _buildMultiExercisePage(state, group);
+    }
+  }
+
+  /// Build page for single exercise
+  Widget _buildSingleExercisePage(WorkoutSessionActive state, WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedSeries = _getCompletedSeriesCount(state, exerciseId);
     final isCompleted = _isExerciseCompleted(state, exercise);
@@ -767,6 +933,287 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
+  /// 🚀 STEP 4: Build page for multiple exercises (superset/circuit) with TABS
+  Widget _buildMultiExercisePage(WorkoutSessionActive state, List<WorkoutExercise> group) {
+    final groupType = group.first.setType; // superset or circuit
+    final groupColor = _getExerciseTypeColor(group.first);
+    final isGroupComplete = _isGroupCompleted(state, group);
+
+    // Ensure current exercise index is valid
+    if (_currentExerciseInGroup >= group.length) {
+      _currentExerciseInGroup = 0;
+    }
+
+    final currentExercise = group[_currentExerciseInGroup];
+    final exerciseId = currentExercise.schedaEsercizioId ?? currentExercise.id;
+    final completedSeries = _getCompletedSeriesCount(state, exerciseId);
+    final isCompleted = _isExerciseCompleted(state, currentExercise);
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(20.w),
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Group Type Badge
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: groupColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: groupColor.withOpacity(0.3)),
+              ),
+              child: Text(
+                '${groupType.toUpperCase()}: ${group.length} esercizi',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: groupColor,
+                ),
+              ),
+            ),
+
+            SizedBox(height: 24.h),
+
+            // 🚀 Exercise Tabs (Horizontal)
+            Container(
+              height: 50.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(25.r),
+              ),
+              child: Row(
+                children: group.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final exercise = entry.value;
+                  final isSelected = index == _currentExerciseInGroup;
+                  final exId = exercise.schedaEsercizioId ?? exercise.id;
+                  final exCompleted = _getCompletedSeriesCount(state, exId);
+                  final exIsCompleted = _isExerciseCompleted(state, exercise);
+
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _currentExerciseInGroup = index;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: isSelected ? groupColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: isSelected ? [
+                            BoxShadow(
+                              color: groupColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ] : null,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Exercise completion indicator
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  exIsCompleted ? Icons.check_circle : Icons.fitness_center,
+                                  color: isSelected ? Colors.white : groupColor,
+                                  size: 16.sp,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  '${exCompleted}/${exercise.serie}',
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? Colors.white : groupColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 2.h),
+                            // Exercise name (truncated)
+                            Text(
+                              exercise.nome.length > 10
+                                  ? '${exercise.nome.substring(0, 10)}...'
+                                  : exercise.nome,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected ? Colors.white : Colors.grey[700],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            SizedBox(height: 32.h),
+
+            // Current Exercise Name (Full)
+            Text(
+              currentExercise.nome,
+              style: TextStyle(
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            SizedBox(height: 40.h),
+
+            // Series Progress (Same as single exercise)
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Serie',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    '$completedSeries/${currentExercise.serie}',
+                    style: TextStyle(
+                      fontSize: 32.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isCompleted ? Colors.green : groupColor,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+                  // Progress Dots
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(currentExercise.serie, (i) {
+                      return Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4.w),
+                        width: 12.w,
+                        height: 12.w,
+                        decoration: BoxDecoration(
+                          color: i < completedSeries
+                              ? groupColor
+                              : Colors.grey[300],
+                          borderRadius: BorderRadius.circular(6.r),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 32.h),
+
+            // Exercise Parameters (Same as single exercise)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildParameterCard(
+                    'Peso',
+                    '${currentExercise.peso.toStringAsFixed(0)} kg',
+                    Icons.fitness_center,
+                    groupColor,
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: _buildParameterCard(
+                    'Ripetizioni',
+                    '${currentExercise.ripetizioni}',
+                    Icons.repeat,
+                    groupColor,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 32.h),
+
+            // Complete Series Button (Same as single exercise)
+            SizedBox(
+              width: double.infinity,
+              height: 56.h,
+              child: ElevatedButton(
+                onPressed: isCompleted
+                    ? null
+                    : () => _handleCompleteSeries(state, currentExercise),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isCompleted ? Colors.green : groupColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  elevation: isCompleted ? 0 : 2,
+                ),
+                child: Text(
+                  isCompleted
+                      ? '✅ Esercizio Completato'
+                      : 'Completa Serie ${completedSeries + 1}',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Group completion status
+            if (isGroupComplete)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: Text(
+                  '✅ ${groupType.toUpperCase()} COMPLETATO!',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+            SizedBox(height: 100.h), // Space for navigation
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildParameterCard(String label, String value, IconData icon, Color color) {
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -812,7 +1259,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   Widget _buildBottomNavigation(WorkoutSessionActive state) {
     final canPrev = _canGoToPrevious();
-    final canNext = _canGoToNext(state.exercises);
+    final canNext = _canGoToNext();
 
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -834,7 +1281,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               width: 80.w,
               height: 48.h,
               child: ElevatedButton(
-                onPressed: canPrev ? () => _goToPreviousExercise(state.exercises) : null,
+                onPressed: canPrev ? _goToPreviousGroup : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canPrev ? Colors.grey[600] : Colors.grey[300],
                   foregroundColor: Colors.white,
@@ -855,15 +1302,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             const Spacer(),
 
-            // Exercise Indicator
+            // Group Indicators
             Row(
-              children: List.generate(state.exercises.length, (index) {
+              children: List.generate(_exerciseGroups.length, (index) {
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  width: index == _currentExerciseIndex ? 24.w : 8.w,
+                  width: index == _currentGroupIndex ? 24.w : 8.w,
                   height: 8.w,
                   decoration: BoxDecoration(
-                    color: index == _currentExerciseIndex
+                    color: index == _currentGroupIndex
                         ? Colors.blue
                         : Colors.grey[300],
                     borderRadius: BorderRadius.circular(4.r),
@@ -879,7 +1326,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               width: 80.w,
               height: 48.h,
               child: ElevatedButton(
-                onPressed: canNext ? () => _goToNextExercise(state.exercises) : null,
+                onPressed: canNext ? _goToNextGroup : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canNext ? Colors.blue : Colors.grey[300],
                   foregroundColor: Colors.white,

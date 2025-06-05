@@ -1,0 +1,422 @@
+// lib/shared/widgets/recovery_timer_popup.dart
+// 🚀 Recovery Timer come Popup - Non invasivo e elegante
+
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
+
+/// 🚀 Recovery Timer Popup - Elegante e non invasivo
+/// ✅ Appare come overlay senza disturbare l'esercizio
+/// ✅ Dismissibile e con controlli
+/// ✅ Posizionamento smart (in basso)
+/// ✅ Animazioni fluide
+class RecoveryTimerPopup extends StatefulWidget {
+  final int initialSeconds;
+  final bool isActive;
+  final String? exerciseName;
+  final VoidCallback onTimerComplete;
+  final VoidCallback onTimerStopped;
+  final VoidCallback? onTimerDismissed;
+
+  const RecoveryTimerPopup({
+    super.key,
+    required this.initialSeconds,
+    required this.isActive,
+    this.exerciseName,
+    required this.onTimerComplete,
+    required this.onTimerStopped,
+    this.onTimerDismissed,
+  });
+
+  @override
+  State<RecoveryTimerPopup> createState() => _RecoveryTimerPopupState();
+}
+
+class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
+    with TickerProviderStateMixin {
+
+  // Timer management
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  bool _isPaused = false;
+  bool _isDismissed = false;
+
+  // Animation controllers
+  late AnimationController _slideController;
+  late AnimationController _pulseController;
+  late AnimationController _progressController;
+
+  // Animations
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingSeconds = widget.initialSeconds;
+    _initializeAnimations();
+    if (widget.isActive) {
+      _startTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _slideController.dispose();
+    _pulseController.dispose();
+    _progressController.dispose();
+    super.dispose();
+  }
+
+  void _initializeAnimations() {
+    // Slide animation per l'ingresso dal basso
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    // Pulse animation per attirare attenzione negli ultimi secondi
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Progress animation per la barra circolare
+    _progressController = AnimationController(
+      duration: Duration(seconds: widget.initialSeconds),
+      vsync: this,
+    );
+
+    _progressAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.linear,
+    ));
+
+    // Avvia l'animazione di ingresso
+    _slideController.forward();
+  }
+
+  void _startTimer() {
+    if (_isDismissed) return;
+
+    _progressController.forward();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _isDismissed) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+
+          // Pulse negli ultimi 3 secondi
+          if (_remainingSeconds <= 3 && _remainingSeconds > 0) {
+            _pulseController.repeat(reverse: true);
+
+            // Haptic feedback più intenso negli ultimi secondi
+            if (_remainingSeconds <= 3) {
+              HapticFeedback.heavyImpact();
+            }
+          }
+        } else {
+          // Timer completato
+          timer.cancel();
+          _pulseController.stop();
+
+          // Haptic feedback finale
+          HapticFeedback.heavyImpact();
+
+          // Callback di completamento
+          widget.onTimerComplete();
+
+          // Auto-dismiss dopo completamento
+          _dismissPopup();
+        }
+      });
+    });
+  }
+
+  void _pauseTimer() {
+    setState(() {
+      _isPaused = !_isPaused;
+    });
+
+    if (_isPaused) {
+      _timer?.cancel();
+      _progressController.stop();
+      _pulseController.stop();
+    } else {
+      _startTimer();
+    }
+  }
+
+  void _skipTimer() {
+    _timer?.cancel();
+    _progressController.stop();
+    _pulseController.stop();
+
+    widget.onTimerStopped();
+    _dismissPopup();
+  }
+
+  void _dismissPopup() {
+    if (_isDismissed) return;
+
+    setState(() {
+      _isDismissed = true;
+    });
+
+    _slideController.reverse().then((_) {
+      if (widget.onTimerDismissed != null) {
+        widget.onTimerDismissed!();
+      }
+    });
+  }
+
+  Color _getTimerColor() {
+    if (_remainingSeconds <= 3) return Colors.red;
+    if (_remainingSeconds <= 10) return Colors.orange;
+    return Colors.blue;
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isDismissed) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 100.h, // Sopra la navigazione ma non troppo in alto
+      left: 20.w,
+      right: 20.w,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: ScaleTransition(
+          scale: _pulseAnimation,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+                border: Border.all(
+                  color: _getTimerColor().withOpacity(0.2),
+                  width: 2,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header con nome esercizio e dismiss
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.timer,
+                        color: _getTimerColor(),
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          widget.exerciseName != null
+                              ? 'Recupero ${widget.exerciseName}'
+                              : 'Recupero',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _dismissPopup,
+                        icon: Icon(
+                          Icons.close,
+                          color: Colors.grey[500],
+                          size: 20.sp,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(
+                          minWidth: 24.w,
+                          minHeight: 24.w,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 12.h),
+
+                  // Timer principale con progress circle
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Progress Circle
+                      SizedBox(
+                        width: 60.w,
+                        height: 60.w,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Background circle
+                            CircularProgressIndicator(
+                              value: 1.0,
+                              strokeWidth: 4,
+                              backgroundColor: Colors.grey[200],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.grey[200]!,
+                              ),
+                            ),
+                            // Progress circle
+                            AnimatedBuilder(
+                              animation: _progressAnimation,
+                              builder: (context, child) {
+                                return CircularProgressIndicator(
+                                  value: _progressAnimation.value,
+                                  strokeWidth: 4,
+                                  backgroundColor: Colors.transparent,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    _getTimerColor(),
+                                  ),
+                                );
+                              },
+                            ),
+                            // Timer text
+                            Text(
+                              _formatTime(_remainingSeconds),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                                color: _getTimerColor(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(width: 24.w),
+
+                      // Controls
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Pause/Play
+                          IconButton(
+                            onPressed: _pauseTimer,
+                            icon: Icon(
+                              _isPaused ? Icons.play_arrow : Icons.pause,
+                              color: _getTimerColor(),
+                              size: 24.sp,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: _getTimerColor().withOpacity(0.1),
+                              padding: EdgeInsets.all(8.w),
+                            ),
+                          ),
+
+                          SizedBox(width: 8.w),
+
+                          // Skip
+                          IconButton(
+                            onPressed: _skipTimer,
+                            icon: Icon(
+                              Icons.skip_next,
+                              color: Colors.grey[600],
+                              size: 24.sp,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey[100],
+                              padding: EdgeInsets.all(8.w),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Status message
+                  if (_isPaused) ...[
+                    SizedBox(height: 8.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        '⏸️ Timer in pausa',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (_remainingSeconds <= 10 && !_isPaused) ...[
+                    SizedBox(height: 8.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: _getTimerColor().withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        _remainingSeconds <= 3
+                            ? '🔥 Ultimi secondi!'
+                            : '⚡ Quasi pronto!',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: _getTimerColor(),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
