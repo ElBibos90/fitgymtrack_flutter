@@ -16,14 +16,14 @@ import '../../features/workouts/bloc/workout_bloc.dart';
 import '../../features/workouts/bloc/active_workout_bloc.dart';
 import '../../features/workouts/bloc/workout_history_bloc.dart';
 
-// ✅ FIX: Import modelli necessari per MockWorkoutRepositoryAdapter
+// ✅ FIX: Import modelli necessari
 import '../../features/workouts/models/workout_plan_models.dart';
 import '../../features/workouts/models/active_workout_models.dart';
 import '../../features/workouts/models/series_request_models.dart';
 import '../../features/workouts/models/workout_response_types.dart';
 import '../../features/exercises/models/exercises_response.dart';
 import '../../features/stats/models/user_stats_models.dart';
-import '../utils/result.dart' as utils_result; // ✅ FIX: Alias per evitare conflitti
+import '../utils/result.dart' as utils_result;
 
 final getIt = GetIt.instance;
 
@@ -57,27 +57,17 @@ class DependencyInjection {
       sessionService: getIt<SessionService>(),
     ));
 
-    // 🎯 NUOVO: Workout Repository con supporto Mock
+    // 🎯 FIX: Workout Repository con supporto Mock CORRETTO
     if (useMockRepository) {
       print('🎯 [DI] Registering MOCK WorkoutRepository for testing...');
 
-      // Registra il MockWorkoutRepository
-      getIt.registerLazySingleton<MockWorkoutRepository>(() {
-        print('🏗️ [DI] Creating MockWorkoutRepository instance...');
-        return MockWorkoutRepository();
-      });
-
-      // ✅ FIX: Crea un WorkoutRepository che delega al mock
+      // Registra SOLO il MockWorkoutRepository come WorkoutRepository
       getIt.registerLazySingleton<WorkoutRepository>(() {
-        print('🏗️ [DI] Creating _MockDelegateWorkoutRepository instance...');
-        final mockRepo = getIt<MockWorkoutRepository>();
-        final delegate = _MockDelegateWorkoutRepository(
-          mockRepository: mockRepo,
-          apiClient: getIt<ApiClient>(),
-          dio: getIt<Dio>(),
-        );
-        print('✅ [DI] _MockDelegateWorkoutRepository created and will delegate to MockWorkoutRepository');
-        return delegate;
+        print('🏗️ [DI] Creating MockWorkoutRepositoryAdapter instance...');
+        final mockRepo = MockWorkoutRepository();
+        final adapter = MockWorkoutRepositoryAdapter(mockRepo);
+        print('✅ [DI] MockWorkoutRepositoryAdapter created - ALL CALLS WILL GO TO MOCK');
+        return adapter;
       });
     } else {
       print('🔧 [DI] Registering REAL WorkoutRepository...');
@@ -144,21 +134,6 @@ class DependencyInjection {
   static Future<void> resetAndInitMock() async {
     print('🔄 [DI] Resetting and switching to mock mode...');
 
-    // ✅ FIX: Reset più aggressivo
-    try {
-      if (getIt.isRegistered<ActiveWorkoutBloc>()) {
-        await getIt.unregister<ActiveWorkoutBloc>();
-      }
-      if (getIt.isRegistered<WorkoutRepository>()) {
-        await getIt.unregister<WorkoutRepository>();
-      }
-      if (getIt.isRegistered<MockWorkoutRepository>()) {
-        await getIt.unregister<MockWorkoutRepository>();
-      }
-    } catch (e) {
-      print('🔄 [DI] Warning during selective unregister: $e');
-    }
-
     // Reset completo
     getIt.reset();
 
@@ -178,72 +153,69 @@ class DependencyInjection {
   static void reset() {
     print('🔄 [DI] Resetting GetIt completely...');
     getIt.reset();
-    // ✅ FIX: Aspetta che il reset sia completo
-    Future.delayed(const Duration(milliseconds: 100));
   }
 }
 
 // ============================================================================
-// 🎯 MOCK WORKOUT REPOSITORY ADAPTER
+// 🎯 MOCK WORKOUT REPOSITORY ADAPTER (COMPOSITION INVECE DI INHERITANCE)
 // ============================================================================
 
-// ============================================================================
-// 🎯 MOCK WORKOUT REPOSITORY DELEGATE
-// ============================================================================
-
-/// Delegate che estende WorkoutRepository ma delega i metodi al MockWorkoutRepository
-/// Questo è più pulito dell'adapter pattern e evita problemi di costruttore
-class _MockDelegateWorkoutRepository extends WorkoutRepository {
+/// Adapter che implementa WorkoutRepository ma delega tutto al MockWorkoutRepository
+/// Usa COMPOSITION invece di inheritance per evitare problemi di costruttore
+class MockWorkoutRepositoryAdapter implements WorkoutRepository {
   final MockWorkoutRepository _mockRepository;
 
-  _MockDelegateWorkoutRepository({
-    required MockWorkoutRepository mockRepository,
-    required ApiClient apiClient,
-    required Dio dio,
-  }) : _mockRepository = mockRepository,
-        super(apiClient: apiClient, dio: dio) {
-    print('🎯 [MOCK DELEGATE] Constructor called - mockRepository: ${mockRepository.runtimeType}');
-    print('🎯 [MOCK DELEGATE] This instance will delegate ALL calls to MockWorkoutRepository');
+  MockWorkoutRepositoryAdapter(this._mockRepository) {
+    print('🎯 [MOCK ADAPTER] Constructor called - mockRepository: ${_mockRepository.runtimeType}');
+    print('🎯 [MOCK ADAPTER] This adapter will delegate ALL calls to MockWorkoutRepository');
+    print('🎯 [MOCK ADAPTER] NO REAL API CALLS WILL BE MADE');
   }
 
-  // Override tutti i metodi per delegare al mock repository
+  // ============================================================================
+  // METODI PRINCIPALI (delegati al mock)
+  // ============================================================================
+
   @override
   Future<utils_result.Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) {
-    print('🎯 [MOCK DELEGATE] getWorkoutPlans called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] getWorkoutPlans called - delegating to mock repository');
     return _mockRepository.getWorkoutPlans(userId);
   }
 
   @override
   Future<utils_result.Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) {
-    print('🎯 [MOCK DELEGATE] getWorkoutExercises called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] getWorkoutExercises called - delegating to mock repository');
     return _mockRepository.getWorkoutExercises(schedaId);
   }
 
   @override
   Future<utils_result.Result<StartWorkoutResponse>> startWorkout(int userId, int schedaId) {
-    print('🎯 [MOCK DELEGATE] startWorkout called - delegating to MOCK repository (NOT real backend)');
+    print('🎯 [MOCK ADAPTER] *** startWorkout called - delegating to MOCK repository (NOT real backend) ***');
     return _mockRepository.startWorkout(userId, schedaId);
   }
 
   @override
   Future<utils_result.Result<List<CompletedSeriesData>>> getCompletedSeries(int allenamentoId) {
-    print('🎯 [MOCK DELEGATE] getCompletedSeries called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] getCompletedSeries called - delegating to mock repository');
     return _mockRepository.getCompletedSeries(allenamentoId);
   }
 
   @override
   Future<utils_result.Result<SaveCompletedSeriesResponse>> saveCompletedSeries(
       int allenamentoId, List<SeriesData> serie, String requestId) {
-    print('🎯 [MOCK DELEGATE] saveCompletedSeries called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] saveCompletedSeries called - delegating to mock repository');
     return _mockRepository.saveCompletedSeries(allenamentoId, serie, requestId);
   }
 
   @override
   Future<utils_result.Result<CompleteWorkoutResponse>> completeWorkout(
       int allenamentoId, int durataTotale, {String? note}) {
-    print('🎯 [MOCK DELEGATE] completeWorkout called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] completeWorkout called - delegating to mock repository');
     return _mockRepository.completeWorkout(allenamentoId, durataTotale, note: note);
   }
+
+  // ============================================================================
+  // METODI PLACEHOLDER (non usati nel test Step 5)
+  // ============================================================================
 
   @override
   Future<utils_result.Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) =>

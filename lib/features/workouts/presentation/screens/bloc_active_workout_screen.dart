@@ -21,6 +21,7 @@ import '../../models/workout_plan_models.dart';
 
 // ✅ FIX: Import per MockWorkoutRepository
 import '../../repository/mock_workout_repository.dart';
+import '../../repository/workout_repository.dart';
 
 class BlocActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
@@ -53,7 +54,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
   // User ID per il test (simulato)
   final int _testUserId = 1;
 
-  // 🎯 NUOVO: Flag per indicare che stiamo usando mock
+  // 🎯 Flag per indicare che stiamo usando mock
   bool _isMockMode = false;
 
   // ✅ FIX: Riferimento diretto al BLoC mock invece di context.read
@@ -442,10 +443,10 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
 
                       SizedBox(height: 16.h),
 
-                      // Debug info
+                      // ✅ FIX: Debug info più compatto per evitare overflow
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.all(10.w),
+                        padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(8.r),
@@ -485,7 +486,8 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
                         ),
                       ),
 
-                      SizedBox(height: 20.h),
+                      // ✅ FIX: Spazio aggiuntivo ridotto per evitare overflow
+                      SizedBox(height: 16.h),
                     ],
                   ),
                 ),
@@ -500,7 +502,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
   Widget _buildStateContent(ActiveWorkoutState state) {
     if (state is ActiveWorkoutLoading) {
       return Container(
-        height: 180.h,
+        height: 160.h, // ✅ FIX: Altezza ridotta
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -521,7 +523,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
     if (state is WorkoutSessionActive) {
       if (state.exercises.isEmpty) {
         return Container(
-          height: 180.h,
+          height: 160.h, // ✅ FIX: Altezza ridotta
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -603,7 +605,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
             ),
           ),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: 16.h), // ✅ FIX: Spazio ridotto
 
           // Pulsante completa serie
           SizedBox(
@@ -637,7 +639,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
 
     if (state is ActiveWorkoutError) {
       return Container(
-        height: 180.h,
+        height: 160.h, // ✅ FIX: Altezza ridotta
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -678,7 +680,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
 
     // Stato iniziale o altri stati
     return Container(
-      height: 180.h,
+      height: 160.h, // ✅ FIX: Altezza ridotta
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -708,7 +710,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
 }
 
 // ============================================================================
-// 🎯 MOCK BLOC WORKOUT WRAPPER (SIMPLIFIED)
+// 🎯 MOCK BLOC WORKOUT WRAPPER (SIMPLIFIED AND FIXED)
 // ============================================================================
 
 /// Wrapper semplificato che crea un BLoC mock senza interferire con il DI globale
@@ -752,31 +754,23 @@ class _MockBlocWorkoutWrapperState extends State<MockBlocWorkoutWrapper> {
         _initStatus = "Creating Mock Repository...";
       });
 
-      // Crea repository mock
+      // ✅ FIX: Crea repository mock con il nuovo adapter
       final mockRepository = MockWorkoutRepository();
 
       setState(() {
-        _initStatus = "Creating Mock Delegate...";
+        _initStatus = "Creating Mock Adapter...";
       });
 
-      // Crea un ApiClient dummy e Dio per il delegate (non verranno usati)
-      final dummyDio = Dio();
-      final dummyApiClient = ApiClient(dummyDio);
-
-      // Crea delegate che usa il mock repository
-      final mockDelegate = _MockDelegateWorkoutRepository(
-        mockRepository: mockRepository,
-        apiClient: dummyApiClient,
-        dio: dummyDio,
-      );
+      // ✅ FIX: Usa il nuovo MockWorkoutRepositoryAdapter
+      final mockAdapter = MockWorkoutRepositoryAdapter(mockRepository);
 
       setState(() {
         _initStatus = "Creating Mock BLoC...";
       });
 
-      // Crea BLoC con il delegate mock
+      // Crea BLoC con l'adapter mock
       _mockActiveWorkoutBloc = ActiveWorkoutBloc(
-        workoutRepository: mockDelegate,
+        workoutRepository: mockAdapter,
       );
 
       setState(() {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../features/workouts/presentation/screens/simple_active_workout_screen.dart';
 import '../features/workouts/presentation/screens/bloc_active_workout_screen.dart';
+import 'simple_bloc_mock_test_screen.dart'; // ✅ NUOVO import
 
 class SimpleWorkoutTestScreen extends StatelessWidget {
   const SimpleWorkoutTestScreen({super.key});
@@ -49,28 +50,45 @@ class SimpleWorkoutTestScreen extends StatelessWidget {
               Colors.blue,
               Colors.blue[50]!,
               [
-                _buildTestButton(context, 'Test Scheda 1 (HTTP)', 1, isHttp: true),
+                _buildTestButton(context, 'Test Scheda 137 (HTTP)', 137, testType: TestType.http),
                 SizedBox(height: 12.h),
-                _buildTestButton(context, 'Test Scheda 2 (HTTP)', 2, isHttp: true),
+                _buildTestButton(context, 'Test Scheda Mock 1 (HTTP)', 1, testType: TestType.http),
                 SizedBox(height: 12.h),
-                _buildTestButton(context, 'Test Scheda 3 (HTTP)', 3, isHttp: true),
+                _buildTestButton(context, 'Test Scheda Mock 2 (HTTP)', 2, testType: TestType.http),
               ],
             ),
 
             SizedBox(height: 32.h),
 
-            // STEP 5: BLoC Test (nuovo)
+            // ✅ NUOVO: STEP 5A: BLoC Test ISOLATO (FUNZIONANTE)
             _buildTestSection(
-              'STEP 5: Test BLoC Pattern (MOCK)',
-              'BLoC + Repository MOCK + DI + Modelli reali\nTesta pattern architetturale senza backend',
+              'STEP 5A: Test BLoC ISOLATO 🎯',
+              'BLoC + Repository MOCK ISOLATO\nZERO DI, ZERO backend, ZERO complicazioni!',
+              Colors.green,
+              Colors.green[50]!,
+              [
+                _buildTestButton(context, 'Test BLoC Isolato Scheda 137', 137, testType: TestType.isolatedMock),
+                SizedBox(height: 12.h),
+                _buildTestButton(context, 'Test BLoC Isolato Mock 1', 1, testType: TestType.isolatedMock),
+                SizedBox(height: 12.h),
+                _buildTestButton(context, 'Test BLoC Isolato Mock 2', 2, testType: TestType.isolatedMock),
+              ],
+            ),
+
+            SizedBox(height: 32.h),
+
+            // STEP 5B: BLoC Test con DI (problematico)
+            _buildTestSection(
+              'STEP 5B: Test BLoC + DI Mock',
+              'BLoC + Repository MOCK + DI + Modelli reali\n⚠️ Complesso - potrebbe ancora chiamare backend',
               Colors.purple,
               Colors.purple[50]!,
               [
-                _buildTestButton(context, 'Test BLoC Mock Scheda 1', 1, isBloC: true),
+                _buildTestButton(context, 'Test BLoC DI Scheda 137 (REALE)', 137, testType: TestType.complexMock),
                 SizedBox(height: 12.h),
-                _buildTestButton(context, 'Test BLoC Mock Scheda 2', 2, isBloC: true),
+                _buildTestButton(context, 'Test BLoC DI Mock 1', 1, testType: TestType.complexMock),
                 SizedBox(height: 12.h),
-                _buildTestButton(context, 'Test BLoC Mock Scheda 3', 3, isBloC: true),
+                _buildTestButton(context, 'Test BLoC DI Mock 2', 2, testType: TestType.complexMock),
               ],
             ),
 
@@ -87,7 +105,7 @@ class SimpleWorkoutTestScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    '🔍 STRATEGIA STEP 5 MOCK',
+                    '🎯 RACCOMANDAZIONE STEP 5A',
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
@@ -96,11 +114,11 @@ class SimpleWorkoutTestScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    '• STEP 4 = setState + HTTP diretto (JSONPlaceholder)\n'
-                        '• STEP 5 = BLoC + Repository MOCK + DI\n'
-                        '• Mock isola il test del pattern BLoC dal backend\n'
-                        '• Se STEP 5 Mock funziona → pattern BLoC OK, problema backend\n'
-                        '• Se STEP 5 Mock fallisce → problema pattern architetturale',
+                    '✅ STEP 5A = BLoC + Mock ISOLATO (sempre funzionante)\n'
+                        '🔧 STEP 5B = BLoC + DI + Backend REALE (ID 137)\n'
+                        '🌐 STEP 4 = setState + HTTP diretto (baseline)\n\n'
+                        'ID 137 = scheda reale nel database\n'
+                        'ID 1,2 = dati mock per test pattern',
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: Colors.orange[700],
@@ -159,39 +177,53 @@ class SimpleWorkoutTestScreen extends StatelessWidget {
       BuildContext context,
       String text,
       int schedaId, {
-        bool isHttp = false,
-        bool isBloC = false,
+        required TestType testType,
       }) {
     Color buttonColor;
     String prefix;
 
-    if (isBloC) {
-      buttonColor = Colors.purple;
-      prefix = '🤖 ';
-    } else if (isHttp) {
-      buttonColor = Colors.blue;
-      prefix = '🌐 ';
-    } else {
-      buttonColor = Colors.grey;
-      prefix = '';
+    switch (testType) {
+      case TestType.isolatedMock:
+        buttonColor = Colors.green;
+        prefix = '🎯 ';
+        break;
+      case TestType.complexMock:
+        buttonColor = Colors.purple;
+        prefix = '🤖 ';
+        break;
+      case TestType.http:
+        buttonColor = Colors.blue;
+        prefix = '🌐 ';
+        break;
     }
 
     return ElevatedButton(
       onPressed: () {
-        if (isBloC) {
-          debugPrint('🤖 [DEBUG] BLoC Mock test button pressed - navigating to BlocActiveWorkoutScreen');
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => BlocActiveWorkoutScreen(schedaId: schedaId),
-            ),
-          );
-        } else {
-          debugPrint('🌐 [DEBUG] HTTP test button pressed - navigating to SimpleActiveWorkoutScreen');
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => SimpleActiveWorkoutScreen(schedaId: schedaId),
-            ),
-          );
+        switch (testType) {
+          case TestType.isolatedMock:
+            debugPrint('🎯 [DEBUG] Isolated Mock test button pressed - navigating to SimpleBlocMockTestScreen');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => SimpleBlocMockTestScreen(schedaId: schedaId),
+              ),
+            );
+            break;
+          case TestType.complexMock:
+            debugPrint('🤖 [DEBUG] Complex Mock test button pressed - navigating to BlocActiveWorkoutScreen');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => BlocActiveWorkoutScreen(schedaId: schedaId),
+              ),
+            );
+            break;
+          case TestType.http:
+            debugPrint('🌐 [DEBUG] HTTP test button pressed - navigating to SimpleActiveWorkoutScreen');
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => SimpleActiveWorkoutScreen(schedaId: schedaId),
+              ),
+            );
+            break;
         }
       },
       style: ElevatedButton.styleFrom(
@@ -211,4 +243,10 @@ class SimpleWorkoutTestScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+enum TestType {
+  http,
+  isolatedMock,
+  complexMock,
 }
