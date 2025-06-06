@@ -6,6 +6,7 @@ import '../../features/workouts/bloc/plateau_bloc.dart';
 import '../../features/workouts/services/plateau_detector.dart';
 import '../../features/workouts/models/plateau_models.dart';
 import '../../features/workouts/repository/workout_repository.dart';
+import 'dependency_injection.dart';
 
 /// 🎯 STEP 6: Estensione del sistema DI per il plateau detection
 /// Registra tutti i servizi e BLoC necessari per il sistema plateau

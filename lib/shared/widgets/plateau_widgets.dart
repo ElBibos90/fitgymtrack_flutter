@@ -498,12 +498,12 @@ class PlateauDetailDialog extends StatelessWidget {
             SizedBox(height: 16.h),
 
             // Valori attuali
-            _buildCurrentValues(),
+            _buildCurrentValues(context),
 
             SizedBox(height: 16.h),
 
             // Suggerimenti
-            _buildSuggestionsList(),
+            _buildSuggestionsList(context),
           ],
         ),
       ),
@@ -516,7 +516,7 @@ class PlateauDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentValues() {
+  Widget _buildCurrentValues(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -553,7 +553,7 @@ class PlateauDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildSuggestionsList() {
+  Widget _buildSuggestionsList(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
