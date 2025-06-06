@@ -5,7 +5,7 @@ import 'package:equatable/equatable.dart';
 part 'plateau_models.g.dart';
 
 /// 🎯 STEP 6: Modelli per il sistema di rilevamento plateau
-/// Traduzioni Dart dei modelli Kotlin esistenti
+/// 🔧 FIX: Versione perfezionata con migliore gestione dati storici
 
 /// Informazioni su un plateau rilevato
 @JsonSerializable()
@@ -95,6 +95,20 @@ class PlateauInfo extends Equatable {
     }
   }
 
+  /// 🔧 FIX: Descrizione dettagliata del plateau
+  String get detailedDescription {
+    return 'Plateau di tipo ${typeDescription.toLowerCase()} rilevato per ${exerciseName}. '
+        'Stessi valori (${currentWeight.toStringAsFixed(1)}kg x $currentReps reps) '
+        'per $sessionsInPlateau allenamenti consecutivi.';
+  }
+
+  /// 🔧 FIX: Indicatore di severità del plateau
+  PlateauSeverity get severity {
+    if (sessionsInPlateau >= 5) return PlateauSeverity.severe;
+    if (sessionsInPlateau >= 3) return PlateauSeverity.moderate;
+    return PlateauSeverity.mild;
+  }
+
   @override
   List<Object?> get props => [
     exerciseId,
@@ -110,6 +124,13 @@ class PlateauInfo extends Equatable {
 
   factory PlateauInfo.fromJson(Map<String, dynamic> json) => _$PlateauInfoFromJson(json);
   Map<String, dynamic> toJson() => _$PlateauInfoToJson(this);
+}
+
+/// 🔧 FIX: Severità del plateau
+enum PlateauSeverity {
+  mild,     // 2-3 sessioni
+  moderate, // 3-4 sessioni
+  severe,   // 5+ sessioni
 }
 
 /// Tipi di plateau
@@ -179,6 +200,30 @@ class ProgressionSuggestion extends Equatable {
     return 'Bassa Confidenza';
   }
 
+  /// 🔧 FIX: Differenza rispetto ai valori attuali
+  String getWeightDifference(double currentWeight) {
+    final diff = newWeight - currentWeight;
+    if (diff > 0) {
+      return '+${diff.toStringAsFixed(1)}kg';
+    } else if (diff < 0) {
+      return '${diff.toStringAsFixed(1)}kg';
+    } else {
+      return 'Stesso peso';
+    }
+  }
+
+  /// 🔧 FIX: Differenza ripetizioni
+  String getRepsDifference(int currentReps) {
+    final diff = newReps - currentReps;
+    if (diff > 0) {
+      return '+$diff reps';
+    } else if (diff < 0) {
+      return '$diff reps';
+    } else {
+      return 'Stesse reps';
+    }
+  }
+
   @override
   List<Object?> get props => [type, description, newWeight, newReps, confidence];
 
@@ -234,6 +279,21 @@ class PlateauDetectionConfig extends Equatable {
     );
   }
 
+  /// 🔧 FIX: Valida la configurazione
+  bool get isValid {
+    return minSessionsForPlateau >= 2 &&
+        minSessionsForPlateau <= 10 &&
+        weightTolerance >= 0.0 &&
+        weightTolerance <= 5.0 &&
+        repsTolerance >= 0 &&
+        repsTolerance <= 5;
+  }
+
+  /// 🔧 FIX: Descrizione configurazione
+  String get description {
+    return 'Plateau dopo $minSessionsForPlateau sessioni (±${weightTolerance.toStringAsFixed(1)}kg, ±$repsTolerance reps)';
+  }
+
   @override
   List<Object?> get props => [
     minSessionsForPlateau,
@@ -282,6 +342,22 @@ class GroupPlateauAnalysis extends Equatable {
     if (plateauPercentage >= 50.0) return PlateauPriority.medium;
     if (plateauPercentage > 0.0) return PlateauPriority.low;
     return PlateauPriority.none;
+  }
+
+  /// 🔧 FIX: Descrizione dettagliata del gruppo
+  String get detailedDescription {
+    final typeText = groupType == 'superset' ? 'Superset' :
+    groupType == 'circuit' ? 'Circuit' : 'Gruppo';
+
+    return '$typeText $groupName: $exercisesInPlateau/$totalExercises esercizi in plateau '
+        '(${plateauPercentage.toStringAsFixed(1)}%)';
+  }
+
+  /// 🔧 FIX: Severità del gruppo
+  PlateauSeverity get groupSeverity {
+    if (plateauPercentage >= 75.0) return PlateauSeverity.severe;
+    if (plateauPercentage >= 50.0) return PlateauSeverity.moderate;
+    return PlateauSeverity.mild;
   }
 
   @override
@@ -350,6 +426,24 @@ class PlateauStatistics extends Equatable {
     return maxType.key;
   }
 
+  /// 🔧 FIX: Descrizione delle statistiche
+  String get summaryDescription {
+    final plateauPerc = globalPlateauPercentage;
+    if (plateauPerc == 0) return 'Nessun plateau rilevato';
+    if (plateauPerc < 25) return 'Pochi plateau (${plateauPerc.toStringAsFixed(1)}%)';
+    if (plateauPerc < 50) return 'Alcuni plateau (${plateauPerc.toStringAsFixed(1)}%)';
+    if (plateauPerc < 75) return 'Molti plateau (${plateauPerc.toStringAsFixed(1)}%)';
+    return 'Plateau diffusi (${plateauPerc.toStringAsFixed(1)}%)';
+  }
+
+  /// 🔧 FIX: Trend generale
+  String get generalTrend {
+    if (totalPlateauDetected == 0) return 'Progressi costanti';
+    if (averageSessionsInPlateau < 3) return 'Stagnazione temporanea';
+    if (averageSessionsInPlateau < 5) return 'Stagnazione preoccupante';
+    return 'Stagnazione prolungata';
+  }
+
   @override
   List<Object?> get props => [
     totalExercisesAnalyzed,
@@ -364,50 +458,101 @@ class PlateauStatistics extends Equatable {
   Map<String, dynamic> toJson() => _$PlateauStatisticsToJson(this);
 }
 
-/// Factory functions per creare istanze comuni
+// ============================================================================
+// 🔧 FIX: FACTORY FUNCTIONS PERFEZIONATE
+// ============================================================================
 
-/// Crea un plateau simulato per testing
+/// Crea un plateau simulato per testing con parametri realistici
 PlateauInfo createSimulatedPlateau({
   required int exerciseId,
   required String exerciseName,
   double weight = 20.0,
   int reps = 10,
   int sessions = 3,
+  PlateauType? plateauType,
 }) {
+  final type = plateauType ?? _determinePlateauTypeForValues(weight, reps);
+
   return PlateauInfo(
     exerciseId: exerciseId,
     exerciseName: exerciseName,
-    plateauType: PlateauType.moderate,
+    plateauType: type,
     sessionsInPlateau: sessions,
     currentWeight: weight,
     currentReps: reps,
     detectedAt: DateTime.now(),
-    suggestions: [
-      ProgressionSuggestion(
-        type: SuggestionType.increaseWeight,
-        description: 'Prova ad aumentare il peso a ${(weight + 2.5).toStringAsFixed(1)} kg',
-        newWeight: weight + 2.5,
-        newReps: reps,
-        confidence: 0.8,
-      ),
-      ProgressionSuggestion(
-        type: SuggestionType.increaseReps,
-        description: 'Prova ad aumentare le ripetizioni a ${reps + 2}',
-        newWeight: weight,
-        newReps: reps + 2,
-        confidence: 0.7,
-      ),
-    ],
+    suggestions: _generateSimulatedSuggestions(weight, reps, type),
   );
+}
+
+/// 🔧 FIX: Crea suggerimenti simulati realistici
+List<ProgressionSuggestion> _generateSimulatedSuggestions(double weight, int reps, PlateauType type) {
+  final suggestions = <ProgressionSuggestion>[];
+
+  // Suggerimento aumento peso
+  final weightIncrement = weight < 10 ? 0.5 : (weight < 50 ? 1.25 : 2.5);
+  suggestions.add(
+    ProgressionSuggestion(
+      type: SuggestionType.increaseWeight,
+      description: 'Aumenta il peso a ${(weight + weightIncrement).toStringAsFixed(1)} kg',
+      newWeight: weight + weightIncrement,
+      newReps: reps,
+      confidence: type == PlateauType.lightWeight ? 0.9 : 0.7,
+    ),
+  );
+
+  // Suggerimento aumento ripetizioni
+  final repsIncrement = reps < 8 ? 1 : 2;
+  suggestions.add(
+    ProgressionSuggestion(
+      type: SuggestionType.increaseReps,
+      description: 'Aumenta le ripetizioni a ${reps + repsIncrement}',
+      newWeight: weight,
+      newReps: reps + repsIncrement,
+      confidence: type == PlateauType.lowReps ? 0.8 : 0.6,
+    ),
+  );
+
+  // Suggerimento tecniche avanzate
+  if (weight > 20 && reps > 8) {
+    suggestions.add(
+      ProgressionSuggestion(
+        type: SuggestionType.advancedTechnique,
+        description: 'Prova tecniche avanzate come drop set o rest-pause',
+        newWeight: weight,
+        newReps: reps,
+        confidence: 0.6,
+      ),
+    );
+  }
+
+  return suggestions..sort((a, b) => b.confidence.compareTo(a.confidence));
+}
+
+/// 🔧 FIX: Determina il tipo di plateau basato sui valori
+PlateauType _determinePlateauTypeForValues(double weight, int reps) {
+  if (weight < 10) return PlateauType.lightWeight;
+  if (weight > 100) return PlateauType.heavyWeight;
+  if (reps < 5) return PlateauType.lowReps;
+  if (reps > 15) return PlateauType.highReps;
+  return PlateauType.moderate;
 }
 
 /// Crea una configurazione di default per il rilevamento
 PlateauDetectionConfig createDefaultPlateauConfig({bool enableTesting = false}) {
-  return PlateauDetectionConfig(
-    minSessionsForPlateau: enableTesting ? 2 : 3,
+  return enableTesting
+      ? const PlateauDetectionConfig(
+    minSessionsForPlateau: 2,
+    weightTolerance: 0.5,
+    repsTolerance: 1,
+    enableSimulatedPlateau: true,
+    autoDetectionEnabled: true,
+  )
+      : const PlateauDetectionConfig(
+    minSessionsForPlateau: 3,
     weightTolerance: 1.0,
     repsTolerance: 1,
-    enableSimulatedPlateau: enableTesting,
+    enableSimulatedPlateau: false,
     autoDetectionEnabled: true,
   );
 }
@@ -423,3 +568,8 @@ PlateauStatistics createEmptyStatistics() {
     averageSessionsInPlateau: 0.0,
   );
 }
+
+// ============================================================================
+// 🔧 FIX: CORE PLATEAU MODELS ONLY
+// ============================================================================
+// Nota: Helper functions e DI sono in dependency_injection_plateau.dart

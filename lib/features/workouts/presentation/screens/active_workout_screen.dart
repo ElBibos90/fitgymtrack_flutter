@@ -500,40 +500,82 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   double _getEffectiveWeight(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
     if (_modifiedWeights.containsKey(exerciseId)) {
       return _modifiedWeights[exerciseId]!;
     }
 
-    final currentState = _activeWorkoutBloc.state;
-    if (currentState is WorkoutSessionActive) {
-      final exerciseValues = currentState.exerciseValues[exerciseId];
+    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState != null) {
+      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+
+      debugPrint('🔧 [FIX] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+
+      // Usa il metodo serie-specifico del BLoC
+      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+
+      if (seriesSpecificValues.weight > 0) {
+        debugPrint('✅ [SERIES] Using series-specific weight: ${seriesSpecificValues.weight}kg (series $currentSeriesNumber)');
+        return seriesSpecificValues.weight;
+      }
+    }
+
+    // 3. FALLBACK: Valori BLoC generici (per retrocompatibilità)
+    final currentState2 = _activeWorkoutBloc.state;
+    if (currentState2 is WorkoutSessionActive) {
+      final exerciseValues = currentState2.exerciseValues[exerciseId];
       if (exerciseValues != null) {
         if (!_loggedExercises.contains(exerciseId)) {
           _loggedExercises.add(exerciseId);
-          debugPrint('💡 [UI] Using BLoC value for exercise $exerciseId: ${exerciseValues.weight}kg (${exerciseValues.isFromHistory ? "FROM HISTORY" : "DEFAULT"})');
+          debugPrint('💡 [FALLBACK] Using BLoC generic value for exercise $exerciseId: ${exerciseValues.weight}kg (${exerciseValues.isFromHistory ? "FROM HISTORY" : "DEFAULT"})');
         }
         return exerciseValues.weight;
       }
     }
 
+    // 4. ULTIMO FALLBACK: Default esercizio
+    debugPrint('⚠️ [FALLBACK] Using exercise default weight: ${exercise.peso}kg');
     return exercise.peso;
   }
 
   int _getEffectiveReps(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
     if (_modifiedReps.containsKey(exerciseId)) {
       return _modifiedReps[exerciseId]!;
     }
 
-    final currentState = _activeWorkoutBloc.state;
-    if (currentState is WorkoutSessionActive) {
-      final exerciseValues = currentState.exerciseValues[exerciseId];
+    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState != null) {
+      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+
+      debugPrint('🔧 [FIX] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+
+      // Usa il metodo serie-specifico del BLoC
+      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+
+      if (seriesSpecificValues.reps > 0) {
+        debugPrint('✅ [SERIES] Using series-specific reps: ${seriesSpecificValues.reps} (series $currentSeriesNumber)');
+        return seriesSpecificValues.reps;
+      }
+    }
+
+    // 3. FALLBACK: Valori BLoC generici (per retrocompatibilità)
+    final currentState2 = _activeWorkoutBloc.state;
+    if (currentState2 is WorkoutSessionActive) {
+      final exerciseValues = currentState2.exerciseValues[exerciseId];
       if (exerciseValues != null) {
         return exerciseValues.reps;
       }
     }
 
+    // 4. ULTIMO FALLBACK: Default esercizio
+    debugPrint('⚠️ [FALLBACK] Using exercise default reps: ${exercise.ripetizioni}');
     return exercise.ripetizioni;
   }
 
