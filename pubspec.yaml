@@ -67,9 +67,33 @@ dev_dependencies:
   json_serializable: ^6.8.0
   retrofit_generator: 9.2.0
 
+  # 🆕 BRANDING PACKAGES
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.2
+
 flutter:
   uses-material-design: true
 
   # 🔊 AUDIO ASSETS per timer feedback
   assets:
     - assets/audio/
+    - assets/icon/        # 🆕 Per le icone personalizzate
+    - assets/splash/      # 🆕 Per lo splash screen
+
+# 🆕 CONFIGURAZIONE ICONE APP
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#1976D2"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  min_sdk_android: 21
+
+# 🆕 CONFIGURAZIONE SPLASH SCREEN
+flutter_native_splash:
+  color: "#1976D2"
+  image: "assets/splash/splash_logo.png"
+  fullscreen: true
+  android_12:
+    image: "assets/splash/splash_logo.png"
+    color: "#1976D2"
