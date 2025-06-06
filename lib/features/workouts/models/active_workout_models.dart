@@ -1,3 +1,4 @@
+// lib/features/workouts/models/active_workout_models.dart
 import 'package:json_annotation/json_annotation.dart';
 import 'package:equatable/equatable.dart';
 import 'workout_plan_models.dart';
@@ -24,6 +25,15 @@ double _parseWeight(dynamic value) {
 /// Converte il peso a stringa per l'invio al server
 String _weightToJson(double value) {
   return value.toStringAsFixed(2);
+}
+
+/// 🔧 FIX: Converte l'ID dal JSON (può essere int o string) a string
+String _parseIdSafe(dynamic value) {
+  if (value == null) return '';
+  if (value is String) return value;
+  if (value is int) return value.toString();
+  if (value is double) return value.toInt().toString();
+  return value.toString();
 }
 
 /// Rappresenta una sessione di allenamento attiva
@@ -215,9 +225,10 @@ class GetCompletedSeriesResponse {
   Map<String, dynamic> toJson() => _$GetCompletedSeriesResponseToJson(this);
 }
 
-/// Dati di una serie completata ricevuta dal server
+/// 🔧 FIX: Dati di una serie completata ricevuta dal server - ID SICURO
 @JsonSerializable()
 class CompletedSeriesData {
+  @JsonKey(fromJson: _parseIdSafe)
   final String id;
   @JsonKey(name: 'scheda_esercizio_id')
   final int schedaEsercizioId;
@@ -317,4 +328,3 @@ class DeleteWorkoutRequest {
   factory DeleteWorkoutRequest.fromJson(Map<String, dynamic> json) => _$DeleteWorkoutRequestFromJson(json);
   Map<String, dynamic> toJson() => _$DeleteWorkoutRequestToJson(this);
 }
-

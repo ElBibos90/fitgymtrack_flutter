@@ -131,7 +131,36 @@ class PeriodStats {
   Map<String, dynamic> toJson() => _$PeriodStatsToJson(this);
 }
 
-/// Cronologia allenamenti
+/// 🔧 FIX: Funzioni helper per parsing sicuro dei campi numerici
+int _parseIntSafe(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) {
+    try {
+      return int.parse(value);
+    } catch (e) {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+double _parseDoubleSafe(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    try {
+      return double.parse(value);
+    } catch (e) {
+      return 0.0;
+    }
+  }
+  return 0.0;
+}
+
+/// 🔧 FIX: Cronologia allenamenti con parsing sicuro per campi nullable
 @JsonSerializable()
 class WorkoutHistory {
   final int id;
@@ -141,16 +170,18 @@ class WorkoutHistory {
   final String schedaNome;
   @JsonKey(name: 'data_allenamento')
   final String dataAllenamento;
-  @JsonKey(name: 'durata_minuti')
+
+  // 🔧 FIX: Campi che possono essere NULL nel database
+  @JsonKey(name: 'durata_minuti', fromJson: _parseIntSafe)
   final int durataMinuti;
-  @JsonKey(name: 'serie_completate')
+  @JsonKey(name: 'serie_completate', fromJson: _parseIntSafe)
   final int serieCompletate;
-  @JsonKey(name: 'peso_totale_kg')
+  @JsonKey(name: 'peso_totale_kg', fromJson: _parseDoubleSafe)
   final double pesoTotaleKg;
   final String? note;
-  @JsonKey(name: 'esercizi_completati')
+  @JsonKey(name: 'esercizi_completati', fromJson: _parseIntSafe)
   final int eserciziCompletati;
-  @JsonKey(name: 'esercizi_totali')
+  @JsonKey(name: 'esercizi_totali', fromJson: _parseIntSafe)
   final int eserciziTotali;
 
   const WorkoutHistory({
@@ -181,7 +212,7 @@ class WorkoutHistory {
   }
 
   /// Indica se l'allenamento è stato completato
-  bool get isCompleted => eserciziCompletati == eserciziTotali;
+  bool get isCompleted => eserciziCompletati == eserciziTotali && eserciziTotali > 0;
 
   /// Durata formattata
   String get formattedDuration {

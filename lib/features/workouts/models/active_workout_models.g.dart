@@ -163,7 +163,7 @@ Map<String, dynamic> _$GetCompletedSeriesResponseToJson(
 
 CompletedSeriesData _$CompletedSeriesDataFromJson(Map<String, dynamic> json) =>
     CompletedSeriesData(
-      id: json['id'] as String,
+      id: _parseIdSafe(json['id']),
       schedaEsercizioId: (json['scheda_esercizio_id'] as num).toInt(),
       peso: _parseWeight(json['peso']),
       ripetizioni: (json['ripetizioni'] as num).toInt(),

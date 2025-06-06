@@ -80,6 +80,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   int _isometricSeconds = 0;
   String? _currentIsometricExerciseName;
   WorkoutExercise? _pendingIsometricExercise;
+  final Set<int> _loggedExercises = {};
 
   // ✏️ Modified parameters storage
   Map<int, double> _modifiedWeights = {};
@@ -98,6 +99,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void initState() {
     super.initState();
     debugPrint("🚀 [SINGLE EXERCISE] initState - Scheda: ${widget.schedaId}");
+    _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
     _initializeAnimations();
     _initializeWorkout();
   }
@@ -482,10 +484,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _saveModifiedParameters(WorkoutExercise exercise, double weight, int reps) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // Salva localmente per questo allenamento
     setState(() {
       _modifiedWeights[exerciseId] = weight;
       _modifiedReps[exerciseId] = reps;
     });
+
+    // Aggiorna anche il BLoC per consistenza
+    context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
 
     debugPrint("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
 
@@ -498,12 +504,50 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   double _getEffectiveWeight(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    return _modifiedWeights[exerciseId] ?? exercise.peso;
+
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente durante questo allenamento
+    if (_modifiedWeights.containsKey(exerciseId)) {
+      return _modifiedWeights[exerciseId]!;
+    }
+
+    // 2. PRIORITÀ MEDIA: Valori dallo storico (dal BLoC) - OTTIMIZZATO
+    final currentState = _activeWorkoutBloc.state;
+    if (currentState is WorkoutSessionActive) {
+      final exerciseValues = currentState.exerciseValues[exerciseId];
+      if (exerciseValues != null) {
+        // Log solo la prima volta per evitare spam
+        if (!_loggedExercises.contains(exerciseId)) {
+          _loggedExercises.add(exerciseId);
+          debugPrint('💡 [UI] Using BLoC value for exercise $exerciseId: ${exerciseValues.weight}kg (${exerciseValues.isFromHistory ? "FROM HISTORY" : "DEFAULT"})');
+        }
+        return exerciseValues.weight;
+      }
+    }
+
+    // 3. PRIORITÀ MINIMA: Valori di default dell'esercizio
+    return exercise.peso;
   }
 
+  /// 🔧 FIX: Ottiene le ripetizioni effettive con priorità: Modificato > BLoC > Default
   int _getEffectiveReps(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    return _modifiedReps[exerciseId] ?? exercise.ripetizioni;
+
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente durante questo allenamento
+    if (_modifiedReps.containsKey(exerciseId)) {
+      return _modifiedReps[exerciseId]!;
+    }
+
+    // 2. PRIORITÀ MEDIA: Valori dallo storico (dal BLoC) - OTTIMIZZATO
+    final currentState = _activeWorkoutBloc.state;
+    if (currentState is WorkoutSessionActive) {
+      final exerciseValues = currentState.exerciseValues[exerciseId];
+      if (exerciseValues != null) {
+        return exerciseValues.reps;
+      }
+    }
+
+    // 3. PRIORITÀ MINIMA: Valori di default dell'esercizio
+    return exercise.ripetizioni;
   }
 
   // ============================================================================

@@ -72,12 +72,12 @@ WorkoutHistory _$WorkoutHistoryFromJson(Map<String, dynamic> json) =>
       schedaId: (json['scheda_id'] as num).toInt(),
       schedaNome: json['scheda_nome'] as String,
       dataAllenamento: json['data_allenamento'] as String,
-      durataMinuti: (json['durata_minuti'] as num).toInt(),
-      serieCompletate: (json['serie_completate'] as num).toInt(),
-      pesoTotaleKg: (json['peso_totale_kg'] as num).toDouble(),
+      durataMinuti: _parseIntSafe(json['durata_minuti']),
+      serieCompletate: _parseIntSafe(json['serie_completate']),
+      pesoTotaleKg: _parseDoubleSafe(json['peso_totale_kg']),
       note: json['note'] as String?,
-      eserciziCompletati: (json['esercizi_completati'] as num).toInt(),
-      eserciziTotali: (json['esercizi_totali'] as num).toInt(),
+      eserciziCompletati: _parseIntSafe(json['esercizi_completati']),
+      eserciziTotali: _parseIntSafe(json['esercizi_totali']),
     );
 
 Map<String, dynamic> _$WorkoutHistoryToJson(WorkoutHistory instance) =>

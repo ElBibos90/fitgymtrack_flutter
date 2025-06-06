@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../repository/workout_repository.dart';
 import '../models/active_workout_models.dart';
 import '../models/workout_plan_models.dart';
+import '../../stats/models/user_stats_models.dart';
 
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutBloc'}) {
@@ -47,6 +48,20 @@ class LoadWorkoutExercises extends ActiveWorkoutEvent {
 
   @override
   List<Object> get props => [schedaId];
+}
+
+/// 🆕 NUOVO: Evento per caricare lo storico degli allenamenti precedenti
+class LoadWorkoutHistory extends ActiveWorkoutEvent {
+  final int userId;
+  final int schedaId;
+
+  const LoadWorkoutHistory({
+    required this.userId,
+    required this.schedaId,
+  });
+
+  @override
+  List<Object> get props => [userId, schedaId];
 }
 
 /// Evento per caricare le serie completate di un allenamento
@@ -144,6 +159,22 @@ class RemoveLocalSeries extends ActiveWorkoutEvent {
   List<Object> get props => [exerciseId, seriesId];
 }
 
+/// 🆕 NUOVO: Evento per aggiornare i valori di un esercizio (peso/ripetizioni)
+class UpdateExerciseValues extends ActiveWorkoutEvent {
+  final int exerciseId;
+  final double weight;
+  final int reps;
+
+  const UpdateExerciseValues({
+    required this.exerciseId,
+    required this.weight,
+    required this.reps,
+  });
+
+  @override
+  List<Object> get props => [exerciseId, weight, reps];
+}
+
 // ============================================================================
 // ACTIVE WORKOUT STATES
 // ============================================================================
@@ -195,6 +226,7 @@ class WorkoutSessionActive extends ActiveWorkoutState {
   final Map<int, List<CompletedSeriesData>> completedSeries;
   final Duration elapsedTime;
   final DateTime startTime;
+  final Map<int, ExerciseValues> exerciseValues; // 🆕 NUOVO: Valori esercizi
 
   const WorkoutSessionActive({
     required this.activeWorkout,
@@ -202,6 +234,7 @@ class WorkoutSessionActive extends ActiveWorkoutState {
     required this.completedSeries,
     required this.elapsedTime,
     required this.startTime,
+    this.exerciseValues = const {}, // 🆕 NUOVO
   });
 
   @override
@@ -211,6 +244,7 @@ class WorkoutSessionActive extends ActiveWorkoutState {
     completedSeries,
     elapsedTime,
     startTime,
+    exerciseValues, // 🆕 NUOVO
   ];
 
   /// Copia lo stato aggiornando solo alcuni campi
@@ -220,6 +254,7 @@ class WorkoutSessionActive extends ActiveWorkoutState {
     Map<int, List<CompletedSeriesData>>? completedSeries,
     Duration? elapsedTime,
     DateTime? startTime,
+    Map<int, ExerciseValues>? exerciseValues, // 🆕 NUOVO
   }) {
     return WorkoutSessionActive(
       activeWorkout: activeWorkout ?? this.activeWorkout,
@@ -227,6 +262,7 @@ class WorkoutSessionActive extends ActiveWorkoutState {
       completedSeries: completedSeries ?? this.completedSeries,
       elapsedTime: elapsedTime ?? this.elapsedTime,
       startTime: startTime ?? this.startTime,
+      exerciseValues: exerciseValues ?? this.exerciseValues, // 🆕 NUOVO
     );
   }
 }
@@ -296,21 +332,73 @@ class ActiveWorkoutError extends ActiveWorkoutState {
 }
 
 // ============================================================================
+// 🆕 NUOVO: DATA CLASSES PER GESTIRE VALORI ESERCIZI E STORICO
+// ============================================================================
+
+/// Rappresenta i valori correnti di un esercizio (peso e ripetizioni)
+class ExerciseValues extends Equatable {
+  final double weight;
+  final int reps;
+  final bool isFromHistory; // 🆕 Indica se i valori vengono dallo storico
+
+  const ExerciseValues({
+    required this.weight,
+    required this.reps,
+    this.isFromHistory = false,
+  });
+
+  @override
+  List<Object> get props => [weight, reps, isFromHistory];
+
+  ExerciseValues copyWith({
+    double? weight,
+    int? reps,
+    bool? isFromHistory,
+  }) {
+    return ExerciseValues(
+      weight: weight ?? this.weight,
+      reps: reps ?? this.reps,
+      isFromHistory: isFromHistory ?? this.isFromHistory,
+    );
+  }
+}
+
+/// Rappresenta i dati storici di un esercizio
+class HistoricExerciseData extends Equatable {
+  final int exerciseId;
+  final List<CompletedSeriesData> historicSeries;
+  final String lastWorkoutDate; // 🔧 FIX: Cambiato da DateTime a String
+
+  const HistoricExerciseData({
+    required this.exerciseId,
+    required this.historicSeries,
+    required this.lastWorkoutDate,
+  });
+
+  @override
+  List<Object> get props => [exerciseId, historicSeries, lastWorkoutDate];
+}
+
+// ============================================================================
 // ACTIVE WORKOUT BLOC
 // ============================================================================
 
 class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   final WorkoutRepository _workoutRepository;
 
+  // 🆕 NUOVO: Memorizza i dati storici degli esercizi
+  final Map<int, HistoricExerciseData> _historicWorkoutData = {};
+
   ActiveWorkoutBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
         super(const ActiveWorkoutInitial()) {
 
-    //_log('🏗️ [INIT] ActiveWorkoutBloc constructor called');
+    _log('🏗️ [INIT] ActiveWorkoutBloc constructor called');
 
     // Registrazione event handlers
     on<StartWorkoutSession>(_onStartWorkoutSession);
     on<LoadWorkoutExercises>(_onLoadWorkoutExercises);
+    on<LoadWorkoutHistory>(_onLoadWorkoutHistory); // 🆕 NUOVO
     on<LoadCompletedSeries>(_onLoadCompletedSeries);
     on<SaveCompletedSeries>(_onSaveCompletedSeries);
     on<CompleteWorkoutSession>(_onCompleteWorkoutSession);
@@ -319,28 +407,29 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     on<UpdateWorkoutTimer>(_onUpdateWorkoutTimer);
     on<AddLocalSeries>(_onAddLocalSeries);
     on<RemoveLocalSeries>(_onRemoveLocalSeries);
+    on<UpdateExerciseValues>(_onUpdateExerciseValues); // 🆕 NUOVO
 
-    //_log('✅ [INIT] ActiveWorkoutBloc event handlers registered');
+    _log('✅ [INIT] ActiveWorkoutBloc event handlers registered');
   }
 
-  /// 🚀 HANDLER SEMPLIFICATO: Gestisce tutto con try/catch invece di Result pattern
+  /// 🚀 HANDLER AGGIORNATO: Gestisce tutto con caricamento storico incluso
   Future<void> _onStartWorkoutSession(
       StartWorkoutSession event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('🚀 [EVENT] StartWorkoutSession received - User: ${event.userId}, Scheda: ${event.schedaId}');
+    _log('🚀 [EVENT] StartWorkoutSession received - User: ${event.userId}, Scheda: ${event.schedaId}');
 
     emit(const ActiveWorkoutLoading(message: 'Avvio allenamento...'));
-    //_log('🔄 [STATE] Emitted ActiveWorkoutLoading');
+    _log('🔄 [STATE] Emitted ActiveWorkoutLoading');
 
     try {
       // STEP 1: Avvia allenamento
-      //_log('📡 [API] Calling startWorkout repository method...');
+      _log('📡 [API] Calling startWorkout repository method...');
       final workoutResult = await _workoutRepository.startWorkout(event.userId, event.schedaId);
 
       // Controlla se l'emitter è ancora valido
       if (emit.isDone) {
-        //_log('⚠️ [WARNING] Emitter is done, stopping execution');
+        _log('⚠️ [WARNING] Emitter is done, stopping execution');
         return;
       }
 
@@ -360,7 +449,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       );
 
       if (workoutResponse == null) {
-        //_log('❌ [ERROR] Error starting workout session: $errorMessage');
+        _log('❌ [ERROR] Error starting workout session: $errorMessage');
         emit(ActiveWorkoutError(
           message: errorMessage ?? 'Errore nell\'avvio dell\'allenamento',
           exception: errorException,
@@ -368,15 +457,15 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         return;
       }
 
-      //_log('✅ [API] Workout session started successfully: ${workoutResponse!.allenamentoId}');
+      _log('✅ [API] Workout session started successfully: ${workoutResponse!.allenamentoId}');
 
       // STEP 2: Carica esercizi
-      //_log('📡 [API] Loading exercises for scheda: ${event.schedaId}');
+      _log('📡 [API] Loading exercises for scheda: ${event.schedaId}');
       final exercisesResult = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
       // Controlla di nuovo se l'emitter è ancora valido
       if (emit.isDone) {
-        //_log('⚠️ [WARNING] Emitter is done, stopping execution');
+        _log('⚠️ [WARNING] Emitter is done, stopping execution');
         return;
       }
 
@@ -396,7 +485,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       );
 
       if (exercises == null) {
-        //_log('❌ [ERROR] Error loading exercises: $errorMessage');
+        _log('❌ [ERROR] Error loading exercises: $errorMessage');
         emit(ActiveWorkoutError(
           message: errorMessage ?? 'Errore nel caricamento degli esercizi',
           exception: errorException,
@@ -404,14 +493,30 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         return;
       }
 
-      //_log('✅ [API] Successfully loaded ${exercises!.length} exercises');
+      _log('✅ [API] Successfully loaded ${exercises!.length} exercises');
 
       // Log dettagli esercizi per debug
       for (final exercise in exercises!) {
-        //_log('  📝 Exercise: ${exercise.nome} (ID: ${exercise.id})');
+        _log('  📝 Exercise: ${exercise.nome} (ID: ${exercise.id}, SchemaExerciseID: ${exercise.schedaEsercizioId})');
       }
 
-      // STEP 3: Crea stato attivo finale
+      // 🆕 STEP 3: Carica storico allenamenti per preloadare valori
+      _log('📚 [HISTORY] Loading workout history for value preloading...');
+      await _loadWorkoutHistory(event.userId, event.schedaId, exercises!);
+
+      // STEP 4: Crea valori iniziali per ogni esercizio
+      final Map<int, ExerciseValues> initialExerciseValues = {};
+      for (final exercise in exercises!) {
+        final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+        final initialValues = _getInitialValuesForExercise(exercise, 0);
+        initialExerciseValues[exerciseId] = initialValues;
+
+        _log('💡 [VALUES] Exercise ${exercise.nome} (${exerciseId}): '
+            'peso=${initialValues.weight}kg, reps=${initialValues.reps} '
+            '${initialValues.isFromHistory ? "(FROM HISTORY)" : "(DEFAULT)"}');
+      }
+
+      // STEP 5: Crea stato attivo finale
       final startTime = DateTime.now();
       final activeWorkout = ActiveWorkout(
         id: workoutResponse!.allenamentoId,
@@ -427,26 +532,265 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         completedSeries: {},
         elapsedTime: Duration.zero,
         startTime: startTime,
+        exerciseValues: initialExerciseValues, // 🆕 NUOVO: Valori preloadati
       );
 
       // Controllo finale prima di emettere
       if (!emit.isDone) {
         emit(activeState);
-        //_log('🔄 [STATE] Emitted WorkoutSessionActive directly');
+        _log('🔄 [STATE] Emitted WorkoutSessionActive with preloaded values');
       } else {
-        //_log('⚠️ [WARNING] Cannot emit - emitter is done');
+        _log('⚠️ [WARNING] Cannot emit - emitter is done');
       }
 
     } catch (e) {
-      //_log('💥 [EXCEPTION] Exception in _onStartWorkoutSession: $e');
+      _log('💥 [EXCEPTION] Exception in _onStartWorkoutSession: $e');
 
       if (!emit.isDone) {
         emit(ActiveWorkoutError(
           message: 'Errore critico nell\'avvio dell\'allenamento: $e',
           exception: e is Exception ? e : Exception(e.toString()),
         ));
-        //_log('🔄 [STATE] Emitted ActiveWorkoutError (exception)');
+        _log('🔄 [STATE] Emitted ActiveWorkoutError (exception)');
       }
+    }
+  }
+
+  /// 🆕 NUOVO: Handler per caricare lo storico degli allenamenti
+  Future<void> _onLoadWorkoutHistory(
+      LoadWorkoutHistory event,
+      Emitter<ActiveWorkoutState> emit,
+      ) async {
+    _log('📚 [EVENT] LoadWorkoutHistory received - User: ${event.userId}, Scheda: ${event.schedaId}');
+
+    try {
+      await _loadWorkoutHistory(event.userId, event.schedaId, []);
+      _log('✅ [HISTORY] Workout history loaded successfully');
+    } catch (e) {
+      _log('❌ [HISTORY] Error loading workout history: $e');
+      // Non emettiamo errore per lo storico, è opzionale
+    }
+  }
+
+  /// 🆕 NUOVO: Metodo per caricare lo storico degli allenamenti precedenti
+  Future<void> _loadWorkoutHistory(int userId, int schedaId, List<WorkoutExercise> exercises) async {
+    try {
+      _log('📚 [HISTORY] Loading workout history for userId=$userId, schedaId=$schedaId');
+
+      // STEP 1: Carica tutti gli allenamenti dell'utente
+      final workoutHistoryResult = await _workoutRepository.getWorkoutHistory(userId);
+
+      List<WorkoutHistory>? allWorkouts;
+      workoutHistoryResult.fold(
+        onSuccess: (workouts) {
+          allWorkouts = workouts;
+        },
+        onFailure: (exception, message) {
+          _log('⚠️ [HISTORY] Error loading workout history: $message');
+          return; // Exit early se non riusciamo a caricare
+        },
+      );
+
+      if (allWorkouts == null || allWorkouts!.isEmpty) {
+        _log('📚 [HISTORY] No previous workouts found');
+        return;
+      }
+
+      _log('📚 [HISTORY] Found ${allWorkouts!.length} total workouts for user');
+
+      // STEP 2: Filtra per stessa scheda e ordina per data (più recente primo)
+      final sameSchemaWorkouts = allWorkouts!
+          .where((workout) => workout.schedaId == schedaId)
+          .toList()
+        ..sort((a, b) => b.dataAllenamento.compareTo(a.dataAllenamento));
+
+      if (sameSchemaWorkouts.isEmpty) {
+        _log('📚 [HISTORY] No previous workouts found for schema $schedaId');
+        return;
+      }
+
+      _log('📚 [HISTORY] Found ${sameSchemaWorkouts.length} workouts with same schema');
+
+      // STEP 3: Per ogni esercizio, trova l'ultimo allenamento che lo contiene
+      final exerciseIds = exercises.isNotEmpty
+          ? exercises.map((e) => e.schedaEsercizioId ?? e.id).toSet()
+          : <int>{}; // Se non abbiamo esercizi, usiamo set vuoto
+
+      final Map<int, HistoricExerciseData> historicData = {};
+      final Set<int> foundExercises = {};
+
+      // Scorri gli allenamenti dal più recente al più vecchio
+      for (final workout in sameSchemaWorkouts) {
+        // Se abbiamo già trovato tutti gli esercizi, esci dal loop
+        if (exerciseIds.isNotEmpty && foundExercises.containsAll(exerciseIds)) {
+          _log('📚 [HISTORY] Found historic data for all exercises');
+          break;
+        }
+
+        try {
+          _log('📚 [HISTORY] Loading series for workout ${workout.id} (${workout.dataAllenamento})');
+
+          // Carica le serie di questo allenamento
+          final seriesResult = await _workoutRepository.getWorkoutSeriesDetail(workout.id);
+
+          List<CompletedSeriesData>? series;
+          seriesResult.fold(
+            onSuccess: (seriesList) {
+              series = seriesList;
+            },
+            onFailure: (exception, message) {
+              _log('⚠️ [HISTORY] Error loading series for workout ${workout.id}: $message');
+              return; // Skip questo allenamento
+            },
+          );
+
+          if (series == null || series!.isEmpty) {
+            _log('📚 [HISTORY] No series found for workout ${workout.id}');
+            continue;
+          }
+
+          _log('📚 [HISTORY] Found ${series!.length} series in workout ${workout.id}');
+
+          // STEP 4: Raggruppa le serie per exerciseId e trova quelle rilevanti
+          final seriesByExercise = <int, List<CompletedSeriesData>>{};
+          for (final seriesData in series!) {
+            final exerciseId = seriesData.schedaEsercizioId;
+
+            // 🔧 VERIFICA: Log per debugging del campo scheda_esercizio_id
+            _log('🔍 [VERIFY] Serie: id=${seriesData.id}, '
+                'schedaEsercizioId=${seriesData.schedaEsercizioId}, '
+                'esercizioId=${seriesData.esercizioId}, '
+                'peso=${seriesData.peso}, reps=${seriesData.ripetizioni}');
+
+            // Aggiungi solo se è un esercizio che ci interessa e non lo abbiamo già trovato
+            if (exerciseIds.isEmpty || // Se non abbiamo esercizi specifici, prendi tutto
+                (exerciseIds.contains(exerciseId) && !foundExercises.contains(exerciseId))) {
+
+              if (!seriesByExercise.containsKey(exerciseId)) {
+                seriesByExercise[exerciseId] = [];
+              }
+              seriesByExercise[exerciseId]!.add(seriesData);
+            }
+          }
+
+          // STEP 5: Per ogni esercizio trovato, crea i dati storici
+          for (final entry in seriesByExercise.entries) {
+            final exerciseId = entry.key;
+            final exerciseSeries = entry.value;
+
+            if (!foundExercises.contains(exerciseId)) {
+              // Ordina le serie per numero di serie
+              exerciseSeries.sort((a, b) => (a.serieNumber ?? 0).compareTo(b.serieNumber ?? 0));
+
+              historicData[exerciseId] = HistoricExerciseData(
+                exerciseId: exerciseId,
+                historicSeries: exerciseSeries,
+                lastWorkoutDate: workout.dataAllenamento,
+              );
+
+              foundExercises.add(exerciseId);
+
+              _log('✅ [HISTORY] Historic data saved for exercise $exerciseId: '
+                  '${exerciseSeries.length} series from ${workout.dataAllenamento}');
+
+              // Log della prima serie per debug
+              if (exerciseSeries.isNotEmpty) {
+                final firstSeries = exerciseSeries.first;
+                _log('    📊 First series: ${firstSeries.peso}kg x ${firstSeries.ripetizioni} reps');
+              }
+            }
+          }
+
+        } catch (e) {
+          _log('💥 [HISTORY] Exception loading workout ${workout.id}: $e');
+          continue; // Skip questo allenamento e continua
+        }
+      }
+
+      // Memorizza i dati storici
+      _historicWorkoutData.clear();
+      _historicWorkoutData.addAll(historicData);
+
+      _log('🏁 [HISTORY] Historic data loading completed. Found data for ${historicData.length} exercises');
+      for (final entry in historicData.entries) {
+        _log('  📚 Exercise ${entry.key}: ${entry.value.historicSeries.length} series');
+      }
+
+    } catch (e) {
+      _log('💥 [HISTORY] Exception in _loadWorkoutHistory: $e');
+      // Non propaghiamo l'errore, lo storico è opzionale
+    }
+  }
+
+  /// 🆕 NUOVO: Ottiene i valori iniziali per un esercizio basandosi sullo storico
+  ExerciseValues _getInitialValuesForExercise(WorkoutExercise exercise, int seriesIndex) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    _log('💡 [VALUES] Getting initial values for exercise ${exercise.nome} (${exerciseId}), series ${seriesIndex + 1}');
+
+    // STEP 1: Verifica se abbiamo dati storici per questo esercizio
+    if (_historicWorkoutData.containsKey(exerciseId)) {
+      final historicData = _historicWorkoutData[exerciseId]!;
+      final historicSeries = historicData.historicSeries;
+
+      _log('📚 [VALUES] Found historic data: ${historicSeries.length} series from ${historicData.lastWorkoutDate}');
+
+      if (historicSeries.isNotEmpty) {
+        // Trova la serie con lo stesso numero, se esiste
+        final currentSerieNumber = seriesIndex + 1;
+        final seriesWithSameNumber = historicSeries
+            .where((series) => (series.serieNumber ?? 0) == currentSerieNumber)
+            .toList();
+
+        if (seriesWithSameNumber.isNotEmpty) {
+          final series = seriesWithSameNumber.first;
+          _log('✅ [VALUES] Found historic series ${currentSerieNumber}: ${series.peso}kg x ${series.ripetizioni} reps');
+          return ExerciseValues(
+            weight: series.peso,
+            reps: series.ripetizioni,
+            isFromHistory: true,
+          );
+        }
+
+        // Se non troviamo la serie specifica, usa l'ultima serie disponibile
+        final lastSeries = historicSeries.last;
+        _log('✅ [VALUES] Using last historic series: ${lastSeries.peso}kg x ${lastSeries.ripetizioni} reps');
+        return ExerciseValues(
+          weight: lastSeries.peso,
+          reps: lastSeries.ripetizioni,
+          isFromHistory: true,
+        );
+      }
+    }
+
+    // STEP 2: Se non abbiamo dati storici, usa i valori di default dell'esercizio
+    _log('📝 [VALUES] Using default values: ${exercise.peso}kg x ${exercise.ripetizioni} reps');
+    return ExerciseValues(
+      weight: exercise.peso,
+      reps: exercise.ripetizioni,
+      isFromHistory: false,
+    );
+  }
+
+  /// 🆕 NUOVO: Handler per aggiornare i valori di un esercizio
+  Future<void> _onUpdateExerciseValues(
+      UpdateExerciseValues event,
+      Emitter<ActiveWorkoutState> emit,
+      ) async {
+    _log('✏️ [VALUES] Updating exercise values - Exercise: ${event.exerciseId}, Weight: ${event.weight}, Reps: ${event.reps}');
+
+    if (state is WorkoutSessionActive) {
+      final activeState = state as WorkoutSessionActive;
+
+      final updatedValues = Map<int, ExerciseValues>.from(activeState.exerciseValues);
+      updatedValues[event.exerciseId] = ExerciseValues(
+        weight: event.weight,
+        reps: event.reps,
+        isFromHistory: false, // Modificato dall'utente
+      );
+
+      emit(activeState.copyWith(exerciseValues: updatedValues));
+      _log('✅ [VALUES] Exercise values updated successfully');
     }
   }
 
@@ -455,8 +799,8 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       LoadWorkoutExercises event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('📋 [EVENT] LoadWorkoutExercises received - Scheda: ${event.schedaId}');
-    //_log('⚠️ [INFO] This method is now deprecated - exercises are loaded directly in StartWorkoutSession');
+    _log('📋 [EVENT] LoadWorkoutExercises received - Scheda: ${event.schedaId}');
+    _log('⚠️ [INFO] This method is now deprecated - exercises are loaded directly in StartWorkoutSession');
 
     // Non fare nulla - gli esercizi vengono caricati direttamente in StartWorkoutSession
     // Questo previene lo stato inconsistente
@@ -467,11 +811,11 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       LoadCompletedSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('📊 [EVENT] LoadCompletedSeries received - Workout: ${event.allenamentoId}');
+    _log('📊 [EVENT] LoadCompletedSeries received - Workout: ${event.allenamentoId}');
 
     // ✅ NON emettere loading se siamo già in WorkoutSessionActive
     if (state is! WorkoutSessionActive) {
-      //_log('⚠️ [WARNING] LoadCompletedSeries called but not in active session');
+      _log('⚠️ [WARNING] LoadCompletedSeries called but not in active session');
       return;
     }
 
@@ -482,7 +826,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       result.fold(
         onSuccess: (completedSeriesList) {
-          //_log('✅ [API] Successfully loaded ${completedSeriesList.length} completed series from server');
+          _log('✅ [API] Successfully loaded ${completedSeriesList.length} completed series from server');
 
           // Organizza le serie per esercizio
           final Map<int, List<CompletedSeriesData>> seriesByExercise = {};
@@ -506,27 +850,27 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
             // Se il server ha più serie di quelle locali, usa quelle del server
             if (serverSeries.length > localSeries.length) {
               mergedSeries[exerciseId] = serverSeries;
-              //_log('🔄 [MERGE] Updated exercise $exerciseId: ${serverSeries.length} series from server');
+              _log('🔄 [MERGE] Updated exercise $exerciseId: ${serverSeries.length} series from server');
             } else {
-              //_log('✅ [MERGE] Keeping local state for exercise $exerciseId: ${localSeries.length} local vs ${serverSeries.length} server');
+              _log('✅ [MERGE] Keeping local state for exercise $exerciseId: ${localSeries.length} local vs ${serverSeries.length} server');
             }
           }
 
           // Emetti solo se ci sono cambiamenti
           if (mergedSeries.toString() != activeState.completedSeries.toString()) {
             emit(activeState.copyWith(completedSeries: mergedSeries));
-            //_log('🔄 [STATE] Updated completed series state');
+            _log('🔄 [STATE] Updated completed series state');
           } else {
-            //_log('✅ [STATE] No changes needed, keeping current state');
+            _log('✅ [STATE] No changes needed, keeping current state');
           }
         },
         onFailure: (exception, message) {
-          //_log('⚠️ [WARNING] Error loading completed series: $message (This is normal for new workouts)');
+          _log('⚠️ [WARNING] Error loading completed series: $message (This is normal for new workouts)');
           // Non emettiamo errore per questo, è normale che non ci siano serie all'inizio
         },
       );
     } catch (e) {
-      //_log('💥 [EXCEPTION] Exception in LoadCompletedSeries: $e');
+      _log('💥 [EXCEPTION] Exception in LoadCompletedSeries: $e');
       // Non emettere errore, mantieni lo stato corrente
     }
   }
@@ -536,7 +880,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       SaveCompletedSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('💾 [BLOC] SaveCompletedSeries received - Workout: ${event.allenamentoId}, Series: ${event.serie.length}');
+    _log('💾 [BLOC] SaveCompletedSeries received - Workout: ${event.allenamentoId}, Series: ${event.serie.length}');
 
     try {
       final result = await _workoutRepository.saveCompletedSeries(
@@ -547,16 +891,16 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       result.fold(
         onSuccess: (response) {
-          //_log('✅ [BLOC] Successfully saved completed series');
+          _log('✅ [BLOC] Successfully saved completed series');
 
           // 🚀 FIX: NON emettere SeriesSaved - rimani in WorkoutSessionActive!
           // Il salvataggio è avvenuto con successo, ma non cambiamo stato
-          //_log('✅ [BLOC] Series saved but keeping current state');
+          _log('✅ [BLOC] Series saved but keeping current state');
 
           // Non emettere nulla - rimaniamo nello stato corrente
         },
         onFailure: (exception, message) {
-          //_log('❌ [BLOC] Error saving completed series: $message');
+          _log('❌ [BLOC] Error saving completed series: $message');
           emit(ActiveWorkoutError(
             message: message ?? 'Errore nel salvataggio della serie',
             exception: exception,
@@ -564,7 +908,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         },
       );
     } catch (e) {
-      //_log('💥 [BLOC] Exception in SaveCompletedSeries: $e');
+      _log('💥 [BLOC] Exception in SaveCompletedSeries: $e');
       emit(ActiveWorkoutError(
         message: 'Errore critico nel salvataggio: $e',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -579,7 +923,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     emit(const ActiveWorkoutLoading(message: 'Completamento allenamento...'));
 
-    //_log('🏁 [EVENT] Completing workout session: ${event.allenamentoId}');
+    _log('🏁 [EVENT] Completing workout session: ${event.allenamentoId}');
 
     final result = await _workoutRepository.completeWorkout(
       event.allenamentoId,
@@ -589,7 +933,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
     result.fold(
       onSuccess: (response) {
-        //_log('✅ [API] Successfully completed workout session');
+        _log('✅ [API] Successfully completed workout session');
 
         emit(WorkoutSessionCompleted(
           response: response,
@@ -598,7 +942,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         ));
       },
       onFailure: (exception, message) {
-        //_log('❌ [ERROR] Error completing workout session: $message');
+        _log('❌ [ERROR] Error completing workout session: $message');
         emit(ActiveWorkoutError(
           message: message ?? 'Errore nel completamento dell\'allenamento',
           exception: exception,
@@ -614,20 +958,20 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     emit(const ActiveWorkoutLoading(message: 'Annullamento allenamento...'));
 
-    //_log('🚪 [EVENT] Cancelling workout session: ${event.allenamentoId}');
+    _log('🚪 [EVENT] Cancelling workout session: ${event.allenamentoId}');
 
     final result = await _workoutRepository.deleteWorkout(event.allenamentoId);
 
     result.fold(
       onSuccess: (success) {
-        //_log('✅ [API] Successfully cancelled workout session');
+        _log('✅ [API] Successfully cancelled workout session');
 
         emit(const WorkoutSessionCancelled(
           message: 'Allenamento annullato con successo',
         ));
       },
       onFailure: (exception, message) {
-        //_log('❌ [ERROR] Error cancelling workout session: $message');
+        _log('❌ [ERROR] Error cancelling workout session: $message');
         emit(ActiveWorkoutError(
           message: message ?? 'Errore nell\'annullamento dell\'allenamento',
           exception: exception,
@@ -652,14 +996,14 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       AddLocalSeries event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('📋 [BLOC] AddLocalSeries - Exercise: ${event.exerciseId}');
+    _log('📋 [BLOC] AddLocalSeries - Exercise: ${event.exerciseId}');
 
     if (state is WorkoutSessionActive) {
       final activeState = state as WorkoutSessionActive;
-      //_log('✅ [BLOC] Currently in active state with ${activeState.exercises.length} exercises');
+      _log('✅ [BLOC] Currently in active state with ${activeState.exercises.length} exercises');
 
       final updatedSeries = Map<int, List<CompletedSeriesData>>.from(activeState.completedSeries);
-      //_log('📊 [BLOC] Current series map has ${updatedSeries.keys.length} exercises');
+      _log('📊 [BLOC] Current series map has ${updatedSeries.keys.length} exercises');
 
       // Converti SeriesData in CompletedSeriesData per l'UI
       final completedSeries = CompletedSeriesData(
@@ -676,22 +1020,22 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       if (!updatedSeries.containsKey(event.exerciseId)) {
         updatedSeries[event.exerciseId] = [];
-        //_log('🆕 [BLOC] Created new series list for exercise ${event.exerciseId}');
+        _log('🆕 [BLOC] Created new series list for exercise ${event.exerciseId}');
       }
 
       final previousCount = updatedSeries[event.exerciseId]!.length;
       updatedSeries[event.exerciseId]!.add(completedSeries);
       final newCount = updatedSeries[event.exerciseId]!.length;
 
-      //_log('✅ [BLOC] Added local series for exercise ${event.exerciseId}: ${previousCount} -> ${newCount}');
-      //_log('📊 [BLOC] Total series map now has ${updatedSeries.keys.length} exercises');
+      _log('✅ [BLOC] Added local series for exercise ${event.exerciseId}: ${previousCount} -> ${newCount}');
+      _log('📊 [BLOC] Total series map now has ${updatedSeries.keys.length} exercises');
 
       // Emit new state
       final newState = activeState.copyWith(completedSeries: updatedSeries);
       emit(newState);
-      //_log('🔄 [BLOC] Emitted new WorkoutSessionActive state');
+      _log('🔄 [BLOC] Emitted new WorkoutSessionActive state');
     } else {
-      //_log('⚠️ [BLOC] AddLocalSeries called but not in active session: ${state.runtimeType}');
+      _log('⚠️ [BLOC] AddLocalSeries called but not in active session: ${state.runtimeType}');
     }
   }
 
@@ -720,8 +1064,45 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ResetActiveWorkoutState event,
       Emitter<ActiveWorkoutState> emit,
       ) async {
-    //_log('🔄 [EVENT] Resetting active workout state');
+    _log('🔄 [EVENT] Resetting active workout state');
+
+    // Reset dei dati storici
+    _historicWorkoutData.clear();
+
     emit(const ActiveWorkoutInitial());
+  }
+
+  // ============================================================================
+  // 🆕 NUOVO: PUBLIC METHODS PER GESTIRE VALORI ESERCIZI
+  // ============================================================================
+
+  /// Ottiene i valori correnti di un esercizio
+  ExerciseValues? getExerciseValues(int exerciseId) {
+    if (state is WorkoutSessionActive) {
+      final activeState = state as WorkoutSessionActive;
+      return activeState.exerciseValues[exerciseId];
+    }
+    return null;
+  }
+
+  /// Aggiorna i valori di un esercizio
+  void updateExerciseValues(int exerciseId, double weight, int reps) {
+    add(UpdateExerciseValues(
+      exerciseId: exerciseId,
+      weight: weight,
+      reps: reps,
+    ));
+  }
+
+  /// Controlla se un esercizio ha valori dallo storico
+  bool hasHistoricValues(int exerciseId) {
+    final values = getExerciseValues(exerciseId);
+    return values?.isFromHistory ?? false;
+  }
+
+  /// Ottiene i dati storici di un esercizio
+  HistoricExerciseData? getHistoricData(int exerciseId) {
+    return _historicWorkoutData[exerciseId];
   }
 
   // ============================================================================
@@ -730,9 +1111,14 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
   /// Inizia una sessione di allenamento
   void startWorkout(int userId, int schedaId) {
-    //_log('🎯 [PUBLIC] startWorkout called - User: $userId, Scheda: $schedaId');
+    _log('🎯 [PUBLIC] startWorkout called - User: $userId, Scheda: $schedaId');
     add(StartWorkoutSession(userId: userId, schedaId: schedaId));
-    //_log('📧 [EVENT] StartWorkoutSession event added to queue');
+    _log('📧 [EVENT] StartWorkoutSession event added to queue');
+  }
+
+  /// Carica lo storico degli allenamenti
+  void loadWorkoutHistory(int userId, int schedaId) {
+    add(LoadWorkoutHistory(userId: userId, schedaId: schedaId));
   }
 
   /// Salva una serie completata
