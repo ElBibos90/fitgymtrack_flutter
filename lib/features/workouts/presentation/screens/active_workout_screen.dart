@@ -18,13 +18,13 @@ import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
-// 🎯 PLATEAU IMPORTS - STEP 7
+// 🎯 PLATEAU IMPORTS - STEP 7 (MINIMALE)
 import '../../bloc/plateau_bloc.dart';
 import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
-/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION
-/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration + 🔧 PERFORMANCE FIX
+/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION MINIMALE
+/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration MINIMALE + 🔧 PERFORMANCE FIX
 /// ✅ Una schermata per esercizio/gruppo - Design pulito e minimale
 /// ✅ Raggruppamento automatico superset/circuit
 /// ✅ Recovery timer come popup non invasivo
@@ -32,7 +32,7 @@ import '../../../../shared/widgets/plateau_widgets.dart';
 /// 🌙 Dark theme support
 /// 🚪 Dialog conferma uscita
 /// ✅ Pulsante completa allenamento lampeggiante
-/// 🎯 Sistema plateau detection integrato!
+/// 🎯 Sistema plateau detection integrato MINIMALE - Solo badge discreti!
 /// 🔧 PERFORMANCE FIX: Cache per valori e riduzione chiamate eccessive
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
@@ -107,10 +107,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   bool _showExitDialog = false;
   bool _showCompleteDialog = false;
 
+  // 🎯 PLATEAU: Auto-trigger flag
+  bool _plateauAnalysisTriggered = false;
+
   @override
   void initState() {
     super.initState();
-    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] initState - Scheda: ${widget.schedaId}");
+    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] initState - Scheda: ${widget.schedaId}");
     _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
     _plateauBloc = context.read<PlateauBloc>(); // 🎯 INITIALIZE PLATEAU BLOC
     _initializeAnimations();
@@ -119,7 +122,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   @override
   void dispose() {
-    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] dispose");
+    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] dispose");
     _workoutTimer?.cancel();
     _slideController.dispose();
     _pulseController.dispose();
@@ -356,7 +359,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _slideController.forward();
 
     } catch (e) {
-      debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] Error initializing: $e");
+      debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] Error initializing: $e");
       setState(() {
         _currentStatus = "Errore inizializzazione: $e";
       });
@@ -668,7 +671,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🎯 PLATEAU DETECTION METHODS - STEP 7
+  // 🎯 PLATEAU DETECTION METHODS - STEP 7 (MINIMALE)
   // ============================================================================
 
   /// Trigger plateau analysis for a single exercise
@@ -677,31 +680,26 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final weight = _getEffectiveWeight(exercise);
     final reps = _getEffectiveReps(exercise);
 
-    debugPrint("🎯 [PLATEAU] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+    debugPrint("🎯 [PLATEAU MINIMALE] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
 
     _plateauBloc.analyzeExercisePlateau(exerciseId, exercise.nome, weight, reps);
   }
 
-  /// Trigger plateau analysis for current group
-  void _triggerPlateauAnalysisForCurrentGroup() {
-    if (_exerciseGroups.isEmpty || _currentGroupIndex >= _exerciseGroups.length) return;
+  /// 🎯 NUOVO: Auto-trigger plateau per tutti gli esercizi
+  void _triggerPlateauAnalysisForAllExercises(WorkoutSessionActive state) {
+    debugPrint("🎯 [AUTO-TRIGGER] Starting plateau analysis for all exercises");
 
-    final currentGroup = _exerciseGroups[_currentGroupIndex];
-    final groupName = _generateGroupName(currentGroup);
-    final groupType = currentGroup.first.setType;
-
-    final Map<int, double> groupWeights = {};
-    final Map<int, int> groupReps = {};
-
-    for (final exercise in currentGroup) {
+    for (final exercise in state.exercises) {
       final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-      groupWeights[exerciseId] = _getEffectiveWeight(exercise);
-      groupReps[exerciseId] = _getEffectiveReps(exercise);
+      final weight = _getEffectiveWeight(exercise);
+      final reps = _getEffectiveReps(exercise);
+
+      debugPrint("🎯 [PLATEAU] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+      _triggerPlateauAnalysisForExercise(exercise);
+
+      // Delay tra analisi per evitare spam
+      Future.delayed(Duration(milliseconds: 500 * (state.exercises.indexOf(exercise) + 1)));
     }
-
-    debugPrint("🎯 [PLATEAU] Triggering group analysis for $groupName ($groupType)");
-
-    _plateauBloc.analyzeGroupPlateau(groupName, groupType, currentGroup, groupWeights, groupReps);
   }
 
   /// Check if exercise has plateau
@@ -720,22 +718,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return plateauState.getPlateauForExercise(exerciseId);
     }
     return null;
-  }
-
-  String _generateGroupName(List<WorkoutExercise> exercises) {
-    if (exercises.length == 1) {
-      return exercises.first.nome;
-    }
-
-    final groupType = exercises.first.setType;
-    switch (groupType) {
-      case 'superset':
-        return 'Superset: ${exercises.map((e) => e.nome).join(' + ')}';
-      case 'circuit':
-        return 'Circuit: ${exercises.length} esercizi';
-      default:
-        return 'Gruppo: ${exercises.length} esercizi';
-    }
   }
 
   // ============================================================================
@@ -984,7 +966,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       },
       child: MultiBlocListener(
         listeners: [
-          // 🎯 PLATEAU BLOC LISTENER - STEP 7
+          // 🎯 PLATEAU BLOC LISTENER - STEP 7 (MINIMALE)
           BlocListener<PlateauBloc, PlateauState>(
             listener: _handlePlateauStateChanges,
           ),
@@ -1328,30 +1310,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 40.h),
 
-            // 🎯 PLATEAU INDICATOR - STEP 7
-            BlocBuilder<PlateauBloc, PlateauState>(
-              builder: (context, plateauState) {
-                if (plateauState is PlateauDetected && _hasPlateauForExercise(exerciseId)) {
-                  final plateauInfo = _getPlateauForExercise(exerciseId);
-                  if (plateauInfo != null) {
-                    return Column(
-                      children: [
-                        PlateauIndicator(
-                          plateauInfo: plateauInfo,
-                          onDismiss: () => _plateauBloc.dismissPlateau(exerciseId),
-                        ),
-                        SizedBox(height: 24.h),
-                      ],
-                    );
-                  }
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+            // 🎯 PLATEAU INDICATOR RIMOSSO - Solo badge discreti sui parameter cards
 
             // 📱 CARD SERIE ULTRA-COMPATTA - Layout Orizzontale
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h), // Ancora più compatto
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12.r),
@@ -1418,7 +1381,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     exerciseColor,
                     onTap: () => _editExerciseParameters(exercise),
                     isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
+                    exerciseId: exerciseId, // 🔧 NUOVO
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -1430,7 +1394,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     exercise.isIsometric ? Colors.deepPurple : Colors.green,
                     onTap: () => _editExerciseParameters(exercise),
                     isModified: _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
+                    exerciseId: exerciseId, // 🔧 NUOVO
                   ),
                 ),
               ],
@@ -1596,7 +1561,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                                     color: isSelected ? Colors.white : groupColor,
                                   ),
                                 ),
-                                // 🎯 PLATEAU BADGE FOR TABS
+                                // 🎯 PLATEAU BADGE FOR TABS - Solo punto rosso discreto
                                 if (_hasPlateauForExercise(exId)) ...[
                                   SizedBox(width: 2.w),
                                   Container(
@@ -1647,26 +1612,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 40.h),
 
-            // 🎯 PLATEAU INDICATOR FOR CURRENT EXERCISE - STEP 7
-            BlocBuilder<PlateauBloc, PlateauState>(
-              builder: (context, plateauState) {
-                if (plateauState is PlateauDetected && _hasPlateauForExercise(exerciseId)) {
-                  final plateauInfo = _getPlateauForExercise(exerciseId);
-                  if (plateauInfo != null) {
-                    return Column(
-                      children: [
-                        PlateauIndicator(
-                          plateauInfo: plateauInfo,
-                          onDismiss: () => _plateauBloc.dismissPlateau(exerciseId),
-                        ),
-                        SizedBox(height: 24.h),
-                      ],
-                    );
-                  }
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+            // 🎯 PLATEAU INDICATOR RIMOSSO - Solo badge discreti sui parameter cards
 
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
@@ -1701,7 +1647,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                       color: isCompleted ? Colors.green : groupColor,
                     ),
                   ),
-                  SizedBox(height: 16.h),
+                  SizedBox(width: 16.w),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(currentExercise.serie, (i) {
@@ -1734,7 +1680,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     groupColor,
                     onTap: () => _editExerciseParameters(currentExercise),
                     isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
+                    exerciseId: exerciseId, // 🔧 NUOVO
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -1746,7 +1693,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     currentExercise.isIsometric ? Colors.deepPurple : groupColor,
                     onTap: () => _editExerciseParameters(currentExercise),
                     isModified: _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
+                    exerciseId: exerciseId, // 🔧 NUOVO
                   ),
                 ),
               ],
@@ -1827,6 +1775,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
   }
 
+  /// 🔧 AGGIORNATO: _buildParameterCard con exerciseId per PlateauBadge
   Widget _buildParameterCard(
       String label,
       String value,
@@ -1834,7 +1783,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       Color color, {
         VoidCallback? onTap,
         bool isModified = false,
-        bool hasPlateauBadge = false, // 🎯 PLATEAU BADGE PARAMETER
+        bool hasPlateauBadge = false,
+        int? exerciseId, // 🔧 NUOVO PARAMETRO
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1883,12 +1833,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     size: 16.sp,
                   ),
                 ],
-                // 🎯 PLATEAU BADGE IN PARAMETER CARD - STEP 7
-                if (hasPlateauBadge) ...[
+                // 🎯 PLATEAU BADGE AGGIORNATO CON plateauInfo
+                if (hasPlateauBadge && exerciseId != null) ...[
                   SizedBox(width: 4.w),
-                  PlateauBadge(
-                    onTap: () {
-                      // Optional: Show plateau details
+                  BlocBuilder<PlateauBloc, PlateauState>(
+                    builder: (context, plateauState) {
+                      if (plateauState is PlateauDetected) {
+                        final plateauInfo = plateauState.getPlateauForExercise(exerciseId);
+                        return PlateauBadge(plateauInfo: plateauInfo);
+                      }
+                      return PlateauBadge();
                     },
                   ),
                 ],
@@ -2334,7 +2288,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   void _handleBlocStateChanges(BuildContext context, ActiveWorkoutState state) {
     if (state is WorkoutSessionStarted) {
-      debugPrint("🚀 [SINGLE EXERCISE] Workout session started");
+      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
       _startWorkoutTimer();
 
       CustomSnackbar.show(
@@ -2345,15 +2299,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionActive) {
-      debugPrint("🚀 [SINGLE EXERCISE] Active session with ${state.exercises.length} exercises");
+      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
 
       if (_workoutTimer == null) {
         _startWorkoutTimer();
       }
+
+      // 🎯 NUOVO: AUTO-TRIGGER PLATEAU ALL'AVVIO
+      if (!_plateauAnalysisTriggered) {
+        _plateauAnalysisTriggered = true;
+        Future.delayed(const Duration(seconds: 2), () {
+          _triggerPlateauAnalysisForAllExercises(state);
+        });
+      }
     }
 
     if (state is WorkoutSessionCompleted) {
-      debugPrint("🚀 [SINGLE EXERCISE] Workout completed");
+      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2363,7 +2325,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionCancelled) {
-      debugPrint("🚀 [SINGLE EXERCISE] Workout cancelled");
+      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2381,7 +2343,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is ActiveWorkoutError) {
-      debugPrint("🚀 [SINGLE EXERCISE] Error: ${state.message}");
+      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
 
       CustomSnackbar.show(
         context,
@@ -2391,17 +2353,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  // 🎯 PLATEAU BLOC LISTENER - STEP 7
+  // 🎯 PLATEAU BLOC LISTENER - STEP 7 (MINIMALE)
   void _handlePlateauStateChanges(BuildContext context, PlateauState state) {
     if (state is PlateauDetected) {
       final activePlateaus = state.activePlateaus;
       if (activePlateaus.isNotEmpty) {
-        debugPrint("🎯 [PLATEAU] Plateau rilevati: ${activePlateaus.length}");
+        debugPrint("🎯 [PLATEAU MINIMALE] Plateau rilevati: ${activePlateaus.length}");
 
-        // Show subtle notification about plateau detection
+        // 🔧 MINIMALE: Solo notifica discreta, NO banner invasivo
         CustomSnackbar.show(
           context,
-          message: "🎯 Rilevato plateau - Controlla i suggerimenti!",
+          message: "🎯 Plateau rilevato - Tap badge per suggerimenti!",
           isSuccess: false,
           duration: const Duration(seconds: 2),
         );
@@ -2409,7 +2371,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is PlateauError) {
-      debugPrint("🎯 [PLATEAU] Error: ${state.message}");
+      debugPrint("🎯 [PLATEAU MINIMALE] Error: ${state.message}");
       // Don't show error to user - plateau is optional feature
     }
   }

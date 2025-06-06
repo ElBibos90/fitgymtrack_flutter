@@ -6,11 +6,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/workouts/models/plateau_models.dart';
 import '../../features/workouts/bloc/plateau_bloc.dart';
 
-/// 🎯 STEP 6: Widget Flutter per visualizzare i plateau
-/// Traduzioni Flutter dei componenti Compose esistenti
-
-/// Indicatore principale per segnalare un plateau
-class PlateauIndicator extends StatefulWidget {
+/// 🎯 OPZIONE 1: PlateauIndicator Minimale - Solo Badge + Popup su Tap
+/// ✅ PIXEL OVERFLOW FIXED
+/// ❌ Rimosso banner invasivo
+/// 🔴 Solo badge discreti
+/// 📱 Tap → Popup dettagli
+class PlateauIndicator extends StatelessWidget {
   final PlateauInfo plateauInfo;
   final VoidCallback? onDismiss;
   final Function(ProgressionSuggestion)? onApplySuggestion;
@@ -22,163 +23,246 @@ class PlateauIndicator extends StatefulWidget {
     this.onApplySuggestion,
   });
 
-  @override
-  State<PlateauIndicator> createState() => _PlateauIndicatorState();
-}
-
-class _PlateauIndicatorState extends State<PlateauIndicator>
-    with TickerProviderStateMixin {
-  bool _isExpanded = false;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.08,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-    _pulseController.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
   Color get _plateauColor {
-    final colorHex = widget.plateauInfo.colorHex;
+    final colorHex = plateauInfo.colorHex;
     return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    // 🔧 OPZIONE 1: Completamente rimosso il banner invasivo
+    // Ora il plateau è gestito solo dai PlateauBadge sui parameter cards
+    return const SizedBox.shrink();
+  }
+}
 
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _pulseAnimation.value,
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            decoration: BoxDecoration(
-              color: _plateauColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(
-                color: _plateauColor.withOpacity(0.3),
-                width: 2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _plateauColor.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                _buildHeader(colorScheme),
-                if (_isExpanded) _buildExpandedContent(colorScheme),
-              ],
-            ),
-          ),
-        );
+/// 🔴 Badge discreto per parameter cards - VERSIONE COMPATTA
+class PlateauBadge extends StatelessWidget {
+  final PlateauInfo? plateauInfo;
+  final VoidCallback? onTap;
+
+  const PlateauBadge({
+    super.key,
+    this.plateauInfo,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        if (plateauInfo != null) {
+          _showPlateauDialog(context, plateauInfo!);
+        } else if (onTap != null) {
+          onTap!();
+        }
       },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFF5722).withOpacity(0.9),
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Text(
+          'Plateau',
+          style: TextStyle(
+            fontSize: 8.sp,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
-    return InkWell(
-      onTap: () => setState(() => _isExpanded = !_isExpanded),
-      borderRadius: BorderRadius.circular(12.r),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Row(
+  /// 📱 Mostra popup dettagliato su tap
+  void _showPlateauDialog(BuildContext context, PlateauInfo plateauInfo) {
+    showDialog(
+      context: context,
+      builder: (context) => PlateauDetailDialog(plateauInfo: plateauInfo),
+    );
+  }
+}
+
+/// 📱 Dialog dettagliato per plateau - VERSIONE COMPATTA E RESPONSIVE
+class PlateauDetailDialog extends StatelessWidget {
+  final PlateauInfo plateauInfo;
+
+  const PlateauDetailDialog({
+    super.key,
+    required this.plateauInfo,
+  });
+
+  Color get _plateauColor {
+    final colorHex = plateauInfo.colorHex;
+    return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.7; // Max 70% altezza schermo
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: maxHeight,
+          maxWidth: 350.w, // Larghezza fissa per evitare overflow
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Icona warning animata
+            // Header compatto
             Container(
-              width: 32.w,
-              height: 32.w,
+              width: double.infinity,
+              padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: _plateauColor.withOpacity(0.2),
-                shape: BoxShape.circle,
+                color: _plateauColor.withOpacity(0.1),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.r),
+                  topRight: Radius.circular(16.r),
+                ),
               ),
-              child: Icon(
-                Icons.trending_flat,
-                color: _plateauColor,
-                size: 20.sp,
-              ),
-            ),
-
-            SizedBox(width: 12.w),
-
-            // Informazioni plateau
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    '⚡ Plateau Rilevato',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                      color: _plateauColor,
+                  Icon(
+                    Icons.trending_flat,
+                    color: _plateauColor,
+                    size: 24.sp,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Plateau Rilevato',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: _plateauColor,
+                          ),
+                        ),
+                        Text(
+                          '${plateauInfo.sessionsInPlateau} allenamenti identici',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: _plateauColor.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    'Stessi valori per ${widget.plateauInfo.sessionsInPlateau} allenamenti',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: _plateauColor.withOpacity(0.8),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      Icons.close,
+                      color: _plateauColor.withOpacity(0.7),
+                      size: 20.sp,
+                    ),
+                    padding: EdgeInsets.all(4.w),
+                    constraints: BoxConstraints(
+                      minWidth: 32.w,
+                      minHeight: 32.w,
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Controlli
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  onPressed: () => setState(() => _isExpanded = !_isExpanded),
-                  icon: Icon(
-                    _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: _plateauColor,
-                    size: 20.sp,
-                  ),
-                  padding: EdgeInsets.all(4.w),
-                  constraints: BoxConstraints(
-                    minWidth: 32.w,
-                    minHeight: 32.w,
+            // Content scrollabile per evitare overflow
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nome esercizio
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: _plateauColor.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: _plateauColor.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        plateauInfo.exerciseName,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: _plateauColor,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    SizedBox(height: 16.h),
+
+                    // Valori attuali - Layout compatto
+                    _buildCurrentValues(context),
+
+                    SizedBox(height: 16.h),
+
+                    // Suggerimenti - Compatti
+                    _buildSuggestionsList(context),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bottom actions
+            Container(
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
-                IconButton(
-                  onPressed: widget.onDismiss,
-                  icon: Icon(
-                    Icons.close,
-                    color: _plateauColor.withOpacity(0.7),
-                    size: 18.sp,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        // Dismiss plateau
+                        context.read<PlateauBloc>().dismissPlateau(plateauInfo.exerciseId);
+                      },
+                      icon: Icon(Icons.close, size: 16.sp),
+                      label: Text(
+                        'Nascondi',
+                        style: TextStyle(fontSize: 12.sp),
+                      ),
+                    ),
                   ),
-                  padding: EdgeInsets.all(4.w),
-                  constraints: BoxConstraints(
-                    minWidth: 32.w,
-                    minHeight: 32.w,
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.check, size: 16.sp),
+                      label: Text(
+                        'OK',
+                        style: TextStyle(fontSize: 12.sp),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _plateauColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -186,42 +270,7 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
     );
   }
 
-  Widget _buildExpandedContent(ColorScheme colorScheme) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Divider
-          Container(
-            height: 1,
-            margin: EdgeInsets.symmetric(vertical: 8.h),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  _plateauColor.withOpacity(0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-
-          // Informazioni attuali
-          _buildCurrentInfo(),
-
-          SizedBox(height: 16.h),
-
-          // Suggerimenti
-          _buildSuggestions(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCurrentInfo() {
+  Widget _buildCurrentValues(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
@@ -233,8 +282,8 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
           // Peso attuale
           Expanded(
             child: _buildValueItem(
-              'Peso Attuale',
-              '${widget.plateauInfo.currentWeight.toStringAsFixed(1)} kg',
+              'Peso',
+              '${plateauInfo.currentWeight.toStringAsFixed(1)} kg',
               Icons.fitness_center,
             ),
           ),
@@ -244,8 +293,8 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
           // Ripetizioni attuali
           Expanded(
             child: _buildValueItem(
-              'Ripetizioni Attuali',
-              widget.plateauInfo.currentReps.toString(),
+              'Ripetizioni',
+              plateauInfo.currentReps.toString(),
               Icons.repeat,
             ),
           ),
@@ -280,12 +329,14 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
             color: _plateauColor,
           ),
           textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
   }
 
-  Widget _buildSuggestions() {
+  Widget _buildSuggestionsList(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -300,23 +351,39 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
 
         SizedBox(height: 8.h),
 
-        ...widget.plateauInfo.suggestions.take(2).map((suggestion) =>
+        // Limita a max 3 suggerimenti per evitare overflow
+        ...plateauInfo.suggestions.take(3).map((suggestion) =>
             Padding(
               padding: EdgeInsets.only(bottom: 8.h),
-              child: _buildSuggestionCard(suggestion),
+              child: _buildSuggestionCard(suggestion, context),
             ),
         ),
+
+        // Mostra il numero dei suggerimenti nascosti
+        if (plateauInfo.suggestions.length > 3)
+          Padding(
+            padding: EdgeInsets.only(top: 4.h),
+            child: Text(
+              '• E altri ${plateauInfo.suggestions.length - 3} suggerimenti...',
+              style: TextStyle(
+                fontSize: 11.sp,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildSuggestionCard(ProgressionSuggestion suggestion) {
+  Widget _buildSuggestionCard(ProgressionSuggestion suggestion, BuildContext context) {
     final confidenceColor = Color(
       int.parse(suggestion.confidenceColorHex.substring(1), radix: 16) + 0xFF000000,
     );
 
     return Container(
-      padding: EdgeInsets.all(12.w),
+      width: double.infinity,
+      padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8.r),
@@ -330,7 +397,7 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
           Icon(
             _getSuggestionIcon(suggestion.type),
             color: _plateauColor,
-            size: 18.sp,
+            size: 16.sp,
           ),
 
           SizedBox(width: 8.w),
@@ -344,27 +411,19 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
-                Row(
-                  children: [
-                    Text(
-                      'Confidenza: ',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      suggestion.confidenceText,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                        color: confidenceColor,
-                      ),
-                    ),
-                  ],
+                SizedBox(height: 2.h),
+                Text(
+                  'Confidenza: ${suggestion.confidenceText}',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: confidenceColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -390,219 +449,7 @@ class _PlateauIndicatorState extends State<PlateauIndicator>
   }
 }
 
-/// Badge discreto per indicare plateau
-class PlateauBadge extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const PlateauBadge({
-    super.key,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFF5722).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.trending_flat,
-              color: Colors.white,
-              size: 12.sp,
-            ),
-            SizedBox(width: 4.w),
-            Text(
-              'Plateau',
-              style: TextStyle(
-                fontSize: 10.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Dialog dettagliato per plateau singolo
-class PlateauDetailDialog extends StatelessWidget {
-  final PlateauInfo plateauInfo;
-
-  const PlateauDetailDialog({
-    super.key,
-    required this.plateauInfo,
-  });
-
-  Color get _plateauColor {
-    final colorHex = plateauInfo.colorHex;
-    return Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: Icon(
-        Icons.trending_flat,
-        color: _plateauColor,
-        size: 32.sp,
-      ),
-      title: Text(
-        'Plateau Rilevato!',
-        style: TextStyle(
-          fontSize: 20.sp,
-          fontWeight: FontWeight.bold,
-        ),
-        textAlign: TextAlign.center,
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Nome esercizio
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: _plateauColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Text(
-                plateauInfo.exerciseName,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: _plateauColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-            SizedBox(height: 16.h),
-
-            // Descrizione
-            Text(
-              'Hai usato gli stessi valori per ${plateauInfo.sessionsInPlateau} allenamenti consecutivi. È il momento di progredire!',
-              style: TextStyle(fontSize: 14.sp),
-            ),
-
-            SizedBox(height: 16.h),
-
-            // Valori attuali
-            _buildCurrentValues(context),
-
-            SizedBox(height: 16.h),
-
-            // Suggerimenti
-            _buildSuggestionsList(context),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Indietro'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCurrentValues(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Valori attuali:',
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Row(
-          children: [
-            Icon(Icons.fitness_center, size: 16.sp, color: _plateauColor),
-            SizedBox(width: 8.w),
-            Text(
-              'Peso: ${plateauInfo.currentWeight.toStringAsFixed(1)} kg',
-              style: TextStyle(fontSize: 13.sp),
-            ),
-          ],
-        ),
-        SizedBox(height: 4.h),
-        Row(
-          children: [
-            Icon(Icons.repeat, size: 16.sp, color: _plateauColor),
-            SizedBox(width: 8.w),
-            Text(
-              'Ripetizioni: ${plateauInfo.currentReps}',
-              style: TextStyle(fontSize: 13.sp),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuggestionsList(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Suggerimenti per progredire:',
-          style: TextStyle(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        ...plateauInfo.suggestions.take(3).map((suggestion) =>
-            Padding(
-              padding: EdgeInsets.only(bottom: 4.h),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '• ',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: _plateauColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      suggestion.description,
-                      style: TextStyle(fontSize: 13.sp),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ),
-        if (plateauInfo.suggestions.length > 3)
-          Text(
-            '• E altri ${plateauInfo.suggestions.length - 3} suggerimenti...',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// Dialog per plateau di gruppo (superset/circuit)
+/// Dialog per plateau di gruppo (superset/circuit) - VERSIONE COMPATTA
 class GroupPlateauDialog extends StatelessWidget {
   final GroupPlateauAnalysis groupAnalysis;
 
@@ -613,118 +460,169 @@ class GroupPlateauDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.8; // Max 80% altezza schermo
 
-    return AlertDialog(
-      icon: Icon(
-        Icons.trending_flat,
-        color: const Color(0xFFFF5722),
-        size: 32.sp,
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
       ),
-      title: Text(
-        'Plateau nel ${_getGroupTypeText()}',
-        style: TextStyle(
-          fontSize: 18.sp,
-          fontWeight: FontWeight.bold,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: maxHeight,
+          maxWidth: 350.w,
         ),
-        textAlign: TextAlign.center,
-      ),
-      content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Informazioni gruppo
+            // Header
             Container(
               width: double.infinity,
-              padding: EdgeInsets.all(12.w),
+              padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
                 color: const Color(0xFFFF5722).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.r),
+                  topRight: Radius.circular(16.r),
+                ),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Text(
-                    groupAnalysis.groupName,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFFF5722),
-                    ),
-                    textAlign: TextAlign.center,
+                  Icon(
+                    Icons.trending_flat,
+                    color: const Color(0xFFFF5722),
+                    size: 24.sp,
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} esercizi in plateau (${groupAnalysis.plateauPercentage.toStringAsFixed(1)}%)',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: const Color(0xFFFF5722),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Plateau nel ${_getGroupTypeText()}',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFFF5722),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          '${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} esercizi',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: const Color(0xFFFF5722).withOpacity(0.8),
+                          ),
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Color(0xFFFF5722)),
+                    iconSize: 20.sp,
                   ),
                 ],
               ),
             ),
 
-            SizedBox(height: 16.h),
+            // Content scrollabile
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nome gruppo
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF5722).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        groupAnalysis.groupName,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFFF5722),
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
 
-            // Lista plateau
-            Text(
-              'Esercizi in plateau:',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+                    SizedBox(height: 16.h),
 
-            SizedBox(height: 8.h),
+                    // Lista plateau (max 5 per evitare overflow)
+                    Text(
+                      'Esercizi in plateau:',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
 
-            ...groupAnalysis.plateauList.map((plateau) =>
-                _buildPlateauItem(plateau, colorScheme),
-            ),
+                    SizedBox(height: 8.h),
 
-            SizedBox(height: 16.h),
+                    ...groupAnalysis.plateauList.take(5).map((plateau) =>
+                        _buildPlateauItem(plateau, context),
+                    ),
 
-            // Suggerimento generale
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Text(
-                '💪 Considera di variare i carichi e le ripetizioni per superare questi plateau!',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.primary,
+                    if (groupAnalysis.plateauList.length > 5)
+                      Padding(
+                        padding: EdgeInsets.only(top: 8.h),
+                        child: Text(
+                          '• E altri ${groupAnalysis.plateauList.length - 5} esercizi...',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
+              ),
+            ),
+
+            // Bottom button
+            Container(
+              padding: EdgeInsets.all(16.w),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5722),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    'Chiudi',
+                    style: TextStyle(fontSize: 14.sp),
+                  ),
+                ),
               ),
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Indietro'),
-        ),
-      ],
     );
   }
 
-  Widget _buildPlateauItem(PlateauInfo plateau, ColorScheme colorScheme) {
+  Widget _buildPlateauItem(PlateauInfo plateau, BuildContext context) {
     final plateauColor = Color(
       int.parse(plateau.colorHex.substring(1), radix: 16) + 0xFF000000,
     );
 
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
-        color: plateauColor.withOpacity(0.1),
+        color: plateauColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
           color: plateauColor.withOpacity(0.3),
@@ -738,50 +636,32 @@ class GroupPlateauDialog extends StatelessWidget {
           Text(
             plateau.exerciseName,
             style: TextStyle(
-              fontSize: 13.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.bold,
               color: plateauColor,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-
-          SizedBox(height: 6.h),
-
-          // Valori attuali
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Peso: ${plateau.currentWeight.toStringAsFixed(1)} kg',
-                style: TextStyle(fontSize: 11.sp),
-              ),
-              Text(
-                'Reps: ${plateau.currentReps}',
-                style: TextStyle(fontSize: 11.sp),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 6.h),
-
-          // Miglior suggerimento
-          if (plateau.bestSuggestion != null)
-            Text(
-              '💡 ${plateau.bestSuggestion!.description}',
-              style: TextStyle(
-                fontSize: 11.sp,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
 
           SizedBox(height: 4.h),
 
-          // Indicatore sessioni
-          Text(
-            '${plateau.sessionsInPlateau} allenamenti con stessi valori',
-            style: TextStyle(
-              fontSize: 10.sp,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-            ),
+          // Valori e suggerimento in riga compatta
+          Row(
+            children: [
+              Text(
+                '${plateau.currentWeight.toStringAsFixed(1)}kg x ${plateau.currentReps}',
+                style: TextStyle(fontSize: 10.sp),
+              ),
+              const Spacer(),
+              Text(
+                '${plateau.sessionsInPlateau} sessioni',
+                style: TextStyle(
+                  fontSize: 9.sp,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -800,7 +680,7 @@ class GroupPlateauDialog extends StatelessWidget {
   }
 }
 
-/// Widget per mostrare statistiche plateau
+/// Widget per mostrare statistiche plateau - VERSIONE COMPATTA
 class PlateauStatisticsCard extends StatelessWidget {
   final PlateauStatistics statistics;
 
@@ -816,27 +696,27 @@ class PlateauStatisticsCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.all(16.w),
       child: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(12.w), // Padding ridotto
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '📊 Statistiche Plateau',
               style: TextStyle(
-                fontSize: 16.sp,
+                fontSize: 14.sp, // Font size ridotto
                 fontWeight: FontWeight.bold,
                 color: colorScheme.primary,
               ),
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 12.h),
 
-            // Statistiche principali
+            // Statistiche principali in layout compatto
             Row(
               children: [
                 Expanded(
                   child: _buildStatItem(
-                    'Plateau Rilevati',
+                    'Rilevati',
                     statistics.totalPlateauDetected.toString(),
                     Icons.trending_flat,
                     colorScheme,
@@ -853,30 +733,20 @@ class PlateauStatisticsCard extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: 16.h),
-
-            // Tipo più comune
-            if (statistics.mostCommonPlateauType != null)
-              _buildInfoRow(
-                'Tipo più comune:',
-                _getPlateauTypeDescription(statistics.mostCommonPlateauType!),
-                colorScheme,
+            // Info compatte se disponibili
+            if (statistics.mostCommonPlateauType != null ||
+                statistics.mostCommonSuggestionType != null) ...[
+              SizedBox(height: 12.h),
+              Text(
+                statistics.summaryDescription,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-
-            // Suggerimento più comune
-            if (statistics.mostCommonSuggestionType != null)
-              _buildInfoRow(
-                'Suggerimento più comune:',
-                _getSuggestionTypeDescription(statistics.mostCommonSuggestionType!),
-                colorScheme,
-              ),
-
-            // Media sessioni
-            _buildInfoRow(
-              'Media sessioni in plateau:',
-              statistics.averageSessionsInPlateau.toStringAsFixed(1),
-              colorScheme,
-            ),
+            ],
           ],
         ),
       ),
@@ -889,13 +759,13 @@ class PlateauStatisticsCard extends StatelessWidget {
         Icon(
           icon,
           color: colorScheme.primary,
-          size: 24.sp,
+          size: 20.sp, // Icona più piccola
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 4.h),
         Text(
           value,
           style: TextStyle(
-            fontSize: 20.sp,
+            fontSize: 16.sp, // Font ridotto
             fontWeight: FontWeight.bold,
             color: colorScheme.primary,
           ),
@@ -903,68 +773,14 @@ class PlateauStatisticsCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12.sp,
+            fontSize: 10.sp, // Font ridotto
             color: colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
-  }
-
-  Widget _buildInfoRow(String label, String value, ColorScheme colorScheme) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _getPlateauTypeDescription(PlateauType type) {
-    switch (type) {
-      case PlateauType.lightWeight:
-        return 'Peso Leggero';
-      case PlateauType.heavyWeight:
-        return 'Peso Pesante';
-      case PlateauType.lowReps:
-        return 'Poche Ripetizioni';
-      case PlateauType.highReps:
-        return 'Molte Ripetizioni';
-      case PlateauType.moderate:
-        return 'Valori Moderati';
-    }
-  }
-
-  String _getSuggestionTypeDescription(SuggestionType type) {
-    switch (type) {
-      case SuggestionType.increaseWeight:
-        return 'Aumenta Peso';
-      case SuggestionType.increaseReps:
-        return 'Aumenta Ripetizioni';
-      case SuggestionType.advancedTechnique:
-        return 'Tecniche Avanzate';
-      case SuggestionType.reduceRest:
-        return 'Riduci Recupero';
-      case SuggestionType.changeTempo:
-        return 'Cambia Tempo';
-    }
   }
 }
