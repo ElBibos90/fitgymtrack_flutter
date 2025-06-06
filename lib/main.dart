@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
+import 'features/workouts/bloc/plateau_bloc.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
@@ -53,6 +54,9 @@ class FitGymTrackApp extends StatelessWidget {
             ),
             BlocProvider<WorkoutHistoryBloc>(
               create: (context) => getIt<WorkoutHistoryBloc>(),
+            ),
+            BlocProvider<PlateauBloc>(
+              create: (context) => getIt<PlateauBloc>(),
             ),
           ],
           child: MaterialApp.router(

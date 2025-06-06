@@ -18,8 +18,13 @@ import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
-/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING
-/// ✅ STEP 4 COMPLETATO + Dark Theme + Dialogs + Complete Button
+// 🎯 PLATEAU IMPORTS - STEP 7
+import '../../bloc/plateau_bloc.dart';
+import '../../models/plateau_models.dart';
+import '../../../../shared/widgets/plateau_widgets.dart';
+
+/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION
+/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration
 /// ✅ Una schermata per esercizio/gruppo - Design pulito e minimale
 /// ✅ Raggruppamento automatico superset/circuit
 /// ✅ Recovery timer come popup non invasivo
@@ -27,6 +32,7 @@ import '../../models/workout_plan_models.dart';
 /// 🌙 Dark theme support
 /// 🚪 Dialog conferma uscita
 /// ✅ Pulsante completa allenamento lampeggiante
+/// 🎯 Sistema plateau detection integrato!
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -48,8 +54,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // STATE VARIABLES
   // ============================================================================
 
-  // BLoC reference
+  // BLoC references
   late ActiveWorkoutBloc _activeWorkoutBloc;
+  late PlateauBloc _plateauBloc; // 🎯 PLATEAU BLOC
 
   // Timer management
   Timer? _workoutTimer;
@@ -59,15 +66,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // Animation controllers
   late AnimationController _slideController;
   late AnimationController _pulseController;
-  late AnimationController _completeButtonController; // 🆕 Per animazione pulsante
+  late AnimationController _completeButtonController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _completeButtonAnimation; // 🆕 Animazione lampeggiante
+  late Animation<double> _completeButtonAnimation;
 
-  // 🚀 STEP 4: Exercise grouping for superset/circuit
+  // 🚀 Exercise grouping for superset/circuit
   List<List<WorkoutExercise>> _exerciseGroups = [];
   int _currentGroupIndex = 0;
-  int _currentExerciseInGroup = 0; // Track which exercise in the current group
+  int _currentExerciseInGroup = 0;
   PageController _pageController = PageController();
 
   // Recovery timer popup state
@@ -98,19 +105,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   @override
   void initState() {
     super.initState();
-    debugPrint("🚀 [SINGLE EXERCISE] initState - Scheda: ${widget.schedaId}");
+    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] initState - Scheda: ${widget.schedaId}");
     _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
+    _plateauBloc = context.read<PlateauBloc>(); // 🎯 INITIALIZE PLATEAU BLOC
     _initializeAnimations();
     _initializeWorkout();
   }
 
   @override
   void dispose() {
-    debugPrint("🚀 [SINGLE EXERCISE] dispose");
+    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] dispose");
     _workoutTimer?.cancel();
     _slideController.dispose();
     _pulseController.dispose();
-    _completeButtonController.dispose(); // 🆕
+    _completeButtonController.dispose();
     _pageController.dispose();
     _stopRecoveryTimer();
     super.dispose();
@@ -131,7 +139,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       vsync: this,
     );
 
-    // 🆕 Animation per pulsante completa allenamento
     _completeButtonController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
@@ -153,7 +160,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       curve: Curves.easeInOut,
     ));
 
-    // 🆕 Animazione lampeggiante per pulsante completa
     _completeButtonAnimation = Tween<double>(
       begin: 0.7,
       end: 1.0,
@@ -189,7 +195,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _slideController.forward();
 
     } catch (e) {
-      debugPrint("🚀 [SINGLE EXERCISE] Error initializing: $e");
+      debugPrint("🚀 [SINGLE EXERCISE + PLATEAU] Error initializing: $e");
       setState(() {
         _currentStatus = "Errore inizializzazione: $e";
       });
@@ -223,7 +229,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _handleExitConfirmed() {
     debugPrint("🚪 [EXIT] User confirmed exit - cancelling workout");
 
-    // Cancella l'allenamento via BLoC se è attivo
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
       _activeWorkoutBloc.cancelWorkout(currentState.activeWorkout.id);
@@ -242,10 +247,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🚀 STEP 4: EXERCISE GROUPING FOR SUPERSET/CIRCUIT
+  // 🚀 EXERCISE GROUPING FOR SUPERSET/CIRCUIT
   // ============================================================================
 
-  /// Raggruppa gli esercizi in base al campo linked_to_previous
   List<List<WorkoutExercise>> _groupExercises(List<WorkoutExercise> exercises) {
     List<List<WorkoutExercise>> groups = [];
     List<WorkoutExercise> currentGroup = [];
@@ -253,21 +257,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     for (int i = 0; i < exercises.length; i++) {
       final exercise = exercises[i];
 
-      // Nuovo gruppo se linked_to_previous = 0 (non collegato al precedente)
       if (exercise.linkedToPreviousInt == 0) {
-        // Salva il gruppo precedente se non vuoto
         if (currentGroup.isNotEmpty) {
           groups.add(List.from(currentGroup));
           currentGroup.clear();
         }
         currentGroup.add(exercise);
       } else {
-        // Esercizio collegato al precedente - aggiunge al gruppo corrente
         currentGroup.add(exercise);
       }
     }
 
-    // Aggiungi l'ultimo gruppo
     if (currentGroup.isNotEmpty) {
       groups.add(currentGroup);
     }
@@ -280,7 +280,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return groups;
   }
 
-  /// Determina se un gruppo è completato (tutti gli esercizi del gruppo)
   bool _isGroupCompleted(WorkoutSessionActive state, List<WorkoutExercise> group) {
     for (final exercise in group) {
       if (!_isExerciseCompleted(state, exercise)) {
@@ -290,24 +289,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return true;
   }
 
-  /// 🆕 Determina se TUTTO l'allenamento è completato
   bool _isWorkoutFullyCompleted(WorkoutSessionActive state) {
     for (final group in _exerciseGroups) {
       if (!_isGroupCompleted(state, group)) {
         return false;
       }
     }
-    return _exerciseGroups.isNotEmpty; // Almeno un gruppo deve esistere
+    return _exerciseGroups.isNotEmpty;
   }
 
-  /// Trova il prossimo esercizio incompleto nel gruppo corrente
   WorkoutExercise? _getNextIncompleteExerciseInGroup(WorkoutSessionActive state, List<WorkoutExercise> group) {
     for (final exercise in group) {
       if (!_isExerciseCompleted(state, exercise)) {
         return exercise;
       }
     }
-    return null; // Tutti completati
+    return null;
   }
 
   // ============================================================================
@@ -318,7 +315,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (_currentGroupIndex > 0) {
       setState(() {
         _currentGroupIndex--;
-        // Set to first incomplete exercise in the new group
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
           _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
@@ -337,7 +333,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (_currentGroupIndex < _exerciseGroups.length - 1) {
       setState(() {
         _currentGroupIndex++;
-        // Set to first incomplete exercise in the new group
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
           _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
@@ -405,7 +400,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _startIsometricTimer(WorkoutExercise exercise) {
-    final seconds = _getEffectiveReps(exercise); // Usa ripetizioni modificate o originali
+    final seconds = _getEffectiveReps(exercise);
 
     debugPrint("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
 
@@ -420,7 +415,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _onIsometricTimerComplete() {
     debugPrint("✅ [ISOMETRIC] Isometric timer completed!");
 
-    // Completa automaticamente la serie
     if (_pendingIsometricExercise != null) {
       final state = _getCurrentState();
       if (state != null) {
@@ -484,13 +478,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _saveModifiedParameters(WorkoutExercise exercise, double weight, int reps) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
-    // Salva localmente per questo allenamento
     setState(() {
       _modifiedWeights[exerciseId] = weight;
       _modifiedReps[exerciseId] = reps;
     });
 
-    // Aggiorna anche il BLoC per consistenza
     context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
 
     debugPrint("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
@@ -500,22 +492,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
       isSuccess: true,
     );
+
+    // 🎯 PLATEAU: Trigger analysis after parameter modification
+    _triggerPlateauAnalysisForExercise(exercise);
   }
 
   double _getEffectiveWeight(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente durante questo allenamento
     if (_modifiedWeights.containsKey(exerciseId)) {
       return _modifiedWeights[exerciseId]!;
     }
 
-    // 2. PRIORITÀ MEDIA: Valori dallo storico (dal BLoC) - OTTIMIZZATO
     final currentState = _activeWorkoutBloc.state;
     if (currentState is WorkoutSessionActive) {
       final exerciseValues = currentState.exerciseValues[exerciseId];
       if (exerciseValues != null) {
-        // Log solo la prima volta per evitare spam
         if (!_loggedExercises.contains(exerciseId)) {
           _loggedExercises.add(exerciseId);
           debugPrint('💡 [UI] Using BLoC value for exercise $exerciseId: ${exerciseValues.weight}kg (${exerciseValues.isFromHistory ? "FROM HISTORY" : "DEFAULT"})');
@@ -524,20 +516,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
     }
 
-    // 3. PRIORITÀ MINIMA: Valori di default dell'esercizio
     return exercise.peso;
   }
 
-  /// 🔧 FIX: Ottiene le ripetizioni effettive con priorità: Modificato > BLoC > Default
   int _getEffectiveReps(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente durante questo allenamento
     if (_modifiedReps.containsKey(exerciseId)) {
       return _modifiedReps[exerciseId]!;
     }
 
-    // 2. PRIORITÀ MEDIA: Valori dallo storico (dal BLoC) - OTTIMIZZATO
     final currentState = _activeWorkoutBloc.state;
     if (currentState is WorkoutSessionActive) {
       final exerciseValues = currentState.exerciseValues[exerciseId];
@@ -546,8 +534,78 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
     }
 
-    // 3. PRIORITÀ MINIMA: Valori di default dell'esercizio
     return exercise.ripetizioni;
+  }
+
+  // ============================================================================
+  // 🎯 PLATEAU DETECTION METHODS - STEP 7
+  // ============================================================================
+
+  /// Trigger plateau analysis for a single exercise
+  void _triggerPlateauAnalysisForExercise(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final weight = _getEffectiveWeight(exercise);
+    final reps = _getEffectiveReps(exercise);
+
+    debugPrint("🎯 [PLATEAU] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+
+    _plateauBloc.analyzeExercisePlateau(exerciseId, exercise.nome, weight, reps);
+  }
+
+  /// Trigger plateau analysis for current group
+  void _triggerPlateauAnalysisForCurrentGroup() {
+    if (_exerciseGroups.isEmpty || _currentGroupIndex >= _exerciseGroups.length) return;
+
+    final currentGroup = _exerciseGroups[_currentGroupIndex];
+    final groupName = _generateGroupName(currentGroup);
+    final groupType = currentGroup.first.setType;
+
+    final Map<int, double> groupWeights = {};
+    final Map<int, int> groupReps = {};
+
+    for (final exercise in currentGroup) {
+      final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+      groupWeights[exerciseId] = _getEffectiveWeight(exercise);
+      groupReps[exerciseId] = _getEffectiveReps(exercise);
+    }
+
+    debugPrint("🎯 [PLATEAU] Triggering group analysis for $groupName ($groupType)");
+
+    _plateauBloc.analyzeGroupPlateau(groupName, groupType, currentGroup, groupWeights, groupReps);
+  }
+
+  /// Check if exercise has plateau
+  bool _hasPlateauForExercise(int exerciseId) {
+    final plateauState = _plateauBloc.state;
+    if (plateauState is PlateauDetected) {
+      return plateauState.hasPlateauForExercise(exerciseId);
+    }
+    return false;
+  }
+
+  /// Get plateau info for exercise
+  PlateauInfo? _getPlateauForExercise(int exerciseId) {
+    final plateauState = _plateauBloc.state;
+    if (plateauState is PlateauDetected) {
+      return plateauState.getPlateauForExercise(exerciseId);
+    }
+    return null;
+  }
+
+  String _generateGroupName(List<WorkoutExercise> exercises) {
+    if (exercises.length == 1) {
+      return exercises.first.nome;
+    }
+
+    final groupType = exercises.first.setType;
+    switch (groupType) {
+      case 'superset':
+        return 'Superset: ${exercises.map((e) => e.nome).join(' + ')}';
+      case 'circuit':
+        return 'Circuit: ${exercises.length} esercizi';
+      default:
+        return 'Gruppo: ${exercises.length} esercizi';
+    }
   }
 
   // ============================================================================
@@ -616,11 +674,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     debugPrint("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
 
-    // ✏️ Usa parametri modificati se disponibili
     final effectiveWeight = _getEffectiveWeight(exercise);
     final effectiveReps = _getEffectiveReps(exercise);
 
-    // Create series data with effective parameters
     final seriesData = SeriesData(
       schedaEsercizioId: exerciseId,
       peso: effectiveWeight,
@@ -634,10 +690,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       serieId: 'series_${DateTime.now().millisecondsSinceEpoch}',
     );
 
-    // Add local series for immediate UI feedback
     _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
 
-    // Save series to backend
     final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
     _activeWorkoutBloc.saveSeries(
       state.activeWorkout.id,
@@ -645,7 +699,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       requestId,
     );
 
-    // Show success feedback
     CustomSnackbar.show(
       context,
       message: exercise.isIsometric
@@ -654,41 +707,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       isSuccess: true,
     );
 
-    // Start recovery timer (for both normal and isometric exercises)
+    // 🎯 PLATEAU: Trigger analysis after series completion
+    _triggerPlateauAnalysisForExercise(exercise);
+
     if (exercise.tempoRecupero > 0) {
       _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
     }
 
-    // 🚀 STEP 4: Handle auto-rotation for superset/circuit
     _handleAutoRotation(state);
 
-    // Check if workout is completed
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && _isWorkoutCompleted(state)) {
-        // 🆕 Avvia animazione pulsante completa quando tutto è finito
         _completeButtonController.repeat(reverse: true);
       }
     });
   }
 
-  /// 🚀 STEP 4: Handle automatic rotation between exercises in superset/circuit
-  /// ✅ FIXED: Sequential rotation logic
   void _handleAutoRotation(WorkoutSessionActive state) {
     if (_currentGroupIndex >= _exerciseGroups.length) return;
 
     final currentGroup = _exerciseGroups[_currentGroupIndex];
-    if (currentGroup.length <= 1) return; // No rotation needed for single exercises
+    if (currentGroup.length <= 1) return;
 
-    // Check if the group is fully completed
     if (_isGroupCompleted(state, currentGroup)) {
       return;
     }
 
-    // Find next exercise in sequential rotation
     final nextExerciseIndex = _findNextExerciseInSequentialRotation(state, currentGroup);
 
     if (nextExerciseIndex != _currentExerciseInGroup) {
-      // Auto-switch to next exercise in 1.5 seconds
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           setState(() {
@@ -708,32 +755,25 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  /// 🆕 SEQUENTIAL ROTATION: Passa al prossimo esercizio in ordine
-  /// Se sono all'ultimo, torna al primo. Continua finché tutto il gruppo è completato.
   int _findNextExerciseInSequentialRotation(WorkoutSessionActive? state, List<WorkoutExercise> group) {
     if (state == null) return 0;
 
-    // Prossimo esercizio in sequenza (sequential, non round-robin basato su serie)
     int nextIndex = (_currentExerciseInGroup + 1) % group.length;
 
-    // Se il prossimo esercizio è già completato, cerca il primo esercizio incompleto
     for (int attempts = 0; attempts < group.length; attempts++) {
       final exercise = group[nextIndex];
       final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
       final completedCount = _getCompletedSeriesCount(state, exerciseId);
 
-      // Se questo esercizio non è ancora completato, selezionalo
       if (completedCount < exercise.serie) {
         return nextIndex;
       }
 
-      // Altrimenti, passa al prossimo
       nextIndex = (nextIndex + 1) % group.length;
     }
 
-    // Se arriviamo qui, tutti gli esercizi sono completati
     debugPrint("🎉 [AUTO-ROTATION] All exercises in group are completed!");
-    return _currentExerciseInGroup; // Rimani dove sei
+    return _currentExerciseInGroup;
   }
 
   WorkoutSessionActive? _getCurrentState() {
@@ -745,7 +785,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     debugPrint("🚀 [SINGLE EXERCISE] Completing workout");
 
     _stopWorkoutTimer();
-    _completeButtonController.stop(); // 🆕 Stop animazione
+    _completeButtonController.stop();
 
     final durationMinutes = _elapsedTime.inMinutes;
     _activeWorkoutBloc.completeWorkout(
@@ -809,9 +849,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           _showExitConfirmDialog();
         }
       },
-      child: BlocListener<ActiveWorkoutBloc, ActiveWorkoutState>(
-        bloc: _activeWorkoutBloc,
-        listener: _handleBlocStateChanges,
+      child: MultiBlocListener(
+        listeners: [
+          // 🎯 PLATEAU BLOC LISTENER - STEP 7
+          BlocListener<PlateauBloc, PlateauState>(
+            listener: _handlePlateauStateChanges,
+          ),
+          // Original ActiveWorkout BlocListener
+          BlocListener<ActiveWorkoutBloc, ActiveWorkoutState>(
+            bloc: _activeWorkoutBloc,
+            listener: _handleBlocStateChanges,
+          ),
+        ],
         child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
           bloc: _activeWorkoutBloc,
           builder: (context, state) {
@@ -823,11 +872,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   body: _buildBody(state),
                 ),
 
-                // 🆕 Dialog di conferma uscita
                 if (_showExitDialog)
                   _buildExitDialog(),
 
-                // 🆕 Dialog di completamento allenamento
                 if (_showCompleteDialog)
                   _buildCompleteDialog(),
               ],
@@ -895,11 +942,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final colorScheme = Theme.of(context).colorScheme;
     bool isWorkoutFullyCompleted = false;
 
-    // 🆕 Check if workout is fully completed for button animation
     if (state is WorkoutSessionActive && _exerciseGroups.isNotEmpty) {
       isWorkoutFullyCompleted = _isWorkoutFullyCompleted(state);
 
-      // Start/stop animation based on completion status
       if (isWorkoutFullyCompleted && !_completeButtonController.isAnimating) {
         _completeButtonController.repeat(reverse: true);
       } else if (!isWorkoutFullyCompleted && _completeButtonController.isAnimating) {
@@ -934,7 +979,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         onPressed: _showExitConfirmDialog,
       ),
       actions: [
-        // 🆕 Pulsante Completa Allenamento con animazione
         Container(
           margin: EdgeInsets.only(right: 16.w),
           child: AnimatedBuilder(
@@ -971,10 +1015,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   Widget _buildBody(ActiveWorkoutState state) {
     return Stack(
       children: [
-        // Main content
         _buildMainContent(state),
 
-        // Recovery Timer Popup Overlay
         if (_isRecoveryTimerActive)
           RecoveryTimerPopup(
             initialSeconds: _recoverySeconds,
@@ -987,7 +1029,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             },
           ),
 
-        // 🔥 Isometric Timer Popup Overlay
         if (_isIsometricTimerActive && _currentIsometricExerciseName != null)
           IsometricTimerPopup(
             initialSeconds: _isometricSeconds,
@@ -1055,13 +1096,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return _buildNoExercisesContent();
     }
 
-    // 🚀 STEP 4: Group exercises if not already grouped
     if (_exerciseGroups.isEmpty) {
       _exerciseGroups = _groupExercises(state.exercises);
       if (_currentGroupIndex >= _exerciseGroups.length) {
         _currentGroupIndex = 0;
       }
-      // Initialize to first incomplete exercise in the current group
       if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
         final currentGroup = _exerciseGroups[_currentGroupIndex];
         _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), currentGroup);
@@ -1070,14 +1109,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     return Column(
       children: [
-        // Exercise Groups PageView
         Expanded(
           child: PageView.builder(
             controller: _pageController,
             onPageChanged: (index) {
               setState(() {
                 _currentGroupIndex = index;
-                // Set to first incomplete exercise in the new group
                 if (index < _exerciseGroups.length) {
                   final newGroup = _exerciseGroups[index];
                   _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
@@ -1093,24 +1130,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           ),
         ),
 
-        // Bottom Navigation
         _buildBottomNavigation(state),
       ],
     );
   }
 
-  /// 🚀 STEP 4: Build page for a group of exercises (single, superset, or circuit)
   Widget _buildGroupPage(WorkoutSessionActive state, List<WorkoutExercise> group, int groupIndex) {
     if (group.length == 1) {
-      // Single exercise (normal)
       return _buildSingleExercisePage(state, group.first);
     } else {
-      // Multiple exercises (superset/circuit)
       return _buildMultiExercisePage(state, group);
     }
   }
 
-  /// Build page for single exercise
   Widget _buildSingleExercisePage(WorkoutSessionActive state, WorkoutExercise exercise) {
     final colorScheme = Theme.of(context).colorScheme;
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
@@ -1126,7 +1158,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Exercise Type Badge
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -1146,7 +1177,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Exercise Name
             Text(
               exercise.nome,
               style: TextStyle(
@@ -1159,7 +1189,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 40.h),
 
-            // Series Progress
+            // 🎯 PLATEAU INDICATOR - STEP 7
+            BlocBuilder<PlateauBloc, PlateauState>(
+              builder: (context, plateauState) {
+                if (plateauState is PlateauDetected && _hasPlateauForExercise(exerciseId)) {
+                  final plateauInfo = _getPlateauForExercise(exerciseId);
+                  if (plateauInfo != null) {
+                    return Column(
+                      children: [
+                        PlateauIndicator(
+                          plateauInfo: plateauInfo,
+                          onDismiss: () => _plateauBloc.dismissPlateau(exerciseId),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
+                    );
+                  }
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -1192,7 +1242,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  // Progress Dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(exercise.serie, (i) {
@@ -1215,7 +1264,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Exercise Parameters
             Row(
               children: [
                 Expanded(
@@ -1226,6 +1274,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     exerciseColor,
                     onTap: () => _editExerciseParameters(exercise),
                     isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id),
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -1237,6 +1286,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     exercise.isIsometric ? Colors.deepPurple : Colors.green,
                     onTap: () => _editExerciseParameters(exercise),
                     isModified: _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
                   ),
                 ),
               ],
@@ -1244,7 +1294,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Complete Series Button (conditional for isometric)
             SizedBox(
               width: double.infinity,
               height: 56.h,
@@ -1289,21 +1338,19 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
             ),
 
-            SizedBox(height: 100.h), // Space for navigation
+            SizedBox(height: 100.h),
           ],
         ),
       ),
     );
   }
 
-  /// 🚀 STEP 4: Build page for multiple exercises (superset/circuit) with TABS
   Widget _buildMultiExercisePage(WorkoutSessionActive state, List<WorkoutExercise> group) {
     final colorScheme = Theme.of(context).colorScheme;
-    final groupType = group.first.setType; // superset or circuit
+    final groupType = group.first.setType;
     final groupColor = _getExerciseTypeColor(group.first);
     final isGroupComplete = _isGroupCompleted(state, group);
 
-    // Ensure current exercise index is valid
     if (_currentExerciseInGroup >= group.length) {
       _currentExerciseInGroup = 0;
     }
@@ -1320,7 +1367,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Group Type Badge
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -1340,7 +1386,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 24.h),
 
-            // 🚀 Exercise Tabs (Horizontal)
             Container(
               height: 50.h,
               decoration: BoxDecoration(
@@ -1380,7 +1425,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Exercise completion indicator
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1402,10 +1446,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                                     color: isSelected ? Colors.white : groupColor,
                                   ),
                                 ),
+                                // 🎯 PLATEAU BADGE FOR TABS
+                                if (_hasPlateauForExercise(exId)) ...[
+                                  SizedBox(width: 2.w),
+                                  Container(
+                                    width: 6.w,
+                                    height: 6.w,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(3.r),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                             SizedBox(height: 2.h),
-                            // Exercise name (truncated)
                             Text(
                               exercise.nome.length > 10
                                   ? '${exercise.nome.substring(0, 10)}...'
@@ -1430,7 +1485,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Current Exercise Name (Full)
             Text(
               currentExercise.nome,
               style: TextStyle(
@@ -1443,7 +1497,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 40.h),
 
-            // Series Progress (Same as single exercise)
+            // 🎯 PLATEAU INDICATOR FOR CURRENT EXERCISE - STEP 7
+            BlocBuilder<PlateauBloc, PlateauState>(
+              builder: (context, plateauState) {
+                if (plateauState is PlateauDetected && _hasPlateauForExercise(exerciseId)) {
+                  final plateauInfo = _getPlateauForExercise(exerciseId);
+                  if (plateauInfo != null) {
+                    return Column(
+                      children: [
+                        PlateauIndicator(
+                          plateauInfo: plateauInfo,
+                          onDismiss: () => _plateauBloc.dismissPlateau(exerciseId),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
+                    );
+                  }
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -1476,7 +1550,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     ),
                   ),
                   SizedBox(height: 16.h),
-                  // Progress Dots
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(currentExercise.serie, (i) {
@@ -1499,7 +1572,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Exercise Parameters (Same as single exercise)
             Row(
               children: [
                 Expanded(
@@ -1510,6 +1582,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     groupColor,
                     onTap: () => _editExerciseParameters(currentExercise),
                     isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
                   ),
                 ),
                 SizedBox(width: 16.w),
@@ -1521,6 +1594,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     currentExercise.isIsometric ? Colors.deepPurple : groupColor,
                     onTap: () => _editExerciseParameters(currentExercise),
                     isModified: _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
+                    hasPlateauBadge: _hasPlateauForExercise(exerciseId), // 🎯 PLATEAU BADGE
                   ),
                 ),
               ],
@@ -1528,7 +1602,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            // Complete Series Button (conditional for isometric)
             SizedBox(
               width: double.infinity,
               height: 56.h,
@@ -1575,7 +1648,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 16.h),
 
-            // Group completion status
             if (isGroupComplete)
               Container(
                 width: double.infinity,
@@ -1596,7 +1668,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 ),
               ),
 
-            SizedBox(height: 100.h), // Space for navigation
+            SizedBox(height: 100.h),
           ],
         ),
       ),
@@ -1610,6 +1682,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       Color color, {
         VoidCallback? onTap,
         bool isModified = false,
+        bool hasPlateauBadge = false, // 🎯 PLATEAU BADGE PARAMETER
       }) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -1656,6 +1729,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     Icons.edit,
                     color: colorScheme.onSurface.withOpacity(0.3),
                     size: 16.sp,
+                  ),
+                ],
+                // 🎯 PLATEAU BADGE IN PARAMETER CARD - STEP 7
+                if (hasPlateauBadge) ...[
+                  SizedBox(width: 4.w),
+                  PlateauBadge(
+                    onTap: () {
+                      // Optional: Show plateau details
+                    },
                   ),
                 ],
               ],
@@ -1714,7 +1796,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       child: SafeArea(
         child: Row(
           children: [
-            // Previous Button
             SizedBox(
               width: 80.w,
               height: 48.h,
@@ -1740,7 +1821,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             const Spacer(),
 
-            // Group Indicators
             Row(
               children: List.generate(_exerciseGroups.length, (index) {
                 return Container(
@@ -1759,7 +1839,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             const Spacer(),
 
-            // Next Button
             SizedBox(
               width: 80.w,
               height: 48.h,
@@ -2098,7 +2177,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // BLOC LISTENER
+  // BLOC LISTENERS
   // ============================================================================
 
   void _handleBlocStateChanges(BuildContext context, ActiveWorkoutState state) {
@@ -2125,14 +2204,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       debugPrint("🚀 [SINGLE EXERCISE] Workout completed");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
-      _completeButtonController.stop(); // 🆕 Stop animazione
+      _completeButtonController.stop();
     }
 
     if (state is WorkoutSessionCancelled) {
       debugPrint("🚀 [SINGLE EXERCISE] Workout cancelled");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
-      _completeButtonController.stop(); // 🆕 Stop animazione
+      _completeButtonController.stop();
 
       CustomSnackbar.show(
         context,
@@ -2151,6 +2230,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         message: "Errore: ${state.message}",
         isSuccess: false,
       );
+    }
+  }
+
+  // 🎯 PLATEAU BLOC LISTENER - STEP 7
+  void _handlePlateauStateChanges(BuildContext context, PlateauState state) {
+    if (state is PlateauDetected) {
+      final activePlateaus = state.activePlateaus;
+      if (activePlateaus.isNotEmpty) {
+        debugPrint("🎯 [PLATEAU] Plateau rilevati: ${activePlateaus.length}");
+
+        // Show subtle notification about plateau detection
+        CustomSnackbar.show(
+          context,
+          message: "🎯 Rilevato plateau - Controlla i suggerimenti!",
+          isSuccess: false,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    }
+
+    if (state is PlateauError) {
+      debugPrint("🎯 [PLATEAU] Error: ${state.message}");
+      // Don't show error to user - plateau is optional feature
     }
   }
 }

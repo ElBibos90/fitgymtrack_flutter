@@ -25,6 +25,8 @@ import '../../features/exercises/models/exercises_response.dart';
 import '../../features/stats/models/user_stats_models.dart';
 import '../utils/result.dart' as utils_result;
 
+import '../di/dependency_injection_plateau.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -123,6 +125,13 @@ class DependencyInjection {
     ));
 
     print('✅ [DI] Dependency injection completed successfully!');
+
+    // ============================================================================
+    // 🎯 PLATEAU SERVICES (STEP 7)
+    // ============================================================================
+
+    print('🔧 [DI] Registering plateau services...');
+    PlateauDependencyInjection.registerPlateauServices();
   }
 
   /// 🎯 NUOVO: Metodo per inizializzare in modalità mock per i test
