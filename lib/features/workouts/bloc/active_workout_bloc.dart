@@ -396,6 +396,32 @@ class HistoricExerciseData extends Equatable {
 }
 
 // ============================================================================
+// 🔧 PERFORMANCE FIX: CACHE PER VALORI SERIE-SPECIFICI
+// ============================================================================
+
+/// Cache key per valori serie-specifici
+class _SeriesValuesKey {
+  final int exerciseId;
+  final int seriesNumber;
+
+  const _SeriesValuesKey(this.exerciseId, this.seriesNumber);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is _SeriesValuesKey &&
+              runtimeType == other.runtimeType &&
+              exerciseId == other.exerciseId &&
+              seriesNumber == other.seriesNumber;
+
+  @override
+  int get hashCode => exerciseId.hashCode ^ seriesNumber.hashCode;
+
+  @override
+  String toString() => '_SeriesValuesKey($exerciseId, $seriesNumber)';
+}
+
+// ============================================================================
 // ACTIVE WORKOUT BLOC
 // ============================================================================
 
@@ -404,6 +430,12 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
   // 🔧 FIX: Memorizza i dati storici degli esercizi organizzati meglio
   final Map<int, HistoricExerciseData> _historicWorkoutData = {};
+
+  // 🔧 PERFORMANCE FIX: Cache per valori serie-specifici
+  final Map<_SeriesValuesKey, ExerciseValues> _seriesValuesCache = {};
+
+  // 🔧 PERFORMANCE FIX: Set per log debugging (evita spam)
+  final Set<int> _loggedExercises = {};
 
   ActiveWorkoutBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
@@ -439,6 +471,9 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     _log('🔄 [STATE] Emitted ActiveWorkoutLoading');
 
     try {
+      // 🔧 PERFORMANCE FIX: Reset cache e log su nuovo allenamento
+      _clearCacheAndLogs();
+
       // STEP 1: Avvia allenamento
       _log('📡 [API] Calling startWorkout repository method...');
       final workoutResult = await _workoutRepository.startWorkout(event.userId, event.schedaId);
@@ -698,6 +733,9 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
         _log('🏁 [HISTORY] Historic data loading completed. Found data for ${historicData.length} exercises');
 
+        // 🔧 PERFORMANCE FIX: Pre-popola la cache con i dati storici
+        _prePopulateCache();
+
       } catch (e) {
         _log('💥 [HISTORY] Exception loading workout ${lastWorkout.id}: $e');
       }
@@ -708,9 +746,54 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     }
   }
 
+  /// 🔧 PERFORMANCE FIX: Pre-popola la cache con i dati storici
+  void _prePopulateCache() {
+    _log('⚡ [CACHE] Pre-populating series values cache...');
+    int cacheEntries = 0;
+
+    for (final historicData in _historicWorkoutData.values) {
+      for (final entry in historicData.seriesByNumber.entries) {
+        final serieNumber = entry.key;
+        final seriesData = entry.value;
+
+        final cacheKey = _SeriesValuesKey(historicData.exerciseId, serieNumber);
+        final cacheValue = ExerciseValues(
+          weight: seriesData.peso,
+          reps: seriesData.ripetizioni,
+          isFromHistory: true,
+        );
+
+        _seriesValuesCache[cacheKey] = cacheValue;
+        cacheEntries++;
+      }
+    }
+
+    _log('⚡ [CACHE] Pre-populated $cacheEntries cache entries');
+  }
+
+  /// 🔧 PERFORMANCE FIX: Pulisce cache e log
+  void _clearCacheAndLogs() {
+    _seriesValuesCache.clear();
+    _loggedExercises.clear();
+    _log('🧹 [CACHE] Cache cleared and reset');
+  }
+
   /// 🔧 FIX: Ottiene i valori iniziali per un esercizio basandosi sullo storico PERFEZIONATO
   ExerciseValues _getInitialValuesForExercisePerfected(WorkoutExercise exercise, int seriesIndex) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    // 🔧 PERFORMANCE FIX: Usa la cache se disponibile
+    final cacheKey = _SeriesValuesKey(exerciseId, seriesIndex);
+    if (_seriesValuesCache.containsKey(cacheKey)) {
+      final cachedValue = _seriesValuesCache[cacheKey]!;
+      // Log solo una volta per exercise per evitare spam
+      if (!_loggedExercises.contains(exerciseId)) {
+        _loggedExercises.add(exerciseId);
+        _log('⚡ [CACHE HIT] Exercise ${exercise.nome} (${exerciseId}): '
+            '${cachedValue.weight}kg x ${cachedValue.reps} reps (FROM CACHE)');
+      }
+      return cachedValue;
+    }
 
     _log('💡 [VALUES] === CALCOLO VALORI INIZIALI PERFEZIONATO ===');
     _log('💡 [VALUES] Getting initial values for exercise ${exercise.nome} (${exerciseId}), series ${seriesIndex}');
@@ -725,50 +808,83 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final targetSeriesData = historicData.getSeriesByNumber(seriesIndex);
 
       if (targetSeriesData != null) {
-        _log('✅ [VALUES] Found EXACT historic series $seriesIndex: ${targetSeriesData.peso}kg x ${targetSeriesData.ripetizioni} reps');
-        return ExerciseValues(
+        final result = ExerciseValues(
           weight: targetSeriesData.peso,
           reps: targetSeriesData.ripetizioni,
           isFromHistory: true,
         );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache per future chiamate
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('✅ [VALUES] Found EXACT historic series $seriesIndex: ${targetSeriesData.peso}kg x ${targetSeriesData.ripetizioni} reps');
+        return result;
       }
 
       // 🔧 FIX: Se non troviamo la serie specifica, usa la serie 1 come fallback
       final fallbackSeriesData = historicData.getSeriesByNumber(1);
       if (fallbackSeriesData != null) {
-        _log('✅ [VALUES] Using fallback to series 1: ${fallbackSeriesData.peso}kg x ${fallbackSeriesData.ripetizioni} reps');
-        return ExerciseValues(
+        final result = ExerciseValues(
           weight: fallbackSeriesData.peso,
           reps: fallbackSeriesData.ripetizioni,
           isFromHistory: true,
         );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache per future chiamate
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('✅ [VALUES] Using fallback to series 1: ${fallbackSeriesData.peso}kg x ${fallbackSeriesData.ripetizioni} reps');
+        return result;
       }
 
       // 🔧 FIX: Se non abbiamo nemmeno la serie 1, usa l'ultima serie disponibile
       final allSeries = historicData.allSeries;
       if (allSeries.isNotEmpty) {
         final lastSeries = allSeries.last;
-        _log('✅ [VALUES] Using last available historic series: ${lastSeries.peso}kg x ${lastSeries.ripetizioni} reps');
-        return ExerciseValues(
+        final result = ExerciseValues(
           weight: lastSeries.peso,
           reps: lastSeries.ripetizioni,
           isFromHistory: true,
         );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache per future chiamate
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('✅ [VALUES] Using last available historic series: ${lastSeries.peso}kg x ${lastSeries.ripetizioni} reps');
+        return result;
       }
     }
 
     // STEP 2: Se non abbiamo dati storici, usa i valori di default dell'esercizio
-    _log('📝 [VALUES] Using default values: ${exercise.peso}kg x ${exercise.ripetizioni} reps');
-    return ExerciseValues(
+    final result = ExerciseValues(
       weight: exercise.peso,
       reps: exercise.ripetizioni,
       isFromHistory: false,
     );
+
+    // 🔧 PERFORMANCE FIX: Salva in cache per future chiamate
+    _seriesValuesCache[cacheKey] = result;
+
+    _log('📝 [VALUES] Using default values: ${exercise.peso}kg x ${exercise.ripetizioni} reps');
+    return result;
   }
 
-  /// 🔧 FIX: Metodo pubblico per ottenere valori per una serie specifica
+  /// 🔧 FIX: Metodo pubblico per ottenere valori per una serie specifica CON CACHE
   ExerciseValues getValuesForSeriesNumber(int exerciseId, int seriesNumber) {
-    _log('💡 [VALUES] Getting values for exercise $exerciseId, series $seriesNumber');
+    // 🔧 PERFORMANCE FIX: Controlla la cache prima di qualsiasi calcolo
+    final cacheKey = _SeriesValuesKey(exerciseId, seriesNumber);
+    if (_seriesValuesCache.containsKey(cacheKey)) {
+      // 🔧 PERFORMANCE FIX: Log MOLTO ridotto per evitare spam
+      // Solo log ogni 10 chiamate per la stessa chiave
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now % 10000 < 1000) {  // Log solo ogni ~10 secondi
+        _log('⚡ [CACHE HIT] Exercise $exerciseId, series $seriesNumber (cached)');
+      }
+      return _seriesValuesCache[cacheKey]!;
+    }
+
+    // 🔧 RIDOTTO LOG: Solo se non è in cache (dovrebbe essere raro)
+    _log('💡 [VALUES] Getting values for exercise $exerciseId, series $seriesNumber (CACHE MISS)');
 
     // Cerca prima nei dati storici
     if (_historicWorkoutData.containsKey(exerciseId)) {
@@ -776,23 +892,33 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final seriesData = historicData.getSeriesByNumber(seriesNumber);
 
       if (seriesData != null) {
-        _log('✅ [VALUES] Found historic series $seriesNumber: ${seriesData.peso}kg x ${seriesData.ripetizioni} reps');
-        return ExerciseValues(
+        final result = ExerciseValues(
           weight: seriesData.peso,
           reps: seriesData.ripetizioni,
           isFromHistory: true,
         );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('✅ [VALUES] Found historic series $seriesNumber: ${seriesData.peso}kg x ${seriesData.ripetizioni} reps');
+        return result;
       }
 
       // Fallback alla serie 1
       final fallbackSeries = historicData.getSeriesByNumber(1);
       if (fallbackSeries != null) {
-        _log('✅ [VALUES] Fallback to series 1: ${fallbackSeries.peso}kg x ${fallbackSeries.ripetizioni} reps');
-        return ExerciseValues(
+        final result = ExerciseValues(
           weight: fallbackSeries.peso,
           reps: fallbackSeries.ripetizioni,
           isFromHistory: true,
         );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('✅ [VALUES] Fallback to series 1: ${fallbackSeries.peso}kg x ${fallbackSeries.ripetizioni} reps');
+        return result;
       }
     }
 
@@ -802,27 +928,41 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final currentValues = activeState.exerciseValues[exerciseId];
 
       if (currentValues != null) {
+        // 🔧 PERFORMANCE FIX: Salva in cache
+        _seriesValuesCache[cacheKey] = currentValues;
+
         _log('✅ [VALUES] Using current values: ${currentValues.weight}kg x ${currentValues.reps} reps');
         return currentValues;
       }
 
       // Cerca l'esercizio nei dati per ottenere i valori di default
-      final exercise = activeState.exercises.firstWhere(
-            (ex) => (ex.schedaEsercizioId ?? ex.id) == exerciseId,
-        orElse: () => throw Exception('Exercise not found'),
-      );
+      try {
+        final exercise = activeState.exercises.firstWhere(
+              (ex) => (ex.schedaEsercizioId ?? ex.id) == exerciseId,
+        );
 
-      _log('📝 [VALUES] Using exercise default values: ${exercise.peso}kg x ${exercise.ripetizioni} reps');
-      return ExerciseValues(
-        weight: exercise.peso,
-        reps: exercise.ripetizioni,
-        isFromHistory: false,
-      );
+        final result = ExerciseValues(
+          weight: exercise.peso,
+          reps: exercise.ripetizioni,
+          isFromHistory: false,
+        );
+
+        // 🔧 PERFORMANCE FIX: Salva in cache
+        _seriesValuesCache[cacheKey] = result;
+
+        _log('📝 [VALUES] Using exercise default values: ${exercise.peso}kg x ${exercise.ripetizioni} reps');
+        return result;
+      } catch (e) {
+        // Exercise non trovato
+      }
     }
 
     // Fallback finale
+    final fallbackResult = const ExerciseValues(weight: 0.0, reps: 0, isFromHistory: false);
+    _seriesValuesCache[cacheKey] = fallbackResult;
+
     _log('⚠️ [VALUES] No values found, using fallback');
-    return const ExerciseValues(weight: 0.0, reps: 0, isFromHistory: false);
+    return fallbackResult;
   }
 
   /// 🆕 NUOVO: Handler per aggiornare i valori di un esercizio
@@ -836,11 +976,19 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final activeState = state as WorkoutSessionActive;
 
       final updatedValues = Map<int, ExerciseValues>.from(activeState.exerciseValues);
-      updatedValues[event.exerciseId] = ExerciseValues(
+      final newValues = ExerciseValues(
         weight: event.weight,
         reps: event.reps,
         isFromHistory: false, // Modificato dall'utente
       );
+
+      updatedValues[event.exerciseId] = newValues;
+
+      // 🔧 PERFORMANCE FIX: Aggiorna anche la cache per tutte le serie
+      for (int i = 1; i <= 10; i++) {  // Assume max 10 serie
+        final cacheKey = _SeriesValuesKey(event.exerciseId, i);
+        _seriesValuesCache[cacheKey] = newValues;
+      }
 
       emit(activeState.copyWith(exerciseValues: updatedValues));
       _log('✅ [VALUES] Exercise values updated successfully');
@@ -1119,8 +1267,9 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       ) async {
     _log('🔄 [EVENT] Resetting active workout state');
 
-    // Reset dei dati storici
+    // Reset dei dati storici e cache
     _historicWorkoutData.clear();
+    _clearCacheAndLogs();
 
     emit(const ActiveWorkoutInitial());
   }
@@ -1161,6 +1310,15 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   /// 🔧 FIX: Ottiene valori per una serie specifica (pubblico)
   ExerciseValues getValuesForSeries(int exerciseId, int seriesNumber) {
     return getValuesForSeriesNumber(exerciseId, seriesNumber);
+  }
+
+  /// 🔧 PERFORMANCE FIX: Ottiene informazioni sulla cache
+  Map<String, dynamic> getCacheInfo() {
+    return {
+      'cache_size': _seriesValuesCache.length,
+      'historic_exercises': _historicWorkoutData.length,
+      'logged_exercises': _loggedExercises.length,
+    };
   }
 
   // ============================================================================

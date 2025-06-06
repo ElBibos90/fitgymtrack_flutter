@@ -24,7 +24,7 @@ import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
 /// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION
-/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration
+/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration + 🔧 PERFORMANCE FIX
 /// ✅ Una schermata per esercizio/gruppo - Design pulito e minimale
 /// ✅ Raggruppamento automatico superset/circuit
 /// ✅ Recovery timer come popup non invasivo
@@ -33,6 +33,7 @@ import '../../../../shared/widgets/plateau_widgets.dart';
 /// 🚪 Dialog conferma uscita
 /// ✅ Pulsante completa allenamento lampeggiante
 /// 🎯 Sistema plateau detection integrato!
+/// 🔧 PERFORMANCE FIX: Cache per valori e riduzione chiamate eccessive
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -87,11 +88,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   int _isometricSeconds = 0;
   String? _currentIsometricExerciseName;
   WorkoutExercise? _pendingIsometricExercise;
-  final Set<int> _loggedExercises = {};
 
   // ✏️ Modified parameters storage
   Map<int, double> _modifiedWeights = {};
   Map<int, int> _modifiedReps = {};
+
+  // 🔧 PERFORMANCE FIX: Cache locale per valori UI
+  final Map<int, double> _cachedWeights = {};
+  final Map<int, int> _cachedReps = {};
+  DateTime _lastCacheUpdate = DateTime.now();
 
   // UI state
   bool _isInitialized = false;
@@ -122,6 +127,162 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _pageController.dispose();
     _stopRecoveryTimer();
     super.dispose();
+  }
+
+  // ============================================================================
+  // 🔧 PERFORMANCE FIX: METODI DI CACHING
+  // ============================================================================
+
+  /// Aggiorna la cache locale per un esercizio specifico
+  void _updateCacheForExercise(int exerciseId, WorkoutExercise exercise) {
+    final now = DateTime.now();
+
+    // Solo se sono passati almeno 500ms dall'ultimo update
+    if (now.difference(_lastCacheUpdate).inMilliseconds < 500) {
+      return;
+    }
+
+    // 1. PRIORITÀ: Valori modificati dall'utente
+    if (_modifiedWeights.containsKey(exerciseId)) {
+      _cachedWeights[exerciseId] = _modifiedWeights[exerciseId]!;
+    } else {
+      // 2. SERIE-SPECIFIC: Chiama BLoC solo se non in cache
+      if (!_cachedWeights.containsKey(exerciseId)) {
+        final currentState = _getCurrentState();
+        if (currentState != null) {
+          final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+          final currentSeriesNumber = completedSeriesCount + 1;
+
+          final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+          _cachedWeights[exerciseId] = seriesSpecificValues.weight;
+          _cachedReps[exerciseId] = seriesSpecificValues.reps;
+        }
+      }
+    }
+
+    if (_modifiedReps.containsKey(exerciseId)) {
+      _cachedReps[exerciseId] = _modifiedReps[exerciseId]!;
+    }
+
+    _lastCacheUpdate = now;
+  }
+
+  /// Ottiene peso efficace con cache
+  double _getEffectiveWeight(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    // 🔧 PERFORMANCE FIX: Usa cache se disponibile
+    if (_cachedWeights.containsKey(exerciseId)) {
+      return _cachedWeights[exerciseId]!;
+    }
+
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
+    if (_modifiedWeights.containsKey(exerciseId)) {
+      final weight = _modifiedWeights[exerciseId]!;
+      _cachedWeights[exerciseId] = weight;
+      return weight;
+    }
+
+    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState != null) {
+      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+
+      // 🔧 PERFORMANCE FIX: Log ridotto
+      if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
+        debugPrint('🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+      }
+
+      // Usa il metodo serie-specifico del BLoC
+      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+
+      if (seriesSpecificValues.weight > 0) {
+        _cachedWeights[exerciseId] = seriesSpecificValues.weight;
+        return seriesSpecificValues.weight;
+      }
+    }
+
+    // 3. FALLBACK: Valori BLoC generici
+    final currentState2 = _activeWorkoutBloc.state;
+    if (currentState2 is WorkoutSessionActive) {
+      final exerciseValues = currentState2.exerciseValues[exerciseId];
+      if (exerciseValues != null) {
+        _cachedWeights[exerciseId] = exerciseValues.weight;
+        return exerciseValues.weight;
+      }
+    }
+
+    // 4. ULTIMO FALLBACK: Default esercizio
+    final weight = exercise.peso;
+    _cachedWeights[exerciseId] = weight;
+    return weight;
+  }
+
+  /// Ottiene ripetizioni efficaci con cache
+  int _getEffectiveReps(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    // 🔧 PERFORMANCE FIX: Usa cache se disponibile
+    if (_cachedReps.containsKey(exerciseId)) {
+      return _cachedReps[exerciseId]!;
+    }
+
+    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
+    if (_modifiedReps.containsKey(exerciseId)) {
+      final reps = _modifiedReps[exerciseId]!;
+      _cachedReps[exerciseId] = reps;
+      return reps;
+    }
+
+    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState != null) {
+      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+
+      // 🔧 PERFORMANCE FIX: Log ridotto
+      if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
+        debugPrint('🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+      }
+
+      // Usa il metodo serie-specifico del BLoC
+      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+
+      if (seriesSpecificValues.reps > 0) {
+        _cachedReps[exerciseId] = seriesSpecificValues.reps;
+        return seriesSpecificValues.reps;
+      }
+    }
+
+    // 3. FALLBACK: Valori BLoC generici
+    final currentState2 = _activeWorkoutBloc.state;
+    if (currentState2 is WorkoutSessionActive) {
+      final exerciseValues = currentState2.exerciseValues[exerciseId];
+      if (exerciseValues != null) {
+        _cachedReps[exerciseId] = exerciseValues.reps;
+        return exerciseValues.reps;
+      }
+    }
+
+    // 4. ULTIMO FALLBACK: Default esercizio
+    final reps = exercise.ripetizioni;
+    _cachedReps[exerciseId] = reps;
+    return reps;
+  }
+
+  /// 🔧 PERFORMANCE FIX: Invalida cache per un esercizio
+  void _invalidateCacheForExercise(int exerciseId) {
+    _cachedWeights.remove(exerciseId);
+    _cachedReps.remove(exerciseId);
+    debugPrint('🔧 [CACHE] Invalidated cache for exercise $exerciseId');
+  }
+
+  /// 🔧 PERFORMANCE FIX: Pulisce tutta la cache
+  void _clearCache() {
+    _cachedWeights.clear();
+    _cachedReps.clear();
+    debugPrint('🔧 [CACHE] Cache cleared');
   }
 
   // ============================================================================
@@ -326,6 +487,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         curve: Curves.easeInOut,
       );
       _stopRecoveryTimer();
+
+      // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia gruppo
+      _clearCache();
     }
   }
 
@@ -344,6 +508,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         curve: Curves.easeInOut,
       );
       _stopRecoveryTimer();
+
+      // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia gruppo
+      _clearCache();
     }
   }
 
@@ -483,6 +650,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _modifiedReps[exerciseId] = reps;
     });
 
+    // 🔧 PERFORMANCE FIX: Invalida cache per questo esercizio
+    _invalidateCacheForExercise(exerciseId);
+
     context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
 
     debugPrint("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
@@ -495,88 +665,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     // 🎯 PLATEAU: Trigger analysis after parameter modification
     _triggerPlateauAnalysisForExercise(exercise);
-  }
-
-  double _getEffectiveWeight(WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedWeights.containsKey(exerciseId)) {
-      return _modifiedWeights[exerciseId]!;
-    }
-
-    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
-    final currentState = _getCurrentState();
-    if (currentState != null) {
-      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
-
-      debugPrint('🔧 [FIX] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
-
-      // Usa il metodo serie-specifico del BLoC
-      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
-
-      if (seriesSpecificValues.weight > 0) {
-        debugPrint('✅ [SERIES] Using series-specific weight: ${seriesSpecificValues.weight}kg (series $currentSeriesNumber)');
-        return seriesSpecificValues.weight;
-      }
-    }
-
-    // 3. FALLBACK: Valori BLoC generici (per retrocompatibilità)
-    final currentState2 = _activeWorkoutBloc.state;
-    if (currentState2 is WorkoutSessionActive) {
-      final exerciseValues = currentState2.exerciseValues[exerciseId];
-      if (exerciseValues != null) {
-        if (!_loggedExercises.contains(exerciseId)) {
-          _loggedExercises.add(exerciseId);
-          debugPrint('💡 [FALLBACK] Using BLoC generic value for exercise $exerciseId: ${exerciseValues.weight}kg (${exerciseValues.isFromHistory ? "FROM HISTORY" : "DEFAULT"})');
-        }
-        return exerciseValues.weight;
-      }
-    }
-
-    // 4. ULTIMO FALLBACK: Default esercizio
-    debugPrint('⚠️ [FALLBACK] Using exercise default weight: ${exercise.peso}kg');
-    return exercise.peso;
-  }
-
-  int _getEffectiveReps(WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedReps.containsKey(exerciseId)) {
-      return _modifiedReps[exerciseId]!;
-    }
-
-    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
-    final currentState = _getCurrentState();
-    if (currentState != null) {
-      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
-
-      debugPrint('🔧 [FIX] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
-
-      // Usa il metodo serie-specifico del BLoC
-      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
-
-      if (seriesSpecificValues.reps > 0) {
-        debugPrint('✅ [SERIES] Using series-specific reps: ${seriesSpecificValues.reps} (series $currentSeriesNumber)');
-        return seriesSpecificValues.reps;
-      }
-    }
-
-    // 3. FALLBACK: Valori BLoC generici (per retrocompatibilità)
-    final currentState2 = _activeWorkoutBloc.state;
-    if (currentState2 is WorkoutSessionActive) {
-      final exerciseValues = currentState2.exerciseValues[exerciseId];
-      if (exerciseValues != null) {
-        return exerciseValues.reps;
-      }
-    }
-
-    // 4. ULTIMO FALLBACK: Default esercizio
-    debugPrint('⚠️ [FALLBACK] Using exercise default reps: ${exercise.ripetizioni}');
-    return exercise.ripetizioni;
   }
 
   // ============================================================================
@@ -740,6 +828,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       [seriesData],
       requestId,
     );
+
+    // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
+    _invalidateCacheForExercise(exerciseId);
 
     CustomSnackbar.show(
       context,
@@ -1163,6 +1254,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 }
               });
               _stopRecoveryTimer();
+
+              // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia pagina
+              _clearCache();
             },
             itemCount: _exerciseGroups.length,
             itemBuilder: (context, index) {
@@ -1192,6 +1286,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final isCompleted = _isExerciseCompleted(state, exercise);
     final exerciseType = _getExerciseTypeLabel(exercise);
     final exerciseColor = _getExerciseTypeColor(exercise);
+
+    // 🔧 PERFORMANCE FIX: Pre-carica cache per questo esercizio
+    _updateCacheForExercise(exerciseId, exercise);
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(20.w),
@@ -1252,54 +1349,59 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               },
             ),
 
+            // 📱 CARD SERIE ULTRA-COMPATTA - Layout Orizzontale
             Container(
-              padding: EdgeInsets.all(20.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h), // Ancora più compatto
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    color: colorScheme.shadow.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Label "Serie"
                   Text(
-                    'Serie',
+                    'Serie ',
                     style: TextStyle(
-                      fontSize: 16.sp,
+                      fontSize: 14.sp,
                       color: colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 8.h),
+
+                  // Numero delle serie
                   Text(
                     '$completedSeries/${exercise.serie}',
                     style: TextStyle(
-                      fontSize: 32.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
                       color: isCompleted ? Colors.green : exerciseColor,
                     ),
                   ),
-                  SizedBox(height: 16.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(exercise.serie, (i) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.w),
-                        width: 12.w,
-                        height: 12.w,
-                        decoration: BoxDecoration(
-                          color: i < completedSeries
-                              ? exerciseColor
-                              : colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                      );
-                    }),
-                  ),
+
+                  SizedBox(width: 16.w), // Spazio tra numero e puntini
+
+                  // Puntini indicatori in fila
+                  ...List.generate(exercise.serie, (i) {
+                    return Container(
+                      margin: EdgeInsets.only(left: i > 0 ? 6.w : 0), // Spazio tra puntini
+                      width: 8.w, // Puntini ancora più piccoli
+                      height: 8.w,
+                      decoration: BoxDecoration(
+                        color: i < completedSeries
+                            ? exerciseColor
+                            : colorScheme.surfaceVariant,
+                        shape: BoxShape.circle, // Perfettamente rotondi
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -1402,6 +1504,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final completedSeries = _getCompletedSeriesCount(state, exerciseId);
     final isCompleted = _isExerciseCompleted(state, currentExercise);
 
+    // 🔧 PERFORMANCE FIX: Pre-carica cache per l'esercizio corrente
+    _updateCacheForExercise(exerciseId, currentExercise);
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(20.w),
       child: SlideTransition(
@@ -1449,6 +1554,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                         setState(() {
                           _currentExerciseInGroup = index;
                         });
+
+                        // 🔧 PERFORMANCE FIX: Invalida cache quando cambia esercizio
+                        _clearCache();
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
@@ -1561,32 +1669,34 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             ),
 
             Container(
-              padding: EdgeInsets.all(20.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    color: colorScheme.shadow.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Label "Serie"
                   Text(
-                    'Serie',
+                    'Serie ',
                     style: TextStyle(
-                      fontSize: 16.sp,
+                      fontSize: 14.sp,
                       color: colorScheme.onSurface.withOpacity(0.7),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(height: 8.h),
                   Text(
                     '$completedSeries/${currentExercise.serie}',
                     style: TextStyle(
-                      fontSize: 32.sp,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
                       color: isCompleted ? Colors.green : groupColor,
                     ),
@@ -2247,6 +2357,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
+
+      // 🔧 PERFORMANCE FIX: Pulisce cache a fine allenamento
+      _clearCache();
     }
 
     if (state is WorkoutSessionCancelled) {
@@ -2254,6 +2367,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
+
+      // 🔧 PERFORMANCE FIX: Pulisce cache quando si annulla
+      _clearCache();
 
       CustomSnackbar.show(
         context,
