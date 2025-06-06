@@ -481,7 +481,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         _currentGroupIndex--;
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
+          // 🔧 MODIFICA QUI:
+          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
+              _getCurrentState(),
+              newGroup,
+              isNewGroup: true  // 🆕 AGGIUNGI QUESTO
+          );
         }
       });
       _pageController.animateToPage(
@@ -502,7 +507,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         _currentGroupIndex++;
         if (_currentGroupIndex < _exerciseGroups.length) {
           final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
+          // 🔧 MODIFICA QUI:
+          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
+              _getCurrentState(),
+              newGroup,
+              isNewGroup: true  // 🆕 AGGIUNGI QUESTO
+          );
         }
       });
       _pageController.animateToPage(
@@ -870,25 +880,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
   }
 
-  int _findNextExerciseInSequentialRotation(WorkoutSessionActive? state, List<WorkoutExercise> group) {
+  int _findNextExerciseInSequentialRotation(
+      WorkoutSessionActive? state,
+      List<WorkoutExercise> group,
+      {bool isNewGroup = false}  // 🆕 AGGIUNGI QUESTO PARAMETRO
+      ) {
     if (state == null) return 0;
 
-    int nextIndex = (_currentExerciseInGroup + 1) % group.length;
+    // 🆕 Per gruppi nuovi, parti sempre da 0
+    int startIndex = isNewGroup ? 0 : (_currentExerciseInGroup + 1) % group.length;
 
     for (int attempts = 0; attempts < group.length; attempts++) {
-      final exercise = group[nextIndex];
+      int checkIndex = (startIndex + attempts) % group.length;
+      final exercise = group[checkIndex];
       final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
       final completedCount = _getCompletedSeriesCount(state, exerciseId);
 
       if (completedCount < exercise.serie) {
-        return nextIndex;
+        return checkIndex;
       }
-
-      nextIndex = (nextIndex + 1) % group.length;
     }
 
     debugPrint("🎉 [AUTO-ROTATION] All exercises in group are completed!");
-    return _currentExerciseInGroup;
+    return isNewGroup ? 0 : _currentExerciseInGroup;
   }
 
   WorkoutSessionActive? _getCurrentState() {
@@ -1218,7 +1232,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
       if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
         final currentGroup = _exerciseGroups[_currentGroupIndex];
-        _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), currentGroup);
+        // 🔧 MODIFICA QUI:
+        _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
+            _getCurrentState(),
+            currentGroup,
+            isNewGroup: true  // 🆕 AGGIUNGI QUESTO
+        );
       }
     }
 
@@ -1232,13 +1251,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 _currentGroupIndex = index;
                 if (index < _exerciseGroups.length) {
                   final newGroup = _exerciseGroups[index];
-                  _currentExerciseInGroup = _findNextExerciseInSequentialRotation(_getCurrentState(), newGroup);
+                  // 🔧 MODIFICA QUI:
+                  _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
+                      _getCurrentState(),
+                      newGroup,
+                      isNewGroup: true  // 🆕 AGGIUNGI QUESTO
+                  );
                 }
               });
-              _stopRecoveryTimer();
-
-              // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia pagina
-              _clearCache();
             },
             itemCount: _exerciseGroups.length,
             itemBuilder: (context, index) {
