@@ -1,4 +1,4 @@
-// lib/features/workouts/bloc/plateau_bloc.dart - RACE CONDITION FIX
+// lib/features/workouts/bloc/plateau_bloc.dart - PERFORMANCE OPTIMIZED VERSION
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -195,21 +195,27 @@ class PlateauError extends PlateauState {
 }
 
 // ============================================================================
-// PLATEAU BLOC - RACE CONDITION FIXED
+// 🚀 PLATEAU BLOC - PERFORMANCE OPTIMIZED VERSION
 // ============================================================================
 
 class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
   final WorkoutRepository _workoutRepository;
   late PlateauDetector _plateauDetector;
 
-  // Cache per i dati storici
+  // 🚀 PERFORMANCE OPTIMIZATION: Cache ottimizzata
   final Map<int, List<CompletedSeriesData>> _historicDataCache = {};
 
   // Cache userId per evitare lookup multipli
   int? _cachedUserId;
 
-  // 🔧 FIX: Flag per evitare caricamenti multipli simultanei
+  // 🚀 PERFORMANCE: Cache timestamp per evitare ricaricamenti inutili
+  final Map<int, DateTime> _cacheTimestamps = {};
+
+  // 🚀 PERFORMANCE: Flag per evitare caricamenti multipli simultanei
   bool _isLoadingHistoricData = false;
+
+  // 🚀 PERFORMANCE: Lista esercizi correnti per caricamento mirato
+  Set<int> _currentExerciseIds = {};
 
   PlateauBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
@@ -249,7 +255,17 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     }
   }
 
-  /// 🔧 RACE CONDITION FIX: Handler per analizzare un singolo esercizio
+  /// 🚀 PERFORMANCE OPTIMIZED: Controlla se i dati sono freschi
+  bool _isCacheFresh(int exerciseId) {
+    final cacheTime = _cacheTimestamps[exerciseId];
+    if (cacheTime == null) return false;
+
+    // Cache valida per 5 minuti
+    final cacheAge = DateTime.now().difference(cacheTime);
+    return cacheAge.inMinutes < 5;
+  }
+
+  /// 🚀 PERFORMANCE OPTIMIZED: Handler per analizzare un singolo esercizio
   Future<void> _onAnalyzeExercisePlateau(
       AnalyzeExercisePlateau event,
       Emitter<PlateauState> emit,
@@ -259,43 +275,19 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     emit(const PlateauAnalyzing(message: 'Analizzando plateau esercizio...'));
 
     try {
-      // 🔧 DEBUG: Controlla cache dati storici
-      _plateauLog('📚 [DEBUG] Historic data cache size: ${_historicDataCache.length}');
-      _plateauLog('📚 [DEBUG] Exercise ${event.exerciseId} in cache: ${_historicDataCache.containsKey(event.exerciseId)}');
-
-      if (_historicDataCache.containsKey(event.exerciseId)) {
+      // 🚀 PERFORMANCE: Controlla cache fresca
+      if (_historicDataCache.containsKey(event.exerciseId) && _isCacheFresh(event.exerciseId)) {
         final exerciseData = _historicDataCache[event.exerciseId]!;
-        _plateauLog('📚 [DEBUG] Exercise ${event.exerciseId} has ${exerciseData.length} historic series');
+        _plateauLog('⚡ [CACHE HIT] Using fresh cache for exercise ${event.exerciseId}: ${exerciseData.length} series');
       } else {
-        _plateauLog('❌ [DEBUG] No historic data for exercise ${event.exerciseId}');
-      }
-
-      // 🔧 RACE CONDITION FIX: Carica dati storici completi e ASPETTA COMPLETAMENTO
-      if (!_historicDataCache.containsKey(event.exerciseId) ||
-          _historicDataCache[event.exerciseId]!.isEmpty) {
-
-        _plateauLog('🔄 [FIX] Loading complete historic data and WAITING for completion');
+        _plateauLog('🔄 [CACHE MISS] Loading targeted data for exercise ${event.exerciseId}');
 
         // Ottieni userId dalla sessione
         final userId = await _getUserId();
 
         if (userId != null) {
-          // 🔧 FIX: ASPETTA COMPLETAMENTO COMPLETO del caricamento
-          await _loadCompleteHistoricDataBlocking(userId);
-
-          // Verifica dopo il caricamento
-          if (_historicDataCache.containsKey(event.exerciseId)) {
-            final exerciseData = _historicDataCache[event.exerciseId]!;
-            _plateauLog('✅ [DEBUG] After BLOCKING load: Exercise ${event.exerciseId} has ${exerciseData.length} historic series');
-
-            // Log delle prime serie caricate
-            for (int i = 0; i < exerciseData.length && i < 5; i++) {
-              final series = exerciseData[i];
-              _plateauLog('📊 [LOADED] Series $i: ${series.peso}kg x ${series.ripetizioni} (${series.timestamp})');
-            }
-          } else {
-            _plateauLog('❌ [DEBUG] After BLOCKING load: Still no data for exercise ${event.exerciseId}');
-          }
+          // 🚀 PERFORMANCE: Caricamento MIRATO per singolo esercizio
+          await _loadTargetedHistoricData(userId, [event.exerciseId]);
         } else {
           _plateauLog('❌ [ERROR] Cannot get userId for historic data loading');
           emit(const PlateauError(message: 'Impossibile ottenere ID utente per analisi plateau'));
@@ -303,14 +295,9 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
         }
       }
 
-      // 🔧 VERIFICA FINALE: Ora i dati dovrebbero essere disponibili
+      // Verifica che i dati siano disponibili
       final exerciseData = _historicDataCache[event.exerciseId] ?? [];
       _plateauLog('🎯 [ANALYSIS] Starting plateau detection with ${exerciseData.length} historic series');
-
-      // 🔧 FIX: Se ancora non ci sono dati, prova plateau simulato
-      if (exerciseData.isEmpty) {
-        _plateauLog('⚠️ [FALLBACK] No historic data found, trying simulated plateau');
-      }
 
       final plateau = await _plateauDetector.detectPlateau(
         exerciseId: event.exerciseId,
@@ -323,8 +310,6 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
       if (plateau != null) {
         _plateauLog('🚨 [RESULT] Plateau rilevato per ${event.exerciseName}!');
         _plateauLog('🚨 [PLATEAU DETAILS] Type: ${plateau.plateauType}, Sessions: ${plateau.sessionsInPlateau}');
-        _plateauLog('🚨 [PLATEAU VALUES] Weight: ${plateau.currentWeight}kg, Reps: ${plateau.currentReps}');
-        _plateauLog('🚨 [PLATEAU SUGGESTIONS] ${plateau.suggestions.length} suggestions generated');
 
         // Aggiorna lo stato con il nuovo plateau
         if (state is PlateauDetected) {
@@ -356,19 +341,6 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
       } else {
         _plateauLog('✅ [RESULT] Nessun plateau rilevato per ${event.exerciseName}');
 
-        // 🔧 DEBUG: Log del perché non è stato rilevato
-        _plateauLog('🔍 [DEBUG] Plateau not detected - analyzing why:');
-        _plateauLog('🔍 [DEBUG] - Exercise ${event.exerciseId} has ${exerciseData.length} historic series');
-        _plateauLog('🔍 [DEBUG] - Current values: ${event.currentWeight}kg x ${event.currentReps}');
-
-        if (exerciseData.isNotEmpty) {
-          _plateauLog('🔍 [DEBUG] Historic data sample:');
-          for (int i = 0; i < exerciseData.length && i < 3; i++) {
-            final series = exerciseData[i];
-            _plateauLog('🔍 [DEBUG]   $i: ${series.peso}kg x ${series.ripetizioni} (${series.timestamp})');
-          }
-        }
-
         // Se era in stato PlateauDetected, rimuovi plateau per questo esercizio
         if (state is PlateauDetected) {
           final currentState = state as PlateauDetected;
@@ -398,8 +370,8 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     }
   }
 
-  /// 🔧 RACE CONDITION FIX: Caricamento dati storici BLOCCANTE
-  Future<void> _loadCompleteHistoricDataBlocking(int userId) async {
+  /// 🚀 PERFORMANCE OPTIMIZED: Caricamento dati storici MIRATO
+  Future<void> _loadTargetedHistoricData(int userId, List<int> exerciseIds) async {
     // Evita caricamenti multipli simultanei
     if (_isLoadingHistoricData) {
       _plateauLog('⏳ [LOADING] Historic data loading already in progress, waiting...');
@@ -415,94 +387,230 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     _isLoadingHistoricData = true;
 
     try {
-      _plateauLog('📚 [LOADING BLOCKING] Loading complete historic data for user $userId');
+      _plateauLog('🚀 [LOADING TARGETED] Loading targeted historic data for user $userId');
+      _plateauLog('🚀 [LOADING TARGETED] Target exercises: $exerciseIds');
 
-      // Carica cronologia allenamenti
+      // 🚀 PERFORMANCE: Carica solo ultimi 3 allenamenti (non 10!)
       final workoutHistoryResult = await _workoutRepository.getWorkoutHistory(userId);
 
       await workoutHistoryResult.fold(
         onSuccess: (workouts) async {
-          _plateauLog('📚 [LOADED BLOCKING] ${workouts.length} workouts found');
+          _plateauLog('📚 [LOADED TARGETED] ${workouts.length} total workouts found');
+
+          // 🚀 PERFORMANCE: Prendi solo ultimi 3 allenamenti invece di 10
+          final recentWorkouts = workouts.take(3).toList();
+          _plateauLog('🚀 [OPTIMIZATION] Using only last ${recentWorkouts.length} workouts for analysis');
 
           // Lista delle operazioni async da completare
           final List<Future<void>> loadingOperations = [];
 
-          // Per ogni allenamento, carica le serie dettagliate
-          for (final workout in workouts.take(10)) {
-            final future = _loadWorkoutSeries(workout.id);
+          // Per ogni allenamento recente, carica le serie dettagliate
+          for (final workout in recentWorkouts) {
+            final future = _loadWorkoutSeriesTargeted(workout.id, exerciseIds);
             loadingOperations.add(future);
           }
 
-          // 🔧 RACE CONDITION FIX: Aspetta che TUTTE le operazioni completino
-          _plateauLog('⏳ [LOADING BLOCKING] Waiting for ${loadingOperations.length} loading operations to complete...');
+          // Aspetta che TUTTE le operazioni completino
+          _plateauLog('⏳ [LOADING TARGETED] Waiting for ${loadingOperations.length} loading operations to complete...');
           await Future.wait(loadingOperations);
-          _plateauLog('✅ [LOADING BLOCKING] All loading operations completed');
+          _plateauLog('✅ [LOADING TARGETED] All loading operations completed');
+
+          // 🚀 PERFORMANCE: Aggiorna timestamp cache
+          for (final exerciseId in exerciseIds) {
+            _cacheTimestamps[exerciseId] = DateTime.now();
+          }
 
           // Log risultati finali
-          _plateauLog('📚 [FINAL BLOCKING] Total exercises in cache: ${_historicDataCache.length}');
-          _historicDataCache.forEach((exerciseId, series) {
-            _plateauLog('📚 [CACHED BLOCKING] Exercise $exerciseId: ${series.length} historic series');
-          });
+          _plateauLog('📚 [FINAL TARGETED] Total exercises in cache: ${_historicDataCache.length}');
+          for (final exerciseId in exerciseIds) {
+            final series = _historicDataCache[exerciseId] ?? [];
+            _plateauLog('📚 [CACHED TARGETED] Exercise $exerciseId: ${series.length} historic series');
+          }
 
         },
         onFailure: (exception, message) async {
-          _plateauLog('❌ [ERROR BLOCKING] Failed to load workout history: $message');
+          _plateauLog('❌ [ERROR TARGETED] Failed to load workout history: $message');
         },
       );
 
     } catch (e) {
-      _plateauLog('💥 [ERROR BLOCKING] Exception loading historic data: $e');
+      _plateauLog('💥 [ERROR TARGETED] Exception loading historic data: $e');
     } finally {
       _isLoadingHistoricData = false;
-      _plateauLog('🏁 [LOADING BLOCKING] Historic data loading completed');
+      _plateauLog('🏁 [LOADING TARGETED] Historic data loading completed');
     }
   }
 
-  /// Carica le serie per un singolo allenamento
-  Future<void> _loadWorkoutSeries(int workoutId) async {
+  /// 🚀 PERFORMANCE OPTIMIZED: Carica le serie per un singolo allenamento, filtrando per esercizi target
+  Future<void> _loadWorkoutSeriesTargeted(int workoutId, List<int> targetExerciseIds) async {
     try {
-      _plateauLog('📊 [SERIES BLOCKING] Loading series for workout $workoutId');
+      _plateauLog('📊 [SERIES TARGETED] Loading series for workout $workoutId (target exercises: $targetExerciseIds)');
       final seriesResult = await _workoutRepository.getWorkoutSeriesDetail(workoutId);
 
       seriesResult.fold(
         onSuccess: (series) {
-          _plateauLog('📊 [SERIES BLOCKING] Workout $workoutId: ${series.length} series found');
+          _plateauLog('📊 [SERIES TARGETED] Workout $workoutId: ${series.length} total series found');
 
-          // Raggruppa le serie per esercizio
+          int addedSeries = 0;
+          // 🚀 PERFORMANCE: Filtra solo serie degli esercizi target
           for (final seriesData in series) {
             final exerciseId = seriesData.schedaEsercizioId;
-            _historicDataCache.putIfAbsent(exerciseId, () => []);
-            _historicDataCache[exerciseId]!.add(seriesData);
 
-            // Log serie per esercizio 445
-            if (exerciseId == 445) {
-              _plateauLog('📊 [EX445 BLOCKING] Added series: ${seriesData.peso}kg x ${seriesData.ripetizioni} (${seriesData.timestamp})');
+            // 🚀 PERFORMANCE: Considera solo esercizi target
+            if (targetExerciseIds.contains(exerciseId)) {
+              _historicDataCache.putIfAbsent(exerciseId, () => []);
+              _historicDataCache[exerciseId]!.add(seriesData);
+              addedSeries++;
+
+              // Log solo per esercizi target
+              _plateauLog('📊 [EX${exerciseId} TARGETED] Added series: ${seriesData.peso}kg x ${seriesData.ripetizioni} (${seriesData.timestamp})');
             }
           }
+
+          _plateauLog('📊 [SERIES TARGETED] Workout $workoutId: $addedSeries relevant series added to cache');
         },
         onFailure: (exception, message) {
-          _plateauLog('⚠️ [WARNING BLOCKING] Error loading series for workout $workoutId: $message');
+          _plateauLog('⚠️ [WARNING TARGETED] Error loading series for workout $workoutId: $message');
         },
       );
     } catch (e) {
-      _plateauLog('💥 [ERROR BLOCKING] Exception loading workout $workoutId: $e');
+      _plateauLog('💥 [ERROR TARGETED] Exception loading workout $workoutId: $e');
+    }
+  }
+
+  /// 🚀 PERFORMANCE OPTIMIZED: Handler per analizzare workout plateaus
+  Future<void> _onAnalyzeWorkoutPlateaus(
+      AnalyzeWorkoutPlateaus event,
+      Emitter<PlateauState> emit,
+      ) async {
+    _plateauLog('🔍 [EVENT] AnalyzeWorkoutPlateaus - ${event.exercises.length} exercises');
+
+    emit(const PlateauAnalyzing(message: 'Analizzando plateau allenamento...'));
+
+    try {
+      // 🚀 PERFORMANCE: Estrai IDs degli esercizi per caricamento mirato
+      final exerciseIds = event.exercises
+          .map((e) => e.schedaEsercizioId ?? e.id)
+          .toList();
+
+      _currentExerciseIds = exerciseIds.toSet();
+
+      _plateauLog('🚀 [WORKOUT ANALYSIS] Target exercises: $exerciseIds');
+
+      // 🚀 PERFORMANCE: Caricamento mirato solo per esercizi correnti
+      await _loadTargetedHistoricData(event.userId, exerciseIds);
+
+      final List<PlateauInfo> allPlateaus = [];
+      final List<GroupPlateauAnalysis> groupAnalyses = [];
+
+      // Raggruppa esercizi per tipo (normale, superset, circuit)
+      final exerciseGroups = _groupExercisesByType(event.exercises);
+
+      for (final group in exerciseGroups) {
+        final groupAnalysis = await _plateauDetector.detectGroupPlateau(
+          groupName: group['name'],
+          groupType: group['type'],
+          exercises: group['exercises'],
+          currentWeights: event.currentWeights,
+          currentReps: event.currentReps,
+          historicData: _historicDataCache,
+        );
+
+        groupAnalyses.add(groupAnalysis);
+        allPlateaus.addAll(groupAnalysis.plateauList);
+
+        _plateauLog('📊 [GROUP] ${group['name']}: ${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} plateau');
+      }
+
+      final statistics = _plateauDetector.calculateStatistics(allPlateaus);
+
+      _plateauLog('🎯 [RESULT] Totale plateau rilevati: ${allPlateaus.length}');
+
+      emit(PlateauDetected(
+        plateaus: allPlateaus,
+        groupAnalyses: groupAnalyses,
+        statistics: statistics,
+        config: _plateauDetector.config,
+        analyzedAt: DateTime.now(),
+      ));
+
+    } catch (e) {
+      _plateauLog('💥 [ERROR] Error analyzing workout plateaus: $e');
+      emit(PlateauError(
+        message: 'Errore nell\'analisi plateau allenamento: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
     }
   }
 
   // ============================================================================
-  // OTHER HANDLERS (simplified, keeping only essential ones)
+  // OTHER HANDLERS (simplified)
   // ============================================================================
 
   Future<void> _onAnalyzeGroupPlateau(AnalyzeGroupPlateau event, Emitter<PlateauState> emit) async {
     _plateauLog('🔍 [EVENT] AnalyzeGroupPlateau - Group: ${event.groupName} (${event.groupType})');
     emit(const PlateauAnalyzing(message: 'Analizzando plateau gruppo...'));
-    // Implementation follows same pattern as single exercise
-  }
 
-  Future<void> _onAnalyzeWorkoutPlateaus(AnalyzeWorkoutPlateaus event, Emitter<PlateauState> emit) async {
-    _plateauLog('🔍 [EVENT] AnalyzeWorkoutPlateaus - ${event.exercises.length} exercises');
-    emit(const PlateauAnalyzing(message: 'Analizzando plateau allenamento...'));
-    // Implementation follows same pattern
+    try {
+      // 🚀 PERFORMANCE: Caricamento mirato per gruppo
+      final exerciseIds = event.exercises
+          .map((e) => e.schedaEsercizioId ?? e.id)
+          .toList();
+
+      final userId = await _getUserId();
+      if (userId != null) {
+        await _loadTargetedHistoricData(userId, exerciseIds);
+      }
+
+      final groupAnalysis = await _plateauDetector.detectGroupPlateau(
+        groupName: event.groupName,
+        groupType: event.groupType,
+        exercises: event.exercises,
+        currentWeights: event.currentWeights,
+        currentReps: event.currentReps,
+        historicData: _historicDataCache,
+      );
+
+      _plateauLog('📊 [RESULT] Gruppo ${event.groupName}: ${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} esercizi in plateau');
+
+      // Aggiorna lo stato (logica invariata)
+      if (state is PlateauDetected) {
+        final currentState = state as PlateauDetected;
+        final updatedPlateaus = [...currentState.plateaus];
+        for (final plateau in groupAnalysis.plateauList) {
+          updatedPlateaus.removeWhere((p) => p.exerciseId == plateau.exerciseId);
+          updatedPlateaus.add(plateau);
+        }
+
+        final updatedGroupAnalyses = [...currentState.groupAnalyses];
+        updatedGroupAnalyses.removeWhere((g) => g.groupName == event.groupName);
+        updatedGroupAnalyses.add(groupAnalysis);
+
+        final updatedStatistics = _plateauDetector.calculateStatistics(updatedPlateaus);
+
+        emit(currentState.copyWith(
+          plateaus: updatedPlateaus,
+          groupAnalyses: updatedGroupAnalyses,
+          statistics: updatedStatistics,
+          analyzedAt: DateTime.now(),
+        ));
+      } else {
+        emit(PlateauDetected(
+          plateaus: groupAnalysis.plateauList,
+          groupAnalyses: [groupAnalysis],
+          statistics: _plateauDetector.calculateStatistics(groupAnalysis.plateauList),
+          config: _plateauDetector.config,
+          analyzedAt: DateTime.now(),
+        ));
+      }
+
+    } catch (e) {
+      _plateauLog('💥 [ERROR] Error analyzing group plateau: $e');
+      emit(PlateauError(
+        message: 'Errore nell\'analisi plateau gruppo: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
   }
 
   Future<void> _onDismissPlateau(DismissPlateau event, Emitter<PlateauState> emit) async {
@@ -538,13 +646,69 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
 
   Future<void> _onResetPlateauState(ResetPlateauState event, Emitter<PlateauState> emit) async {
     _historicDataCache.clear();
+    _cacheTimestamps.clear();
+    _currentExerciseIds.clear();
     _cachedUserId = null;
     _isLoadingHistoricData = false;
     emit(const PlateauInitial());
   }
 
   // ============================================================================
-  // PUBLIC METHODS
+  // HELPER METHODS (unchanged)
+  // ============================================================================
+
+  List<Map<String, dynamic>> _groupExercisesByType(List<WorkoutExercise> exercises) {
+    final List<Map<String, dynamic>> groups = [];
+    List<WorkoutExercise> currentGroup = [];
+    String currentGroupType = 'normal';
+
+    for (int i = 0; i < exercises.length; i++) {
+      final exercise = exercises[i];
+
+      if (exercise.linkedToPreviousInt == 0) {
+        if (currentGroup.isNotEmpty) {
+          groups.add({
+            'name': _generateGroupName(currentGroup, currentGroupType),
+            'type': currentGroupType,
+            'exercises': List<WorkoutExercise>.from(currentGroup),
+          });
+          currentGroup.clear();
+        }
+        currentGroup.add(exercise);
+        currentGroupType = exercise.setType;
+      } else {
+        currentGroup.add(exercise);
+      }
+    }
+
+    if (currentGroup.isNotEmpty) {
+      groups.add({
+        'name': _generateGroupName(currentGroup, currentGroupType),
+        'type': currentGroupType,
+        'exercises': currentGroup,
+      });
+    }
+
+    return groups;
+  }
+
+  String _generateGroupName(List<WorkoutExercise> exercises, String groupType) {
+    if (exercises.length == 1) {
+      return exercises.first.nome;
+    }
+
+    switch (groupType) {
+      case 'superset':
+        return 'Superset: ${exercises.map((e) => e.nome).join(' + ')}';
+      case 'circuit':
+        return 'Circuit: ${exercises.length} esercizi';
+      default:
+        return 'Gruppo: ${exercises.length} esercizi';
+    }
+  }
+
+  // ============================================================================
+  // PUBLIC METHODS (unchanged)
   // ============================================================================
 
   void analyzeExercisePlateau(int exerciseId, String exerciseName, double weight, int reps) {
