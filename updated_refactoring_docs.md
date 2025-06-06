@@ -1,4 +1,4 @@
-# 🚀 GUIDA COMPLETA REFACTORING ACTIVE WORKOUT SCREEN - AGGIORNATA STEP 5 + ISOMETRIC + AUDIO
+# 🚀 GUIDA COMPLETA REFACTORING ACTIVE WORKOUT SCREEN - AGGIORNATA CON CARICAMENTO ULTIMO PESO
 
 ## 📋 STATO ATTUALE - DICEMBRE 2024
 
@@ -159,6 +159,55 @@
 - 🔊 **Smart playback** - Evita suoni duplicati, pause-safe
 - 🔊 **Coordinated feedback** - Audio + Visual + Haptic insieme
 
+#### **📚 CARICAMENTO ULTIMO PESO USATO - IMPLEMENTATO ✅**
+**Status:** ✅ **IMPLEMENTATO E FUNZIONANTE**
+**Complessità:** 🟡 Media  
+**Valore:** 🔥🔥🔥🔥 Molto Alto  
+**Tempo stimato:** 4-5 ore  
+**📁 File necessari:** ✅ **BACKEND FIX** + Flutter BLoC updates
+
+**Funzionalità implementate:**
+- 📚 **Caricamento storico automatico** - All'avvio carica allenamenti precedenti
+- 🎯 **Ultimo peso per esercizio** - Preleva ultima serie completata per ogni esercizio
+- 🔄 **Preload valori UI** - Valori storici mostrati automaticamente nell'interfaccia
+- 🏆 **Priorità intelligente** - Modificati utente > Storico > Default
+- 📊 **Gestione serie multiple** - Trova l'ultima serie per numero/timestamp
+- 🛡️ **Parsing sicuro** - Gestisce int/string/null dal backend
+- 🔧 **Backend API fixata** - Query SQL corretta per `scheda_esercizio_id`
+- 💾 **Sincronizzazione BLoC** - Stato consistente tra BLoC e UI
+- 🚀 **Performance ottimizzata** - Caching e logging ridotto
+
+**Workflow Caricamento Storico:**
+```
+1. Avvio allenamento scheda X
+2. Sistema carica tutti allenamenti utente
+3. Filtra per stessa scheda (schedaId)
+4. Trova ultimo allenamento completato
+5. Per ogni esercizio, preleva ultima serie completata
+6. Precarica peso/ripetizioni nell'UI
+7. Utente vede automaticamente ultimo peso usato
+```
+
+**Esempio pratico:**
+```
+PRIMO ALLENAMENTO:
+- Affondi: 0.0kg x 10 reps (default)
+
+SECONDO ALLENAMENTO:
+- Affondi: 1.5kg x 11 reps (caricato da storico automaticamente)
+```
+
+**Backend Fix Effettuato:**
+```php
+// PRIMA (NON FUNZIONAVA):
+JOIN esercizi e ON FLOOR(sc.serie_number / 100) = e.id
+
+// DOPO (FUNZIONA):
+SELECT sc.*, sc.scheda_esercizio_id as esercizio_id
+FROM serie_completate sc  
+WHERE sc.allenamento_id = ?
+```
+
 ### **❌ PROVATO MA SCARTATO:**
 
 #### **🚫 STEP 1B: SystemChrome Fullscreen - SCARTATO**
@@ -174,63 +223,94 @@
 
 ### **📁 ANALISI FILE ANDROID NECESSARI:**
 
-#### **🔴 STEP 6: Plateau Detection System - LUNGO TERMINE**
+#### **🔴 STEP 6: Plateau Detection System - PRIORITÀ ALTA**
 **Complessità:** 🔴 Alta  
-**Valore:** 🔥🔥🔥🔥 Molto Alto  
+**Valore:** 🔥🔥🔥🔥🔥 Molto Alto  
 **Tempo stimato:** 6-8 ore  
-**📁 File Android necessari:** ❌ **MANCANO FILE CHIAVE**
+**📁 File Android necessari:** ✅ **DISPONIBILI** nel `ActiveWorkoutViewModel.kt`
 
-**File Android NON ancora forniti (NECESSARI):**
-- ❌ `PlateauDetector.kt` - Algoritmi rilevamento stagnazione
-- ❌ `PlateauInfo.kt` - Modelli plateau (LIGHT/MODERATE/SEVERE)
-- ❌ `ProgressionSuggestion.kt` - Suggerimenti progressione automatici
-- ❌ `PlateauType.kt` - Enum tipi plateau
-- ❌ `SuggestionType.kt` - Enum tipi suggerimenti
-- ❌ Eventuali utils per calcoli statistici
+**File Android DISPONIBILI nel `ActiveWorkoutViewModel.kt`:**
+- ✅ Logica `PlateauDetector.detectPlateau()` - Algoritmi rilevamento stagnazione
+- ✅ Modelli `PlateauInfo` - Dati plateau (LIGHT/MODERATE/SEVERE)
+- ✅ Modelli `ProgressionSuggestion` - Suggerimenti progressione automatici
+- ✅ Enum `PlateauType` - Tipi plateau
+- ✅ Enum `SuggestionType` - Tipi suggerimenti
+- ✅ Logica completa nel ViewModel Android
 
-**🚨 BLOCCO:** **Non implementabile senza i file algoritmi mancanti**
+**🚀 READY TO IMPLEMENT:** Tutti gli algoritmi sono già implementati nell'app Android!
+
+**Features da portare dal Kotlin:**
+```kotlin
+// 1. Rilevamento plateau automatico
+fun checkForPlateaus(exercises: List<WorkoutExercise>) {
+    val plateau = PlateauDetector.detectPlateau(
+        exerciseId = exercise.id,
+        exerciseName = exercise.nome,
+        currentWeight = currentWeight,
+        currentReps = currentReps,
+        historicData = historicData,
+        minSessionsForPlateau = 2
+    )
+}
+
+// 2. Suggerimenti automatici
+ProgressionSuggestion(
+    type = SuggestionType.INCREASE_WEIGHT,
+    description = "Aumenta il peso a ${currentWeight + 2.5f} kg",
+    newWeight = currentWeight + 2.5f,
+    newReps = currentReps,
+    confidence = 0.8f
+)
+
+// 3. Applicazione suggerimenti
+fun applyProgressionSuggestion(exerciseId: Int, suggestion: ProgressionSuggestion)
+```
 
 ### **🔥 PRIORITÀ BASATA SU DISPONIBILITÀ FILE:**
 
-1. **✅ STEP 5 (Live Parameter Editing)** - ✅ **COMPLETATO** 
-2. **✅ ESERCIZI ISOMETRICI** - ✅ **COMPLETATO**
-3. **✅ AUDIO SYSTEM** - ✅ **COMPLETATO** 
-4. **❌ STEP 6 (Plateau Detection)** - 🔴 **BLOCKED** - File algoritmi mancanti
+1. **✅ CARICAMENTO ULTIMO PESO** - ✅ **COMPLETATO** 
+2. **🔴 STEP 6 (Plateau Detection)** - 🚀 **READY TO IMPLEMENT** - Algoritmi disponibili!
+3. **🟡 Enhanced Analytics** - Stats avanzate sui workout
+4. **🟢 Workout Templates** - Creazione rapida da template
 
 ---
 
 ## 📁 STRUTTURA FILE COMPLETATA
 
 ### **✅ FILE COMPLETATI:**
-1. **`active_workout_screen.dart`** - Main screen con STEP 5 + Isometric + Dark Theme ✅
+1. **`active_workout_screen.dart`** - Main screen con STEP 5+ + Isometric + Dark Theme + Ultimo Peso ✅
 2. **`recovery_timer_popup.dart`** - Timer recupero con audio feedback ✅ **STEP 2**
-3. **`isometric_timer_popup.dart`** - Timer isometrico con audio feedback ✅ **🔥 NUOVO**
+3. **`isometric_timer_popup.dart`** - Timer isometrico con audio feedback ✅ **🔥 ISOMETRIC**
 4. **`parameter_edit_dialog.dart`** - Live parameter editing dialog ✅ **STEP 5**
 5. **`exercise_navigation_widget.dart`** - Smart navigation (deprecato in favore di single screen) ✅ **STEP 3**
-6. **`active_workout_bloc.dart`** - BLoC gestione stati ✅
-7. **`active_workout_models.dart`** - Modelli active workout ✅
+6. **`active_workout_bloc.dart`** - BLoC gestione stati + caricamento storico ✅ **+ ULTIMO PESO**
+7. **`active_workout_models.dart`** - Modelli active workout + parsing sicuro ID ✅ **+ ULTIMO PESO**
 8. **`workout_plan_models.dart`** - Modelli piani workout ✅
 9. **`workout_repository.dart`** - Repository API calls ✅
-10. **`dependency_injection.dart`** - DI setup ✅
-11. **`loading_overlay.dart`** - Widget loading ✅
-12. **`custom_snackbar.dart`** - Widget snackbar ✅
-13. **`pubspec.yaml`** - Dependencies aggiornate + audio assets ✅
+10. **`user_stats_models.dart`** - Modelli con parsing sicuro campi NULL ✅ **+ ULTIMO PESO**
+11. **`get_completed_series_standalone.php`** - Backend API fixata ✅ **+ ULTIMO PESO**
+12. **`dependency_injection.dart`** - DI setup ✅
+13. **`loading_overlay.dart`** - Widget loading ✅
+14. **`custom_snackbar.dart`** - Widget snackbar ✅
+15. **`pubspec.yaml`** - Dependencies aggiornate + audio assets ✅
 
 ### **🔊 AUDIO FILES NECESSARI:**
-14. **`lib/audio/beep_countdown.mp3`** - Countdown beep negli ultimi 3 secondi ✅
-15. **`lib/audio/timer_complete.mp3`** - Suono completamento timer ✅
+16. **`lib/audio/beep_countdown.mp3`** - Countdown beep negli ultimi 3 secondi ✅
+17. **`lib/audio/timer_complete.mp3`** - Suono completamento timer ✅
 
 ### **📋 FILE FUTURI (per plateau detection):**
-16. **`plateau_detection_service.dart`** - Servizio rilevamento plateau **STEP 6**
-17. **`workout_analytics_service.dart`** - Calcoli statistiche avanzate
+18. **`plateau_detector.dart`** - Algoritmi rilevamento plateau **STEP 6** 🚀 **READY**
+19. **`plateau_models.dart`** - Modelli plateau + suggerimenti **STEP 6** 🚀 **READY**
+20. **`plateau_dialog.dart`** - UI per mostrare plateau e suggerimenti **STEP 6** 🚀 **READY**
+21. **`workout_analytics_service.dart`** - Calcoli statistiche avanzate
 
 ---
 
 ## 🧪 TESTING STRATEGY AGGIORNATA
 
 ### **✅ TEST COMPLETATI:**
-- ✅ **API 34 Compatibility** - Base screen + wakelock + recovery timer + navigation + superset + isometric
-- ✅ **BLoC Architecture** - Loading, active, completed states
+- ✅ **API 34 Compatibility** - Base screen + wakelock + recovery timer + navigation + superset + isometric + ultimo peso
+- ✅ **BLoC Architecture** - Loading, active, completed states + caricamento storico
 - ✅ **Recovery Timer Popup** - Auto-start, countdown, haptic feedback, dismissible, audio
 - ✅ **Isometric Timer Popup** - Auto-start, countdown, auto-completion, audio
 - ✅ **Exercise Grouping** - linked_to_previous field + UI raggruppamento
@@ -241,13 +321,15 @@
 - ✅ **Dark Theme** - ColorScheme dinamico, tutti i componenti
 - ✅ **Exit/Complete Dialogs** - Conferma azioni critiche
 - ✅ **Audio Feedback** - beep_countdown + timer_complete
+- ✅ **Caricamento Ultimo Peso** - Storico automatico, preload valori, backend fix
 - ✅ **Error handling** - Graceful fallbacks
 
 ### **📋 TEST DA FARE:**
 - 🧪 **iOS Compatibility** - Quando disponibile Mac
-- 🧪 **Performance** - Memory leaks, smooth animations con superset + audio
-- 🧪 **Edge cases** - Empty workouts, network failures, malformed groups, audio failures
+- 🧪 **Performance** - Memory leaks, smooth animations con superset + audio + storico
+- 🧪 **Edge cases** - Empty workouts, network failures, malformed groups, audio failures, dati storici malformati
 - 🧪 **Accessibility** - VoiceOver, TalkBack, contrasto
+- 🧪 **Plateau Detection** - Algoritmi rilevamento + suggerimenti (STEP 6)
 
 ---
 
@@ -259,17 +341,20 @@
 3. **✅ AUDIO SYSTEM** - Value aggiunto per UX immersiva
 4. **✅ DARK THEME** - Accessibilità e UX moderna
 5. **✅ DIALOGS** - UX professionale per azioni critiche
+6. **✅ CARICAMENTO ULTIMO PESO** - Feature killer per continuità allenamenti
+
+### **🚀 PRONTO PER IMPLEMENTAZIONE:**
+7. **STEP 6 (Plateau Detection)** - 🔥🔥🔥🔥🔥 VALORE MASSIMO - Algoritmi disponibili nel Kotlin!
 
 ### **⏳ MEDIO TERMINE:**
-6. **STEP 6 (Plateau Detection)** - Feature killer, molto complessa ma HIGH VALUE (BLOCKED)
-7. **Enhanced Analytics** - Stats avanzate sui workout
-8. **Workout Templates** - Creazione rapida da template
+8. **Enhanced Analytics** - Stats avanzate sui workout
+9. **Workout Templates** - Creazione rapida da template
 
 ### **🔮 LUNGO TERMINE:**
-9. **Advanced UX** features (gesture control, voice commands)
-10. **iOS-specific optimizations**
-11. **Offline mode** support
-12. **Cloud sync** capabilities
+10. **Advanced UX** features (gesture control, voice commands)
+11. **iOS-specific optimizations**
+12. **Offline mode** support
+13. **Cloud sync** capabilities
 
 ---
 
@@ -286,6 +371,9 @@
 - **✅ Live parameter editing** - Dialog touch-friendly essenziale
 - **✅ Dark theme support** - ColorScheme dinamico nativo
 - **✅ Audio feedback** - Immersività senza invasività
+- **✅ Historic data loading** - Preload automatico ultimo peso usato
+- **✅ Backend debugging** - Logging intensivo per identificare problemi API
+- **✅ Parsing sicuro** - Helper functions per gestire int/string/null
 - **✅ Cross-platform packages** - Evitare platform-specific quando possibile
 - **✅ Progressive enhancement** - Ogni step aggiunge valore senza rompere precedenti
 - **✅ User feedback immediato** - Snackbar per ogni azione
@@ -303,12 +391,15 @@
 - **❌ Complex navigation** - PageView semplice > complex routing
 - **❌ Hard-coded paths** - Configurabile e fallback-safe
 - **❌ Duplicate sounds** - Smart playback con flags
+- **❌ context.read() in metodi chiamati frequentemente** - Causano performance issues
+- **❌ Debug logging eccessivo** - Causa spam nei log
+- **❌ Backend assumptions** - Sempre verificare API response format
 
 ---
 
 ## 🚀 SYSTEM STATUS
 
-**CURRENT STATE: STEP 5+ COMPLETATO - ENTERPRISE READY! 🎯**
+**CURRENT STATE: CARICAMENTO ULTIMO PESO COMPLETATO - READY FOR STEP 6! 🎯📚**
 
 ### **📈 PROGRESSO GENERALE:**
 - **STEP 1A (Keep Screen On):** ✅ **COMPLETATO**
@@ -320,16 +411,17 @@
 - **🌙 DARK THEME:** ✅ **COMPLETATO**
 - **🚪 EXIT/COMPLETE DIALOGS:** ✅ **COMPLETATO**
 - **🔊 AUDIO SYSTEM:** ✅ **COMPLETATO**
-- **STEP 6 (Plateau Detection):** 🔴 **BLOCKED** (file mancanti)
+- **📚 CARICAMENTO ULTIMO PESO:** ✅ **COMPLETATO**
+- **STEP 6 (Plateau Detection):** 🚀 **READY TO IMPLEMENT** (algoritmi disponibili)
 
-**💪 ACHIEVEMENT UNLOCKED: Complete Professional Workout System with Audio! 🎯🔊✨**
+**💪 ACHIEVEMENT UNLOCKED: Complete Professional Workout System with Historic Data Loading! 🎯📚✨**
 
 ---
 
 ## 🔧 TECHNICAL NOTES AGGIORNATE
 
 ### **Architecture Pattern:**
-- **BLoC State Management** - ActiveWorkoutBloc gestisce tutto lo stato
+- **BLoC State Management** - ActiveWorkoutBloc gestisce tutto lo stato + storico
 - **Single Screen Design** - Una schermata per esercizio/gruppo
 - **PageView Navigation** - Swipe tra gruppi di esercizi
 - **Tab System** - Per esercizi collegati (superset/circuit)
@@ -337,14 +429,17 @@
 - **Dialog System** - Parameter editing + exit/complete confirmations
 - **Audio Integration** - AudioPlayers con graceful fallbacks
 - **Dark Theme** - ColorScheme dinamico nativo
+- **Historic Data System** - Caricamento automatico ultimo peso per ogni esercizio
 
 ### **Key Algorithms:**
 - **Exercise Grouping** - `_groupExercises()` basato su `linked_to_previous`
 - **Sequential Auto-Rotation** - `_findNextExerciseInSequentialRotation()` A→B→A→B
 - **Completion Detection** - `_isGroupCompleted()` per gruppi
-- **Parameter Management** - `_modifiedWeights` + `_modifiedReps` maps
+- **Parameter Management** - `_modifiedWeights` + `_modifiedReps` maps con priorità
 - **Audio Coordination** - Smart playback con duplicate prevention
 - **State Synchronization** - BLoC events per consistenza
+- **Historic Data Loading** - `_loadWorkoutHistory()` per preload automatico valori
+- **Safe Parsing** - Helper functions per gestire int/string/null dal backend
 
 ### **Performance Optimizations:**
 - **Lazy Grouping** - Calcolo una sola volta alla prima visualizzazione
@@ -353,27 +448,42 @@
 - **Audio Management** - AudioPlayer dispose automatico
 - **Recovery Timer** - Popup invece di inline per performance
 - **Parameter Persistence** - In-memory maps per modifiche
+- **Historic Data Caching** - Una sola chiamata API per caricamento storico
+- **Logging Optimization** - Ridotto spam nei metodi chiamati frequentemente
 
 ### **Database Integration:**
 - **Isometric Support** - `is_isometric = 1` (Int field)
 - **Linked Exercises** - `linked_to_previous` per grouping
 - **Parameter Override** - Usa parametri modificati per serie successive
 - **Series Completion** - Auto-completion per esercizi isometrici
+- **Historic Data** - Query ottimizzata `scheda_esercizio_id` per ultimo peso
+- **Backend Compatibility** - Gestione robusta tipi int/string dal server
 
-**Sistema enterprise-ready per allenamenti professionali completi! 💪🎯🔊**
+### **Backend API Integration:**
+- **Fixed SQL Query** - `get_completed_series_standalone.php` per serie storiche
+- **Robust Type Handling** - Parsing sicuro int/string/null in Flutter models
+- **Error Recovery** - Graceful fallback quando storico non disponibile
+- **Performance** - Single API call per tutto lo storico necessario
+
+**Sistema enterprise-ready per allenamenti professionali completi con continuità automatica! 💪🎯📚🔊**
 
 ---
 
 ## 📊 SCHEMA DATABASE SUPPORTATO
 
 ```sql
-# Scheda 137 - Struttura testata e funzionante:
+# Scheda 137 - Struttura testata e funzionante + storico:
 439: AB wheel roller - normal (linked_to_previous=0, is_isometric=0)
 440: Affondi con manubri - superset (linked_to_previous=0, is_isometric=0) 
 441: Alzate Frontali - superset (linked_to_previous=1, is_isometric=0) 
 442: Crossover Cavi - circuit (linked_to_previous=0, is_isometric=0)
 443: Crunch - circuit (linked_to_previous=1, is_isometric=0)
 444: Plank - isometric (linked_to_previous=0, is_isometric=1)
+
+# Serie completate esempio (tabella serie_completate):
+id | allenamento_id | scheda_esercizio_id | peso | ripetizioni | serie_number
+2397 | 1058 | 445 | 1.00 | 10 | 1
+2398 | 1058 | 445 | 1.50 | 11 | 2
 ```
 
 **Risultato UI:**
@@ -382,5 +492,6 @@
 - **Superset** - 2 tab (Affondi + Alzate) con sequential auto-rotation
 - **Circuit** - 2 tab (Crossover + Crunch) con sequential auto-rotation  
 - **Plank Isometrico** - Single exercise con timer isometrico
+- **📚 Caricamento automatico** - Ultimo peso usato (1.50kg x 11 reps) preloadato automaticamente
 
-**🎯 STATO FINALE: STEP 5+ COMPLETATO - SISTEMA COMPLETO ENTERPRISE-READY! 🚀💪🔊**
+**🎯 STATO FINALE: SISTEMA COMPLETO CON CARICAMENTO ULTIMO PESO - READY FOR PLATEAU DETECTION! 🚀💪📚🔊**
