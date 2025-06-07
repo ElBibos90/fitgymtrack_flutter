@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/extensions/context_extensions.dart';
 import '../../bloc/subscription_bloc.dart';
@@ -10,7 +9,7 @@ import '../../models/subscription_models.dart';
 import '../widgets/subscription_widgets.dart';
 
 class SubscriptionScreen extends StatefulWidget {
-  final VoidCallback? onBack; // 🔧 FIX: Parametro onBack opzionale
+  final VoidCallback? onBack;
 
   const SubscriptionScreen({super.key, this.onBack});
 
@@ -28,11 +27,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔧 FIX: Determina se siamo in tema scuro
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      // 🔧 FIX: AppBar con pulsante back corretto
+      // 🔧 FIX: AppBar senza pulsante back
       appBar: AppBar(
         title: Text(
           'Abbonamento',
@@ -44,21 +42,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        // 🔧 FIX: Pulsante back che funziona sempre
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDarkMode ? Colors.white : AppColors.textPrimary,
-          ),
-          onPressed: widget.onBack ?? () {
-            // Fallback: se onBack non è fornito, usa la navigazione di default
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              context.go('/dashboard');
-            }
-          },
-        ),
+        // 🔧 FIX: Rimuoviamo completamente il pulsante back
+        automaticallyImplyLeading: false,
       ),
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: _handleStateChanges,
@@ -163,12 +148,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             onUpgrade: () => _handleUpgradeToPremium(context),
           ),
 
-        // Abbonamento corrente
+        // 🔧 FIX: Abbonamento corrente con supporto dark theme migliorato
         CurrentSubscriptionCard(subscription: state.subscription),
 
         SizedBox(height: 32.h),
 
-        // 🔧 FIX: Sezione piani disponibili con colori corretti
+        // Sezione piani disponibili
         _buildAvailablePlansSection(context, state, isDarkMode),
 
         SizedBox(height: 32.h),
@@ -212,7 +197,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 🔧 FIX: Titolo con colore corretto per tema scuro
         Text(
           'Piani disponibili',
           style: TextStyle(
@@ -329,7 +313,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // Metodi per gestire le azioni
 
   void _handleUpgradeToPremium(BuildContext context) {
-    // Mostra dialog informativo
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -362,7 +345,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                // Simula l'upgrade usando il mock
                 context.read<SubscriptionBloc>().add(const UpdatePlanEvent(2));
               },
               style: ElevatedButton.styleFrom(
@@ -377,7 +359,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _handleDowngradeToFree(BuildContext context) {
-    // Mostra dialog di conferma
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -424,7 +405,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _handleDonation(BuildContext context) {
-    // Mostra dialog informativo
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {

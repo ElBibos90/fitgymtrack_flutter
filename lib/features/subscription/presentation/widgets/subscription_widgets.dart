@@ -15,11 +15,18 @@ class CurrentSubscriptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🔧 FIX: Rilevamento tema scuro corretto
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
       ),
+      // 🔧 FIX: Colore card dinamico basato sul tema
+      color: isDarkMode
+          ? (subscription.isPremium ? AppColors.surfaceDark : const Color(0xFF1A1A1A))
+          : (subscription.isPremium ? Colors.white : const Color(0xFFF8FAFC)),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.r),
@@ -27,24 +34,40 @@ class CurrentSubscriptionCard extends StatelessWidget {
               ? LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+            colors: isDarkMode
+                ? [
+              AppColors.indigo600.withOpacity(0.3),
+              AppColors.indigo700.withOpacity(0.2),
+            ]
+                : [
               AppColors.indigo600,
               AppColors.indigo700,
             ],
           )
-              : null,
-          color: subscription.isPremium ? null : AppColors.surfaceLight,
+              : LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDarkMode
+                ? [
+              const Color(0xFF2A2A2A),
+              const Color(0xFF1F1F1F),
+            ]
+                : [
+              const Color(0xFFF8FAFC),
+              const Color(0xFFF1F5F9),
+            ],
+          ),
         ),
         child: Padding(
           padding: EdgeInsets.all(20.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context),
+              _buildHeader(context, isDarkMode),
               SizedBox(height: 20.h),
-              _buildUsageSection(context),
+              _buildUsageSection(context, isDarkMode),
               SizedBox(height: 16.h),
-              _buildFeaturesSection(context),
+              _buildFeaturesSection(context, isDarkMode),
             ],
           ),
         ),
@@ -52,8 +75,11 @@ class CurrentSubscriptionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final textColor = subscription.isPremium ? Colors.white : AppColors.textPrimary;
+  Widget _buildHeader(BuildContext context, bool isDarkMode) {
+    // 🔧 FIX: Colori testo dinamici
+    final textColor = subscription.isPremium
+        ? Colors.white
+        : (isDarkMode ? Colors.white : AppColors.textPrimary);
 
     return Row(
       children: [
@@ -64,11 +90,13 @@ class CurrentSubscriptionCard extends StatelessWidget {
             shape: BoxShape.circle,
             color: subscription.isPremium
                 ? Colors.white.withOpacity(0.2)
-                : AppColors.indigo600,
+                : (isDarkMode
+                ? AppColors.indigo600.withOpacity(0.8)
+                : AppColors.indigo600),
           ),
           child: Icon(
             subscription.isPremium ? Icons.star : Icons.star_border,
-            color: subscription.isPremium ? Colors.white : Colors.white,
+            color: Colors.white,
             size: 24.sp,
           ),
         ),
@@ -116,8 +144,10 @@ class CurrentSubscriptionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildUsageSection(BuildContext context) {
-    final textColor = subscription.isPremium ? Colors.white : AppColors.textPrimary;
+  Widget _buildUsageSection(BuildContext context, bool isDarkMode) {
+    final textColor = subscription.isPremium
+        ? Colors.white
+        : (isDarkMode ? Colors.white : AppColors.textPrimary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,6 +166,7 @@ class CurrentSubscriptionCard extends StatelessWidget {
           'Schede di allenamento',
           subscription.workoutsLimitText,
           subscription.workoutsProgress,
+          isDarkMode,
         ),
         SizedBox(height: 8.h),
         _buildUsageItem(
@@ -143,13 +174,16 @@ class CurrentSubscriptionCard extends StatelessWidget {
           'Esercizi personalizzati',
           subscription.customExercisesLimitText,
           subscription.customExercisesProgress,
+          isDarkMode,
         ),
       ],
     );
   }
 
-  Widget _buildUsageItem(BuildContext context, String label, String value, double progress) {
-    final textColor = subscription.isPremium ? Colors.white : AppColors.textPrimary;
+  Widget _buildUsageItem(BuildContext context, String label, String value, double progress, bool isDarkMode) {
+    final textColor = subscription.isPremium
+        ? Colors.white
+        : (isDarkMode ? Colors.white : AppColors.textPrimary);
 
     return Column(
       children: [
@@ -178,23 +212,29 @@ class CurrentSubscriptionCard extends StatelessWidget {
           value: progress,
           backgroundColor: subscription.isPremium
               ? Colors.white.withOpacity(0.3)
-              : AppColors.border,
+              : (isDarkMode
+              ? Colors.grey.withOpacity(0.3)
+              : AppColors.border),
           valueColor: AlwaysStoppedAnimation<Color>(
-            subscription.isPremium ? Colors.white : AppColors.indigo600,
+            subscription.isPremium
+                ? Colors.white
+                : (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFeaturesSection(BuildContext context) {
-    final textColor = subscription.isPremium ? Colors.white : AppColors.textPrimary;
+  Widget _buildFeaturesSection(BuildContext context, bool isDarkMode) {
+    final textColor = subscription.isPremium
+        ? Colors.white
+        : (isDarkMode ? Colors.white : AppColors.textPrimary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Il tuo piano include:',
+          'Il tuo piano non include:',
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
@@ -202,15 +242,17 @@ class CurrentSubscriptionCard extends StatelessWidget {
           ),
         ),
         SizedBox(height: 8.h),
-        _buildFeatureItem('Statistiche avanzate', subscription.advancedStats),
-        _buildFeatureItem('Backup cloud', subscription.cloudBackup),
-        _buildFeatureItem('Nessuna pubblicità', subscription.noAds),
+        _buildFeatureItem('Statistiche avanzate', subscription.advancedStats, isDarkMode),
+        _buildFeatureItem('Backup cloud', subscription.cloudBackup, isDarkMode),
+        _buildFeatureItem('Nessuna pubblicità', subscription.noAds, isDarkMode),
       ],
     );
   }
 
-  Widget _buildFeatureItem(String feature, bool included) {
-    final textColor = subscription.isPremium ? Colors.white : AppColors.textPrimary;
+  Widget _buildFeatureItem(String feature, bool included, bool isDarkMode) {
+    final textColor = subscription.isPremium
+        ? Colors.white
+        : (isDarkMode ? Colors.white : AppColors.textPrimary);
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2.h),
@@ -220,8 +262,12 @@ class CurrentSubscriptionCard extends StatelessWidget {
             included ? Icons.check_circle : Icons.cancel,
             size: 16.sp,
             color: included
-                ? (subscription.isPremium ? Colors.white : AppColors.success)
-                : (subscription.isPremium ? Colors.white.withOpacity(0.5) : AppColors.textHint),
+                ? (subscription.isPremium
+                ? Colors.white
+                : (isDarkMode ? const Color(0xFF4CAF50) : AppColors.success))
+                : (subscription.isPremium
+                ? Colors.white.withOpacity(0.5)
+                : (isDarkMode ? Colors.grey : AppColors.textHint)),
           ),
           SizedBox(width: 8.w),
           Text(
@@ -257,15 +303,23 @@ class SubscriptionPlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPremium = plan.price > 0;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       elevation: isPremium ? 8 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
         side: isPremium
-            ? BorderSide(color: AppColors.indigo600, width: 2)
+            ? BorderSide(
+          color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+          width: 2,
+        )
             : BorderSide.none,
       ),
+      // 🔧 FIX: Colore card dinamico
+      color: isDarkMode
+          ? (isPremium ? AppColors.surfaceDark : const Color(0xFF1A1A1A))
+          : (isPremium ? Colors.white : const Color(0xFFF8FAFC)),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.r),
@@ -273,7 +327,12 @@ class SubscriptionPlanCard extends StatelessWidget {
               ? LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
+            colors: isDarkMode
+                ? [
+              AppColors.indigo600.withOpacity(0.2),
+              AppColors.indigo700.withOpacity(0.1),
+            ]
+                : [
               AppColors.indigo600.withOpacity(0.1),
               AppColors.indigo700.withOpacity(0.05),
             ],
@@ -285,11 +344,11 @@ class SubscriptionPlanCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildPlanHeader(context, isPremium),
+              _buildPlanHeader(context, isPremium, isDarkMode),
               SizedBox(height: 16.h),
-              _buildFeaturesList(context),
+              _buildFeaturesList(context, isDarkMode),
               SizedBox(height: 20.h),
-              _buildSubscribeButton(context, isPremium),
+              _buildSubscribeButton(context, isPremium, isDarkMode),
             ],
           ),
         ),
@@ -297,10 +356,7 @@ class SubscriptionPlanCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlanHeader(BuildContext context, bool isPremium) {
-    // 🔧 FIX: Rilevamento tema scuro
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildPlanHeader(BuildContext context, bool isPremium, bool isDarkMode) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -321,7 +377,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                   SizedBox(width: 8.w),
                   Icon(
                     Icons.star,
-                    color: AppColors.indigo600,
+                    color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
                     size: 20.sp,
                   ),
                 ],
@@ -358,7 +414,7 @@ class SubscriptionPlanCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturesList(BuildContext context) {
+  Widget _buildFeaturesList(BuildContext context, bool isDarkMode) {
     return Column(
       children: plan.features.map((feature) {
         return Padding(
@@ -368,7 +424,9 @@ class SubscriptionPlanCard extends StatelessWidget {
               Icon(
                 feature.isIncluded ? Icons.check_circle : Icons.cancel,
                 size: 18.sp,
-                color: feature.isIncluded ? AppColors.success : AppColors.textHint,
+                color: feature.isIncluded
+                    ? (isDarkMode ? const Color(0xFF4CAF50) : AppColors.success)
+                    : (isDarkMode ? Colors.grey : AppColors.textHint),
               ),
               SizedBox(width: 12.w),
               Expanded(
@@ -377,8 +435,8 @@ class SubscriptionPlanCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: feature.isIncluded
-                        ? AppColors.textPrimary
-                        : AppColors.textHint,
+                        ? (isDarkMode ? Colors.white : AppColors.textPrimary)
+                        : (isDarkMode ? Colors.grey : AppColors.textHint),
                   ),
                 ),
               ),
@@ -389,16 +447,22 @@ class SubscriptionPlanCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSubscribeButton(BuildContext context, bool isPremium) {
+  Widget _buildSubscribeButton(BuildContext context, bool isPremium, bool isDarkMode) {
     return SizedBox(
       width: double.infinity,
       height: 48.h,
       child: ElevatedButton(
         onPressed: isCurrentPlan ? null : onSubscribe,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPremium ? AppColors.indigo600 : AppColors.textSecondary,
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: AppColors.border,
+          backgroundColor: isPremium
+              ? (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600)
+              : (isDarkMode ? Colors.grey[700] : AppColors.textSecondary),
+          foregroundColor: isPremium
+              ? (isDarkMode ? Colors.black : Colors.white)
+              : Colors.white,
+          disabledBackgroundColor: isDarkMode
+              ? Colors.grey[800]
+              : AppColors.border,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
@@ -407,9 +471,13 @@ class SubscriptionPlanCard extends StatelessWidget {
             ? SizedBox(
           width: 20.w,
           height: 20.w,
-          child: const CircularProgressIndicator(
+          child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isPremium
+                  ? (isDarkMode ? Colors.black : Colors.white)
+                  : Colors.white,
+            ),
           ),
         )
             : Text(
@@ -441,13 +509,19 @@ class SubscriptionExpiredBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: EdgeInsets.all(16.w),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: isDarkMode
+            ? AppColors.error.withOpacity(0.2)
+            : AppColors.error.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.error.withOpacity(0.3)),
+        border: Border.all(
+          color: AppColors.error.withOpacity(0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,7 +559,7 @@ class SubscriptionExpiredBanner extends StatelessWidget {
             'Il tuo abbonamento Premium è scaduto. Sei stato automaticamente riportato al piano Free con funzionalità limitate.',
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
             ),
           ),
           SizedBox(height: 16.h),
@@ -506,8 +580,10 @@ class SubscriptionExpiredBanner extends StatelessWidget {
               ElevatedButton(
                 onPressed: onUpgrade,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.indigo600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDarkMode
+                      ? const Color(0xFF90CAF9)
+                      : AppColors.indigo600,
+                  foregroundColor: isDarkMode ? Colors.black : Colors.white,
                 ),
                 child: const Text('Rinnova ora'),
               ),
@@ -538,13 +614,19 @@ class SubscriptionLimitBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: EdgeInsets.all(16.w),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: isDarkMode
+            ? AppColors.warning.withOpacity(0.2)
+            : AppColors.warning.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(
+          color: AppColors.warning.withOpacity(0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,7 +664,7 @@ class SubscriptionLimitBanner extends StatelessWidget {
             _getLimitMessage(),
             style: TextStyle(
               fontSize: 14.sp,
-              color: AppColors.textPrimary,
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
             ),
           ),
           SizedBox(height: 16.h),
@@ -603,8 +685,10 @@ class SubscriptionLimitBanner extends StatelessWidget {
               ElevatedButton(
                 onPressed: onUpgrade,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.indigo600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDarkMode
+                      ? const Color(0xFF90CAF9)
+                      : AppColors.indigo600,
+                  foregroundColor: isDarkMode ? Colors.black : Colors.white,
                 ),
                 child: const Text('Passa a Premium'),
               ),
@@ -640,6 +724,8 @@ class SubscriptionErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Padding(
         padding: EdgeInsets.all(32.w),
@@ -657,7 +743,7 @@ class SubscriptionErrorWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: isDarkMode ? Colors.white : AppColors.textPrimary,
               ),
             ),
             SizedBox(height: 8.h),
@@ -666,7 +752,7 @@ class SubscriptionErrorWidget extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
               ),
             ),
             if (onRetry != null) ...[
@@ -674,8 +760,10 @@ class SubscriptionErrorWidget extends StatelessWidget {
               ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.indigo600,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDarkMode
+                      ? const Color(0xFF90CAF9)
+                      : AppColors.indigo600,
+                  foregroundColor: isDarkMode ? Colors.black : Colors.white,
                 ),
                 child: const Text('Riprova'),
               ),
@@ -693,19 +781,23 @@ class SubscriptionLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.indigo600),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+            ),
           ),
           SizedBox(height: 16.h),
           Text(
             'Caricamento abbonamento...',
             style: TextStyle(
               fontSize: 16.sp,
-              color: AppColors.textSecondary,
+              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
             ),
           ),
         ],

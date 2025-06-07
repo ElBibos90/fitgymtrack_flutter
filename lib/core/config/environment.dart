@@ -1,12 +1,13 @@
+// lib/core/config/environment.dart
 class Environment {
   // ============================================================================
   // API CONFIGURATION
   // ============================================================================
 
-  /// Base URL per API production
+  /// Base URL per API production (ATTIVA)
   static const String baseUrl = 'https://fitgymtrack.com/api/';
 
-  /// Base URL per sviluppo locale (commenta/decommenta secondo necessità)
+  /// Base URL per sviluppo locale (DISATTIVATA - per evitare errori)
   // static const String baseUrl = 'http://192.168.1.113/api/';
 
   // ============================================================================
@@ -15,7 +16,9 @@ class Environment {
 
   static const String appName = 'FitGymTrack Flutter';
   static const String version = '1.0.0';
-  static const bool isDebug = true;
+
+  // 🔧 FIX: Debug false per produzione
+  static const bool isDebug = false;
 
   // ============================================================================
   // TIMEOUT CONFIGURATION
@@ -75,7 +78,7 @@ class Environment {
   static const String unknownErrorMessage = 'Si è verificato un errore sconosciuto.';
 
   // ============================================================================
-  // FEATURE FLAGS (per future implementazioni)
+  // FEATURE FLAGS
   // ============================================================================
 
   static const bool enableOfflineMode = false;
@@ -99,4 +102,38 @@ class Environment {
 
   /// Ritorna l'URL completo per un endpoint
   static String getFullUrl(String endpoint) => baseUrl + endpoint.replaceFirst('/', '');
+
+  // ============================================================================
+  // DEBUG HELPERS
+  // ============================================================================
+
+  /// Mostra informazioni di configurazione per debug
+  static void printConfiguration() {
+    print('🔧 [ENV] Environment Configuration:');
+    print('🔧 [ENV] Base URL: $baseUrl');
+    print('🔧 [ENV] Is Debug: $isDebug');
+    print('🔧 [ENV] Is Production: $isProduction');
+    print('🔧 [ENV] App Version: $fullVersion');
+  }
+
+  /// Valida la configurazione dell'ambiente
+  static bool validateConfiguration() {
+    if (baseUrl.isEmpty) {
+      print('❌ [ENV] ERROR: Base URL is empty');
+      return false;
+    }
+
+    if (!baseUrl.startsWith('http')) {
+      print('❌ [ENV] ERROR: Base URL must start with http/https');
+      return false;
+    }
+
+    if (isProduction && baseUrl.contains('localhost') || baseUrl.contains('192.168')) {
+      print('⚠️ [ENV] WARNING: Production mode but using local URL');
+      return false;
+    }
+
+    print('✅ [ENV] Configuration is valid');
+    return true;
+  }
 }

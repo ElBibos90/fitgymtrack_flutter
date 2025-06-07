@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // 📱 IMPORT PER ORIENTAMENTO
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,10 +11,6 @@ import 'features/subscription/bloc/subscription_bloc.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
-
-// ✅ IMPORT PER TEST API 34 vs 35 - STEP 5
-import 'test/simple_workout_test_screen.dart';
-// 🔧 IMPORT PER TEST PERFORMANCE FIX
 import 'features/subscription/presentation/screens/subscription_screen.dart';
 
 void main() async {
@@ -26,10 +22,10 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // 🚨 TEST LINE - se vedi questo log, i file sono aggiornati
-  print('🚨 MAIN STARTED - Files are updated for Step 5 + Performance Fix!');
+  print('🚨 MAIN STARTED - Using REAL repositories only!');
   print('📱 App orientation locked to PORTRAIT only');
 
+  // 🔧 FIX: Inizializzazione semplificata - solo repository reali
   await DependencyInjection.init();
 
   runApp(const FitGymTrackApp());
@@ -58,7 +54,7 @@ class FitGymTrackApp extends StatelessWidget {
               create: (context) => getIt<PasswordResetBloc>(),
             ),
 
-            // WORKOUT BLOC PROVIDERS - NUOVO!
+            // WORKOUT BLOC PROVIDERS
             BlocProvider<WorkoutBloc>(
               create: (context) => getIt<WorkoutBloc>(),
             ),
@@ -89,7 +85,7 @@ class FitGymTrackApp extends StatelessWidget {
   }
 }
 
-// SplashScreen che puoi usare nel GoRouter
+// SplashScreen
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -120,8 +116,6 @@ class _SplashScreenState extends State<SplashScreen>
     ));
 
     _animationController.forward();
-
-    // Rimuovo la navigazione manuale - la gestisce il GoRouter
   }
 
   @override
@@ -203,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// HomeScreen per la dashboard (quando autenticato)
+// HomeScreen per la dashboard
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -266,7 +260,6 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // Logout con BLoC
               context.read<AuthBloc>().logout();
             },
           ),
@@ -293,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================================
-// PAGINE PLACEHOLDER
+// PAGINE
 // ============================================================================
 
 class DashboardPage extends StatelessWidget {
@@ -306,7 +299,6 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Benvenuto
           Text(
             'Benvenuto!',
             style: TextStyle(
@@ -328,7 +320,6 @@ class DashboardPage extends StatelessWidget {
 
           SizedBox(height: 24.h),
 
-          // Stats Cards
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
@@ -367,7 +358,6 @@ class DashboardPage extends StatelessWidget {
             ),
           ),
 
-          // Quick Actions
           Row(
             children: [
               Expanded(
@@ -396,7 +386,6 @@ class DashboardPage extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          // Pulsante Statistiche
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -460,7 +449,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-// ✅ WORKOUTS PAGE CON PULSANTE TEST STEP 5
 class WorkoutsPage extends StatelessWidget {
   const WorkoutsPage({super.key});
 

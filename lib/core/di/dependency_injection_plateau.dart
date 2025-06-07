@@ -6,14 +6,13 @@ import '../../features/workouts/bloc/plateau_bloc.dart';
 import '../../features/workouts/services/plateau_detector.dart';
 import '../../features/workouts/models/plateau_models.dart';
 import '../../features/workouts/repository/workout_repository.dart';
-import 'dependency_injection.dart';
 
 /// 🎯 STEP 6: Estensione del sistema DI per il plateau detection
 /// Registra tutti i servizi e BLoC necessari per il sistema plateau
 class PlateauDependencyInjection {
 
   /// Registra i servizi plateau nel container DI
-  static void registerPlateauServices({bool enableTestingMode = false}) {
+  static void registerPlateauServices() {
     final getIt = GetIt.instance;
 
     print('🎯 [PLATEAU DI] Registering plateau services...');
@@ -24,7 +23,7 @@ class PlateauDependencyInjection {
 
     print('🔧 [PLATEAU DI] Registering PlateauDetector...');
     getIt.registerLazySingleton<PlateauDetector>(() {
-      final config = createDefaultPlateauConfig(enableTesting: enableTestingMode);
+      final config = createDefaultPlateauConfig();
       print('🎯 [PLATEAU DI] PlateauDetector config: ${config.toJson()}');
       return PlateauDetector(config: config);
     });
@@ -42,11 +41,6 @@ class PlateauDependencyInjection {
     });
 
     print('✅ [PLATEAU DI] Plateau services registered successfully!');
-  }
-
-  /// Registra i servizi plateau in modalità test
-  static void registerPlateauServicesForTesting() {
-    registerPlateauServices(enableTestingMode: true);
   }
 
   /// Aggiorna la configurazione del plateau detector
@@ -105,50 +99,6 @@ class PlateauDependencyInjection {
       'services_ready': arePlateauServicesRegistered(),
       'timestamp': DateTime.now().toIso8601String(),
     };
-  }
-}
-
-/// 🎯 STEP 6: Estensione della classe DependencyInjection principale
-/// Aggiunge i metodi per il plateau al DI esistente
-extension PlateauDependencyInjectionExtension on DependencyInjection {
-
-  /// Inizializza il sistema completo incluso plateau
-  static Future<void> initWithPlateau({
-    bool useMockRepository = false,
-    bool enablePlateauTesting = false,
-  }) async {
-    print('🚨 [DI] Starting dependency injection with plateau system...');
-
-    // Prima inizializza il sistema base
-    await DependencyInjection.init(useMockRepository: useMockRepository);
-
-    // Poi aggiungi i servizi plateau
-    PlateauDependencyInjection.registerPlateauServices(
-      enableTestingMode: enablePlateauTesting,
-    );
-
-    print('✅ [DI] Dependency injection with plateau completed successfully!');
-  }
-
-  /// Inizializza in modalità mock con plateau testing
-  static Future<void> initMockWithPlateau() async {
-    await initWithPlateau(
-      useMockRepository: true,
-      enablePlateauTesting: true,
-    );
-  }
-
-  /// Reset completo incluso plateau
-  static Future<void> resetCompleteWithPlateau() async {
-    print('🔄 [DI] Resetting complete system with plateau...');
-
-    // Reset servizi plateau
-    PlateauDependencyInjection.resetPlateauServices();
-
-    // Reset sistema base
-    DependencyInjection.reset();
-
-    print('✅ [DI] Complete system reset with plateau finished');
   }
 }
 
@@ -263,5 +213,14 @@ class PlateauSystemChecker {
       'workout_repository_registered': getIt.isRegistered<WorkoutRepository>(),
       'check_timestamp': DateTime.now().toIso8601String(),
     };
+  }
+}
+
+/// 🎯 STEP 6: Crea configurazione plateau di default
+PlateauDetectionConfig createDefaultPlateauConfig({bool enableTesting = false}) {
+  if (enableTesting) {
+    return PlateauConfigurationHelper.developmentConfig;
+  } else {
+    return PlateauConfigurationHelper.productionConfig;
   }
 }

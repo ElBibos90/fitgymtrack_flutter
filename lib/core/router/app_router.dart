@@ -94,7 +94,7 @@ class AppRouter {
         ),
 
         // ============================================================================
-        // 🔧 FIX: SUBSCRIPTION ROUTES con pulsante back corretto
+        // 🔧 FIX: SUBSCRIPTION ROUTES senza pulsante back
         // ============================================================================
 
         GoRoute(
@@ -102,7 +102,7 @@ class AppRouter {
           name: 'subscription',
           builder: (context, state) {
             return AuthWrapper(
-              authenticatedChild: SubscriptionScreenWrapper(), // 🔧 Nuovo wrapper
+              authenticatedChild: const SubscriptionScreen(), // 🔧 Senza wrapper
               unauthenticatedChild: const LoginScreen(),
             );
           },
@@ -280,27 +280,6 @@ class AppRouter {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ============================================================================
-// 🔧 WRAPPER per SubscriptionScreen con pulsante back
-// ============================================================================
-
-class SubscriptionScreenWrapper extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SubscriptionScreen(
-      onBack: () {
-        // 🔧 FIX: Implementa la navigazione indietro corretta
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        } else {
-          // Se non può tornare indietro, va alla dashboard
-          context.go('/dashboard');
-        }
-      },
     );
   }
 }
