@@ -1,13 +1,19 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.fitgymtracker">
-    <!-- Permessi per network e Stripe -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.fitgymtracker">
+
+    <!-- 💳 STRIPE FIX: Permessi necessari per Stripe e pagamenti -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- 💳 STRIPE: Permessi opzionali per migliore UX -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:label="FitGym Tracker"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@style/LaunchTheme">
 
         <activity
             android:name=".MainActivity"
@@ -20,10 +26,7 @@
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
 
-            <!-- Specifies an Android theme to apply to this Activity as soon as
-                 the Android process has started. This theme is visible to the user
-                 while the Flutter UI initializes. After that, this theme continues
-                 to determine the Window background behind the Flutter UI. -->
+            <!-- 💳 STRIPE FIX: Normal theme con AppCompat -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -32,24 +35,42 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- 💳 STRIPE: Intent filter per deep linking (opzionale) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="fitgymtracker" />
+            </intent-filter>
         </activity>
 
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <!-- 💳 STRIPE: Meta-data per Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- 💳 STRIPE: Configurazione per hardware acceleration (importante per Payment Sheet) -->
+        <meta-data
+            android:name="android.hardware.vulkan.level"
+            android:value="0" />
     </application>
 
-    <!-- Required to query activities that can process text, see:
-         https://developer.android.com/training/package-visibility and
-         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
-
-         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <!-- 💳 STRIPE: Query intents per migliore compatibilità -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!-- 💳 STRIPE: Query per app di pagamento -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+
+        <!-- 💳 STRIPE: Query per Google Pay -->
+        <package android:name="com.google.android.apps.walletnfcrel" />
     </queries>
 </manifest>

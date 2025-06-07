@@ -6,13 +6,14 @@ import '../../../core/config/stripe_config.dart';
 import '../models/stripe_models.dart';
 import '../../../core/utils/result.dart';
 
-/// Servizio per gestire le operazioni Stripe nel client - VERSIONE ENHANCED
+/// Servizio per gestire le operazioni Stripe nel client - VERSIONE ROBUSTA
 class StripeService {
   static bool _isInitialized = false;
   static String? _lastError;
   static DateTime? _lastInitAttempt;
+  static int _initAttempts = 0;
 
-  /// Inizializza Stripe SDK con retry automatico
+  /// Inizializza Stripe SDK con gestione errori robusta
   static Future<Result<bool>> initialize() async {
     if (_isInitialized) {
       developer.log('✅ [STRIPE] Already initialized', name: 'StripeService');
@@ -20,35 +21,40 @@ class StripeService {
     }
 
     _lastInitAttempt = DateTime.now();
+    _initAttempts++;
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE] Initializing Stripe SDK...', name: 'StripeService');
+      developer.log('🔧 [STRIPE] Initializing Stripe SDK (attempt $_initAttempts)...', name: 'StripeService');
 
       // Verifica prerequisiti
       if (StripeConfig.publishableKey.isEmpty) {
-        throw Exception('Publishable key Stripe vuota');
+        throw Exception('❌ Publishable key Stripe vuota');
       }
 
       if (!StripeConfig.publishableKey.startsWith('pk_')) {
-        throw Exception('Publishable key formato non valido');
+        throw Exception('❌ Publishable key formato non valido (deve iniziare con pk_)');
       }
 
       try {
-        // Configura Stripe
+        // 🔧 STEP 1: Configura Stripe Publishable Key
+        developer.log('🔧 [STRIPE] Step 1: Setting publishable key...', name: 'StripeService');
         Stripe.publishableKey = StripeConfig.publishableKey;
+
+        // 🔧 STEP 2: Configura Merchant Identifier
+        developer.log('🔧 [STRIPE] Step 2: Setting merchant identifier...', name: 'StripeService');
         Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
 
-        developer.log('🔧 [STRIPE] Publishable key set: ${StripeConfig.publishableKey.substring(0, 20)}...', name: 'StripeService');
-        developer.log('🔧 [STRIPE] Merchant identifier: ${StripeConfig.merchantIdentifier}', name: 'StripeService');
-
-        // Configura opzioni aggiuntive con retry
-        await _applySettingsWithRetry();
+        // 🔧 STEP 3: Applica Settings con retry migliorato
+        developer.log('🔧 [STRIPE] Step 3: Applying Stripe settings...', name: 'StripeService');
+        await _applySettingsWithEnhancedRetry();
 
         _isInitialized = true;
         _lastError = null;
 
-        developer.log('✅ [STRIPE] Stripe SDK initialized successfully', name: 'StripeService');
-        StripeConfig.printConfiguration();
+        developer.log('✅ [STRIPE] Stripe SDK initialized successfully!', name: 'StripeService');
+        developer.log('✅ [STRIPE] - Publishable key: ${StripeConfig.publishableKey.substring(0, 20)}...', name: 'StripeService');
+        developer.log('✅ [STRIPE] - Merchant ID: ${StripeConfig.merchantIdentifier}', name: 'StripeService');
+        developer.log('✅ [STRIPE] - Test mode: ${StripeConfig.isTestMode}', name: 'StripeService');
 
         return true;
 
@@ -56,10 +62,10 @@ class StripeService {
         _lastError = e.toString();
         developer.log('❌ [STRIPE] Initialization failed: $e', name: 'StripeService');
 
-        // 🔧 Reset e retry automatico se l'errore è temporaneo
-        if (_shouldRetryInit(e.toString())) {
-          developer.log('🔄 [STRIPE] Attempting automatic retry...', name: 'StripeService');
-          await Future.delayed(const Duration(seconds: 1));
+        // 🔧 Analisi errore per retry intelligente
+        if (_shouldRetryWithDelay(e.toString()) && _initAttempts < 3) {
+          developer.log('🔄 [STRIPE] Scheduling retry in ${_initAttempts * 2} seconds...', name: 'StripeService');
+          await Future.delayed(Duration(seconds: _initAttempts * 2));
           return await _retryInitialization();
         }
 
@@ -68,25 +74,39 @@ class StripeService {
     });
   }
 
-  /// Applica le impostazioni Stripe con retry
-  static Future<void> _applySettingsWithRetry() async {
+  /// Applica le impostazioni Stripe con retry più robusto
+  static Future<void> _applySettingsWithEnhancedRetry() async {
     int attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5;
+    const baseDelayMs = 500;
 
     while (attempts < maxAttempts) {
       try {
-        await Stripe.instance.applySettings();
-        developer.log('✅ [STRIPE] Settings applied successfully', name: 'StripeService');
-        return;
-      } catch (e) {
         attempts++;
+        developer.log('🔧 [STRIPE] Applying settings attempt $attempts/$maxAttempts...', name: 'StripeService');
+
+        await Stripe.instance.applySettings();
+
+        developer.log('✅ [STRIPE] Settings applied successfully on attempt $attempts', name: 'StripeService');
+        return;
+
+      } catch (e) {
         developer.log('⚠️ [STRIPE] Settings apply attempt $attempts failed: $e', name: 'StripeService');
 
         if (attempts >= maxAttempts) {
-          throw Exception('Failed to apply Stripe settings after $maxAttempts attempts: $e');
+          throw Exception('🚨 STRIPE CONFIGURATION ERROR: Failed to apply Stripe settings after $maxAttempts attempts.\n'
+              'Error: $e\n\n'
+              '💡 POSSIBLE SOLUTIONS:\n'
+              '1. Make sure your Android theme uses Theme.AppCompat or Theme.MaterialComponents\n'
+              '2. Verify MainActivity extends FlutterFragmentActivity\n'
+              '3. Check if required dependencies are in build.gradle\n'
+              '4. Restart the app completely\n\n'
+              'See: https://github.com/flutter-stripe/flutter_stripe#android');
         }
 
-        await Future.delayed(Duration(milliseconds: 500 * attempts));
+        // Delay progressivo per retry
+        final delayMs = baseDelayMs * attempts;
+        await Future.delayed(Duration(milliseconds: delayMs));
       }
     }
   }
@@ -96,8 +116,8 @@ class StripeService {
     try {
       _isInitialized = false;
 
-      // Reset stato Stripe
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Reset stato
+      await Future.delayed(const Duration(milliseconds: 800));
 
       // Retry inizializzazione
       final result = await initialize();
@@ -110,12 +130,13 @@ class StripeService {
   }
 
   /// Determina se dovremmo fare retry dell'inizializzazione
-  static bool _shouldRetryInit(String error) {
+  static bool _shouldRetryWithDelay(String error) {
     const retryableErrors = [
       'network',
       'timeout',
       'connection',
       'temporary',
+      'failed to initialize',
     ];
 
     final errorLower = error.toLowerCase();
@@ -128,6 +149,9 @@ class StripeService {
   /// Ultimo errore di inizializzazione
   static String? get lastError => _lastError;
 
+  /// Numero di tentativi di inizializzazione
+  static int get initAttempts => _initAttempts;
+
   /// Presenta Payment Sheet per il pagamento
   static Future<Result<PaymentSheetPaymentOption?>> presentPaymentSheet({
     required String clientSecret,
@@ -136,7 +160,7 @@ class StripeService {
     PaymentSheetAppearance? appearance,
   }) async {
     if (!_isInitialized) {
-      return Result.error('Stripe non è stato inizializzato');
+      return Result.error('Stripe non è stato inizializzato. Chiama initialize() prima.');
     }
 
     return Result.tryCallAsync(() async {
@@ -163,7 +187,7 @@ class StripeService {
         // Presenta Payment Sheet
         final result = await Stripe.instance.presentPaymentSheet();
 
-        developer.log('✅ [STRIPE] Payment Sheet presented successfully', name: 'StripeService');
+        developer.log('✅ [STRIPE] Payment Sheet completed successfully', name: 'StripeService');
 
         return result;
 
@@ -173,7 +197,7 @@ class StripeService {
         // Gestisci errori specifici di Payment Sheet
         if (e is StripeException) {
           final errorInfo = handleStripeException(e);
-          throw Exception('Payment Sheet failed: ${errorInfo['message']}');
+          throw Exception('Payment failed: ${errorInfo['user_message'] ?? errorInfo['message']}');
         }
 
         rethrow;
@@ -315,14 +339,44 @@ class StripeService {
     );
   }
 
-  /// Gestisce gli errori Stripe
+  /// Gestisce gli errori Stripe con messaggi user-friendly
   static Map<String, dynamic> handleStripeException(StripeException exception) {
     developer.log('❌ [STRIPE] Stripe exception: ${exception.error}', name: 'StripeService');
 
     final error = exception.error;
+    String userMessage = 'Si è verificato un errore durante il pagamento.';
+
+    // Traduci errori comuni in messaggi user-friendly
+    switch (error.code) {
+      case 'card_declined':
+        userMessage = 'Carta rifiutata. Controlla i dati o usa un altro metodo di pagamento.';
+        break;
+      case 'insufficient_funds':
+        userMessage = 'Fondi insufficienti sulla carta.';
+        break;
+      case 'expired_card':
+        userMessage = 'Carta scaduta.';
+        break;
+      case 'incorrect_cvc':
+        userMessage = 'Codice di sicurezza non valido.';
+        break;
+      case 'processing_error':
+        userMessage = 'Errore durante l\'elaborazione. Riprova.';
+        break;
+      case 'authentication_required':
+        userMessage = 'Autenticazione richiesta. Completa la verifica 3D Secure.';
+        break;
+      case 'canceled':
+        userMessage = 'Pagamento annullato dall\'utente.';
+        break;
+      default:
+        userMessage = error.message ?? userMessage;
+    }
+
     return {
       'code': error.code ?? 'unknown_error',
       'message': error.message ?? 'Errore sconosciuto',
+      'user_message': userMessage,
       'type': error.type.toString(),
       'decline_code': error.declineCode,
       'payment_intent_id': null,
@@ -340,33 +394,42 @@ class StripeService {
     );
   }
 
-  /// Force re-initialization
+  /// Force re-initialization con reset completo
   static Future<Result<bool>> forceReinitialize() async {
-    developer.log('🔄 [STRIPE] Forcing re-initialization...', name: 'StripeService');
+    developer.log('🔄 [STRIPE] Forcing complete re-initialization...', name: 'StripeService');
 
     _isInitialized = false;
     _lastError = null;
+    _initAttempts = 0;
+
+    // Breve pausa per reset completo
+    await Future.delayed(const Duration(seconds: 1));
 
     return await initialize();
   }
 
-  /// Health check per Stripe
+  /// Health check completo per Stripe
   static Future<Map<String, dynamic>> healthCheck() async {
     final health = {
       'is_initialized': _isInitialized,
       'last_error': _lastError,
       'last_init_attempt': _lastInitAttempt?.toIso8601String(),
+      'init_attempts': _initAttempts,
       'publishable_key_set': Stripe.publishableKey?.isNotEmpty ?? false,
       'merchant_identifier': Stripe.merchantIdentifier,
       'config_valid': StripeConfig.isValidKey(StripeConfig.publishableKey),
+      'config_test_mode': StripeConfig.isTestMode,
     };
 
-    // Test rapido se inizializzato
+    // Test funzionalità se inizializzato
     if (_isInitialized) {
       try {
-        // Semplice test per vedere se Stripe risponde
-        await Stripe.instance.isGooglePaySupported(const IsGooglePaySupportedParams());
+        // Test Google Pay come proxy per verifica SDK
+        final gpaySupported = await Stripe.instance.isGooglePaySupported(
+          const IsGooglePaySupportedParams(),
+        );
         health['sdk_responsive'] = true;
+        health['google_pay_supported'] = gpaySupported;
       } catch (e) {
         health['sdk_responsive'] = false;
         health['sdk_error'] = e.toString();
@@ -376,12 +439,31 @@ class StripeService {
     return health;
   }
 
+  /// Test rapido di inizializzazione
+  static Future<bool> quickHealthTest() async {
+    try {
+      if (!_isInitialized) {
+        final result = await initialize();
+        return result.isSuccess;
+      }
+
+      // Se già inizializzato, testa con una chiamata leggera
+      await Stripe.instance.isGooglePaySupported(const IsGooglePaySupportedParams());
+      return true;
+
+    } catch (e) {
+      developer.log('❌ [STRIPE] Quick health test failed: $e', name: 'StripeService');
+      return false;
+    }
+  }
+
   /// Cleanup risorse
   static void dispose() {
     developer.log('🔧 [STRIPE] Disposing Stripe service...', name: 'StripeService');
     _isInitialized = false;
     _lastError = null;
     _lastInitAttempt = null;
+    _initAttempts = 0;
   }
 
   /// Reset per testing
@@ -395,6 +477,7 @@ class StripeService {
       'is_initialized': _isInitialized,
       'last_error': _lastError,
       'last_init_attempt': _lastInitAttempt?.toIso8601String(),
+      'init_attempts': _initAttempts,
       'publishable_key_set': Stripe.publishableKey?.isNotEmpty ?? false,
       'publishable_key_valid': StripeConfig.isValidKey(StripeConfig.publishableKey),
       'merchant_identifier': Stripe.merchantIdentifier,
@@ -408,7 +491,27 @@ class StripeService {
             : 'EMPTY',
         'supported_payment_methods': StripeConfig.supportedPaymentMethods,
       },
+      'system_info': {
+        'dart_version': '3.4.0',
+        'flutter_stripe_version': '10.1.1',
+      },
       'timestamp': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Stampa informazioni diagnostiche per debug
+  static void printDiagnosticInfo() {
+    final info = getDiagnosticInfo();
+    print('');
+    print('🔍 STRIPE SERVICE DIAGNOSTIC INFO');
+    print('================================');
+    print('✅ Initialized: ${info['is_initialized']}');
+    print('🔧 Init attempts: ${info['init_attempts']}');
+    print('⚠️ Last error: ${info['last_error'] ?? 'None'}');
+    print('🔑 Key set: ${info['publishable_key_set']}');
+    print('🏪 Merchant ID: ${info['merchant_identifier']}');
+    print('🧪 Test mode: ${info['test_mode']}');
+    print('================================');
+    print('');
   }
 }
