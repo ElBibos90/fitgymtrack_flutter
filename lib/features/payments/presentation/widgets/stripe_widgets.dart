@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/config/stripe_config.dart';
 import '../../bloc/stripe_bloc.dart';
-import '../../models/stripe_models.dart' as stripe_models;
+import '../../models/stripe_models.dart';
 
 /// Widget per mostrare i piani di abbonamento con Stripe
 class StripePricingCard extends StatelessWidget {
@@ -249,8 +249,8 @@ class StripePaymentStatusWidget extends StatelessWidget {
       return _buildSuccessWidget(context, successState, isDarkMode);
     }
 
-    if (state is StripeError) {
-      final errorState = state as StripeError;
+    if (state is StripeErrorState) {
+      final errorState = state as StripeErrorState;
       return _buildErrorWidget(context, errorState, isDarkMode);
     }
 
@@ -358,7 +358,7 @@ class StripePaymentStatusWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorWidget(BuildContext context, StripeError state, bool isDarkMode) {
+  Widget _buildErrorWidget(BuildContext context, StripeErrorState state, bool isDarkMode) {
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(

@@ -51,7 +51,7 @@ dependencies:
   # Dependency Injection
   get_it: ^7.7.0
 
-  # 🚀 STEP 2: RECOVERY TIMER DEPENDENCIES
+  # 🚀 RECOVERY TIMER DEPENDENCIES
   # Audio per feedback sonoro cross-platform
   audioplayers: ^6.0.0
 
@@ -62,9 +62,6 @@ dependencies:
   # Stripe SDK principale per Flutter
   flutter_stripe: ^10.1.1
 
-  # Pay package per Apple Pay e Google Pay (opzionale)
-  pay: ^2.0.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -72,7 +69,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   build_runner: ^2.4.9
   json_serializable: ^6.8.0
-  retrofit_generator: 9.2.0
+  retrofit_generator: ^9.2.0
 
   # 🆕 BRANDING PACKAGES
   flutter_launcher_icons: ^0.13.1

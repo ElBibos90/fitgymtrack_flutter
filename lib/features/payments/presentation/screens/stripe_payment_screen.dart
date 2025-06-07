@@ -183,7 +183,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       return _buildLoadingPage(context, 'Inizializzazione Stripe...', isDarkMode);
     }
 
-    if (state is StripeError) {
+    if (state is StripeErrorState) {
       return _buildErrorPage(context, state.message, isDarkMode);
     }
 
@@ -738,7 +738,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
           backgroundColor: AppColors.success,
         ),
       );
-    } else if (state is StripeError) {
+    } else if (state is StripeErrorState) {
       // Errore nel pagamento
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

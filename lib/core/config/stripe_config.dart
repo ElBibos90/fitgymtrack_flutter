@@ -5,7 +5,7 @@ class StripeConfig {
   // ============================================================================
 
   /// Publishable key per il client (pubblico)
-  static const String publishableKey = 'STRIPE_SECRET_KEY';
+  static const String publishableKey = 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY';
 
   /// Secret key per il server (da NON usare nel client)
   /// Questa è solo per referenza - il server deve usarla

@@ -71,25 +71,6 @@ class StripeDependencyInjection {
       'stripe_bloc_registered': getIt.isRegistered<StripeBloc>(),
       'stripe_service_initialized': StripeService.isInitialized,
       'services_ready': areStripeServicesRegistered(),
-      'timestamp': DateTime.now().toIso8String(),
-    };
-  }
-
-  /// Verifica se i servizi Stripe sono registrati
-  static bool areStripeServicesRegistered() {
-    final getIt = GetIt.instance;
-    return getIt.isRegistered<StripeRepository>() && getIt.isRegistered<StripeBloc>();
-  }
-
-  /// Ottiene informazioni sui servizi Stripe registrati
-  static Map<String, dynamic> getStripeServicesInfo() {
-    final getIt = GetIt.instance;
-
-    return {
-      'stripe_repository_registered': getIt.isRegistered<StripeRepository>(),
-      'stripe_bloc_registered': getIt.isRegistered<StripeBloc>(),
-      'stripe_service_initialized': StripeService.isInitialized,
-      'services_ready': areStripeServicesRegistered(),
       'timestamp': DateTime.now().toIso8601String(),
     };
   }

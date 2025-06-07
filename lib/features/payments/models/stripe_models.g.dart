@@ -302,7 +302,8 @@ Map<String, dynamic> _$StripeCardToJson(StripeCard instance) =>
       'country': instance.country,
     };
 
-StripeError _$StripeErrorFromJson(Map<String, dynamic> json) => StripeError(
+StripeErrorModel _$StripeErrorModelFromJson(Map<String, dynamic> json) =>
+    StripeErrorModel(
       code: json['code'] as String,
       message: json['message'] as String,
       type: json['type'] as String?,
@@ -310,7 +311,7 @@ StripeError _$StripeErrorFromJson(Map<String, dynamic> json) => StripeError(
       paymentIntent: json['payment_intent'] as String?,
     );
 
-Map<String, dynamic> _$StripeErrorToJson(StripeError instance) =>
+Map<String, dynamic> _$StripeErrorModelToJson(StripeErrorModel instance) =>
     <String, dynamic>{
       'code': instance.code,
       'message': instance.message,

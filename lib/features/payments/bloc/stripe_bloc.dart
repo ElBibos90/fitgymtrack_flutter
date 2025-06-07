@@ -230,12 +230,12 @@ class StripePaymentMethodsLoaded extends StripeState {
   List<Object?> get props => [paymentMethods];
 }
 
-class StripeError extends StripeState {
+class StripeErrorState extends StripeState {
   final String message;
   final String? errorCode;
   final StripeErrorModel? stripeError;
 
-  const StripeError({
+  const StripeErrorState({
     required this.message,
     this.errorCode,
     this.stripeError,
@@ -298,7 +298,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       final initResult = await StripeService.initialize();
 
       if (initResult.isFailure) {
-        emit(StripeError(message: initResult.message ?? 'Errore inizializzazione Stripe'));
+        emit(StripeErrorState(message: initResult.message ?? 'Errore inizializzazione Stripe'));
         return;
       }
 
@@ -330,7 +330,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Initialization error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore inizializzazione: $e'));
+      emit(StripeErrorState(message: 'Errore inizializzazione: $e'));
     }
   }
 
@@ -361,13 +361,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Payment intent creation failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore creazione pagamento'));
+          emit(StripeErrorState(message: message ?? 'Errore creazione pagamento'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Payment creation error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore imprevisto: $e'));
+      emit(StripeErrorState(message: 'Errore imprevisto: $e'));
     }
   }
 
@@ -398,13 +398,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Donation payment creation failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore creazione donazione'));
+          emit(StripeErrorState(message: message ?? 'Errore creazione donazione'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Donation creation error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore imprevisto: $e'));
+      emit(StripeErrorState(message: 'Errore imprevisto: $e'));
     }
   }
 
@@ -436,13 +436,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Payment processing failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Pagamento fallito'));
+          emit(StripeErrorState(message: message ?? 'Pagamento fallito'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Payment processing error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore elaborazione pagamento: $e'));
+      emit(StripeErrorState(message: 'Errore elaborazione pagamento: $e'));
     }
   }
 
@@ -478,13 +478,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Payment confirmation failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore conferma pagamento'));
+          emit(StripeErrorState(message: message ?? 'Errore conferma pagamento'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Payment confirmation error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore conferma pagamento: $e'));
+      emit(StripeErrorState(message: 'Errore conferma pagamento: $e'));
     }
   }
 
@@ -515,13 +515,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Subscription loading failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore caricamento subscription'));
+          emit(StripeErrorState(message: message ?? 'Errore caricamento subscription'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Subscription loading error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore caricamento subscription: $e'));
+      emit(StripeErrorState(message: 'Errore caricamento subscription: $e'));
     }
   }
 
@@ -554,13 +554,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Subscription cancellation failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore cancellazione subscription'));
+          emit(StripeErrorState(message: message ?? 'Errore cancellazione subscription'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Subscription cancellation error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore cancellazione subscription: $e'));
+      emit(StripeErrorState(message: 'Errore cancellazione subscription: $e'));
     }
   }
 
@@ -588,13 +588,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Subscription reactivation failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore riattivazione subscription'));
+          emit(StripeErrorState(message: message ?? 'Errore riattivazione subscription'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Subscription reactivation error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore riattivazione subscription: $e'));
+      emit(StripeErrorState(message: 'Errore riattivazione subscription: $e'));
     }
   }
 
@@ -617,13 +617,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Payment methods loading failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore caricamento metodi di pagamento'));
+          emit(StripeErrorState(message: message ?? 'Errore caricamento metodi di pagamento'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Payment methods loading error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore caricamento metodi di pagamento: $e'));
+      emit(StripeErrorState(message: 'Errore caricamento metodi di pagamento: $e'));
     }
   }
 
@@ -653,13 +653,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Payment method deletion failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore eliminazione metodo di pagamento'));
+          emit(StripeErrorState(message: message ?? 'Errore eliminazione metodo di pagamento'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Payment method deletion error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore eliminazione metodo di pagamento: $e'));
+      emit(StripeErrorState(message: 'Errore eliminazione metodo di pagamento: $e'));
     }
   }
 
@@ -687,13 +687,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           developer.log('❌ [STRIPE BLOC] Subscription sync failed: $message', name: 'StripeBloc');
-          emit(StripeError(message: message ?? 'Errore sincronizzazione'));
+          emit(StripeErrorState(message: message ?? 'Errore sincronizzazione'));
         },
       );
 
     } catch (e) {
       developer.log('❌ [STRIPE BLOC] Subscription sync error: $e', name: 'StripeBloc');
-      emit(StripeError(message: 'Errore sincronizzazione: $e'));
+      emit(StripeErrorState(message: 'Errore sincronizzazione: $e'));
     }
   }
 

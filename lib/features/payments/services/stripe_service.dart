@@ -172,50 +172,6 @@ class StripeService {
     });
   }
 
-  /// Verifica se Apple Pay è disponibile
-  static Future<Result<bool>> isApplePaySupported() async {
-    if (!_isInitialized) {
-      return Result.error('Stripe non è stato inizializzato');
-    }
-
-    return Result.tryCallAsync(() async {
-      final isSupported = await Stripe.instance.isApplePaySupported();
-
-      developer.log('🔧 [STRIPE] Apple Pay supported: $isSupported', name: 'StripeService');
-
-      return isSupported;
-    });
-  }
-
-  /// Presenta Apple Pay
-  static Future<Result<void>> presentApplePay({
-    required String clientSecret,
-    required List<ApplePayCartSummaryItem> cartItems,
-  }) async {
-    if (!_isInitialized) {
-      return Result.error('Stripe non è stato inizializzato');
-    }
-
-    return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE] Presenting Apple Pay...', name: 'StripeService');
-
-      await Stripe.instance.presentApplePay(
-        params: PresentApplePayParams(
-          cartItems: cartItems,
-          country: StripeConfig.countryCode,
-          currency: StripeConfig.currency,
-        ),
-      );
-
-      // Conferma pagamento
-      await Stripe.instance.confirmApplePayPayment(
-        clientSecret,
-      );
-
-      developer.log('✅ [STRIPE] Apple Pay presented and confirmed', name: 'StripeService');
-    });
-  }
-
   /// Ottiene l'aspetto di default per Payment Sheet
   static PaymentSheetAppearance _getDefaultAppearance() {
     return const PaymentSheetAppearance(
@@ -231,7 +187,6 @@ class StripeService {
         placeholderText: Color(0xFF94A3B8),
       ),
       shapes: PaymentSheetShape(
-        borderRadius: 12.0,
         borderWidth: 1.0,
       ),
       primaryButton: PaymentSheetPrimaryButtonAppearance(
@@ -248,7 +203,7 @@ class StripeService {
           ),
         ),
         shapes: PaymentSheetPrimaryButtonShape(
-          borderRadius: 12.0,
+          borderWidth: 1.0,
         ),
       ),
     );
@@ -268,21 +223,8 @@ class StripeService {
     };
   }
 
-  /// Crea parametri per Payment Method da carta
-  static PaymentMethodParams createCardPaymentMethodParams({
-    required PaymentMethodDataCardFromToken cardFromToken,
-  }) {
-    return PaymentMethodParams.cardFromToken(
-      paymentMethodDataCardFromToken: cardFromToken,
-    );
-  }
-
   /// Crea parametri per Payment Method da carta manuale
-  static PaymentMethodParams createCardPaymentMethodParamsFromData({
-    required String number,
-    required int expMonth,
-    required int expYear,
-    required String cvc,
+  static PaymentMethodParams createCardPaymentMethodParams({
     BillingDetails? billingDetails,
   }) {
     return PaymentMethodParams.card(

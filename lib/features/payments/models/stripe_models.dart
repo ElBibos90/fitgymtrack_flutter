@@ -442,9 +442,9 @@ class StripeCard {
 // ERROR MODELS
 // ============================================================================
 
-/// Errore Stripe
+/// Errore Stripe completo
 @JsonSerializable()
-class StripeError {
+class StripeErrorModel {
   final String code;
   final String message;
   final String? type;
@@ -453,7 +453,7 @@ class StripeError {
   @JsonKey(name: 'payment_intent')
   final String? paymentIntent;
 
-  const StripeError({
+  const StripeErrorModel({
     required this.code,
     required this.message,
     this.type,
@@ -461,10 +461,10 @@ class StripeError {
     this.paymentIntent,
   });
 
-  factory StripeError.fromJson(Map<String, dynamic> json) =>
-      _$StripeErrorFromJson(json);
+  factory StripeErrorModel.fromJson(Map<String, dynamic> json) =>
+      _$StripeErrorModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$StripeErrorToJson(this);
+  Map<String, dynamic> toJson() => _$StripeErrorModelToJson(this);
 
   /// Messaggio utente-friendly
   String get userFriendlyMessage {
@@ -486,3 +486,6 @@ class StripeError {
     }
   }
 }
+
+// Nota: StripeError come State è definito nel BLoC
+// Questa classe è StripeErrorModel per evitare conflitti

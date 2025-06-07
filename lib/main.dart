@@ -223,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen>
                 listener: (context, state) {
                   if (state is StripeReady) {
                     print('💳 Stripe ready during splash');
-                  } else if (state is StripeError) {
+                  } else if (state is StripeErrorState) {
                     print('💳 Stripe error during splash: ${state.message}');
                   }
                 },
@@ -237,7 +237,7 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Colors.white.withOpacity(0.8),
                         ),
                       );
-                    } else if (state is StripeError) {
+                    } else if (state is StripeErrorState) {
                       return Text(
                         'Modalità offline',
                         style: TextStyle(
@@ -324,12 +324,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   state is StripeReady
                       ? Icons.payment
-                      : state is StripeError
+                      : state is StripeErrorState
                       ? Icons.payment_outlined
                       : Icons.hourglass_empty,
                   color: state is StripeReady
                       ? Colors.green
-                      : state is StripeError
+                      : state is StripeErrorState
                       ? Colors.orange
                       : Colors.grey,
                 ),
@@ -339,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       content: Text(
                         state is StripeReady
                             ? 'Pagamenti Stripe attivi'
-                            : state is StripeError
+                            : state is StripeErrorState
                             ? 'Pagamenti offline'
                             : 'Inizializzazione pagamenti...',
                       ),
