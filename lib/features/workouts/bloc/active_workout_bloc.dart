@@ -437,6 +437,9 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   // 🔧 PERFORMANCE FIX: Set per log debugging (evita spam)
   final Set<int> _loggedExercises = {};
 
+  // 🆕 FIX: Memorizza l'ID dell'allenamento corrente per escluderlo dalla ricerca storica
+  int? _currentWorkoutId;
+
   ActiveWorkoutBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
         super(const ActiveWorkoutInitial()) {
@@ -492,6 +495,8 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       workoutResult.fold(
         onSuccess: (response) {
           workoutResponse = response;
+          // 🆕 FIX: Memorizza l'ID dell'allenamento corrente
+          _currentWorkoutId = response.allenamentoId;
         },
         onFailure: (exception, message) {
           errorException = exception;
@@ -553,7 +558,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       // 🔧 FIX: STEP 3: Carica storico allenamenti per preloadare valori PERFEZIONATO
       _log('📚 [HISTORY] Loading workout history for value preloading...');
-      await _loadWorkoutHistoryPerfected(event.userId, event.schedaId, exercises!);
+      await _loadWorkoutHistoryFixed(event.userId, event.schedaId, exercises!);
 
       // 🔧 FIX: STEP 4: Crea valori iniziali per ogni esercizio con logica CORRETTA
       final Map<int, ExerciseValues> initialExerciseValues = {};
@@ -617,7 +622,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     _log('📚 [EVENT] LoadWorkoutHistory received - User: ${event.userId}, Scheda: ${event.schedaId}');
 
     try {
-      await _loadWorkoutHistoryPerfected(event.userId, event.schedaId, []);
+      await _loadWorkoutHistoryFixed(event.userId, event.schedaId, []);
       _log('✅ [HISTORY] Workout history loaded successfully');
     } catch (e) {
       _log('❌ [HISTORY] Error loading workout history: $e');
@@ -625,11 +630,12 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     }
   }
 
-  /// 🔧 FIX: Metodo PERFEZIONATO per caricare lo storico degli allenamenti precedenti
-  Future<void> _loadWorkoutHistoryPerfected(int userId, int schedaId, List<WorkoutExercise> exercises) async {
+  /// 🔧 FIX PRINCIPALE: Metodo PERFEZIONATO per caricare lo storico escludendo l'allenamento corrente
+  Future<void> _loadWorkoutHistoryFixed(int userId, int schedaId, List<WorkoutExercise> exercises) async {
     try {
-      _log('📚 [HISTORY] === CARICAMENTO STORICO PERFEZIONATO ===');
+      _log('📚 [HISTORY] === CARICAMENTO STORICO FIXATO ===');
       _log('📚 [HISTORY] Loading workout history for userId=$userId, schedaId=$schedaId');
+      _log('📚 [HISTORY] Current workout ID to exclude: $_currentWorkoutId');
 
       // STEP 1: Carica tutti gli allenamenti dell'utente
       final workoutHistoryResult = await _workoutRepository.getWorkoutHistory(userId);
@@ -653,7 +659,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       _log('📚 [HISTORY] Found ${allWorkouts!.length} total workouts for user');
 
       // STEP 2: Filtra per stessa scheda e ordina per data (più recente primo)
-      final sameSchemaWorkouts = allWorkouts!
+      var sameSchemaWorkouts = allWorkouts!
           .where((workout) => workout.schedaId == schedaId)
           .toList()
         ..sort((a, b) => b.dataAllenamento.compareTo(a.dataAllenamento));
@@ -665,83 +671,118 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
       _log('📚 [HISTORY] Found ${sameSchemaWorkouts.length} workouts with same schema');
 
-      // 🔧 FIX: STEP 3: Prendi SOLO il workout più recente per il preload iniziale
-      final lastWorkout = sameSchemaWorkouts.first;
-      _log('📚 [HISTORY] Processing most recent workout: ${lastWorkout.id} (${lastWorkout.dataAllenamento})');
+      // 🔧 FIX PRINCIPALE: ESCLUDI l'allenamento corrente se presente
+      if (_currentWorkoutId != null) {
+        final originalCount = sameSchemaWorkouts.length;
+        sameSchemaWorkouts = sameSchemaWorkouts
+            .where((workout) => workout.id != _currentWorkoutId)
+            .toList();
 
-      try {
-        // Carica le serie dell'ultimo allenamento
-        final seriesResult = await _workoutRepository.getWorkoutSeriesDetail(lastWorkout.id);
-
-        List<CompletedSeriesData>? series;
-        seriesResult.fold(
-          onSuccess: (seriesList) {
-            series = seriesList;
-          },
-          onFailure: (exception, message) {
-            _log('⚠️ [HISTORY] Error loading series for workout ${lastWorkout.id}: $message');
-            return; // Skip questo allenamento
-          },
-        );
-
-        if (series == null || series!.isEmpty) {
-          _log('📚 [HISTORY] No series found for workout ${lastWorkout.id}');
-          return;
+        final excludedCount = originalCount - sameSchemaWorkouts.length;
+        if (excludedCount > 0) {
+          _log('🚫 [HISTORY] Excluded current workout $_currentWorkoutId from history search');
         }
-
-        _log('📚 [HISTORY] Found ${series!.length} series in last workout');
-
-        // 🔧 FIX: STEP 4: Raggruppa le serie per exerciseId E per numero di serie
-        final Map<int, Map<int, CompletedSeriesData>> historicData = {};
-
-        for (final seriesData in series!) {
-          final exerciseId = seriesData.schedaEsercizioId;
-          final serieNumber = seriesData.serieNumber ?? 1;
-
-          // 🔧 VERIFICA: Log per debugging del campo scheda_esercizio_id
-          _log('🔍 [VERIFY] Serie: id=${seriesData.id}, '
-              'schedaEsercizioId=${seriesData.schedaEsercizioId}, '
-              'serieNumber=${seriesData.serieNumber}, '
-              'peso=${seriesData.peso}, reps=${seriesData.ripetizioni}');
-
-          // Organizza: exerciseId -> serieNumber -> SeriesData
-          historicData.putIfAbsent(exerciseId, () => {});
-          historicData[exerciseId]![serieNumber] = seriesData;
-        }
-
-        // 🔧 FIX: STEP 5: Converte e memorizza nei dati storici
-        _historicWorkoutData.clear();
-
-        for (final entry in historicData.entries) {
-          final exerciseId = entry.key;
-          final seriesByNumber = entry.value;
-
-          _historicWorkoutData[exerciseId] = HistoricExerciseData(
-            exerciseId: exerciseId,
-            seriesByNumber: seriesByNumber,
-            lastWorkoutDate: lastWorkout.dataAllenamento,
-          );
-
-          _log('✅ [HISTORY] Historic data saved for exercise $exerciseId: '
-              '${seriesByNumber.length} series from ${lastWorkout.dataAllenamento}');
-
-          // Log dettagliato delle serie per debug
-          seriesByNumber.forEach((serieNumber, seriesData) {
-            _log('    📊 Serie $serieNumber: ${seriesData.peso}kg x ${seriesData.ripetizioni} reps');
-          });
-        }
-
-        _log('🏁 [HISTORY] Historic data loading completed. Found data for ${historicData.length} exercises');
-
-        // 🔧 PERFORMANCE FIX: Pre-popola la cache con i dati storici
-        _prePopulateCache();
-
-      } catch (e) {
-        _log('💥 [HISTORY] Exception loading workout ${lastWorkout.id}: $e');
       }
 
+      if (sameSchemaWorkouts.isEmpty) {
+        _log('📚 [HISTORY] No previous completed workouts found after excluding current');
+        return;
+      }
+
+      _log('📚 [HISTORY] Processing ${sameSchemaWorkouts.length} candidate workouts for history data');
+
+      // 🔧 FIX: STEP 3: Prova con gli allenamenti in ordine finché non trova uno con serie
+      WorkoutHistory? workoutWithSeries;
+      List<CompletedSeriesData>? series;
+
+      for (int i = 0; i < sameSchemaWorkouts.length && i < 3; i++) { // Prova max 3 allenamenti
+        final candidate = sameSchemaWorkouts[i];
+        _log('📚 [HISTORY] Trying workout ${candidate.id} (${candidate.dataAllenamento}) - attempt ${i + 1}');
+
+        try {
+          // Carica le serie del candidato
+          final seriesResult = await _workoutRepository.getWorkoutSeriesDetail(candidate.id);
+
+          List<CompletedSeriesData>? candidateSeries;
+          seriesResult.fold(
+            onSuccess: (seriesList) {
+              candidateSeries = seriesList;
+            },
+            onFailure: (exception, message) {
+              _log('⚠️ [HISTORY] Error loading series for workout ${candidate.id}: $message');
+              return; // Skip questo allenamento
+            },
+          );
+
+          if (candidateSeries != null && candidateSeries!.isNotEmpty) {
+            workoutWithSeries = candidate;
+            series = candidateSeries;
+            _log('✅ [HISTORY] Found workout with ${series!.length} series: ${candidate.id}');
+            break; // Trovato un allenamento con serie, fermiamoci qui
+          } else {
+            _log('📚 [HISTORY] Workout ${candidate.id} has no series, trying next...');
+          }
+
+        } catch (e) {
+          _log('💥 [HISTORY] Exception loading workout ${candidate.id}: $e');
+          continue; // Prova il prossimo
+        }
+      }
+
+      if (workoutWithSeries == null || series == null || series!.isEmpty) {
+        _log('📚 [HISTORY] No workout with completed series found in recent history');
+        return;
+      }
+
+      _log('🎉 [HISTORY] Successfully found workout ${workoutWithSeries.id} with ${series!.length} series');
+
+      // 🔧 FIX: STEP 4: Raggruppa le serie per exerciseId E per numero di serie
+      final Map<int, Map<int, CompletedSeriesData>> historicData = {};
+
+      for (final seriesData in series!) {
+        final exerciseId = seriesData.schedaEsercizioId;
+        final serieNumber = seriesData.serieNumber ?? 1;
+
+        // 🔧 VERIFICA: Log per debugging del campo scheda_esercizio_id
+        _log('🔍 [VERIFY] Serie: id=${seriesData.id}, '
+            'schedaEsercizioId=${seriesData.schedaEsercizioId}, '
+            'serieNumber=${seriesData.serieNumber}, '
+            'peso=${seriesData.peso}, reps=${seriesData.ripetizioni}');
+
+        // Organizza: exerciseId -> serieNumber -> SeriesData
+        historicData.putIfAbsent(exerciseId, () => {});
+        historicData[exerciseId]![serieNumber] = seriesData;
+      }
+
+      // 🔧 FIX: STEP 5: Converte e memorizza nei dati storici
+      _historicWorkoutData.clear();
+
+      for (final entry in historicData.entries) {
+        final exerciseId = entry.key;
+        final seriesByNumber = entry.value;
+
+        _historicWorkoutData[exerciseId] = HistoricExerciseData(
+          exerciseId: exerciseId,
+          seriesByNumber: seriesByNumber,
+          lastWorkoutDate: workoutWithSeries.dataAllenamento,
+        );
+
+        _log('✅ [HISTORY] Historic data saved for exercise $exerciseId: '
+            '${seriesByNumber.length} series from ${workoutWithSeries.dataAllenamento}');
+
+        // Log dettagliato delle serie per debug
+        seriesByNumber.forEach((serieNumber, seriesData) {
+          _log('    📊 Serie $serieNumber: ${seriesData.peso}kg x ${seriesData.ripetizioni} reps');
+        });
+      }
+
+      _log('🏁 [HISTORY] Historic data loading completed. Found data for ${historicData.length} exercises');
+
+      // 🔧 PERFORMANCE FIX: Pre-popola la cache con i dati storici
+      _prePopulateCache();
+
     } catch (e) {
-      _log('💥 [HISTORY] Exception in _loadWorkoutHistoryPerfected: $e');
+      _log('💥 [HISTORY] Exception in _loadWorkoutHistoryFixed: $e');
       // Non propaghiamo l'errore, lo storico è opzionale
     }
   }
@@ -775,6 +816,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   void _clearCacheAndLogs() {
     _seriesValuesCache.clear();
     _loggedExercises.clear();
+    _currentWorkoutId = null; // 🆕 Reset current workout ID
     _log('🧹 [CACHE] Cache cleared and reset');
   }
 
@@ -1318,6 +1360,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       'cache_size': _seriesValuesCache.length,
       'historic_exercises': _historicWorkoutData.length,
       'logged_exercises': _loggedExercises.length,
+      'current_workout_id': _currentWorkoutId,
     };
   }
 
