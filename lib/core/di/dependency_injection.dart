@@ -26,6 +26,7 @@ import '../../features/stats/models/user_stats_models.dart';
 import '../utils/result.dart' as utils_result;
 
 import '../di/dependency_injection_plateau.dart';
+import '../../features/subscription/di/subscription_dependency_injection.dart';
 
 final getIt = GetIt.instance;
 
@@ -124,14 +125,29 @@ class DependencyInjection {
       authRepository: getIt<AuthRepository>(),
     ));
 
-    print('✅ [DI] Dependency injection completed successfully!');
-
     // ============================================================================
     // 🎯 PLATEAU SERVICES (STEP 7)
     // ============================================================================
 
     print('🔧 [DI] Registering plateau services...');
     PlateauDependencyInjection.registerPlateauServices();
+
+    // ============================================================================
+    // 💳 SUBSCRIPTION SERVICES - FIX CRITICO!
+    // ============================================================================
+
+    print('🔧 [DI] Registering subscription services...');
+    try {
+      SubscriptionDependencyInjection.registerSubscriptionServices(
+        useMockRepository: useMockRepository,
+      );
+      print('✅ [DI] Subscription services registered successfully!');
+    } catch (e) {
+      print('❌ [DI] ERROR registering subscription services: $e');
+      rethrow;
+    }
+
+    print('✅ [DI] Dependency injection completed successfully!');
   }
 
   /// 🎯 NUOVO: Metodo per inizializzare in modalità mock per i test

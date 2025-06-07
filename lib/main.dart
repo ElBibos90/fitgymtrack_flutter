@@ -7,6 +7,7 @@ import 'core/di/dependency_injection.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/workouts/bloc/plateau_bloc.dart';
+import 'features/subscription/bloc/subscription_bloc.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
@@ -14,6 +15,7 @@ import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 // ✅ IMPORT PER TEST API 34 vs 35 - STEP 5
 import 'test/simple_workout_test_screen.dart';
 // 🔧 IMPORT PER TEST PERFORMANCE FIX
+import 'features/subscription/presentation/screens/subscription_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +70,9 @@ class FitGymTrackApp extends StatelessWidget {
             ),
             BlocProvider<PlateauBloc>(
               create: (context) => getIt<PlateauBloc>(),
+            ),
+            BlocProvider<SubscriptionBloc>(
+              create: (context) => getIt<SubscriptionBloc>(),
             ),
           ],
           child: MaterialApp.router(
@@ -213,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const DashboardPage(),
     const WorkoutsPage(),
     const StatsPage(),
-    const ProfilePage(),
+    const SubscriptionScreen(),
   ];
 
   final List<BottomNavigationBarItem> _navItems = [
@@ -230,8 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
       label: 'Statistiche',
     ),
     const BottomNavigationBarItem(
-      icon: Icon(Icons.person),
-      label: 'Profilo',
+      icon: Icon(Icons.card_membership),
+      label: 'Abbonamento',
     ),
   ];
 
@@ -378,15 +383,30 @@ class DashboardPage extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => context.go('/stats'),
-                  icon: const Icon(Icons.analytics),
-                  label: const Text('Vedi Statistiche'),
+                  onPressed: () => context.go('/subscription'),
+                  icon: const Icon(Icons.card_membership),
+                  label: const Text('Abbonamento'),
                   style: OutlinedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
                 ),
               ),
             ],
+          ),
+
+          SizedBox(height: 16.h),
+
+          // Pulsante Statistiche
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => context.go('/stats'),
+              icon: const Icon(Icons.analytics),
+              label: const Text('Vedi Statistiche'),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+              ),
+            ),
           ),
         ],
       ),
@@ -449,6 +469,7 @@ class WorkoutsPage extends StatelessWidget {
     return const WorkoutPlansScreen();
   }
 }
+
 class StatsPage extends StatelessWidget {
   const StatsPage({super.key});
 
@@ -497,9 +518,9 @@ class ProfilePage extends StatelessWidget {
           const Text('Prossima implementazione...'),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.go('/profile'),
-            icon: const Icon(Icons.edit),
-            label: const Text('Modifica Profilo'),
+            onPressed: () => context.go('/subscription'),
+            icon: const Icon(Icons.card_membership),
+            label: const Text('Vai all\'Abbonamento'),
           ),
         ],
       ),

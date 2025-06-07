@@ -13,10 +13,9 @@ import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
 import '../../features/workouts/presentation/screens/edit_workout_screen.dart';
 import '../../features/workouts/presentation/screens/active_workout_screen.dart';
-// ✅ AGGIUNTI: Import mancanti
 import '../../features/workouts/bloc/active_workout_bloc.dart';
+import '../../features/subscription/presentation/screens/subscription_screen.dart';
 import '../../core/di/dependency_injection.dart';
-
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -37,18 +36,15 @@ class AppRouter {
             return BlocConsumer<AuthBloc, AuthState>(
               listener: (context, authState) {
                 if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
-                  context.go('/dashboard'); // ✅ DEVE ESSERE /dashboard
+                  context.go('/dashboard');
                 } else if (authState is AuthUnauthenticated || authState is AuthError) {
-                  context.go('/login');   // ✅ DEVE ESSERE /login
+                  context.go('/login');
                 }
               },
               builder: (context, authState) {
-                // Controlla automaticamente lo stato auth all'avvio
                 if (authState is AuthInitial) {
                   context.read<AuthBloc>().checkAuthStatus();
                 }
-
-                // Splash screen esistente
                 return const SplashScreen();
               },
             );
@@ -91,7 +87,22 @@ class AppRouter {
           name: 'dashboard',
           builder: (context, state) {
             return AuthWrapper(
-              authenticatedChild: const HomeScreen(), // Dalla Dashboard esistente
+              authenticatedChild: const HomeScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // SUBSCRIPTION ROUTES - FIX CRITICO!
+        // ============================================================================
+
+        GoRoute(
+          path: '/subscription',
+          name: 'subscription',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const SubscriptionScreen(),
               unauthenticatedChild: const LoginScreen(),
             );
           },
@@ -100,6 +111,17 @@ class AppRouter {
         // ============================================================================
         // WORKOUT ROUTES
         // ============================================================================
+
+        GoRoute(
+          path: '/workouts',
+          name: 'workouts',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const WorkoutPlansScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
 
         GoRoute(
           path: '/workouts/create',
@@ -112,7 +134,6 @@ class AppRouter {
           },
         ),
 
-        // ✅ SEMPLIFICATO: Versione senza BlocProvider.value
         GoRoute(
           path: '/workouts/edit/:id',
           name: 'edit-workout',
@@ -148,19 +169,6 @@ class AppRouter {
           },
         ),
 
-        // ✅ AGGIORNATO: Usa la nuova WorkoutPlansScreen
-        GoRoute(
-          path: '/workouts',
-          name: 'workouts',
-          builder: (context, state) {
-            return AuthWrapper(
-              authenticatedChild: const WorkoutPlansScreen(),
-              unauthenticatedChild: const LoginScreen(),
-            );
-          },
-        ),
-
-        // 🚀 FIX PRINCIPALE: Fornisce il BLoC nel contesto giusto
         GoRoute(
           path: '/workouts/:id/start',
           name: 'start-workout',
@@ -176,17 +184,19 @@ class AppRouter {
 
             return AuthWrapper(
               authenticatedChild: BlocProvider.value(
-                // ✅ FIX: Fornisce l'istanza del BLoC nel contesto corretto
                 value: getIt<ActiveWorkoutBloc>(),
                 child: ActiveWorkoutScreen(
                   schedaId: workoutId,
-                  // allenamentoId è null per iniziare nuovo allenamento
                 ),
               ),
               unauthenticatedChild: const LoginScreen(),
             );
           },
         ),
+
+        // ============================================================================
+        // OTHER ROUTES
+        // ============================================================================
 
         GoRoute(
           path: '/stats',
@@ -200,10 +210,6 @@ class AppRouter {
             );
           },
         ),
-
-        // ============================================================================
-        // FUTURE ROUTES (placeholder)
-        // ============================================================================
 
         GoRoute(
           path: '/profile',
@@ -230,17 +236,15 @@ class AppRouter {
         final isOnAuthPage = ['/login', '/register', '/forgot-password'].contains(state.matchedLocation) ||
             state.matchedLocation.startsWith('/reset-password');
 
-        // Se utente è autenticato e cerca di accedere a pagine auth, reindirizza alla dashboard
         if ((authState is AuthAuthenticated || authState is AuthLoginSuccess) && isOnAuthPage) {
           return '/dashboard';
         }
 
-        // Se utente non è autenticato e cerca di accedere a pagine protette, reindirizza al login
         if ((authState is AuthUnauthenticated || authState is AuthError) && !isOnAuthPage && state.matchedLocation != '/splash') {
           return '/login';
         }
 
-        return null; // Nessun redirect necessario
+        return null;
       },
 
       // ============================================================================
