@@ -13,6 +13,7 @@ import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 import 'features/subscription/presentation/screens/subscription_screen.dart';
+import 'core/utils/stripe_configuration_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,15 +31,22 @@ void main() async {
   // 🔧 FIX: Inizializzazione semplificata - solo repository reali + Stripe
   await DependencyInjection.init();
 
-  // 💳 Verifica salute sistema Stripe
+  // 💳 Verifica configurazione Stripe all'avvio
+  print('🔍 Checking Stripe configuration...');
+  final stripeCheck = await StripeConfigurationChecker.checkConfiguration();
+  StripeConfigurationChecker.printCheckResult(stripeCheck);
+
+  // 💳 Verifica salute sistema generale
   final systemHealthy = DependencyInjection.checkSystemHealth();
   print('🏥 System health check: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
-  runApp(const FitGymTrackApp());
+  runApp(FitGymTrackApp(stripeConfigValid: stripeCheck.isValid));
 }
 
 class FitGymTrackApp extends StatelessWidget {
-  const FitGymTrackApp({super.key});
+  final bool stripeConfigValid;
+
+  const FitGymTrackApp({super.key, required this.stripeConfigValid});
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +87,17 @@ class FitGymTrackApp extends StatelessWidget {
               create: (context) => getIt<SubscriptionBloc>(),
             ),
 
-            // 💳 STRIPE BLOC PROVIDER
+            // 💳 STRIPE BLOC PROVIDER CON INIZIALIZZAZIONE FORZATA
             BlocProvider<StripeBloc>(
-              create: (context) => getIt<StripeBloc>(),
+              create: (context) {
+                final stripeBloc = getIt<StripeBloc>();
+                // 🔧 FORZA inizializzazione immediata se configurazione è valida
+                if (stripeConfigValid) {
+                  print('💳 Forcing Stripe initialization...');
+                  stripeBloc.add(const InitializeStripeEvent());
+                }
+                return stripeBloc;
+              },
             ),
           ],
           child: MaterialApp.router(
@@ -110,6 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool _stripeInitialized = false;
 
   @override
   void initState() {
@@ -130,17 +147,24 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    // 💳 Inizializza Stripe all'avvio se necessario
-    _initializeStripeIfNeeded();
+    // 💳 Forza inizializzazione Stripe
+    _forceInitializeStripe();
   }
 
-  Future<void> _initializeStripeIfNeeded() async {
+  Future<void> _forceInitializeStripe() async {
     try {
-      // Inizializza Stripe in background durante lo splash
-      context.read<StripeBloc>().add(const InitializeStripeEvent());
-      print('💳 Stripe initialization triggered during splash');
+      print('💳 [SPLASH] Forcing Stripe initialization...');
+
+      // Aspetta un po' per essere sicuri che il BLoC sia pronto
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        context.read<StripeBloc>().add(const InitializeStripeEvent());
+        print('💳 [SPLASH] Stripe initialization event sent');
+      }
+
     } catch (e) {
-      print('⚠️ Could not initialize Stripe during splash: $e');
+      print('⚠️ [SPLASH] Could not initialize Stripe: $e');
     }
   }
 
@@ -218,36 +242,70 @@ class _SplashScreenState extends State<SplashScreen>
 
               SizedBox(height: 16.h),
 
-              // 💳 Indicatore Stripe
+              // 💳 Indicatore Stripe più semplice
               BlocListener<StripeBloc, StripeState>(
                 listener: (context, state) {
-                  if (state is StripeReady) {
-                    print('💳 Stripe ready during splash');
+                  if (state is StripeReady && !_stripeInitialized) {
+                    print('💳 [SPLASH] Stripe ready!');
+                    setState(() {
+                      _stripeInitialized = true;
+                    });
                   } else if (state is StripeErrorState) {
-                    print('💳 Stripe error during splash: ${state.message}');
+                    print('💳 [SPLASH] Stripe error: ${state.message}');
                   }
                 },
                 child: BlocBuilder<StripeBloc, StripeState>(
                   builder: (context, state) {
                     if (state is StripeReady) {
-                      return Text(
-                        'Pagamenti sicuri ✓',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
+                      return Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 16.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'Pagamenti Stripe pronti',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       );
                     } else if (state is StripeErrorState) {
-                      return Text(
-                        'Modalità offline',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
+                      return Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.orange,
+                                size: 16.sp,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                'Modalità offline',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       );
                     } else {
                       return Text(
-                        'Inizializzazione...',
+                        'Inizializzazione pagamenti...',
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: Colors.white.withOpacity(0.8),
@@ -317,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         actions: [
-          // 💳 Indicatore stato Stripe
+          // 💳 Indicatore stato Stripe semplificato
           BlocBuilder<StripeBloc, StripeState>(
             builder: (context, state) {
               return IconButton(
@@ -334,15 +392,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       : Colors.grey,
                 ),
                 onPressed: () {
+                  String message;
+                  Color color;
+
+                  if (state is StripeReady) {
+                    message = '✅ Stripe configurato e funzionante';
+                    color = Colors.green;
+                  } else if (state is StripeErrorState) {
+                    message = '⚠️ Errore Stripe: ${state.message}';
+                    color = Colors.orange;
+                  } else {
+                    message = '⏳ Inizializzazione Stripe in corso...';
+                    color = Colors.blue;
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        state is StripeReady
-                            ? 'Pagamenti Stripe attivi'
-                            : state is StripeErrorState
-                            ? 'Pagamenti offline'
-                            : 'Inizializzazione pagamenti...',
-                      ),
+                      content: Text(message),
+                      backgroundColor: color,
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 },
@@ -486,27 +554,67 @@ class DashboardPage extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          // 💳 Pulsante per testare pagamenti Stripe
+          // 💳 Pulsante per testare pagamenti Stripe - SEMPLIFICATO E MIGLIORATO
           SizedBox(
             width: double.infinity,
             child: BlocBuilder<StripeBloc, StripeState>(
               builder: (context, state) {
-                return OutlinedButton.icon(
-                  onPressed: state is StripeReady
-                      ? () => context.go('/payment/donation')
+                final isReady = state is StripeReady;
+                final isError = state is StripeErrorState;
+                final isLoading = state is StripeInitializing;
+
+                return ElevatedButton.icon(
+                  onPressed: isReady
+                      ? () {
+                    print('💳 [DASHBOARD] Navigating to Stripe payment...');
+                    context.go('/payment/donation');
+                  }
+                      : isError
+                      ? () {
+                    // 🔧 Retry inizializzazione
+                    print('💳 [DASHBOARD] Retrying Stripe initialization...');
+                    context.read<StripeBloc>().add(const InitializeStripeEvent());
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('🔄 Tentativo di riconnessione Stripe...'),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  }
                       : null,
-                  icon: Icon(
-                    state is StripeReady
+                  icon: isLoading
+                      ? SizedBox(
+                    width: 16.w,
+                    height: 16.w,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : Icon(
+                    isReady
                         ? Icons.payment
+                        : isError
+                        ? Icons.refresh
                         : Icons.payment_outlined,
                   ),
                   label: Text(
-                    state is StripeReady
-                        ? 'Testa Pagamento Stripe'
-                        : 'Pagamenti non disponibili',
+                    isReady
+                        ? 'Testa Pagamento Stripe ✓'
+                        : isError
+                        ? 'Riprova Stripe'
+                        : isLoading
+                        ? 'Inizializzazione...'
+                        : 'Stripe non pronto',
                   ),
-                  style: OutlinedButton.styleFrom(
+                  style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(vertical: 12.h),
+                    backgroundColor: isReady
+                        ? Colors.green
+                        : isError
+                        ? Colors.orange
+                        : null,
+                    foregroundColor: isReady || isError ? Colors.white : null,
                   ),
                 );
               },
