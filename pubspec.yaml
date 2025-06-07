@@ -58,6 +58,13 @@ dependencies:
   # 🔧 FIX: Vibrazione con package aggiornato + compatibile
   haptic_feedback: ^0.5.1+1  # Alternativa moderna al vibration package
 
+  # 💳 STRIPE PAYMENT DEPENDENCIES
+  # Stripe SDK principale per Flutter
+  flutter_stripe: ^10.1.1
+
+  # Pay package per Apple Pay e Google Pay (opzionale)
+  pay: ^2.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

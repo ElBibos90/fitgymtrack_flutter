@@ -42,4 +42,22 @@ class SubscriptionDependencyInjection {
 
     print('✅ [DI] Subscription services registered successfully!');
   }
+
+  /// Verifica se i servizi Subscription sono registrati
+  static bool areSubscriptionServicesRegistered() {
+    final getIt = GetIt.instance;
+    return getIt.isRegistered<SubscriptionRepository>() && getIt.isRegistered<SubscriptionBloc>();
+  }
+
+  /// Ottiene informazioni sui servizi Subscription registrati
+  static Map<String, dynamic> getSubscriptionServicesInfo() {
+    final getIt = GetIt.instance;
+
+    return {
+      'subscription_repository_registered': getIt.isRegistered<SubscriptionRepository>(),
+      'subscription_bloc_registered': getIt.isRegistered<SubscriptionBloc>(),
+      'services_ready': areSubscriptionServicesRegistered(),
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+  }
 }

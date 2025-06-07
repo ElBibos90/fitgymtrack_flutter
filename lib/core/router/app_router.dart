@@ -15,6 +15,8 @@ import '../../features/workouts/presentation/screens/edit_workout_screen.dart';
 import '../../features/workouts/presentation/screens/active_workout_screen.dart';
 import '../../features/workouts/bloc/active_workout_bloc.dart';
 import '../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../../features/payments/presentation/screens/stripe_payment_screen.dart';
+import '../../features/payments/bloc/stripe_bloc.dart';
 import '../../core/di/dependency_injection.dart';
 
 class AppRouter {
@@ -103,6 +105,48 @@ class AppRouter {
           builder: (context, state) {
             return AuthWrapper(
               authenticatedChild: const SubscriptionScreen(), // 🔧 Senza wrapper
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // 💳 STRIPE PAYMENT ROUTES
+        // ============================================================================
+
+        GoRoute(
+          path: '/payment/subscription',
+          name: 'stripe-subscription-payment',
+          builder: (context, state) {
+            final parameters = state.extra as Map<String, dynamic>?;
+
+            return AuthWrapper(
+              authenticatedChild: BlocProvider(
+                create: (context) => getIt<StripeBloc>(),
+                child: StripePaymentScreen(
+                  paymentType: 'subscription',
+                  parameters: parameters,
+                ),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/payment/donation',
+          name: 'stripe-donation-payment',
+          builder: (context, state) {
+            final parameters = state.extra as Map<String, dynamic>?;
+
+            return AuthWrapper(
+              authenticatedChild: BlocProvider(
+                create: (context) => getIt<StripeBloc>(),
+                child: StripePaymentScreen(
+                  paymentType: 'donation',
+                  parameters: parameters,
+                ),
+              ),
               unauthenticatedChild: const LoginScreen(),
             );
           },
@@ -218,6 +262,142 @@ class AppRouter {
             return AuthWrapper(
               authenticatedChild: const Scaffold(
                 body: Center(child: Text('Profile Screen - Coming Soon')),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // 💳 PAYMENT SUCCESS/FAILURE ROUTES
+        // ============================================================================
+
+        GoRoute(
+          path: '/payment/success',
+          name: 'payment-success',
+          builder: (context, state) {
+            final paymentType = state.uri.queryParameters['type'] ?? 'subscription';
+            final amount = state.uri.queryParameters['amount'];
+
+            return AuthWrapper(
+              authenticatedChild: Scaffold(
+                appBar: AppBar(
+                  title: const Text('Pagamento Completato'),
+                  automaticallyImplyLeading: false,
+                ),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.check_circle,
+                          size: 80,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          paymentType == 'subscription'
+                              ? 'Abbonamento Attivato!'
+                              : 'Grazie per la Donazione!',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          paymentType == 'subscription'
+                              ? 'Il tuo abbonamento Premium è ora attivo. Goditi tutte le funzionalità di FitGymTrack!'
+                              : 'Il tuo supporto ci aiuta a migliorare l\'app. Grazie!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        if (amount != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Importo: €$amount',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: () => context.go('/dashboard'),
+                          child: const Text('Torna alla Dashboard'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/payment/cancelled',
+          name: 'payment-cancelled',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: Scaffold(
+                appBar: AppBar(
+                  title: const Text('Pagamento Annullato'),
+                ),
+                body: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.cancel_outlined,
+                          size: 80,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Pagamento Annullato',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Il pagamento è stato annullato. Puoi riprovare in qualsiasi momento.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            OutlinedButton(
+                              onPressed: () => context.go('/subscription'),
+                              child: const Text('Torna agli Abbonamenti'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => context.go('/dashboard'),
+                              child: const Text('Dashboard'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               unauthenticatedChild: const LoginScreen(),
             );

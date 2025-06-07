@@ -8,6 +8,7 @@ import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/workouts/bloc/plateau_bloc.dart';
 import 'features/subscription/bloc/subscription_bloc.dart';
+import 'features/payments/bloc/stripe_bloc.dart';
 import 'shared/theme/app_theme.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
@@ -22,11 +23,16 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('🚨 MAIN STARTED - Using REAL repositories only!');
+  print('🚨 MAIN STARTED - Using REAL repositories only + STRIPE PAYMENTS!');
   print('📱 App orientation locked to PORTRAIT only');
+  print('💳 Stripe payments system enabled');
 
-  // 🔧 FIX: Inizializzazione semplificata - solo repository reali
+  // 🔧 FIX: Inizializzazione semplificata - solo repository reali + Stripe
   await DependencyInjection.init();
+
+  // 💳 Verifica salute sistema Stripe
+  final systemHealthy = DependencyInjection.checkSystemHealth();
+  print('🏥 System health check: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
   runApp(const FitGymTrackApp());
 }
@@ -67,8 +73,15 @@ class FitGymTrackApp extends StatelessWidget {
             BlocProvider<PlateauBloc>(
               create: (context) => getIt<PlateauBloc>(),
             ),
+
+            // SUBSCRIPTION & PAYMENT BLOC PROVIDERS
             BlocProvider<SubscriptionBloc>(
               create: (context) => getIt<SubscriptionBloc>(),
+            ),
+
+            // 💳 STRIPE BLOC PROVIDER
+            BlocProvider<StripeBloc>(
+              create: (context) => getIt<StripeBloc>(),
             ),
           ],
           child: MaterialApp.router(
@@ -116,6 +129,19 @@ class _SplashScreenState extends State<SplashScreen>
     ));
 
     _animationController.forward();
+
+    // 💳 Inizializza Stripe all'avvio se necessario
+    _initializeStripeIfNeeded();
+  }
+
+  Future<void> _initializeStripeIfNeeded() async {
+    try {
+      // Inizializza Stripe in background durante lo splash
+      context.read<StripeBloc>().add(const InitializeStripeEvent());
+      print('💳 Stripe initialization triggered during splash');
+    } catch (e) {
+      print('⚠️ Could not initialize Stripe during splash: $e');
+    }
   }
 
   @override
@@ -189,6 +215,48 @@ class _SplashScreenState extends State<SplashScreen>
                   strokeWidth: 3,
                 ),
               ),
+
+              SizedBox(height: 16.h),
+
+              // 💳 Indicatore Stripe
+              BlocListener<StripeBloc, StripeState>(
+                listener: (context, state) {
+                  if (state is StripeReady) {
+                    print('💳 Stripe ready during splash');
+                  } else if (state is StripeError) {
+                    print('💳 Stripe error during splash: ${state.message}');
+                  }
+                },
+                child: BlocBuilder<StripeBloc, StripeState>(
+                  builder: (context, state) {
+                    if (state is StripeReady) {
+                      return Text(
+                        'Pagamenti sicuri ✓',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      );
+                    } else if (state is StripeError) {
+                      return Text(
+                        'Modalità offline',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      );
+                    } else {
+                      return Text(
+                        'Inizializzazione...',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
             ],
           ),
         ),
@@ -249,6 +317,38 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         actions: [
+          // 💳 Indicatore stato Stripe
+          BlocBuilder<StripeBloc, StripeState>(
+            builder: (context, state) {
+              return IconButton(
+                icon: Icon(
+                  state is StripeReady
+                      ? Icons.payment
+                      : state is StripeError
+                      ? Icons.payment_outlined
+                      : Icons.hourglass_empty,
+                  color: state is StripeReady
+                      ? Colors.green
+                      : state is StripeError
+                      ? Colors.orange
+                      : Colors.grey,
+                ),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        state is StripeReady
+                            ? 'Pagamenti Stripe attivi'
+                            : state is StripeError
+                            ? 'Pagamenti offline'
+                            : 'Inizializzazione pagamenti...',
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
@@ -382,6 +482,35 @@ class DashboardPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+
+          SizedBox(height: 16.h),
+
+          // 💳 Pulsante per testare pagamenti Stripe
+          SizedBox(
+            width: double.infinity,
+            child: BlocBuilder<StripeBloc, StripeState>(
+              builder: (context, state) {
+                return OutlinedButton.icon(
+                  onPressed: state is StripeReady
+                      ? () => context.go('/payment/donation')
+                      : null,
+                  icon: Icon(
+                    state is StripeReady
+                        ? Icons.payment
+                        : Icons.payment_outlined,
+                  ),
+                  label: Text(
+                    state is StripeReady
+                        ? 'Testa Pagamento Stripe'
+                        : 'Pagamenti non disponibili',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                );
+              },
+            ),
           ),
 
           SizedBox(height: 16.h),
