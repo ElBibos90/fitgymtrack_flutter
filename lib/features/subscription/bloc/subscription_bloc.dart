@@ -180,7 +180,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<DismissLimitNotificationEvent>(_onDismissLimitNotification);
   }
 
-  /// Carica l'abbonamento corrente con controllo scadenze opzionale
+  /// 🔧 FIX: Carica l'abbonamento corrente con gestione async corretta
   Future<void> _onLoadSubscription(
       LoadSubscriptionEvent event,
       Emitter<SubscriptionState> emit,
@@ -201,42 +201,61 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         );
       }
 
-      // Carica l'abbonamento
+      // 🔧 FIX: Carica l'abbonamento SENZA usare async dentro fold()
       final result = await _repository.getCurrentSubscription();
 
-      result.fold(
-        onSuccess: (subscription) async {
-          developer.log(
-            'Abbonamento caricato: ${subscription.planName} - €${subscription.price}',
-            name: 'SubscriptionBloc',
-          );
+      // 🔧 FIX: Gestisci il risultato FUORI dal fold per evitare async issues
+      if (result.isSuccess) {
+        final subscription = result.data!;
 
-          // Carica anche i piani disponibili in parallelo
-          final plansResult = await _repository.getAvailablePlans();
-          final plans = plansResult.fold(
-            onSuccess: (plans) => plans,
-            onFailure: (exception, message) => <SubscriptionPlan>[],
-          );
+        developer.log(
+          'Abbonamento caricato: ${subscription.planName} - €${subscription.price}',
+          name: 'SubscriptionBloc',
+        );
 
-          // Determina se mostrare notifica di scadenza
-          final showExpiredNotification = subscription.isExpired ||
-              (expiredCount != null && expiredCount! > 0);
+        // 🔧 FIX: Carica i piani disponibili SEPARATAMENTE
+        final plansResult = await _repository.getAvailablePlans();
+        final plans = plansResult.fold(
+          onSuccess: (plans) => plans,
+          onFailure: (exception, message) {
+            developer.log('Errore caricamento piani: $message', name: 'SubscriptionBloc');
+            return <SubscriptionPlan>[];
+          },
+        );
 
+        // Determina se mostrare notifica di scadenza
+        final showExpiredNotification = subscription.isExpired ||
+            (expiredCount != null && expiredCount! > 0);
+
+        // 🔧 FIX: Controlla se l'emitter è ancora valido prima di emettere
+        if (!emit.isDone) {
           emit(SubscriptionLoaded(
             subscription: subscription,
             availablePlans: plans,
             showExpiredNotification: showExpiredNotification,
             expiredCount: expiredCount,
           ));
-        },
-        onFailure: (exception, message) {
-          developer.log('Errore caricamento abbonamento: $message', name: 'SubscriptionBloc');
-          emit(SubscriptionError(message ?? 'Errore nel caricamento dell\'abbonamento'));
-        },
+        }
+      } else {
+        // Gestione errore
+        final errorMessage = result.message ?? 'Errore nel caricamento dell\'abbonamento';
+        developer.log('Errore caricamento abbonamento: $errorMessage', name: 'SubscriptionBloc');
+
+        if (!emit.isDone) {
+          emit(SubscriptionError(errorMessage));
+        }
+      }
+    } catch (e, stackTrace) {
+      developer.log(
+        'Eccezione caricamento abbonamento: $e',
+        name: 'SubscriptionBloc',
+        error: e,
+        stackTrace: stackTrace,
       );
-    } catch (e) {
-      developer.log('Eccezione caricamento abbonamento: $e', name: 'SubscriptionBloc');
-      emit(SubscriptionError('Errore imprevisto: $e'));
+
+      if (!emit.isDone) {
+        emit(SubscriptionError('Errore imprevisto: $e'));
+      }
     }
   }
 
@@ -249,24 +268,28 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     final currentState = state as SubscriptionLoaded;
 
-    final result = await _repository.checkExpiredSubscriptions();
+    try {
+      final result = await _repository.checkExpiredSubscriptions();
 
-    result.fold(
-      onSuccess: (response) {
-        if (response.updatedCount > 0) {
-          emit(currentState.copyWith(
-            showExpiredNotification: true,
-            expiredCount: response.updatedCount,
-          ));
+      result.fold(
+        onSuccess: (response) {
+          if (response.updatedCount > 0 && !emit.isDone) {
+            emit(currentState.copyWith(
+              showExpiredNotification: true,
+              expiredCount: response.updatedCount,
+            ));
 
-          // Ricarica l'abbonamento per aggiornare i dati
-          add(const LoadSubscriptionEvent(checkExpired: false));
-        }
-      },
-      onFailure: (exception, message) {
-        developer.log('Errore controllo scadenze: $message', name: 'SubscriptionBloc');
-      },
-    );
+            // Ricarica l'abbonamento per aggiornare i dati
+            add(const LoadSubscriptionEvent(checkExpired: false));
+          }
+        },
+        onFailure: (exception, message) {
+          developer.log('Errore controllo scadenze: $message', name: 'SubscriptionBloc');
+        },
+      );
+    } catch (e) {
+      developer.log('Eccezione controllo scadenze: $e', name: 'SubscriptionBloc');
+    }
   }
 
   /// Verifica i limiti per un tipo di risorsa
@@ -278,32 +301,38 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     final currentState = state as SubscriptionLoaded;
 
-    final result = await _repository.checkResourceLimits(event.resourceType);
+    try {
+      final result = await _repository.checkResourceLimits(event.resourceType);
 
-    result.fold(
-      onSuccess: (limits) {
-        ResourceLimits? workoutLimits = currentState.workoutLimits;
-        ResourceLimits? exerciseLimits = currentState.exerciseLimits;
+      result.fold(
+        onSuccess: (limits) {
+          if (!emit.isDone) {
+            ResourceLimits? workoutLimits = currentState.workoutLimits;
+            ResourceLimits? exerciseLimits = currentState.exerciseLimits;
 
-        if (event.resourceType == 'max_workouts') {
-          workoutLimits = limits;
-        } else if (event.resourceType == 'max_custom_exercises') {
-          exerciseLimits = limits;
-        }
+            if (event.resourceType == 'max_workouts') {
+              workoutLimits = limits;
+            } else if (event.resourceType == 'max_custom_exercises') {
+              exerciseLimits = limits;
+            }
 
-        emit(currentState.copyWith(
-          workoutLimits: workoutLimits,
-          exerciseLimits: exerciseLimits,
-          showLimitNotification: limits.limitReached,
-        ));
-      },
-      onFailure: (exception, message) {
-        developer.log('Errore verifica limiti: $message', name: 'SubscriptionBloc');
-      },
-    );
+            emit(currentState.copyWith(
+              workoutLimits: workoutLimits,
+              exerciseLimits: exerciseLimits,
+              showLimitNotification: limits.limitReached,
+            ));
+          }
+        },
+        onFailure: (exception, message) {
+          developer.log('Errore verifica limiti: $message', name: 'SubscriptionBloc');
+        },
+      );
+    } catch (e) {
+      developer.log('Eccezione verifica limiti: $e', name: 'SubscriptionBloc');
+    }
   }
 
-  /// Aggiorna il piano di abbonamento
+  /// 🔧 FIX: Aggiorna il piano di abbonamento con gestione async corretta
   Future<void> _onUpdatePlan(
       UpdatePlanEvent event,
       Emitter<SubscriptionState> emit,
@@ -311,45 +340,52 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     if (state is! SubscriptionLoaded) return;
 
     final currentState = state as SubscriptionLoaded;
-    emit(SubscriptionUpdating(currentState.subscription));
+
+    if (!emit.isDone) {
+      emit(SubscriptionUpdating(currentState.subscription));
+    }
 
     try {
       final result = await _repository.updatePlan(event.planId);
 
-      result.fold(
-        onSuccess: (response) async {
-          developer.log('Piano aggiornato: ${response.planName}', name: 'SubscriptionBloc');
+      if (result.isSuccess) {
+        final response = result.data!;
+        developer.log('Piano aggiornato: ${response.planName}', name: 'SubscriptionBloc');
 
-          // Ricarica l'abbonamento per ottenere i nuovi dati
-          final subscriptionResult = await _repository.getCurrentSubscription();
+        // Ricarica l'abbonamento per ottenere i nuovi dati
+        final subscriptionResult = await _repository.getCurrentSubscription();
 
-          subscriptionResult.fold(
-            onSuccess: (subscription) {
-              emit(SubscriptionUpdateSuccess(
-                subscription: subscription,
-                message: response.message,
-              ));
+        if (subscriptionResult.isSuccess && !emit.isDone) {
+          final subscription = subscriptionResult.data!;
 
-              // Torna allo stato caricato con i nuovi dati
-              emit(currentState.copyWith(subscription: subscription));
-            },
-            onFailure: (exception, message) {
-              emit(SubscriptionError(message ?? 'Errore dopo aggiornamento piano'));
-            },
-          );
-        },
-        onFailure: (exception, message) {
-          developer.log('Errore aggiornamento piano: $message', name: 'SubscriptionBloc');
-          emit(SubscriptionError(message ?? 'Errore nell\'aggiornamento del piano'));
+          emit(SubscriptionUpdateSuccess(
+            subscription: subscription,
+            message: response.message,
+          ));
 
+          // Torna allo stato caricato con i nuovi dati
+          emit(currentState.copyWith(subscription: subscription));
+        } else if (!emit.isDone) {
+          emit(SubscriptionError(
+              subscriptionResult.message ?? 'Errore dopo aggiornamento piano'
+          ));
+        }
+      } else {
+        final errorMessage = result.message ?? 'Errore nell\'aggiornamento del piano';
+        developer.log('Errore aggiornamento piano: $errorMessage', name: 'SubscriptionBloc');
+
+        if (!emit.isDone) {
+          emit(SubscriptionError(errorMessage));
           // Torna allo stato precedente
           emit(currentState);
-        },
-      );
+        }
+      }
     } catch (e) {
       developer.log('Eccezione aggiornamento piano: $e', name: 'SubscriptionBloc');
-      emit(SubscriptionError('Errore imprevisto: $e'));
-      emit(currentState);
+      if (!emit.isDone) {
+        emit(SubscriptionError('Errore imprevisto: $e'));
+        emit(currentState);
+      }
     }
   }
 
@@ -362,16 +398,22 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
     final currentState = state as SubscriptionLoaded;
 
-    final result = await _repository.getAvailablePlans();
+    try {
+      final result = await _repository.getAvailablePlans();
 
-    result.fold(
-      onSuccess: (plans) {
-        emit(currentState.copyWith(availablePlans: plans));
-      },
-      onFailure: (exception, message) {
-        developer.log('Errore caricamento piani: $message', name: 'SubscriptionBloc');
-      },
-    );
+      result.fold(
+        onSuccess: (plans) {
+          if (!emit.isDone) {
+            emit(currentState.copyWith(availablePlans: plans));
+          }
+        },
+        onFailure: (exception, message) {
+          developer.log('Errore caricamento piani: $message', name: 'SubscriptionBloc');
+        },
+      );
+    } catch (e) {
+      developer.log('Eccezione caricamento piani: $e', name: 'SubscriptionBloc');
+    }
   }
 
   /// Dismisses la notifica di scadenza
@@ -379,7 +421,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       DismissExpiredNotificationEvent event,
       Emitter<SubscriptionState> emit,
       ) {
-    if (state is SubscriptionLoaded) {
+    if (state is SubscriptionLoaded && !emit.isDone) {
       final currentState = state as SubscriptionLoaded;
       emit(currentState.copyWith(showExpiredNotification: false));
     }
@@ -390,7 +432,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       DismissLimitNotificationEvent event,
       Emitter<SubscriptionState> emit,
       ) {
-    if (state is SubscriptionLoaded) {
+    if (state is SubscriptionLoaded && !emit.isDone) {
       final currentState = state as SubscriptionLoaded;
       emit(currentState.copyWith(showLimitNotification: false));
     }
@@ -398,19 +440,35 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
   /// Helper per verificare se l'utente può creare una scheda
   Future<bool> canCreateWorkout() async {
-    final result = await _repository.canCreateWorkout();
-    return result.fold(
-      onSuccess: (canCreate) => canCreate,
-      onFailure: (exception, message) => true, // Default permissivo in caso di errore
-    );
+    try {
+      final result = await _repository.canCreateWorkout();
+      return result.fold(
+        onSuccess: (canCreate) => canCreate,
+        onFailure: (exception, message) {
+          developer.log('Errore verifica creazione scheda: $message', name: 'SubscriptionBloc');
+          return true; // Default permissivo in caso di errore
+        },
+      );
+    } catch (e) {
+      developer.log('Eccezione verifica creazione scheda: $e', name: 'SubscriptionBloc');
+      return true;
+    }
   }
 
   /// Helper per verificare se l'utente può creare un esercizio personalizzato
   Future<bool> canCreateCustomExercise() async {
-    final result = await _repository.canCreateCustomExercise();
-    return result.fold(
-      onSuccess: (canCreate) => canCreate,
-      onFailure: (exception, message) => true, // Default permissivo in caso di errore
-    );
+    try {
+      final result = await _repository.canCreateCustomExercise();
+      return result.fold(
+        onSuccess: (canCreate) => canCreate,
+        onFailure: (exception, message) {
+          developer.log('Errore verifica creazione esercizio: $message', name: 'SubscriptionBloc');
+          return true; // Default permissivo in caso di errore
+        },
+      );
+    } catch (e) {
+      developer.log('Eccezione verifica creazione esercizio: $e', name: 'SubscriptionBloc');
+      return true;
+    }
   }
 }

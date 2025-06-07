@@ -298,6 +298,9 @@ class SubscriptionPlanCard extends StatelessWidget {
   }
 
   Widget _buildPlanHeader(BuildContext context, bool isPremium) {
+    // 🔧 FIX: Rilevamento tema scuro
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -311,7 +314,7 @@ class SubscriptionPlanCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 if (isPremium) ...[
@@ -329,7 +332,7 @@ class SubscriptionPlanCard extends StatelessWidget {
               plan.formattedPrice,
               style: TextStyle(
                 fontSize: 16.sp,
-                color: AppColors.textSecondary,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),

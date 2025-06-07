@@ -31,7 +31,8 @@ import '../../features/subscription/di/subscription_dependency_injection.dart';
 final getIt = GetIt.instance;
 
 class DependencyInjection {
-  static Future<void> init({bool useMockRepository = false}) async {
+  // 🔧 FIX: Modalità mock abilitata di default per sviluppo
+  static Future<void> init({bool useMockRepository = true}) async {
     print('🚨 DEPENDENCY INJECTION STARTED ${useMockRepository ? '(MOCK MODE)' : '(REAL MODE)'}');
     print('🔧 [DI] Starting dependency injection initialization...');
 
@@ -138,10 +139,11 @@ class DependencyInjection {
 
     print('🔧 [DI] Registering subscription services...');
     try {
+      // 🔧 FIX: Passa lo stesso parametro useMockRepository
       SubscriptionDependencyInjection.registerSubscriptionServices(
         useMockRepository: useMockRepository,
       );
-      print('✅ [DI] Subscription services registered successfully!');
+      print('✅ [DI] Subscription services registered successfully in ${useMockRepository ? 'MOCK' : 'REAL'} mode!');
     } catch (e) {
       print('❌ [DI] ERROR registering subscription services: $e');
       rethrow;
@@ -153,6 +155,11 @@ class DependencyInjection {
   /// 🎯 NUOVO: Metodo per inizializzare in modalità mock per i test
   static Future<void> initMock() async {
     await init(useMockRepository: true);
+  }
+
+  /// 🎯 NUOVO: Metodo per inizializzare in modalità real (produzione)
+  static Future<void> initReal() async {
+    await init(useMockRepository: false);
   }
 
   /// Metodo per resettare e reinizializzare con mock
@@ -172,7 +179,7 @@ class DependencyInjection {
   static Future<void> resetAndInitReal() async {
     print('🔄 [DI] Resetting and switching to real mode...');
     reset();
-    await init(useMockRepository: false);
+    await initReal();
   }
 
   static void reset() {

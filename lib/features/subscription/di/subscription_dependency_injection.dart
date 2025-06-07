@@ -10,7 +10,8 @@ import '../../../core/utils/result.dart' as utils_result;
 
 /// Dependency injection per le subscription
 class SubscriptionDependencyInjection {
-  static void registerSubscriptionServices({bool useMockRepository = true}) { // Default MOCK per sviluppo
+  // 🔧 FIX: Default a true per sviluppo, ma rispetta il parametro passato
+  static void registerSubscriptionServices({bool useMockRepository = true}) {
     final getIt = GetIt.instance;
 
     print('🔧 [DI] Registering subscription services ${useMockRepository ? '(MOCK MODE)' : '(REAL MODE)'}...');
@@ -33,6 +34,15 @@ class SubscriptionDependencyInjection {
       });
     } else {
       print('🔧 [DI] Registering REAL SubscriptionRepository...');
+
+      // 🔧 FIX: Assicurati che le dipendenze esistano
+      if (!getIt.isRegistered<ApiClient>()) {
+        throw Exception('ApiClient not registered! Call DependencyInjection.init() first.');
+      }
+      if (!getIt.isRegistered<Dio>()) {
+        throw Exception('Dio not registered! Call DependencyInjection.init() first.');
+      }
+
       getIt.registerLazySingleton<SubscriptionRepository>(() {
         print('🏗️ [DI] Creating SubscriptionRepository instance...');
         return SubscriptionRepository(
@@ -50,7 +60,7 @@ class SubscriptionDependencyInjection {
       );
     });
 
-    print('✅ [DI] Subscription services registered successfully!');
+    print('✅ [DI] Subscription services registered successfully in ${useMockRepository ? 'MOCK' : 'REAL'} mode!');
   }
 }
 
@@ -82,13 +92,13 @@ class MockSubscriptionRepositoryAdapter implements SubscriptionRepository {
 
   @override
   Future<utils_result.Result<ResourceLimits>> checkResourceLimits(String resourceType) {
-    print('🎯 [MOCK ADAPTER] checkResourceLimits called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] checkResourceLimits called for $resourceType - delegating to mock repository');
     return _mockRepository.checkResourceLimits(resourceType);
   }
 
   @override
   Future<utils_result.Result<UpdatePlanResponse>> updatePlan(int planId) {
-    print('🎯 [MOCK ADAPTER] updatePlan called - delegating to mock repository');
+    print('🎯 [MOCK ADAPTER] updatePlan called for planId $planId - delegating to mock repository');
     return _mockRepository.updatePlan(planId);
   }
 

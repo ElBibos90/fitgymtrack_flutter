@@ -1,3 +1,4 @@
+// lib/shared/theme/app_theme.dart
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
@@ -95,6 +96,7 @@ class AppTheme {
         error: AppColors.error,
         onSurface: Colors.white,
         onBackground: Colors.white,
+        onPrimary: AppColors.backgroundDark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
       appBarTheme: const AppBarTheme(
@@ -161,15 +163,29 @@ class AppTheme {
         labelStyle: const TextStyle(color: Color(0xFFBBBBBB)),
         hintStyle: const TextStyle(color: Color(0xFF888888)),
       ),
+      // 🔧 FIX: Migliorato il textTheme per il dark mode
       textTheme: const TextTheme(
         bodyLarge: TextStyle(color: Colors.white),
         bodyMedium: TextStyle(color: Colors.white),
+        bodySmall: TextStyle(color: Color(0xFFBBBBBB)),
+        titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        titleMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+        headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headlineSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        displayMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        displaySmall: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        labelLarge: TextStyle(color: Color(0xFFBBBBBB)),
+        labelMedium: TextStyle(color: Color(0xFFBBBBBB)),
+        labelSmall: TextStyle(color: Color(0xFF888888)),
+      ),
+      // 🔧 FIX: Assicura che tutti i testi siano leggibili
+      primaryTextTheme: const TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white),
         titleLarge: TextStyle(color: Colors.white),
-        titleMedium: TextStyle(color: Colors.white),
-        titleSmall: TextStyle(color: Colors.white),
-        headlineLarge: TextStyle(color: Colors.white),
-        headlineMedium: TextStyle(color: Colors.white),
-        headlineSmall: TextStyle(color: Colors.white),
       ),
     );
   }

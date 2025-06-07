@@ -31,18 +31,18 @@ class SubscriptionRepository {
       if (data['success'] == true && data['data']?['subscription'] != null) {
         final subscriptionData = data['data']['subscription'];
 
-        // Conversione dei campi booleani da int a bool se necessario
+        // 🔧 FIX: Usa le funzioni helper per parsing robusto
         final subscription = Subscription(
           id: subscriptionData['id'],
           userId: subscriptionData['user_id'],
           planId: subscriptionData['plan_id'],
           planName: subscriptionData['plan_name'] ?? 'Free',
           status: subscriptionData['status'] ?? 'active',
-          price: (subscriptionData['price'] ?? 0.0).toDouble(),
+          price: _parseDouble(subscriptionData['price']), // 🔧 FIX: Parsing robusto
           maxWorkouts: subscriptionData['max_workouts'],
           maxCustomExercises: subscriptionData['max_custom_exercises'],
-          currentCount: subscriptionData['current_count'] ?? 0,
-          currentCustomExercises: subscriptionData['current_custom_exercises'] ?? 0,
+          currentCount: _parseInt(subscriptionData['current_count']), // 🔧 FIX: Parsing robusto
+          currentCustomExercises: _parseInt(subscriptionData['current_custom_exercises']), // 🔧 FIX: Parsing robusto
           advancedStats: _convertToBool(subscriptionData['advanced_stats']),
           cloudBackup: _convertToBool(subscriptionData['cloud_backup']),
           noAds: _convertToBool(subscriptionData['no_ads']),
@@ -77,7 +77,7 @@ class SubscriptionRepository {
 
       if (data['success'] == true) {
         final expiredCheck = ExpiredCheckResponse(
-          updatedCount: data['data']?['updated_count'] ?? 0,
+          updatedCount: _parseInt(data['data']?['updated_count']), // 🔧 FIX: Parsing robusto
         );
 
         developer.log(
@@ -107,10 +107,10 @@ class SubscriptionRepository {
         final limitData = data['data'];
 
         final resourceLimits = ResourceLimits(
-          limitReached: limitData['limit_reached'] ?? false,
-          currentCount: limitData['current_count'] ?? 0,
-          maxAllowed: limitData['max_allowed'],
-          remaining: limitData['remaining'] ?? 0,
+          limitReached: _convertToBool(limitData['limit_reached']), // 🔧 FIX: Parsing robusto
+          currentCount: _parseInt(limitData['current_count']), // 🔧 FIX: Parsing robusto
+          maxAllowed: limitData['max_allowed'] != null ? _parseInt(limitData['max_allowed']) : null,
+          remaining: _parseInt(limitData['remaining']), // 🔧 FIX: Parsing robusto
           subscriptionStatus: limitData['subscription_status'],
           daysRemaining: limitData['days_remaining'],
         );
@@ -143,7 +143,7 @@ class SubscriptionRepository {
         final updateData = data['data'];
 
         final updateResponse = UpdatePlanResponse(
-          success: updateData['success'] ?? true,
+          success: _convertToBool(updateData['success']), // 🔧 FIX: Parsing robusto
           message: updateData['message'] ?? 'Piano aggiornato con successo',
           planName: updateData['plan_name'] ?? 'Unknown',
         );
@@ -176,12 +176,12 @@ class SubscriptionRepository {
 
         final plans = plansData.map((planData) {
           return SubscriptionPlan(
-            id: planData['id'],
-            name: planData['name'],
-            price: (planData['price'] ?? 0.0).toDouble(),
+            id: _parseInt(planData['id']), // 🔧 FIX: Parsing robusto
+            name: planData['name'] ?? 'Unknown',
+            price: _parseDouble(planData['price']), // 🔧 FIX: Parsing robusto
             billingCycle: planData['billing_cycle'] ?? 'monthly',
-            maxWorkouts: planData['max_workouts'],
-            maxCustomExercises: planData['max_custom_exercises'],
+            maxWorkouts: planData['max_workouts'] != null ? _parseInt(planData['max_workouts']) : null,
+            maxCustomExercises: planData['max_custom_exercises'] != null ? _parseInt(planData['max_custom_exercises']) : null,
             advancedStats: _convertToBool(planData['advanced_stats']),
             cloudBackup: _convertToBool(planData['cloud_backup']),
             noAds: _convertToBool(planData['no_ads']),
@@ -214,11 +214,55 @@ class SubscriptionRepository {
     });
   }
 
+  // ============================================================================
+  // 🔧 HELPER FUNCTIONS FOR ROBUST PARSING (DUPLICATI PER SICUREZZA)
+  // ============================================================================
+
+  /// Converte qualsiasi tipo a double in modo robusto
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        developer.log('Errore parsing double: $value', name: 'SubscriptionRepository');
+        return 0.0;
+      }
+    }
+    return 0.0;
+  }
+
+  /// Converte qualsiasi tipo a int in modo robusto
+  int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        try {
+          return double.parse(value).toInt();
+        } catch (e2) {
+          developer.log('Errore parsing int: $value', name: 'SubscriptionRepository');
+          return 0;
+        }
+      }
+    }
+    return 0;
+  }
+
   /// Converte valori int/string a bool per compatibilità API
   bool _convertToBool(dynamic value) {
+    if (value == null) return false;
     if (value is bool) return value;
     if (value is int) return value == 1;
-    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    if (value is String) {
+      final str = value.toLowerCase();
+      return str == 'true' || str == '1' || str == 'yes';
+    }
     return false;
   }
 }

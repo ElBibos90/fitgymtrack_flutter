@@ -10,7 +10,9 @@ import '../../models/subscription_models.dart';
 import '../widgets/subscription_widgets.dart';
 
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+  final VoidCallback? onBack; // 🔧 FIX: Parametro onBack opzionale
+
+  const SubscriptionScreen({super.key, this.onBack});
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -26,13 +28,37 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔧 FIX: Determina se siamo in tema scuro
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      // 🔧 FIX: AppBar con pulsante back corretto
       appBar: AppBar(
-        title: const Text('Abbonamento'),
+        title: Text(
+          'Abbonamento',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+        // 🔧 FIX: Pulsante back che funziona sempre
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDarkMode ? Colors.white : AppColors.textPrimary,
+          ),
+          onPressed: widget.onBack ?? () {
+            // Fallback: se onBack non è fornito, usa la navigazione di default
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
+        ),
       ),
       body: BlocConsumer<SubscriptionBloc, SubscriptionState>(
         listener: _handleStateChanges,
@@ -43,7 +69,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.all(16.w),
-              child: _buildContent(context, state),
+              child: _buildContent(context, state, isDarkMode),
             ),
           );
         },
@@ -73,7 +99,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  Widget _buildContent(BuildContext context, SubscriptionState state) {
+  Widget _buildContent(BuildContext context, SubscriptionState state, bool isDarkMode) {
     if (state is SubscriptionLoading) {
       return SizedBox(
         height: MediaQuery.of(context).size.height * 0.8,
@@ -94,11 +120,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
 
     if (state is SubscriptionLoaded) {
-      return _buildLoadedContent(context, state);
+      return _buildLoadedContent(context, state, isDarkMode);
     }
 
     if (state is SubscriptionUpdating) {
-      return _buildUpdatingContent(context, state);
+      return _buildUpdatingContent(context, state, isDarkMode);
     }
 
     // Stato iniziale
@@ -108,7 +134,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildLoadedContent(BuildContext context, SubscriptionLoaded state) {
+  Widget _buildLoadedContent(BuildContext context, SubscriptionLoaded state, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -142,20 +168,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
         SizedBox(height: 32.h),
 
-        // Sezione piani disponibili
-        _buildAvailablePlansSection(context, state),
+        // 🔧 FIX: Sezione piani disponibili con colori corretti
+        _buildAvailablePlansSection(context, state, isDarkMode),
 
         SizedBox(height: 32.h),
 
         // Sezione di supporto
-        _buildSupportSection(context),
+        _buildSupportSection(context, isDarkMode),
 
         SizedBox(height: 32.h),
       ],
     );
   }
 
-  Widget _buildUpdatingContent(BuildContext context, SubscriptionUpdating state) {
+  Widget _buildUpdatingContent(BuildContext context, SubscriptionUpdating state, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -172,7 +198,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 'Aggiornamento del piano in corso...',
                 style: TextStyle(
                   fontSize: 16.sp,
-                  color: AppColors.textSecondary,
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -182,16 +208,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildAvailablePlansSection(BuildContext context, SubscriptionLoaded state) {
+  Widget _buildAvailablePlansSection(BuildContext context, SubscriptionLoaded state, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 🔧 FIX: Titolo con colore corretto per tema scuro
         Text(
           'Piani disponibili',
           style: TextStyle(
             fontSize: 24.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            color: isDarkMode ? Colors.white : AppColors.textPrimary,
           ),
         ),
         SizedBox(height: 4.h),
@@ -199,7 +226,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           'Scegli il piano più adatto alle tue esigenze',
           style: TextStyle(
             fontSize: 16.sp,
-            color: AppColors.textSecondary,
+            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
           ),
         ),
         SizedBox(height: 20.h),
@@ -223,12 +250,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildSupportSection(BuildContext context) {
+  Widget _buildSupportSection(BuildContext context, bool isDarkMode) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.r),
       ),
+      // 🔧 FIX: Colore card basato sul tema
+      color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16.r),
@@ -259,7 +288,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -269,7 +298,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 'Il tuo supporto ci aiuta a continuare a migliorare l\'app e ad aggiungere nuove funzionalità.',
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.textSecondary,
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                 ),
               ),
               SizedBox(height: 16.h),
@@ -304,15 +333,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
+        final isDarkMode = Theme.of(dialogContext).brightness == Brightness.dark;
+
         return AlertDialog(
-          title: const Text('Upgrade a Premium'),
-          content: const Text(
+          backgroundColor: isDarkMode ? AppColors.surfaceDark : Colors.white,
+          title: Text(
+            'Upgrade a Premium',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
+            ),
+          ),
+          content: Text(
             'Per ora, il sistema di pagamento è in modalità demo. Vuoi simulare l\'upgrade al piano Premium?',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Annulla'),
+              child: Text(
+                'Annulla',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -336,15 +381,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
+        final isDarkMode = Theme.of(dialogContext).brightness == Brightness.dark;
+
         return AlertDialog(
-          title: const Text('Conferma downgrade'),
-          content: const Text(
+          backgroundColor: isDarkMode ? AppColors.surfaceDark : Colors.white,
+          title: Text(
+            'Conferma downgrade',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
+            ),
+          ),
+          content: Text(
             'Sei sicuro di voler passare al piano Free? Perderai l\'accesso alle funzionalità Premium.',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Annulla'),
+              child: Text(
+                'Annulla',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -367,7 +428,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
+        final isDarkMode = Theme.of(dialogContext).brightness == Brightness.dark;
+
         return AlertDialog(
+          backgroundColor: isDarkMode ? AppColors.surfaceDark : Colors.white,
           title: Row(
             children: [
               Icon(
@@ -375,11 +439,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 color: AppColors.purple600,
               ),
               SizedBox(width: 8.w),
-              const Text('Grazie!'),
+              Text(
+                'Grazie!',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
             ],
           ),
-          content: const Text(
+          content: Text(
             'Il sistema di donazione è in sviluppo. Grazie per il tuo interesse nel supportarci!',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+            ),
           ),
           actions: [
             ElevatedButton(
