@@ -1,6 +1,6 @@
 // lib/features/subscription/repository/subscription_repository.dart
 import 'package:dio/dio.dart';
-import 'dart:developer' as developer;
+
 import '../../../core/utils/result.dart';
 import '../../../core/network/api_client.dart';
 import '../models/subscription_models.dart';
@@ -18,7 +18,7 @@ class SubscriptionRepository {
 
   /// Recupera l'abbonamento corrente dell'utente
   Future<Result<Subscription>> getCurrentSubscription() async {
-    developer.log('Recupero abbonamento corrente', name: 'SubscriptionRepository');
+    print('Recupero abbonamento corrente');
 
     return Result.tryCallAsync(() async {
       // Chiamata API diretta usando Dio per flessibilità
@@ -52,7 +52,7 @@ class SubscriptionRepository {
           computedStatus: subscriptionData['computed_status'],
         );
 
-        developer.log(
+        print(
           'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}',
           name: 'SubscriptionRepository',
         );
@@ -66,7 +66,7 @@ class SubscriptionRepository {
 
   /// Controlla le subscription scadute
   Future<Result<ExpiredCheckResponse>> checkExpiredSubscriptions() async {
-    developer.log('Controllo subscription scadute', name: 'SubscriptionRepository');
+    print('Controllo subscription scadute');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -80,7 +80,7 @@ class SubscriptionRepository {
           updatedCount: _parseInt(data['data']?['updated_count']), // 🔧 FIX: Parsing robusto
         );
 
-        developer.log(
+        print(
           'Controllo scadenze completato: ${expiredCheck.updatedCount} aggiornamenti',
           name: 'SubscriptionRepository',
         );
@@ -94,7 +94,7 @@ class SubscriptionRepository {
 
   /// Verifica i limiti di utilizzo per un tipo di risorsa
   Future<Result<ResourceLimits>> checkResourceLimits(String resourceType) async {
-    developer.log('Verifica limiti per: $resourceType', name: 'SubscriptionRepository');
+    print('Verifica limiti per: $resourceType');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_resource_limits_api.php', queryParameters: {
@@ -115,7 +115,7 @@ class SubscriptionRepository {
           daysRemaining: limitData['days_remaining'],
         );
 
-        developer.log(
+        print(
           'Limiti verificati: ${resourceLimits.currentCount}/${resourceLimits.maxAllowed}',
           name: 'SubscriptionRepository',
         );
@@ -129,7 +129,7 @@ class SubscriptionRepository {
 
   /// Aggiorna il piano di abbonamento
   Future<Result<UpdatePlanResponse>> updatePlan(int planId) async {
-    developer.log('Aggiornamento al piano ID: $planId', name: 'SubscriptionRepository');
+    print('Aggiornamento al piano ID: $planId');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.post(
@@ -148,7 +148,7 @@ class SubscriptionRepository {
           planName: updateData['plan_name'] ?? 'Unknown',
         );
 
-        developer.log(
+        print(
           'Piano aggiornato: ${updateResponse.planName}',
           name: 'SubscriptionRepository',
         );
@@ -162,7 +162,7 @@ class SubscriptionRepository {
 
   /// Ottiene i piani di abbonamento disponibili
   Future<Result<List<SubscriptionPlan>>> getAvailablePlans() async {
-    developer.log('Recupero piani disponibili', name: 'SubscriptionRepository');
+    print('Recupero piani disponibili');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -188,7 +188,7 @@ class SubscriptionRepository {
           );
         }).toList();
 
-        developer.log(
+        print(
           'Recuperati ${plans.length} piani disponibili',
           name: 'SubscriptionRepository',
         );
@@ -227,7 +227,7 @@ class SubscriptionRepository {
       try {
         return double.parse(value);
       } catch (e) {
-        developer.log('Errore parsing double: $value', name: 'SubscriptionRepository');
+        print('Errore parsing double: $value');
         return 0.0;
       }
     }
@@ -246,7 +246,7 @@ class SubscriptionRepository {
         try {
           return double.parse(value).toInt();
         } catch (e2) {
-          developer.log('Errore parsing int: $value', name: 'SubscriptionRepository');
+          print('Errore parsing int: $value');
           return 0;
         }
       }

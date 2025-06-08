@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'dart:developer' as developer;
+
 
 class ErrorInterceptor extends Interceptor {
   @override
@@ -55,11 +55,7 @@ class ErrorInterceptor extends Interceptor {
         errorMessage = 'Errore di rete sconosciuto';
     }
 
-    developer.log(
-      'API Error: $errorMessage',
-      name: 'DioError',
-      error: err,
-    );
+    print('API Error: $errorMessage');
 
     final customError = DioException(
       requestOptions: err.requestOptions,

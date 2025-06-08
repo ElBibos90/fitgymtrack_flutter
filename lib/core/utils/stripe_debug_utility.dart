@@ -1,6 +1,5 @@
 // lib/core/utils/stripe_debug_utility.dart
 import 'package:dio/dio.dart';
-import 'dart:developer' as developer;
 import '../services/session_service.dart';
 import '../config/environment.dart';
 
@@ -12,7 +11,7 @@ class StripeDebugUtility {
   static Future<StripeDebugReport> runFullDiagnostic({
     required Dio dio,
   }) async {
-    developer.log('🔍 [STRIPE DEBUG] Starting full diagnostic...', name: 'StripeDebugUtility');
+    print('🔍 [STRIPE DEBUG] Starting full diagnostic...');
 
     final report = StripeDebugReport();
 
@@ -40,12 +39,12 @@ class StripeDebugUtility {
         report.tokenPreview = '${token.substring(0, 20)}...';
       }
 
-      developer.log('🔍 [AUTH] User authenticated: ${report.userAuthenticated}', name: 'StripeDebugUtility');
-      developer.log('🔍 [AUTH] Token available: ${report.tokenAvailable}', name: 'StripeDebugUtility');
+      print('🔍 [AUTH] User authenticated: ${report.userAuthenticated}');
+      print('🔍 [AUTH] Token available: ${report.tokenAvailable}');
 
     } catch (e) {
       report.authError = e.toString();
-      developer.log('❌ [AUTH] Authentication check failed: $e', name: 'StripeDebugUtility');
+      print('❌ [AUTH] Authentication check failed: $e');
     }
 
     // ============================================================================
@@ -53,7 +52,7 @@ class StripeDebugUtility {
     // ============================================================================
 
     try {
-      developer.log('🔍 [CONNECTIVITY] Testing base API connectivity...', name: 'StripeDebugUtility');
+      print('🔍 [CONNECTIVITY] Testing base API connectivity...');
 
       final response = await dio.get('/auth.php', queryParameters: {
         'action': 'verify_token',
@@ -62,12 +61,12 @@ class StripeDebugUtility {
       report.baseApiWorking = response.statusCode == 200;
       report.baseApiResponse = response.data.toString();
 
-      developer.log('✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}', name: 'StripeDebugUtility');
+      print('✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}');
 
     } catch (e) {
       report.baseApiWorking = false;
       report.baseApiError = e.toString();
-      developer.log('❌ [CONNECTIVITY] Base API test failed: $e', name: 'StripeDebugUtility');
+      print('❌ [CONNECTIVITY] Base API test failed: $e');
     }
 
     // ============================================================================
@@ -118,7 +117,7 @@ class StripeDebugUtility {
 
     report.overallHealth = _calculateOverallHealth(report);
 
-    developer.log('🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}', name: 'StripeDebugUtility');
+    print('🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}');
 
     return report;
   }
@@ -128,7 +127,7 @@ class StripeDebugUtility {
       Dio dio,
       EndpointConfig config,
       ) async {
-    developer.log('🔍 [ENDPOINT] Testing: ${config.method} ${config.path}', name: 'StripeDebugUtility');
+    print('🔍 [ENDPOINT] Testing: ${config.method} ${config.path}');
 
     final result = EndpointTestResult(endpoint: config.path);
 
@@ -205,11 +204,10 @@ class StripeDebugUtility {
         result.error = 'Unexpected response format';
       }
 
-      developer.log(
+      print(
           result.isWorking
               ? '✅ [ENDPOINT] ${config.method} ${config.path} working'
-              : '⚠️ [ENDPOINT] ${config.method} ${config.path} reachable but not working: ${result.error}',
-          name: 'StripeDebugUtility'
+              : '⚠️ [ENDPOINT] ${config.method} ${config.path} reachable but not working: ${result.error}'
       );
 
     } catch (e) {
@@ -229,7 +227,7 @@ class StripeDebugUtility {
         }
       }
 
-      developer.log('❌ [ENDPOINT] ${config.method} ${config.path} failed: $e', name: 'StripeDebugUtility');
+      print('❌ [ENDPOINT] ${config.method} ${config.path} failed: $e');
     }
 
     return result;
@@ -237,7 +235,7 @@ class StripeDebugUtility {
 
   /// Test struttura del server
   static Future<void> _testServerStructure(Dio dio, StripeDebugReport report) async {
-    developer.log('🔍 [SERVER] Testing server structure...', name: 'StripeDebugUtility');
+    print('🔍 [SERVER] Testing server structure...');
 
     // Test se la directory /stripe/ esiste
     try {
@@ -274,8 +272,8 @@ class StripeDebugUtility {
       }
     }
 
-    developer.log('🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}', name: 'StripeDebugUtility');
-    developer.log('🔍 [SERVER] PHP files: ${report.phpFilesExist}', name: 'StripeDebugUtility');
+    print('🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}');
+    print('🔍 [SERVER] PHP files: ${report.phpFilesExist}');
   }
 
   /// Calcola la salute generale del sistema

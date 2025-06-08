@@ -1,6 +1,6 @@
 // lib/core/utils/stripe_super_debug.dart
 import 'package:dio/dio.dart';
-import 'dart:developer' as developer;
+
 import '../services/session_service.dart';
 import '../config/environment.dart';
 import '../config/stripe_config.dart';
@@ -15,7 +15,7 @@ class StripeSuperDebug {
     bool verbose = true,
   }) async {
     if (verbose) {
-      developer.log('🚀 [SUPER DEBUG] Starting comprehensive Stripe diagnostic...', name: 'StripeSuperDebug');
+      print('🚀 [SUPER DEBUG] Starting comprehensive Stripe diagnostic...');
     }
 
     final report = StripeSystemReport();
@@ -46,7 +46,7 @@ class StripeSuperDebug {
       await _phase4StripeEndpointsSmartCheck(dio, report, verbose);
     } else {
       if (verbose) {
-        developer.log('⚠️ [SUPER DEBUG] Skipping Stripe endpoints - authentication failed', name: 'StripeSuperDebug');
+        print('⚠️ [SUPER DEBUG] Skipping Stripe endpoints - authentication failed');
       }
     }
 
@@ -57,8 +57,8 @@ class StripeSuperDebug {
     await _phase5AnalysisAndRecommendations(report, verbose);
 
     if (verbose) {
-      developer.log('✅ [SUPER DEBUG] Comprehensive diagnostic completed!', name: 'StripeSuperDebug');
-      developer.log('📊 [SUPER DEBUG] Overall Score: ${report.overallScore}/100', name: 'StripeSuperDebug');
+      print('✅ [SUPER DEBUG] Comprehensive diagnostic completed!');
+      print('📊 [SUPER DEBUG] Overall Score: ${report.overallScore}/100');
     }
 
     return report;
@@ -67,7 +67,7 @@ class StripeSuperDebug {
   /// FASE 1: Controllo configurazione
   static Future<void> _phase1ConfigurationCheck(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('📋 [PHASE 1] Configuration check...', name: 'StripeSuperDebug');
+      print('📋 [PHASE 1] Configuration check...');
     }
 
     // Stripe Configuration
@@ -82,17 +82,17 @@ class StripeSuperDebug {
     report.baseUrlValid = Environment.baseUrl.isNotEmpty && Environment.baseUrl.startsWith('https://');
 
     if (verbose) {
-      developer.log('📋 [PHASE 1] Stripe key valid: ${report.stripeKeyValid}', name: 'StripeSuperDebug');
-      developer.log('📋 [PHASE 1] Test mode: ${report.isTestMode}', name: 'StripeSuperDebug');
-      developer.log('📋 [PHASE 1] Demo mode: ${report.isDemoMode}', name: 'StripeSuperDebug');
-      developer.log('📋 [PHASE 1] Base URL valid: ${report.baseUrlValid}', name: 'StripeSuperDebug');
+      print('📋 [PHASE 1] Stripe key valid: ${report.stripeKeyValid}');
+      print('📋 [PHASE 1] Test mode: ${report.isTestMode}');
+      print('📋 [PHASE 1] Demo mode: ${report.isDemoMode}');
+      print('📋 [PHASE 1] Base URL valid: ${report.baseUrlValid}');
     }
   }
 
   /// FASE 2: Test connettività
   static Future<void> _phase2ConnectivityCheck(Dio dio, StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('🌐 [PHASE 2] Connectivity check...', name: 'StripeSuperDebug');
+      print('🌐 [PHASE 2] Connectivity check...');
     }
 
     try {
@@ -105,7 +105,7 @@ class StripeSuperDebug {
       report.baseApiResponse = response.data.toString();
 
       if (verbose) {
-        developer.log('✅ [PHASE 2] Base API reachable: ${report.baseApiReachable}', name: 'StripeSuperDebug');
+        print('✅ [PHASE 2] Base API reachable: ${report.baseApiReachable}');
       }
 
       // Test 2: Stripe directory
@@ -148,8 +148,8 @@ class StripeSuperDebug {
       report.connectivityScore = _calculateConnectivityScore(report);
 
       if (verbose) {
-        developer.log('🌐 [PHASE 2] Stripe directory accessible: ${report.stripeDirectoryAccessible}', name: 'StripeSuperDebug');
-        developer.log('🌐 [PHASE 2] PHP files accessible: ${report.phpFilesAccessible}', name: 'StripeSuperDebug');
+        print('🌐 [PHASE 2] Stripe directory accessible: ${report.stripeDirectoryAccessible}');
+        print('🌐 [PHASE 2] PHP files accessible: ${report.phpFilesAccessible}');
       }
 
     } catch (e) {
@@ -158,7 +158,7 @@ class StripeSuperDebug {
       report.connectivityScore = 0;
 
       if (verbose) {
-        developer.log('❌ [PHASE 2] Connectivity error: $e', name: 'StripeSuperDebug');
+        print('❌ [PHASE 2] Connectivity error: $e');
       }
     }
   }
@@ -166,7 +166,7 @@ class StripeSuperDebug {
   /// FASE 3: Test autenticazione
   static Future<void> _phase3AuthenticationCheck(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('🔐 [PHASE 3] Authentication check...', name: 'StripeSuperDebug');
+      print('🔐 [PHASE 3] Authentication check...');
     }
 
     try {
@@ -186,9 +186,9 @@ class StripeSuperDebug {
       report.authenticationScore = report.authenticationWorking ? 100 : 0;
 
       if (verbose) {
-        developer.log('🔐 [PHASE 3] User authenticated: ${report.userAuthenticated}', name: 'StripeSuperDebug');
-        developer.log('🔐 [PHASE 3] Token available: ${report.tokenAvailable}', name: 'StripeSuperDebug');
-        developer.log('🔐 [PHASE 3] User ID: ${report.userId}', name: 'StripeSuperDebug');
+        print('🔐 [PHASE 3] User authenticated: ${report.userAuthenticated}');
+        print('🔐 [PHASE 3] Token available: ${report.tokenAvailable}');
+        print('🔐 [PHASE 3] User ID: ${report.userId}');
       }
 
     } catch (e) {
@@ -197,7 +197,7 @@ class StripeSuperDebug {
       report.authenticationScore = 0;
 
       if (verbose) {
-        developer.log('❌ [PHASE 3] Authentication error: $e', name: 'StripeSuperDebug');
+        print('❌ [PHASE 3] Authentication error: $e');
       }
     }
   }
@@ -205,7 +205,7 @@ class StripeSuperDebug {
   /// FASE 4: Test endpoint Stripe INTELLIGENTI
   static Future<void> _phase4StripeEndpointsSmartCheck(Dio dio, StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('🎯 [PHASE 4] Smart Stripe endpoints check...', name: 'StripeSuperDebug');
+      print('🎯 [PHASE 4] Smart Stripe endpoints check...');
     }
 
     // Store per Payment Intent ID creato per test successivi
@@ -281,7 +281,7 @@ class StripeSuperDebug {
     report.stripeEndpointsScore = (successfulEndpoints / 5 * 100).round();
 
     if (verbose) {
-      developer.log('🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/5', name: 'StripeSuperDebug');
+      print('🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/5');
     }
   }
 
@@ -321,7 +321,7 @@ class StripeSuperDebug {
             paymentIntentId = paymentIntentData['payment_intent_id'] as String?;
 
             if (verbose && paymentIntentId != null) {
-              developer.log('🎯 [SMART TEST] Extracted Payment Intent ID: ${paymentIntentId!.substring(0, 20)}...', name: 'StripeSuperDebug');
+              print('🎯 [SMART TEST] Extracted Payment Intent ID: ${paymentIntentId!.substring(0, 20)}...');
             }
           }
         } else {
@@ -351,7 +351,7 @@ class StripeSuperDebug {
     if (realPaymentIntentId == null) {
       // Nessun Payment Intent ID reale disponibile - testa solo connettività
       if (verbose) {
-        developer.log('🎯 [SMART TEST] No real Payment Intent ID - testing connectivity only', name: 'StripeSuperDebug');
+        print('🎯 [SMART TEST] No real Payment Intent ID - testing connectivity only');
       }
 
       try {
@@ -391,7 +391,7 @@ class StripeSuperDebug {
     } else {
       // Test con Payment Intent ID reale
       if (verbose) {
-        developer.log('🎯 [SMART TEST] Testing with real Payment Intent ID: ${realPaymentIntentId.substring(0, 20)}...', name: 'StripeSuperDebug');
+        print('🎯 [SMART TEST] Testing with real Payment Intent ID: ${realPaymentIntentId.substring(0, 20)}...');
       }
 
       try {
@@ -555,7 +555,7 @@ class StripeSuperDebug {
   /// FASE 5: Analisi e raccomandazioni
   static Future<void> _phase5AnalysisAndRecommendations(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('🔍 [PHASE 5] Analysis and recommendations...', name: 'StripeSuperDebug');
+      print('🔍 [PHASE 5] Analysis and recommendations...');
     }
 
     // Calcola score generale
@@ -579,8 +579,8 @@ class StripeSuperDebug {
     report.quickFixes = _generateQuickFixes(report);
 
     if (verbose) {
-      developer.log('🔍 [PHASE 5] System status: ${report.systemStatus}', name: 'StripeSuperDebug');
-      developer.log('🔍 [PHASE 5] Recommendations: ${report.recommendations.length}', name: 'StripeSuperDebug');
+      print('🔍 [PHASE 5] System status: ${report.systemStatus}');
+      print('🔍 [PHASE 5] Recommendations: ${report.recommendations.length}');
     }
   }
 
@@ -776,7 +776,7 @@ class StripeSuperDebug {
 
   /// Test rapido per problemi comuni
   static Future<StripeQuickTestResults> runQuickTest(Dio dio) async {
-    developer.log('⚡ [QUICK TEST] Running quick Stripe test...', name: 'StripeSuperDebug');
+    print('⚡ [QUICK TEST] Running quick Stripe test...');
 
     final results = StripeQuickTestResults();
 
@@ -826,8 +826,8 @@ class StripeSuperDebug {
     results.overallSuccess = passedTests >= 3; // 3 su 4 test devono passare
     results.score = (passedTests / 4 * 100).round();
 
-    developer.log('⚡ [QUICK TEST] Score: ${results.score}/100', name: 'StripeSuperDebug');
-    developer.log('⚡ [QUICK TEST] Overall success: ${results.overallSuccess}', name: 'StripeSuperDebug');
+    print('⚡ [QUICK TEST] Score: ${results.score}/100');
+    print('⚡ [QUICK TEST] Overall success: ${results.overallSuccess}');
 
     return results;
   }

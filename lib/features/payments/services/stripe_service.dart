@@ -1,7 +1,7 @@
 // lib/features/payments/services/stripe_service.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'dart:developer' as developer;
+
 import '../../../core/config/stripe_config.dart';
 import '../models/stripe_models.dart';
 import '../../../core/utils/result.dart';
@@ -17,7 +17,7 @@ class StripeService {
   /// Inizializza Stripe SDK con gestione errori super robusta
   static Future<Result<bool>> initialize() async {
     if (_isInitialized && _currentPublishableKey == StripeConfig.publishableKey) {
-      developer.log('✅ [STRIPE SERVICE] Already initialized with current key', name: 'StripeService');
+      print('✅ [STRIPE SERVICE] Already initialized with current key');
       return Result.success(true);
     }
 
@@ -25,7 +25,7 @@ class StripeService {
     _initAttempts++;
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE SERVICE] Initializing Stripe SDK (attempt $_initAttempts)...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Initializing Stripe SDK (attempt $_initAttempts)...');
 
       // ============================================================================
       // STEP 1: VALIDAZIONE CONFIGURAZIONE
@@ -40,7 +40,7 @@ class StripeService {
       }
 
       if (StripeConfig.isDemoMode) {
-        developer.log('⚠️ [STRIPE SERVICE] Demo mode detected - using placeholder configuration', name: 'StripeService');
+        print('⚠️ [STRIPE SERVICE] Demo mode detected - using placeholder configuration');
         // In demo mode, usiamo configurazione basilare
         return await _initializeDemoMode();
       }
@@ -50,7 +50,7 @@ class StripeService {
         // STEP 2: CONFIGURA STRIPE PUBLISHABLE KEY
         // ============================================================================
 
-        developer.log('🔧 [STRIPE SERVICE] Step 1: Setting publishable key...', name: 'StripeService');
+        print('🔧 [STRIPE SERVICE] Step 1: Setting publishable key...');
         Stripe.publishableKey = StripeConfig.publishableKey;
         _currentPublishableKey = StripeConfig.publishableKey;
 
@@ -58,44 +58,44 @@ class StripeService {
         // STEP 3: CONFIGURA MERCHANT IDENTIFIER
         // ============================================================================
 
-        developer.log('🔧 [STRIPE SERVICE] Step 2: Setting merchant identifier...', name: 'StripeService');
+        print('🔧 [STRIPE SERVICE] Step 2: Setting merchant identifier...');
         Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
 
         // ============================================================================
         // STEP 4: APPLICA SETTINGS CON RETRY SUPER INTELLIGENTE
         // ============================================================================
 
-        developer.log('🔧 [STRIPE SERVICE] Step 3: Applying Stripe settings...', name: 'StripeService');
+        print('🔧 [STRIPE SERVICE] Step 3: Applying Stripe settings...');
         await _applySettingsWithSuperRetry();
 
         _isInitialized = true;
         _lastError = null;
 
-        developer.log('✅ [STRIPE SERVICE] Stripe SDK initialized successfully!', name: 'StripeService');
-        developer.log('✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...', name: 'StripeService');
-        developer.log('✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}', name: 'StripeService');
-        developer.log('✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}', name: 'StripeService');
-        developer.log('✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}', name: 'StripeService');
+        print('✅ [STRIPE SERVICE] Stripe SDK initialized successfully!');
+        print('✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...');
+        print('✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}');
+        print('✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}');
+        print('✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}');
 
         return true;
 
       } catch (e) {
         _lastError = e.toString();
-        developer.log('❌ [STRIPE SERVICE] Initialization failed: $e', name: 'StripeService');
+        print('❌ [STRIPE SERVICE] Initialization failed: $e');
 
         // ============================================================================
         // RETRY INTELLIGENTE CON ANALISI ERRORE
         // ============================================================================
 
         if (_shouldRetryWithDelay(e.toString()) && _initAttempts < 5) {
-          developer.log('🔄 [STRIPE SERVICE] Scheduling intelligent retry in ${_initAttempts * 2} seconds...', name: 'StripeService');
+          print('🔄 [STRIPE SERVICE] Scheduling intelligent retry in ${_initAttempts * 2} seconds...');
           await Future.delayed(Duration(seconds: _initAttempts * 2));
           return await _retryInitialization();
         }
 
         // Se non può fare retry, prova modalità degraded
         if (_initAttempts >= 3) {
-          developer.log('⚠️ [STRIPE SERVICE] Multiple failures - attempting degraded mode...', name: 'StripeService');
+          print('⚠️ [STRIPE SERVICE] Multiple failures - attempting degraded mode...');
           return await _initializeDegradedMode();
         }
 
@@ -106,7 +106,7 @@ class StripeService {
 
   /// Inizializzazione in modalità demo
   static Future<bool> _initializeDemoMode() async {
-    developer.log('🎭 [STRIPE SERVICE] Initializing in DEMO mode...', name: 'StripeService');
+    print('🎭 [STRIPE SERVICE] Initializing in DEMO mode...');
 
     try {
       // Usa una chiave test standard di Stripe per demo
@@ -121,18 +121,18 @@ class StripeService {
       _isInitialized = true;
       _lastError = null;
 
-      developer.log('🎭 [STRIPE SERVICE] Demo mode initialized successfully', name: 'StripeService');
+      print('🎭 [STRIPE SERVICE] Demo mode initialized successfully');
       return true;
 
     } catch (e) {
-      developer.log('❌ [STRIPE SERVICE] Demo mode initialization failed: $e', name: 'StripeService');
+      print('❌ [STRIPE SERVICE] Demo mode initialization failed: $e');
       return false;
     }
   }
 
   /// Inizializzazione in modalità degraded (solo funzioni base)
   static Future<bool> _initializeDegradedMode() async {
-    developer.log('⚙️ [STRIPE SERVICE] Initializing in DEGRADED mode...', name: 'StripeService');
+    print('⚙️ [STRIPE SERVICE] Initializing in DEGRADED mode...');
 
     try {
       // Prova solo configurazione base senza applySettings
@@ -144,11 +144,11 @@ class StripeService {
       _isInitialized = true;
       _lastError = 'Initialized in degraded mode - limited functionality';
 
-      developer.log('⚙️ [STRIPE SERVICE] Degraded mode initialized', name: 'StripeService');
+      print('⚙️ [STRIPE SERVICE] Degraded mode initialized');
       return true;
 
     } catch (e) {
-      developer.log('❌ [STRIPE SERVICE] Degraded mode failed: $e', name: 'StripeService');
+      print('❌ [STRIPE SERVICE] Degraded mode failed: $e');
       return false;
     }
   }
@@ -162,13 +162,13 @@ class StripeService {
 
     while (attempts < maxAttempts) {
       attempts++;
-      developer.log('🔧 [STRIPE SERVICE] Applying settings - attempt $attempts/$maxAttempts...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Applying settings - attempt $attempts/$maxAttempts...');
 
       try {
         // Strategia 1-3: Retry normale con delay progressivo
         if (attempts <= 3) {
           await Stripe.instance.applySettings();
-          developer.log('✅ [STRIPE SERVICE] Settings applied successfully on attempt $attempts', name: 'StripeService');
+          print('✅ [STRIPE SERVICE] Settings applied successfully on attempt $attempts');
           return;
         }
 
@@ -177,7 +177,7 @@ class StripeService {
           attemptedStrategies.add('Extended timeout');
           await Future.delayed(const Duration(seconds: 3));
           await Stripe.instance.applySettings();
-          developer.log('✅ [STRIPE SERVICE] Settings applied with extended timeout', name: 'StripeService');
+          print('✅ [STRIPE SERVICE] Settings applied with extended timeout');
           return;
         }
 
@@ -187,7 +187,7 @@ class StripeService {
           Stripe.publishableKey = StripeConfig.publishableKey;
           await Future.delayed(const Duration(seconds: 2));
           await Stripe.instance.applySettings();
-          developer.log('✅ [STRIPE SERVICE] Settings applied after key reset', name: 'StripeService');
+          print('✅ [STRIPE SERVICE] Settings applied after key reset');
           return;
         }
 
@@ -197,7 +197,7 @@ class StripeService {
           Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
           await Future.delayed(const Duration(seconds: 1));
           await Stripe.instance.applySettings();
-          developer.log('✅ [STRIPE SERVICE] Settings applied after merchant ID reset', name: 'StripeService');
+          print('✅ [STRIPE SERVICE] Settings applied after merchant ID reset');
           return;
         }
 
@@ -208,12 +208,12 @@ class StripeService {
           Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
           await Future.delayed(const Duration(seconds: 5));
           await Stripe.instance.applySettings();
-          developer.log('✅ [STRIPE SERVICE] Settings applied after full reset', name: 'StripeService');
+          print('✅ [STRIPE SERVICE] Settings applied after full reset');
           return;
         }
 
       } catch (e) {
-        developer.log('⚠️ [STRIPE SERVICE] Settings apply attempt $attempts failed: $e', name: 'StripeService');
+        print('⚠️ [STRIPE SERVICE] Settings apply attempt $attempts failed: $e');
 
         if (attempts >= maxAttempts) {
           final strategiesText = attemptedStrategies.isNotEmpty
@@ -256,7 +256,7 @@ class StripeService {
       return result.isSuccess;
 
     } catch (e) {
-      developer.log('❌ [STRIPE SERVICE] Retry initialization failed: $e', name: 'StripeService');
+      print('❌ [STRIPE SERVICE] Retry initialization failed: $e');
       return false;
     }
   }
@@ -307,8 +307,8 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE SERVICE] Presenting Payment Sheet...', name: 'StripeService');
-      developer.log('🔧 [STRIPE SERVICE] Client secret: ${clientSecret.substring(0, 20)}...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Presenting Payment Sheet...');
+      print('🔧 [STRIPE SERVICE] Client secret: ${clientSecret.substring(0, 20)}...');
 
       try {
         // ============================================================================
@@ -323,7 +323,7 @@ class StripeService {
         // STEP 2: INIZIALIZZA PAYMENT SHEET
         // ============================================================================
 
-        developer.log('🔧 [STRIPE SERVICE] Initializing Payment Sheet...', name: 'StripeService');
+        print('🔧 [STRIPE SERVICE] Initializing Payment Sheet...');
 
         await Stripe.instance.initPaymentSheet(
           paymentSheetParameters: SetupPaymentSheetParameters(
@@ -348,22 +348,22 @@ class StripeService {
           ),
         );
 
-        developer.log('✅ [STRIPE SERVICE] Payment Sheet initialized successfully', name: 'StripeService');
+        print('✅ [STRIPE SERVICE] Payment Sheet initialized successfully');
 
         // ============================================================================
         // STEP 3: PRESENTA PAYMENT SHEET
         // ============================================================================
 
-        developer.log('🔧 [STRIPE SERVICE] Presenting Payment Sheet to user...', name: 'StripeService');
+        print('🔧 [STRIPE SERVICE] Presenting Payment Sheet to user...');
 
         final result = await Stripe.instance.presentPaymentSheet();
 
-        developer.log('✅ [STRIPE SERVICE] Payment Sheet completed successfully', name: 'StripeService');
+        print('✅ [STRIPE SERVICE] Payment Sheet completed successfully');
 
         return result;
 
       } catch (e) {
-        developer.log('❌ [STRIPE SERVICE] Payment Sheet error: $e', name: 'StripeService');
+        print('❌ [STRIPE SERVICE] Payment Sheet error: $e');
 
         // ============================================================================
         // GESTIONE INTELLIGENTE ERRORI STRIPE
@@ -377,11 +377,11 @@ class StripeService {
         // Gestione errori di configurazione comuni
         if (e.toString().contains('not properly initialized')) {
           // Tenta re-inizializzazione automatica
-          developer.log('🔄 [STRIPE SERVICE] Attempting auto re-initialization...', name: 'StripeService');
+          print('🔄 [STRIPE SERVICE] Attempting auto re-initialization...');
 
           final reinitResult = await forceReinitialize();
           if (reinitResult.isSuccess) {
-            developer.log('✅ [STRIPE SERVICE] Re-initialization successful, retrying payment...', name: 'StripeService');
+            print('✅ [STRIPE SERVICE] Re-initialization successful, retrying payment...');
             // Retry una volta dopo re-inizializzazione
             final retryResult = await presentPaymentSheet(
               clientSecret: clientSecret,
@@ -416,7 +416,7 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE SERVICE] Confirming payment...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Confirming payment...');
 
       final result = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
@@ -424,7 +424,7 @@ class StripeService {
         options: options,
       );
 
-      developer.log('✅ [STRIPE SERVICE] Payment confirmed: ${result.status}', name: 'StripeService');
+      print('✅ [STRIPE SERVICE] Payment confirmed: ${result.status}');
 
       return result;
     });
@@ -442,13 +442,13 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE SERVICE] Creating payment method...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Creating payment method...');
 
       final result = await Stripe.instance.createPaymentMethod(
         params: params,
       );
 
-      developer.log('✅ [STRIPE SERVICE] Payment method created: ${result.id}', name: 'StripeService');
+      print('✅ [STRIPE SERVICE] Payment method created: ${result.id}');
 
       return result;
     });
@@ -474,7 +474,7 @@ class StripeService {
         ),
       );
 
-      developer.log('🔧 [STRIPE SERVICE] Google Pay supported: $isSupported', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Google Pay supported: $isSupported');
 
       return isSupported;
     });
@@ -491,7 +491,7 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      developer.log('🔧 [STRIPE SERVICE] Presenting Google Pay...', name: 'StripeService');
+      print('🔧 [STRIPE SERVICE] Presenting Google Pay...');
 
       await Stripe.instance.initGooglePay(
         GooglePayInitParams(
@@ -510,7 +510,7 @@ class StripeService {
         );
       }
 
-      developer.log('✅ [STRIPE SERVICE] Google Pay presented successfully', name: 'StripeService');
+      print('✅ [STRIPE SERVICE] Google Pay presented successfully');
     });
   }
 
@@ -555,7 +555,7 @@ class StripeService {
 
   /// Gestisce gli errori Stripe con messaggi user-friendly migliorati
   static Map<String, dynamic> handleStripeException(StripeException exception) {
-    developer.log('❌ [STRIPE SERVICE] Stripe exception: ${exception.error}', name: 'StripeService');
+    print('❌ [STRIPE SERVICE] Stripe exception: ${exception.error}');
 
     final error = exception.error;
     String userMessage = 'Si è verificato un errore durante il pagamento.';
@@ -646,7 +646,7 @@ class StripeService {
 
   /// Force re-initialization con reset completo e recovery
   static Future<Result<bool>> forceReinitialize() async {
-    developer.log('🔄 [STRIPE SERVICE] Forcing complete re-initialization...', name: 'StripeService');
+    print('🔄 [STRIPE SERVICE] Forcing complete re-initialization...');
 
     _isInitialized = false;
     _lastError = null;
@@ -709,7 +709,7 @@ class StripeService {
         final result = await initialize();
         if (result.isFailure) {
           // Tenta recovery automatico
-          developer.log('🔄 [STRIPE SERVICE] Quick test failed, attempting recovery...', name: 'StripeService');
+          print('🔄 [STRIPE SERVICE] Quick test failed, attempting recovery...');
           final recoveryResult = await forceReinitialize();
           return recoveryResult.isSuccess;
         }
@@ -720,14 +720,14 @@ class StripeService {
       return true;
 
     } catch (e) {
-      developer.log('❌ [STRIPE SERVICE] Quick health test failed: $e', name: 'StripeService');
+      print('❌ [STRIPE SERVICE] Quick health test failed: $e');
 
       // Ultimo tentativo di recovery
       try {
         final lastChanceResult = await _initializeDegradedMode();
         return lastChanceResult;
       } catch (recoveryError) {
-        developer.log('❌ [STRIPE SERVICE] Recovery also failed: $recoveryError', name: 'StripeService');
+        print('❌ [STRIPE SERVICE] Recovery also failed: $recoveryError');
         return false;
       }
     }
@@ -735,7 +735,7 @@ class StripeService {
 
   /// Cleanup risorse
   static void dispose() {
-    developer.log('🔧 [STRIPE SERVICE] Disposing Stripe service...', name: 'StripeService');
+    print('🔧 [STRIPE SERVICE] Disposing Stripe service...');
     _isInitialized = false;
     _lastError = null;
     _lastInitAttempt = null;
