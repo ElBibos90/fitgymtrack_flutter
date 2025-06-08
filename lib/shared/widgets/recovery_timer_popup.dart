@@ -131,17 +131,17 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   // 🔊 Audio methods
   Future<void> _playCountdownBeep() async {
     try {
-      debugPrint("🔊 [RECOVERY AUDIO] Playing countdown beep");
+      print("🔊 [RECOVERY AUDIO] Playing countdown beep");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      debugPrint("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
+      print("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
     }
   }
 
   Future<void> _playCompletionSound() async {
     try {
       if (!_hasPlayedCompletionSound) {
-        debugPrint("🔊 [RECOVERY AUDIO] Playing completion sound");
+        print("🔊 [RECOVERY AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
         // 🔧 FIX: Aspetta che l'audio finisca davvero
@@ -150,10 +150,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         // Piccolo delay extra per sicurezza
         await Future.delayed(const Duration(milliseconds: 900));
 
-        debugPrint("🔊 [RECOVERY AUDIO] Completion sound finished");
+        print("🔊 [RECOVERY AUDIO] Completion sound finished");
       }
     } catch (e) {
-      debugPrint("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
+      print("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
     }
   }
 
@@ -171,7 +171,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         _dismissPopup();
       }
     } catch (e) {
-      debugPrint("🔊 [RECOVERY AUDIO] Error in completion sequence: $e");
+      print("🔊 [RECOVERY AUDIO] Error in completion sequence: $e");
       // Fallback: chiama comunque il callback
       widget.onTimerComplete();
       if (mounted && !_isDismissed) {

@@ -40,7 +40,7 @@ class StripeRepository {
 
   /// Crea o ottiene un cliente Stripe per l'utente corrente
   Future<Result<StripeCustomer>> getOrCreateCustomer() async {
-    print('🔧 [STRIPE REPO] Getting or creating Stripe customer...');
+    print('[CONSOLE]🔧 [STRIPE REPO] Getting or creating Stripe customer...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -58,7 +58,7 @@ class StripeRepository {
         'name': user.username ?? 'User ${user.id}',
       };
 
-      print('🔧 [STRIPE REPO] Customer data: $customerData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Customer data: $customerData');
 
       // 🔧 FIX: POST corretto con gestione errori
       final response = await _makeAuthenticatedRequest(
@@ -70,7 +70,7 @@ class StripeRepository {
       if (response['success'] == true && response['customer'] != null) {
         final customer = StripeCustomer.fromJson(response['customer']);
 
-        print('✅ [STRIPE REPO] Customer obtained: ${customer.id}');
+        print('[CONSOLE]✅ [STRIPE REPO] Customer obtained: ${customer.id}');
 
         return customer;
       } else {
@@ -119,7 +119,7 @@ class StripeRepository {
         },
       };
 
-      print('🔧 [STRIPE REPO] Payment data: $paymentData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Payment data: $paymentData');
 
       // 🔧 FIX: Richiesta con retry automatico
       final response = await _makeAuthenticatedRequest(
@@ -129,7 +129,7 @@ class StripeRepository {
         retryOnFailure: true,
       );
 
-      print('🔧 [STRIPE REPO] Full response: $response');
+      print('[CONSOLE]🔧 [STRIPE REPO] Full response: $response');
 
       // 🔧 FIX: Parsing corretto della risposta - SUPPORTA ENTRAMBI I FORMATI
       if (response['success'] == true) {
@@ -138,12 +138,12 @@ class StripeRepository {
         // Controlla nuovo formato: data.payment_intent
         if (response['data'] != null && response['data']['payment_intent'] != null) {
           paymentIntentData = response['data']['payment_intent'];
-          print('🔧 [STRIPE REPO] Using new format: data.payment_intent');
+          print('[CONSOLE]🔧 [STRIPE REPO] Using new format: data.payment_intent');
         }
         // Controlla vecchio formato: payment_intent diretto
         else if (response['payment_intent'] != null) {
           paymentIntentData = response['payment_intent'];
-          print('🔧 [STRIPE REPO] Using old format: payment_intent');
+          print('[CONSOLE]🔧 [STRIPE REPO] Using old format: payment_intent');
         }
 
         if (paymentIntentData != null) {
@@ -156,18 +156,18 @@ class StripeRepository {
 
             return paymentIntent;
           } catch (e) {
-            print('❌ [STRIPE REPO] JSON parsing error: $e');
-            print('❌ [STRIPE REPO] Payment intent data: $paymentIntentData');
+            print('[CONSOLE]❌ [STRIPE REPO] JSON parsing error: $e');
+            print('[CONSOLE]❌ [STRIPE REPO] Payment intent data: $paymentIntentData');
             throw Exception('Error parsing payment intent response: $e');
           }
         } else {
-          print('❌ [STRIPE REPO] Payment intent data not found in response');
-          print('❌ [STRIPE REPO] Response structure: ${response.keys.toList()}');
+          print('[CONSOLE]❌ [STRIPE REPO] Payment intent data not found in response');
+          print('[CONSOLE]❌ [STRIPE REPO] Response structure: ${response.keys.toList()}');
           throw Exception('Payment intent data not found in response. Available keys: ${response.keys.toList()}');
         }
       } else {
         final errorMessage = response['message'] ?? 'Errore nella creazione del payment intent per subscription';
-        print('❌ [STRIPE REPO] Server returned success=false: $errorMessage');
+        print('[CONSOLE]❌ [STRIPE REPO] Server returned success=false: $errorMessage');
         throw Exception(errorMessage);
       }
     });
@@ -212,7 +212,7 @@ class StripeRepository {
         },
       };
 
-      print('🔧 [STRIPE REPO] Donation data: $donationData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Donation data: $donationData');
 
       // 🔧 FIX: Richiesta con retry automatico
       final response = await _makeAuthenticatedRequest(
@@ -258,7 +258,7 @@ class StripeRepository {
         'confirmed_at': DateTime.now().toIso8601String(),
       };
 
-      print('🔧 [STRIPE REPO] Confirm data: $confirmData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Confirm data: $confirmData');
 
       // 🔧 FIX: Richiesta con retry automatico e timeout esteso
       final response = await _makeAuthenticatedRequest(
@@ -287,7 +287,7 @@ class StripeRepository {
 
   /// Ottiene la subscription corrente dell'utente
   Future<Result<StripeSubscription?>> getCurrentSubscription() async {
-    print('🔧 [STRIPE REPO] Getting current subscription...');
+    print('[CONSOLE]🔧 [STRIPE REPO] Getting current subscription...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -353,7 +353,7 @@ class StripeRepository {
         'cancelled_at': DateTime.now().toIso8601String(),
       };
 
-      print('🔧 [STRIPE REPO] Cancel data: $cancelData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Cancel data: $cancelData');
 
       // 🔧 FIX: DELETE method per cancellazione
       final response = await _makeAuthenticatedRequest(
@@ -396,7 +396,7 @@ class StripeRepository {
         'reactivated_at': DateTime.now().toIso8601String(),
       };
 
-      print('🔧 [STRIPE REPO] Reactivate data: $reactivateData');
+      print('[CONSOLE]🔧 [STRIPE REPO] Reactivate data: $reactivateData');
 
       // 🔧 FIX: PUT method per riattivazione
       final response = await _makeAuthenticatedRequest(
@@ -426,7 +426,7 @@ class StripeRepository {
 
   /// Ottiene i metodi di pagamento salvati per l'utente
   Future<Result<List<StripePaymentMethod>>> getPaymentMethods() async {
-    print('🔧 [STRIPE REPO] Getting payment methods...');
+    print('[CONSOLE]🔧 [STRIPE REPO] Getting payment methods...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -506,7 +506,7 @@ class StripeRepository {
 
   /// Sincronizza lo stato della subscription locale con Stripe
   Future<Result<bool>> syncSubscriptionStatus() async {
-    print('🔧 [STRIPE REPO] Syncing subscription status...');
+    print('[CONSOLE]🔧 [STRIPE REPO] Syncing subscription status...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -569,7 +569,7 @@ class StripeRepository {
     bool retryOnFailure = false,
     int timeoutSeconds = 15,
   }) async {
-    print('🔧 [REQUEST] $method $endpoint');
+    print('[CONSOLE]🔧 [REQUEST] $method $endpoint');
 
     try {
       Response response;
@@ -634,14 +634,14 @@ class StripeRepository {
           throw Exception('Server returned invalid JSON format');
         }
 
-        print('✅ [REQUEST] $method $endpoint - Success');
+        print('[CONSOLE]✅ [REQUEST] $method $endpoint - Success');
         return responseData;
       } else {
         throw Exception('HTTP ${response.statusCode}: ${response.statusMessage}');
       }
 
     } on DioException catch (e) {
-      print('❌ [REQUEST] $method $endpoint - DioException: ${e.message}');
+      print('[CONSOLE]❌ [REQUEST] $method $endpoint - DioException: ${e.message}');
 
       // 🔧 FIX: Gestione specifici errori Dio
       String errorMessage = 'Errore di rete';
@@ -693,7 +693,7 @@ class StripeRepository {
 
       // 🔧 FIX: Retry automatico per errori temporanei
       if (retryOnFailure && _shouldRetry(e)) {
-        print('🔄 [REQUEST] Retrying $method $endpoint...');
+        print('[CONSOLE]🔄 [REQUEST] Retrying $method $endpoint...');
         await Future.delayed(const Duration(seconds: 2));
 
         return await _makeAuthenticatedRequest(
@@ -709,7 +709,7 @@ class StripeRepository {
       throw Exception(errorMessage);
 
     } catch (e) {
-      print('❌ [REQUEST] $method $endpoint - Exception: $e');
+      print('[CONSOLE]❌ [REQUEST] $method $endpoint - Exception: $e');
       throw Exception('Errore imprevisto: $e');
     }
   }
@@ -729,7 +729,7 @@ class StripeRepository {
 
   /// Test di connettività con backend Stripe
   Future<Result<bool>> testConnection() async {
-    print('🔧 [STRIPE REPO] Testing backend connection...');
+    print('[CONSOLE]🔧 [STRIPE REPO] Testing backend connection...');
 
     return Result.tryCallAsync(() async {
       try {
@@ -757,7 +757,7 @@ class StripeRepository {
 
         return isSuccess;
       } catch (e) {
-        print('❌ [STRIPE REPO] Backend connection failed: $e');
+        print('[CONSOLE]❌ [STRIPE REPO] Backend connection failed: $e');
         return false;
       }
     });
@@ -794,30 +794,30 @@ class StripeRepository {
   /// Stampa informazioni di debug dettagliate
   void printDebugInfo() {
     final info = getDebugInfo();
-    print('');
-    print('🔍 STRIPE REPOSITORY DEBUG INFO');
-    print('================================');
-    print('Base URL: ${info['base_url']}');
-    print('');
-    print('Endpoints:');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔍 STRIPE REPOSITORY DEBUG INFO');
+    print('[CONSOLE]================================');
+    print('[CONSOLE]Base URL: ${info['base_url']}');
+    print('[CONSOLE]');
+    print('[CONSOLE]Endpoints:');
     (info['endpoints'] as Map).forEach((key, value) {
-      print('  $key: $value');
+      print('[CONSOLE]  $key: $value');
     });
-    print('');
-    print('Full URLs:');
+    print('[CONSOLE]');
+    print('[CONSOLE]Full URLs:');
     (info['full_urls'] as Map).forEach((key, value) {
-      print('  $key: $value');
+      print('[CONSOLE]  $key: $value');
     });
-    print('');
-    print('Headers: ${info['headers']}');
-    print('Timeouts: ${info['timeout']}');
-    print('================================');
-    print('');
+    print('[CONSOLE]');
+    print('[CONSOLE]Headers: ${info['headers']}');
+    print('[CONSOLE]Timeouts: ${info['timeout']}');
+    print('[CONSOLE]================================');
+    print('[CONSOLE]');
   }
 
   /// Test rapido di tutti gli endpoint principali
   Future<Map<String, bool>> quickEndpointTest() async {
-    print('🧪 [STRIPE REPO] Running quick endpoint test...');
+    print('[CONSOLE]🧪 [STRIPE REPO] Running quick endpoint test...');
 
     final results = <String, bool>{};
 
@@ -881,7 +881,7 @@ class StripeRepository {
       results['donation_payment'] = false;
     }
 
-    print('🧪 [STRIPE REPO] Quick test results: $results');
+    print('[CONSOLE]🧪 [STRIPE REPO] Quick test results: $results');
     return results;
   }
 }

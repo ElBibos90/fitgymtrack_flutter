@@ -193,8 +193,8 @@ class WorkoutExercise {
       return _$WorkoutExerciseFromJson(json);
     } catch (e) {
       // 🔧 DEBUG: Log dell'errore di parsing
-      print('❌ ERROR parsing WorkoutExercise: $e');
-      print('❌ JSON data: $json');
+      print('[CONSOLE]❌ ERROR parsing WorkoutExercise: $e');
+      print('[CONSOLE]❌ JSON data: $json');
 
       // Fallback con parsing manuale sicuro
       return WorkoutExercise(

@@ -54,14 +54,14 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint("🎯 [REAL BLOC] initState called");
+    print("🎯 [REAL BLOC] initState called");
     _workoutKey = 'bloc_real_workout_${widget.schedaId}';
     _initializeRealWorkout();
   }
 
   @override
   void dispose() {
-    debugPrint("🎯 [REAL BLOC] dispose called");
+    print("🎯 [REAL BLOC] dispose called");
     _saveWorkoutState();
     _workoutTimer?.cancel();
     super.dispose();
@@ -92,14 +92,14 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
         _blocStatus = "Real BLoC Ready - Starting Workout...";
       });
 
-      debugPrint("🎯 [REAL BLOC] Real mode prepared successfully for user $_userId");
+      print("🎯 [REAL BLOC] Real mode prepared successfully for user $_userId");
 
       // Usa il BLoC dal context (già fornito dal Provider)
       context.read<ActiveWorkoutBloc>().startWorkout(_userId!, widget.schedaId);
       _logEvent("StartRealWorkout");
 
     } catch (e) {
-      debugPrint("🎯 [REAL BLOC] Error initializing real workflow: $e");
+      print("🎯 [REAL BLOC] Error initializing real workflow: $e");
       setState(() {
         _blocStatus = "Real Initialization Error: $e";
       });
@@ -109,7 +109,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
   Future<void> _restoreWorkoutState() async {
     try {
       final stateJson = _prefs?.getString(_workoutKey);
-      debugPrint("🎯 [REAL BLOC] Restoring state: ${stateJson ?? 'null'}");
+      print("🎯 [REAL BLOC] Restoring state: ${stateJson ?? 'null'}");
 
       if (stateJson != null) {
         final state = jsonDecode(stateJson) as Map<String, dynamic>;
@@ -120,12 +120,12 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
           _elapsedTime = DateTime.now().difference(_startTime!);
         }
 
-        debugPrint("🎯 [REAL BLOC] State restored with elapsed time: ${_elapsedTime.inSeconds}s");
+        print("🎯 [REAL BLOC] State restored with elapsed time: ${_elapsedTime.inSeconds}s");
       } else {
         _startTime = DateTime.now();
       }
     } catch (e) {
-      debugPrint("🎯 [REAL BLOC] Error restoring state: $e");
+      print("🎯 [REAL BLOC] Error restoring state: $e");
       _startTime = DateTime.now();
     }
   }
@@ -142,18 +142,18 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
       };
 
       await _prefs!.setString(_workoutKey, jsonEncode(state));
-      debugPrint("🎯 [REAL BLOC] State saved with $_eventCount events");
+      print("🎯 [REAL BLOC] State saved with $_eventCount events");
     } catch (e) {
-      debugPrint("🎯 [REAL BLOC] Error saving state: $e");
+      print("🎯 [REAL BLOC] Error saving state: $e");
     }
   }
 
   Future<void> _clearWorkoutState() async {
     try {
       await _prefs?.remove(_workoutKey);
-      debugPrint("🎯 [REAL BLOC] State cleared");
+      print("🎯 [REAL BLOC] State cleared");
     } catch (e) {
-      debugPrint("🎯 [REAL BLOC] Error clearing state: $e");
+      print("🎯 [REAL BLOC] Error clearing state: $e");
     }
   }
 
@@ -186,7 +186,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
   void _logEvent(String eventName) {
     _eventCount++;
     _lastEvent = eventName;
-    debugPrint("🎯 [REAL BLOC] Event #$_eventCount: $eventName");
+    print("🎯 [REAL BLOC] Event #$_eventCount: $eventName");
     setState(() {
       _blocStatus = "Real Event: $eventName (#$_eventCount)";
     });
@@ -194,7 +194,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
 
   void _logState(String stateName) {
     _lastState = stateName;
-    debugPrint("🎯 [REAL BLOC] State: $stateName");
+    print("🎯 [REAL BLOC] State: $stateName");
   }
 
   String _formatDuration(Duration duration) {
@@ -232,7 +232,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
       WorkoutExercise exercise,
       int completedCount
       ) {
-    debugPrint("🎯 [REAL BLOC] handleCompleteSeries called via Real BLoC");
+    print("🎯 [REAL BLOC] handleCompleteSeries called via Real BLoC");
 
     // Crea SeriesData per il BLoC
     final seriesData = SeriesData(
@@ -330,10 +330,10 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
           _logState(state.runtimeType.toString());
 
           if (state is WorkoutSessionStarted) {
-            debugPrint("🎯 [REAL BLOC] Real workout session started - ID: ${state.response.allenamentoId}");
+            print("🎯 [REAL BLOC] Real workout session started - ID: ${state.response.allenamentoId}");
             _startWorkoutTimer();
           } else if (state is WorkoutSessionActive) {
-            debugPrint("🎯 [REAL BLOC] Real active session with ${state.exercises.length} exercises");
+            print("🎯 [REAL BLOC] Real active session with ${state.exercises.length} exercises");
             if (_workoutTimer == null) {
               _startWorkoutTimer();
             }

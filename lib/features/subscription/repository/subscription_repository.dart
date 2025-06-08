@@ -18,7 +18,7 @@ class SubscriptionRepository {
 
   /// Recupera l'abbonamento corrente dell'utente
   Future<Result<Subscription>> getCurrentSubscription() async {
-    print('Recupero abbonamento corrente');
+    print('[CONSOLE]Recupero abbonamento corrente');
 
     return Result.tryCallAsync(() async {
       // Chiamata API diretta usando Dio per flessibilità
@@ -53,8 +53,7 @@ class SubscriptionRepository {
         );
 
         print(
-          'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}',
-          name: 'SubscriptionRepository',
+          'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}'
         );
 
         return subscription;
@@ -66,7 +65,7 @@ class SubscriptionRepository {
 
   /// Controlla le subscription scadute
   Future<Result<ExpiredCheckResponse>> checkExpiredSubscriptions() async {
-    print('Controllo subscription scadute');
+    print('[CONSOLE]Controllo subscription scadute');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -81,8 +80,7 @@ class SubscriptionRepository {
         );
 
         print(
-          'Controllo scadenze completato: ${expiredCheck.updatedCount} aggiornamenti',
-          name: 'SubscriptionRepository',
+          'Controllo scadenze completato: ${expiredCheck.updatedCount} aggiornamenti'
         );
 
         return expiredCheck;
@@ -94,7 +92,7 @@ class SubscriptionRepository {
 
   /// Verifica i limiti di utilizzo per un tipo di risorsa
   Future<Result<ResourceLimits>> checkResourceLimits(String resourceType) async {
-    print('Verifica limiti per: $resourceType');
+    print('[CONSOLE]Verifica limiti per: $resourceType');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_resource_limits_api.php', queryParameters: {
@@ -116,8 +114,7 @@ class SubscriptionRepository {
         );
 
         print(
-          'Limiti verificati: ${resourceLimits.currentCount}/${resourceLimits.maxAllowed}',
-          name: 'SubscriptionRepository',
+          'Limiti verificati: ${resourceLimits.currentCount}/${resourceLimits.maxAllowed}'
         );
 
         return resourceLimits;
@@ -129,7 +126,7 @@ class SubscriptionRepository {
 
   /// Aggiorna il piano di abbonamento
   Future<Result<UpdatePlanResponse>> updatePlan(int planId) async {
-    print('Aggiornamento al piano ID: $planId');
+    print('[CONSOLE]Aggiornamento al piano ID: $planId');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.post(
@@ -149,8 +146,7 @@ class SubscriptionRepository {
         );
 
         print(
-          'Piano aggiornato: ${updateResponse.planName}',
-          name: 'SubscriptionRepository',
+          'Piano aggiornato: ${updateResponse.planName}'
         );
 
         return updateResponse;
@@ -162,7 +158,7 @@ class SubscriptionRepository {
 
   /// Ottiene i piani di abbonamento disponibili
   Future<Result<List<SubscriptionPlan>>> getAvailablePlans() async {
-    print('Recupero piani disponibili');
+    print('[CONSOLE]Recupero piani disponibili');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -189,8 +185,7 @@ class SubscriptionRepository {
         }).toList();
 
         print(
-          'Recuperati ${plans.length} piani disponibili',
-          name: 'SubscriptionRepository',
+          'Recuperati ${plans.length} piani disponibili'
         );
 
         return plans;
@@ -227,7 +222,7 @@ class SubscriptionRepository {
       try {
         return double.parse(value);
       } catch (e) {
-        print('Errore parsing double: $value');
+        print('[CONSOLE]Errore parsing double: $value');
         return 0.0;
       }
     }
@@ -246,7 +241,7 @@ class SubscriptionRepository {
         try {
           return double.parse(value).toInt();
         } catch (e2) {
-          print('Errore parsing int: $value');
+          print('[CONSOLE]Errore parsing int: $value');
           return 0;
         }
       }

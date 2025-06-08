@@ -11,7 +11,7 @@ class StripeDebugUtility {
   static Future<StripeDebugReport> runFullDiagnostic({
     required Dio dio,
   }) async {
-    print('🔍 [STRIPE DEBUG] Starting full diagnostic...');
+    print('[CONSOLE]🔍 [STRIPE DEBUG] Starting full diagnostic...');
 
     final report = StripeDebugReport();
 
@@ -39,12 +39,12 @@ class StripeDebugUtility {
         report.tokenPreview = '${token.substring(0, 20)}...';
       }
 
-      print('🔍 [AUTH] User authenticated: ${report.userAuthenticated}');
-      print('🔍 [AUTH] Token available: ${report.tokenAvailable}');
+      print('[CONSOLE]🔍 [AUTH] User authenticated: ${report.userAuthenticated}');
+      print('[CONSOLE]🔍 [AUTH] Token available: ${report.tokenAvailable}');
 
     } catch (e) {
       report.authError = e.toString();
-      print('❌ [AUTH] Authentication check failed: $e');
+      print('[CONSOLE]❌ [AUTH] Authentication check failed: $e');
     }
 
     // ============================================================================
@@ -52,7 +52,7 @@ class StripeDebugUtility {
     // ============================================================================
 
     try {
-      print('🔍 [CONNECTIVITY] Testing base API connectivity...');
+      print('[CONSOLE]🔍 [CONNECTIVITY] Testing base API connectivity...');
 
       final response = await dio.get('/auth.php', queryParameters: {
         'action': 'verify_token',
@@ -61,12 +61,12 @@ class StripeDebugUtility {
       report.baseApiWorking = response.statusCode == 200;
       report.baseApiResponse = response.data.toString();
 
-      print('✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}');
+      print('[CONSOLE]✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}');
 
     } catch (e) {
       report.baseApiWorking = false;
       report.baseApiError = e.toString();
-      print('❌ [CONNECTIVITY] Base API test failed: $e');
+      print('[CONSOLE]❌ [CONNECTIVITY] Base API test failed: $e');
     }
 
     // ============================================================================
@@ -117,7 +117,7 @@ class StripeDebugUtility {
 
     report.overallHealth = _calculateOverallHealth(report);
 
-    print('🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}');
+    print('[CONSOLE]🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}');
 
     return report;
   }
@@ -127,7 +127,7 @@ class StripeDebugUtility {
       Dio dio,
       EndpointConfig config,
       ) async {
-    print('🔍 [ENDPOINT] Testing: ${config.method} ${config.path}');
+    print('[CONSOLE]🔍 [ENDPOINT] Testing: ${config.method} ${config.path}');
 
     final result = EndpointTestResult(endpoint: config.path);
 
@@ -227,7 +227,7 @@ class StripeDebugUtility {
         }
       }
 
-      print('❌ [ENDPOINT] ${config.method} ${config.path} failed: $e');
+      print('[CONSOLE]❌ [ENDPOINT] ${config.method} ${config.path} failed: $e');
     }
 
     return result;
@@ -235,7 +235,7 @@ class StripeDebugUtility {
 
   /// Test struttura del server
   static Future<void> _testServerStructure(Dio dio, StripeDebugReport report) async {
-    print('🔍 [SERVER] Testing server structure...');
+    print('[CONSOLE]🔍 [SERVER] Testing server structure...');
 
     // Test se la directory /stripe/ esiste
     try {
@@ -272,8 +272,8 @@ class StripeDebugUtility {
       }
     }
 
-    print('🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}');
-    print('🔍 [SERVER] PHP files: ${report.phpFilesExist}');
+    print('[CONSOLE]🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}');
+    print('[CONSOLE]🔍 [SERVER] PHP files: ${report.phpFilesExist}');
   }
 
   /// Calcola la salute generale del sistema
@@ -321,79 +321,79 @@ class StripeDebugUtility {
 
   /// Stampa un report dettagliato
   static void printDetailedReport(StripeDebugReport report) {
-    print('');
-    print('🔍 STRIPE DIAGNOSTIC REPORT');
-    print('============================');
-    print('Overall Health: ${report.overallHealth}');
-    print('');
-    print('🔗 CONNECTIVITY:');
-    print('  Base URL: ${report.baseUrl}');
-    print('  Base API Working: ${report.baseApiWorking}');
-    print('  Stripe Directory Exists: ${report.stripeDirectoryExists}');
-    print('');
-    print('🔐 AUTHENTICATION:');
-    print('  User Authenticated: ${report.userAuthenticated}');
-    print('  Token Available: ${report.tokenAvailable}');
-    print('  User ID: ${report.userId}');
-    print('  Token Preview: ${report.tokenPreview}');
-    print('');
-    print('📁 SERVER STRUCTURE:');
-    print('  PHP Files:');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔍 STRIPE DIAGNOSTIC REPORT');
+    print('[CONSOLE]============================');
+    print('[CONSOLE]Overall Health: ${report.overallHealth}');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔗 CONNECTIVITY:');
+    print('[CONSOLE]  Base URL: ${report.baseUrl}');
+    print('[CONSOLE]  Base API Working: ${report.baseApiWorking}');
+    print('[CONSOLE]  Stripe Directory Exists: ${report.stripeDirectoryExists}');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔐 AUTHENTICATION:');
+    print('[CONSOLE]  User Authenticated: ${report.userAuthenticated}');
+    print('[CONSOLE]  Token Available: ${report.tokenAvailable}');
+    print('[CONSOLE]  User ID: ${report.userId}');
+    print('[CONSOLE]  Token Preview: ${report.tokenPreview}');
+    print('[CONSOLE]');
+    print('[CONSOLE]📁 SERVER STRUCTURE:');
+    print('[CONSOLE]  PHP Files:');
     report.phpFilesExist.forEach((file, exists) {
-      print('    $file: $exists');
+      print('[CONSOLE]    $file: $exists');
     });
-    print('');
-    print('🎯 ENDPOINT TESTS:');
+    print('[CONSOLE]');
+    print('[CONSOLE]🎯 ENDPOINT TESTS:');
     report.endpointTests.forEach((endpoint, result) {
       final status = result.isWorking ? '✅' : result.isReachable ? '⚠️' : '❌';
-      print('  $status ${result.httpMethod} $endpoint');
-      print('    Status: ${result.statusCode}');
-      print('    Working: ${result.isWorking}');
-      print('    Reachable: ${result.isReachable}');
-      print('    Error: ${result.error ?? 'None'}');
-      print('');
+      print('[CONSOLE]  $status ${result.httpMethod} $endpoint');
+      print('[CONSOLE]    Status: ${result.statusCode}');
+      print('[CONSOLE]    Working: ${result.isWorking}');
+      print('[CONSOLE]    Reachable: ${result.isReachable}');
+      print('[CONSOLE]    Error: ${result.error ?? 'None'}');
+      print('[CONSOLE]');
     });
 
     if (report.overallHealth != 'HEALTHY' && report.overallHealth != 'MOSTLY_HEALTHY') {
-      print('🔧 SUGGESTED FIXES:');
+      print('[CONSOLE]🔧 SUGGESTED FIXES:');
       _printSuggestedFixes(report);
     } else {
-      print('🎉 SYSTEM STATUS: All major components are working!');
+      print('[CONSOLE]🎉 SYSTEM STATUS: All major components are working!');
       if (report.overallHealth == 'MOSTLY_HEALTHY') {
-        print('   Minor issues detected but system is functional.');
+        print('[CONSOLE]   Minor issues detected but system is functional.');
       }
     }
 
-    print('============================');
-    print('');
+    print('[CONSOLE]============================');
+    print('[CONSOLE]');
   }
 
   static void _printSuggestedFixes(StripeDebugReport report) {
     if (!report.baseApiWorking) {
-      print('  - Check base API configuration and server status');
+      print('[CONSOLE]  - Check base API configuration and server status');
     }
     if (!report.userAuthenticated || !report.tokenAvailable) {
-      print('  - Login again to refresh authentication token');
+      print('[CONSOLE]  - Login again to refresh authentication token');
     }
     if (!report.stripeDirectoryExists) {
-      print('  - Verify /stripe/ directory exists on server');
-      print('  - Check file upload to https://fitgymtrack.com/api/stripe/');
+      print('[CONSOLE]  - Verify /stripe/ directory exists on server');
+      print('[CONSOLE]  - Check file upload to https://fitgymtrack.com/api/stripe/');
     }
 
     final notWorkingEndpoints = report.endpointTests.values.where((test) => !test.isWorking);
     if (notWorkingEndpoints.isNotEmpty) {
-      print('  - Some endpoints not responding correctly:');
+      print('[CONSOLE]  - Some endpoints not responding correctly:');
       for (final endpoint in notWorkingEndpoints) {
         if (endpoint.statusCode == 405) {
-          print('    ${endpoint.endpoint}: Check HTTP method compatibility');
+          print('[CONSOLE]    ${endpoint.endpoint}: Check HTTP method compatibility');
         } else if (endpoint.statusCode == 500) {
-          print('    ${endpoint.endpoint}: Check PHP error logs');
+          print('[CONSOLE]    ${endpoint.endpoint}: Check PHP error logs');
         } else {
-          print('    ${endpoint.endpoint}: ${endpoint.error}');
+          print('[CONSOLE]    ${endpoint.endpoint}: ${endpoint.error}');
         }
       }
-      print('  - Verify backend Stripe configuration and keys');
-      print('  - Check PHP error logs on server');
+      print('[CONSOLE]  - Verify backend Stripe configuration and keys');
+      print('[CONSOLE]  - Check PHP error logs on server');
     }
   }
 }

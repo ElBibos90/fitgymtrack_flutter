@@ -98,70 +98,70 @@ class StripeConfigurationChecker {
 
   /// Stampa il risultato della verifica
   static void printCheckResult(StripeConfigCheckResult result) {
-    print('');
-    print('🔍 STRIPE CONFIGURATION CHECK RESULTS');
-    print('=====================================');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔍 STRIPE CONFIGURATION CHECK RESULTS');
+    print('[CONSOLE]=====================================');
 
     if (result.isValid) {
-      print('✅ CONFIGURAZIONE VALIDA');
+      print('[CONSOLE]✅ CONFIGURAZIONE VALIDA');
     } else {
-      print('❌ CONFIGURAZIONE NON VALIDA');
+      print('[CONSOLE]❌ CONFIGURAZIONE NON VALIDA');
     }
 
-    print('');
+    print('[CONSOLE]');
 
     // Errori
     if (result.errors.isNotEmpty) {
-      print('🚨 ERRORI DA RISOLVERE:');
+      print('[CONSOLE]🚨 ERRORI DA RISOLVERE:');
       for (final error in result.errors) {
-        print('   $error');
+        print('[CONSOLE]   $error');
       }
-      print('');
+      print('[CONSOLE]');
     }
 
     // Warning
     if (result.warnings.isNotEmpty) {
-      print('⚠️  AVVERTIMENTI:');
+      print('[CONSOLE]⚠️  AVVERTIMENTI:');
       for (final warning in result.warnings) {
-        print('   $warning');
+        print('[CONSOLE]   $warning');
       }
-      print('');
+      print('[CONSOLE]');
     }
 
     // Info
     if (result.info.isNotEmpty) {
-      print('ℹ️  INFORMAZIONI:');
+      print('[CONSOLE]ℹ️  INFORMAZIONI:');
       for (final infoItem in result.info) {
-        print('   $infoItem');
+        print('[CONSOLE]   $infoItem');
       }
-      print('');
+      print('[CONSOLE]');
     }
 
-    print('=====================================');
-    print('');
+    print('[CONSOLE]=====================================');
+    print('[CONSOLE]');
   }
 
   /// Test rapido di Stripe
   static Future<bool> quickStripeTest() async {
     try {
-      print('🧪 Eseguendo test rapido Stripe...');
+      print('[CONSOLE]🧪 Eseguendo test rapido Stripe...');
 
       // Verifica che le chiavi siano impostate
       if (StripeConfig.publishableKey.isEmpty) {
-        print('❌ Test fallito: Publishable key mancante');
+        print('[CONSOLE]❌ Test fallito: Publishable key mancante');
         return false;
       }
 
       if (!StripeConfig.publishableKey.startsWith('pk_')) {
-        print('❌ Test fallito: Publishable key formato non valido');
+        print('[CONSOLE]❌ Test fallito: Publishable key formato non valido');
         return false;
       }
 
-      print('✅ Test rapido Stripe completato');
+      print('[CONSOLE]✅ Test rapido Stripe completato');
       return true;
 
     } catch (e) {
-      print('❌ Test rapido Stripe fallito: $e');
+      print('[CONSOLE]❌ Test rapido Stripe fallito: $e');
       return false;
     }
   }
@@ -197,9 +197,9 @@ extension StripeDebugHelper on StripeConfigCheckResult {
   /// Mostra solo gli errori critici
   void showOnlyErrors() {
     if (errors.isNotEmpty) {
-      print('🚨 ERRORI STRIPE CRITICI:');
+      print('[CONSOLE]🚨 ERRORI STRIPE CRITICI:');
       for (final error in errors) {
-        print('   $error');
+        print('[CONSOLE]   $error');
       }
     }
   }

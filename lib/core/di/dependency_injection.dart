@@ -25,14 +25,14 @@ class DependencyInjection {
   /// Inizializzazione dei servizi di dependency injection
   /// Ora usa SOLO repository reali - niente più mock
   static Future<void> init() async {
-    print('🚨 DEPENDENCY INJECTION STARTED (REAL REPOSITORIES ONLY + STRIPE)');
-    print('🔧 [DI] Starting dependency injection initialization...');
+    print('[CONSOLE]🚨 DEPENDENCY INJECTION STARTED (REAL REPOSITORIES ONLY + STRIPE)');
+    print('[CONSOLE]🔧 [DI] Starting dependency injection initialization...');
 
     // ============================================================================
     // CORE SERVICES
     // ============================================================================
 
-    print('🔧 [DI] Registering core services...');
+    print('[CONSOLE]🔧 [DI] Registering core services...');
     getIt.registerLazySingleton<SessionService>(() => SessionService());
 
     getIt.registerLazySingleton(() => DioClient.getInstance(
@@ -45,7 +45,7 @@ class DependencyInjection {
     // REPOSITORIES (SOLO REALI)
     // ============================================================================
 
-    print('🔧 [DI] Registering repositories...');
+    print('[CONSOLE]🔧 [DI] Registering repositories...');
 
     // Auth Repository
     getIt.registerLazySingleton<AuthRepository>(() => AuthRepository(
@@ -54,7 +54,7 @@ class DependencyInjection {
     ));
 
     // 🔧 FIX: Workout Repository - SOLO REAL
-    print('🔧 [DI] Registering REAL WorkoutRepository...');
+    print('[CONSOLE]🔧 [DI] Registering REAL WorkoutRepository...');
     getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
       apiClient: getIt<ApiClient>(),
       dio: getIt<Dio>(),
@@ -64,24 +64,24 @@ class DependencyInjection {
     // WORKOUT BLOCS (SINGLETONS)
     // ============================================================================
 
-    print('🔧 [DI] Registering workout BLoCs as singletons...');
+    print('[CONSOLE]🔧 [DI] Registering workout BLoCs as singletons...');
 
     getIt.registerLazySingleton<WorkoutBloc>(() {
-      print('🏗️ [DI] Creating WorkoutBloc instance...');
+      print('[CONSOLE]🏗️ [DI] Creating WorkoutBloc instance...');
       return WorkoutBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
     });
 
     getIt.registerLazySingleton<ActiveWorkoutBloc>(() {
-      print('🏗️ [DI] Creating ActiveWorkoutBloc instance...');
+      print('[CONSOLE]🏗️ [DI] Creating ActiveWorkoutBloc instance...');
       return ActiveWorkoutBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
     });
 
     getIt.registerLazySingleton<WorkoutHistoryBloc>(() {
-      print('🏗️ [DI] Creating WorkoutHistoryBloc instance...');
+      print('[CONSOLE]🏗️ [DI] Creating WorkoutHistoryBloc instance...');
       return WorkoutHistoryBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
@@ -91,7 +91,7 @@ class DependencyInjection {
     // AUTH BLOCS (FACTORIES)
     // ============================================================================
 
-    print('🔧 [DI] Registering auth BLoCs as factories...');
+    print('[CONSOLE]🔧 [DI] Registering auth BLoCs as factories...');
 
     getIt.registerFactory<AuthBloc>(() => AuthBloc(
       authRepository: getIt<AuthRepository>(),
@@ -109,20 +109,20 @@ class DependencyInjection {
     // 🎯 PLATEAU SERVICES (STEP 7)
     // ============================================================================
 
-    print('🔧 [DI] Registering plateau services...');
+    print('[CONSOLE]🔧 [DI] Registering plateau services...');
     PlateauDependencyInjection.registerPlateauServices();
 
     // ============================================================================
     // 💳 SUBSCRIPTION SERVICES
     // ============================================================================
 
-    print('🔧 [DI] Registering subscription services...');
+    print('[CONSOLE]🔧 [DI] Registering subscription services...');
     try {
       // 🔧 FIX: Subscription services con repository reali
       SubscriptionDependencyInjection.registerSubscriptionServices();
-      print('✅ [DI] Subscription services registered successfully!');
+      print('[CONSOLE]✅ [DI] Subscription services registered successfully!');
     } catch (e) {
-      print('❌ [DI] ERROR registering subscription services: $e');
+      print('[CONSOLE]❌ [DI] ERROR registering subscription services: $e');
       rethrow;
     }
 
@@ -130,16 +130,16 @@ class DependencyInjection {
     // 💳 STRIPE PAYMENT SERVICES
     // ============================================================================
 
-    print('🔧 [DI] Registering Stripe payment services...');
+    print('[CONSOLE]🔧 [DI] Registering Stripe payment services...');
     try {
       StripeDependencyInjection.registerStripeServices();
-      print('✅ [DI] Stripe services registered successfully!');
+      print('[CONSOLE]✅ [DI] Stripe services registered successfully!');
     } catch (e) {
-      print('❌ [DI] ERROR registering Stripe services: $e');
+      print('[CONSOLE]❌ [DI] ERROR registering Stripe services: $e');
       rethrow;
     }
 
-    print('✅ [DI] Dependency injection completed successfully!');
+    print('[CONSOLE]✅ [DI] Dependency injection completed successfully!');
 
     // ============================================================================
     // DIAGNOSTIC INFO
@@ -150,18 +150,18 @@ class DependencyInjection {
 
   /// Stampa informazioni diagnostiche sui servizi registrati
   static void _printDiagnosticInfo() {
-    print('');
-    print('🔍 [DI] DIAGNOSTIC INFO:');
-    print('🔍 [DI] ════════════════════════════════════════');
-    print('🔍 [DI] Core services registered: ${_countCoreServices()}');
-    print('🔍 [DI] Repository services: ${_countRepositories()}');
-    print('🔍 [DI] BLoC services: ${_countBlocs()}');
-    print('🔍 [DI] Plateau services: ${PlateauDependencyInjection.arePlateauServicesRegistered()}');
-    print('🔍 [DI] Subscription services: ${SubscriptionDependencyInjection.areSubscriptionServicesRegistered()}');
-    print('🔍 [DI] Stripe services: ${StripeDependencyInjection.areStripeServicesRegistered()}');
-    print('🔍 [DI] Total services registered: ${_getTotalServicesCount()}');
-    print('🔍 [DI] ════════════════════════════════════════');
-    print('');
+    print('[CONSOLE]');
+    print('[CONSOLE]🔍 [DI] DIAGNOSTIC INFO:');
+    print('[CONSOLE]🔍 [DI] ════════════════════════════════════════');
+    print('[CONSOLE]🔍 [DI] Core services registered: ${_countCoreServices()}');
+    print('[CONSOLE]🔍 [DI] Repository services: ${_countRepositories()}');
+    print('[CONSOLE]🔍 [DI] BLoC services: ${_countBlocs()}');
+    print('[CONSOLE]🔍 [DI] Plateau services: ${PlateauDependencyInjection.arePlateauServicesRegistered()}');
+    print('[CONSOLE]🔍 [DI] Subscription services: ${SubscriptionDependencyInjection.areSubscriptionServicesRegistered()}');
+    print('[CONSOLE]🔍 [DI] Stripe services: ${StripeDependencyInjection.areStripeServicesRegistered()}');
+    print('[CONSOLE]🔍 [DI] Total services registered: ${_getTotalServicesCount()}');
+    print('[CONSOLE]🔍 [DI] ════════════════════════════════════════');
+    print('[CONSOLE]');
   }
 
   static int _countCoreServices() {
@@ -220,15 +220,15 @@ class DependencyInjection {
       final subscriptionHealthy = SubscriptionDependencyInjection.areSubscriptionServicesRegistered();
       final stripeHealthy = StripeDependencyInjection.areStripeServicesRegistered();
 
-      print('✅ [DI] System health check passed');
-      print('🎯 [DI] Plateau system: ${plateauHealthy ? "✅" : "❌"}');
-      print('🎯 [DI] Subscription system: ${subscriptionHealthy ? "✅" : "❌"}');
-      print('🎯 [DI] Stripe system: ${stripeHealthy ? "✅" : "❌"}');
+      print('[CONSOLE]✅ [DI] System health check passed');
+      print('[CONSOLE]🎯 [DI] Plateau system: ${plateauHealthy ? "✅" : "❌"}');
+      print('[CONSOLE]🎯 [DI] Subscription system: ${subscriptionHealthy ? "✅" : "❌"}');
+      print('[CONSOLE]🎯 [DI] Stripe system: ${stripeHealthy ? "✅" : "❌"}');
 
       return plateauHealthy && subscriptionHealthy && stripeHealthy;
 
     } catch (e) {
-      print('❌ [DI] System health check failed: $e');
+      print('[CONSOLE]❌ [DI] System health check failed: $e');
       return false;
     }
   }
@@ -250,13 +250,13 @@ class DependencyInjection {
 
   /// Reset completo di GetIt
   static void reset() {
-    print('🔄 [DI] Resetting GetIt completely...');
+    print('[CONSOLE]🔄 [DI] Resetting GetIt completely...');
     getIt.reset();
   }
 
   /// Reinizializza con repository reali
   static Future<void> reinitialize() async {
-    print('🔄 [DI] Reinitializing with real repositories and Stripe...');
+    print('[CONSOLE]🔄 [DI] Reinitializing with real repositories and Stripe...');
     reset();
     await Future.delayed(const Duration(milliseconds: 200));
     await init();
@@ -264,13 +264,13 @@ class DependencyInjection {
 
   /// Reset selettivo solo dei servizi Stripe (per testing)
   static void resetStripeOnly() {
-    print('🔄 [DI] Resetting only Stripe services...');
+    print('[CONSOLE]🔄 [DI] Resetting only Stripe services...');
     StripeDependencyInjection.resetStripeServices();
   }
 
   /// Reinizializza solo i servizi Stripe
   static Future<void> reinitializeStripeOnly() async {
-    print('🔄 [DI] Reinitializing only Stripe services...');
+    print('[CONSOLE]🔄 [DI] Reinitializing only Stripe services...');
     await StripeDependencyInjection.reinitializeStripeServices();
   }
 }

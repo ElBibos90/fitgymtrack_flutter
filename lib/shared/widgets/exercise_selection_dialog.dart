@@ -384,7 +384,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
           size: 24.sp,
         ),
         onTap: isSelected ? null : () {
-          print('Selected exercise: ${exercise.nome}');
+          print('[CONSOLE]Selected exercise: ${exercise.nome}');
           widget.onExerciseSelected(exercise);
         },
       ),

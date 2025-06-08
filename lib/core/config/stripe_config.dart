@@ -254,45 +254,45 @@ class StripeConfig {
 
   /// Stampa informazioni di configurazione per testing
   static void printSandboxTestingInfo() {
-    print('');
-    print('🧪 STRIPE SANDBOX TESTING CONFIGURATION');
-    print('=========================================');
-    print('🔑 Test Mode: ${isTestMode ? "✅ ACTIVE" : "❌ INACTIVE"}');
-    print('🎯 Ready for Testing: ${isReadyForSandboxTesting ? "✅ YES" : "❌ NO"}');
-    print('');
+    print('[CONSOLE]');
+    print('[CONSOLE]🧪 STRIPE SANDBOX TESTING CONFIGURATION');
+    print('[CONSOLE]=========================================');
+    print('[CONSOLE]🔑 Test Mode: ${isTestMode ? "✅ ACTIVE" : "❌ INACTIVE"}');
+    print('[CONSOLE]🎯 Ready for Testing: ${isReadyForSandboxTesting ? "✅ YES" : "❌ NO"}');
+    print('[CONSOLE]');
 
     if (isReadyForSandboxTesting) {
-      print('✅ TESTING READY - You can now test payments!');
-      print('');
-      print('🧪 TEST CARDS FOR SANDBOX:');
-      print('   Success: ${testCards['success']} (CVV: 123, Exp: 12/25)');
-      print('   Declined: ${testCards['declined']} (CVV: 123, Exp: 12/25)');
-      print('   3D Secure: ${testCards['require_3d_secure']} (CVV: 123, Exp: 12/25)');
-      print('   Insufficient: ${testCards['insufficient_funds']} (CVV: 123, Exp: 12/25)');
-      print('');
-      print('💳 AVAILABLE PLANS:');
+      print('[CONSOLE]✅ TESTING READY - You can now test payments!');
+      print('[CONSOLE]');
+      print('[CONSOLE]🧪 TEST CARDS FOR SANDBOX:');
+      print('[CONSOLE]   Success: ${testCards['success']} (CVV: 123, Exp: 12/25)');
+      print('[CONSOLE]   Declined: ${testCards['declined']} (CVV: 123, Exp: 12/25)');
+      print('[CONSOLE]   3D Secure: ${testCards['require_3d_secure']} (CVV: 123, Exp: 12/25)');
+      print('[CONSOLE]   Insufficient: ${testCards['insufficient_funds']} (CVV: 123, Exp: 12/25)');
+      print('[CONSOLE]');
+      print('[CONSOLE]💳 AVAILABLE PLANS:');
       for (final plan in subscriptionPlans.values) {
-        print('   ${plan.name}: ${plan.formattedPrice}/${plan.interval}');
+        print('[CONSOLE]   ${plan.name}: ${plan.formattedPrice}/${plan.interval}');
       }
-      print('');
-      print('🎯 TEST FLOW:');
-      print('   1. Dashboard → "Vai all\'Abbonamento"');
-      print('   2. Subscription Screen → "Sottoscrivi Premium"');
-      print('   3. Payment Flow → Use test card: ${testCards['success']}');
-      print('   4. Verify success and return to dashboard');
+      print('[CONSOLE]');
+      print('[CONSOLE]🎯 TEST FLOW:');
+      print('[CONSOLE]   1. Dashboard → "Vai all\'Abbonamento"');
+      print('[CONSOLE]   2. Subscription Screen → "Sottoscrivi Premium"');
+      print('[CONSOLE]   3. Payment Flow → Use test card: ${testCards['success']}');
+      print('[CONSOLE]   4. Verify success and return to dashboard');
     } else {
-      print('❌ NOT READY FOR TESTING');
-      print('');
-      print('🔧 ISSUES TO FIX:');
+      print('[CONSOLE]❌ NOT READY FOR TESTING');
+      print('[CONSOLE]');
+      print('[CONSOLE]🔧 ISSUES TO FIX:');
       for (final check in configurationChecks) {
         if (check.startsWith('❌') || check.startsWith('⚠️')) {
-          print('   $check');
+          print('[CONSOLE]   $check');
         }
       }
     }
 
-    print('=========================================');
-    print('');
+    print('[CONSOLE]=========================================');
+    print('[CONSOLE]');
   }
 
   // ============================================================================

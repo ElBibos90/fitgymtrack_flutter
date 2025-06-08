@@ -185,7 +185,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       LoadSubscriptionEvent event,
       Emitter<SubscriptionState> emit,
       ) async {
-    print('Caricamento abbonamento');
+    print('[CONSOLE]Caricamento abbonamento');
     emit(const SubscriptionLoading());
 
     try {
@@ -196,7 +196,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         expiredResult.fold(
           onSuccess: (response) => expiredCount = response.updatedCount,
           onFailure: (exception, message) {
-            print('Errore controllo scadenze: $message');
+            print('[CONSOLE]Errore controllo scadenze: $message');
           },
         );
       }
@@ -208,14 +208,14 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       if (result.isSuccess) {
         final subscription = result.data!;
 
-        print('Abbonamento caricato: ${subscription.planName} - €${subscription.price}');
+        print('[CONSOLE]Abbonamento caricato: ${subscription.planName} - €${subscription.price}');
 
         // 🔧 FIX: Carica i piani disponibili SEPARATAMENTE
         final plansResult = await _repository.getAvailablePlans();
         final plans = plansResult.fold(
           onSuccess: (plans) => plans,
           onFailure: (exception, message) {
-            print('Errore caricamento piani: $message');
+            print('[CONSOLE]Errore caricamento piani: $message');
             return <SubscriptionPlan>[];
           },
         );
@@ -236,14 +236,14 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       } else {
         // Gestione errore
         final errorMessage = result.message ?? 'Errore nel caricamento dell\'abbonamento';
-        print('Errore caricamento abbonamento: $errorMessage');
+        print('[CONSOLE]Errore caricamento abbonamento: $errorMessage');
 
         if (!emit.isDone) {
           emit(SubscriptionError(errorMessage));
         }
       }
     } catch (e, stackTrace) {
-      print('Eccezione caricamento abbonamento: $e');
+      print('[CONSOLE]Eccezione caricamento abbonamento: $e');
 
       if (!emit.isDone) {
         emit(SubscriptionError('Errore imprevisto: $e'));
@@ -276,11 +276,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           }
         },
         onFailure: (exception, message) {
-          print('Errore controllo scadenze: $message');
+          print('[CONSOLE]Errore controllo scadenze: $message');
         },
       );
     } catch (e) {
-      print('Eccezione controllo scadenze: $e');
+      print('[CONSOLE]Eccezione controllo scadenze: $e');
     }
   }
 
@@ -316,11 +316,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           }
         },
         onFailure: (exception, message) {
-          print('Errore verifica limiti: $message');
+          print('[CONSOLE]Errore verifica limiti: $message');
         },
       );
     } catch (e) {
-      print('Eccezione verifica limiti: $e');
+      print('[CONSOLE]Eccezione verifica limiti: $e');
     }
   }
 
@@ -342,7 +342,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       if (result.isSuccess) {
         final response = result.data!;
-        print('Piano aggiornato: ${response.planName}');
+        print('[CONSOLE]Piano aggiornato: ${response.planName}');
 
         // Ricarica l'abbonamento per ottenere i nuovi dati
         final subscriptionResult = await _repository.getCurrentSubscription();
@@ -364,7 +364,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         }
       } else {
         final errorMessage = result.message ?? 'Errore nell\'aggiornamento del piano';
-        print('Errore aggiornamento piano: $errorMessage');
+        print('[CONSOLE]Errore aggiornamento piano: $errorMessage');
 
         if (!emit.isDone) {
           emit(SubscriptionError(errorMessage));
@@ -373,7 +373,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         }
       }
     } catch (e) {
-      print('Eccezione aggiornamento piano: $e');
+      print('[CONSOLE]Eccezione aggiornamento piano: $e');
       if (!emit.isDone) {
         emit(SubscriptionError('Errore imprevisto: $e'));
         emit(currentState);
@@ -400,11 +400,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           }
         },
         onFailure: (exception, message) {
-          print('Errore caricamento piani: $message');
+          print('[CONSOLE]Errore caricamento piani: $message');
         },
       );
     } catch (e) {
-      print('Eccezione caricamento piani: $e');
+      print('[CONSOLE]Eccezione caricamento piani: $e');
     }
   }
 
@@ -437,12 +437,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       return result.fold(
         onSuccess: (canCreate) => canCreate,
         onFailure: (exception, message) {
-          print('Errore verifica creazione scheda: $message');
+          print('[CONSOLE]Errore verifica creazione scheda: $message');
           return true; // Default permissivo in caso di errore
         },
       );
     } catch (e) {
-      print('Eccezione verifica creazione scheda: $e');
+      print('[CONSOLE]Eccezione verifica creazione scheda: $e');
       return true;
     }
   }
@@ -454,12 +454,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       return result.fold(
         onSuccess: (canCreate) => canCreate,
         onFailure: (exception, message) {
-          print('Errore verifica creazione esercizio: $message');
+          print('[CONSOLE]Errore verifica creazione esercizio: $message');
           return true; // Default permissivo in caso di errore
         },
       );
     } catch (e) {
-      print('Eccezione verifica creazione esercizio: $e');
+      print('[CONSOLE]Eccezione verifica creazione esercizio: $e');
       return true;
     }
   }

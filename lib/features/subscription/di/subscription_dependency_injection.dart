@@ -11,10 +11,10 @@ class SubscriptionDependencyInjection {
   static void registerSubscriptionServices() {
     final getIt = GetIt.instance;
 
-    print('🔧 [DI] Registering subscription services (REAL MODE)...');
+    print('[CONSOLE]🔧 [DI] Registering subscription services (REAL MODE)...');
 
     // 🔧 FIX: SOLO Repository Reale
-    print('🔧 [DI] Registering REAL SubscriptionRepository...');
+    print('[CONSOLE]🔧 [DI] Registering REAL SubscriptionRepository...');
 
     // Verifica che le dipendenze esistano
     if (!getIt.isRegistered<ApiClient>()) {
@@ -25,7 +25,7 @@ class SubscriptionDependencyInjection {
     }
 
     getIt.registerLazySingleton<SubscriptionRepository>(() {
-      print('🏗️ [DI] Creating REAL SubscriptionRepository instance...');
+      print('[CONSOLE]🏗️ [DI] Creating REAL SubscriptionRepository instance...');
       return SubscriptionRepository(
         apiClient: getIt<ApiClient>(),
         dio: getIt<Dio>(),
@@ -34,13 +34,13 @@ class SubscriptionDependencyInjection {
 
     // BLoC
     getIt.registerFactory<SubscriptionBloc>(() {
-      print('🏗️ [DI] Creating SubscriptionBloc instance...');
+      print('[CONSOLE]🏗️ [DI] Creating SubscriptionBloc instance...');
       return SubscriptionBloc(
         repository: getIt<SubscriptionRepository>(),
       );
     });
 
-    print('✅ [DI] Subscription services registered successfully!');
+    print('[CONSOLE]✅ [DI] Subscription services registered successfully!');
   }
 
   /// Verifica se i servizi Subscription sono registrati

@@ -21,7 +21,7 @@ class AuthRepository {
 
   Future<Result<LoginResponse>> login(String username, String password) async {
     try {
-      print('Tentativo di login per: $username');
+      print('[CONSOLE]Tentativo di login per: $username');
 
       final loginRequest = LoginRequest(
         username: username,
@@ -30,7 +30,7 @@ class AuthRepository {
 
       final response = await _apiClient.login('login', loginRequest);
 
-      print('Risposta login: ${response.toJson()}');
+      print('[CONSOLE]Risposta login: ${response.toJson()}');
 
       if (response.token != null && response.user != null) {
         await sessionService.saveSession(response.token!, response.user!);
@@ -38,7 +38,7 @@ class AuthRepository {
 
       return Result.success(response);
     } catch (e) {
-      print('Errore login: ${e.toString()}');
+      print('[CONSOLE]Errore login: ${e.toString()}');
       return Result.failure(_handleApiError(e));
     }
   }
@@ -67,7 +67,7 @@ class AuthRepository {
         );
         return Result.success(errorResponse);
       } else {
-        print('Errore registrazione: ${e.toString()}');
+        print('[CONSOLE]Errore registrazione: ${e.toString()}');
         return Result.failure(_handleApiError(e));
       }
     }
@@ -79,14 +79,14 @@ class AuthRepository {
 
       final responseData = await _apiClient.requestPasswordReset('request', resetRequest);
 
-      print('Password reset response: $responseData');
+      print('[CONSOLE]Password reset response: $responseData');
 
       final responseBody = responseData.toString();
       if (responseBody.contains('<b>Warning</b>') ||
           responseBody.contains('<b>Fatal error</b>') ||
           responseBody.contains('<br />')) {
 
-        print('Risposta contiene errori PHP: $responseBody');
+        print('[CONSOLE]Risposta contiene errori PHP: $responseBody');
         return Result.success(PasswordResetResponse(
           success: false,
           message: "Errore del server. Contatta l'amministratore del sistema.",
@@ -111,14 +111,14 @@ class AuthRepository {
           token: token,
         ));
       } catch (jsonEx) {
-        print('Risposta non è JSON valido: $responseData', error: jsonEx);
+        print('[CONSOLE]Risposta non è JSON valido: $responseData');
         return Result.success(PasswordResetResponse(
           success: false,
           message: "Errore nel formato della risposta. Riprova più tardi.",
         ));
       }
     } catch (e) {
-      print('Errore richiesta reset password: ${e.toString()}');
+      print('[CONSOLE]Errore richiesta reset password: ${e.toString()}');
       return Result.failure(_handleApiError(e));
     }
   }
@@ -137,7 +137,7 @@ class AuthRepository {
 
       final responseData = await _apiClient.confirmPasswordReset('reset', resetConfirmRequest);
 
-      print('Reset password response: $responseData');
+      print('[CONSOLE]Reset password response: $responseData');
 
       final responseBody = responseData.toString();
       if (responseBody.contains('<b>Warning</b>') ||
@@ -172,7 +172,7 @@ class AuthRepository {
         ));
       }
     } catch (e) {
-      print('Errore conferma reset password: ${e.toString()}');
+      print('[CONSOLE]Errore conferma reset password: ${e.toString()}');
       return Result.failure(_handleApiError(e));
     }
   }

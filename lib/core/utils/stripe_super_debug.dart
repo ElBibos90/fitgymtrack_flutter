@@ -15,7 +15,7 @@ class StripeSuperDebug {
     bool verbose = true,
   }) async {
     if (verbose) {
-      print('🚀 [SUPER DEBUG] Starting comprehensive Stripe diagnostic...');
+      print('[CONSOLE]🚀 [SUPER DEBUG] Starting comprehensive Stripe diagnostic...');
     }
 
     final report = StripeSystemReport();
@@ -46,7 +46,7 @@ class StripeSuperDebug {
       await _phase4StripeEndpointsSmartCheck(dio, report, verbose);
     } else {
       if (verbose) {
-        print('⚠️ [SUPER DEBUG] Skipping Stripe endpoints - authentication failed');
+        print('[CONSOLE]⚠️ [SUPER DEBUG] Skipping Stripe endpoints - authentication failed');
       }
     }
 
@@ -57,8 +57,8 @@ class StripeSuperDebug {
     await _phase5AnalysisAndRecommendations(report, verbose);
 
     if (verbose) {
-      print('✅ [SUPER DEBUG] Comprehensive diagnostic completed!');
-      print('📊 [SUPER DEBUG] Overall Score: ${report.overallScore}/100');
+      print('[CONSOLE]✅ [SUPER DEBUG] Comprehensive diagnostic completed!');
+      print('[CONSOLE]📊 [SUPER DEBUG] Overall Score: ${report.overallScore}/100');
     }
 
     return report;
@@ -67,7 +67,7 @@ class StripeSuperDebug {
   /// FASE 1: Controllo configurazione
   static Future<void> _phase1ConfigurationCheck(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      print('📋 [PHASE 1] Configuration check...');
+      print('[CONSOLE]📋 [PHASE 1] Configuration check...');
     }
 
     // Stripe Configuration
@@ -82,17 +82,17 @@ class StripeSuperDebug {
     report.baseUrlValid = Environment.baseUrl.isNotEmpty && Environment.baseUrl.startsWith('https://');
 
     if (verbose) {
-      print('📋 [PHASE 1] Stripe key valid: ${report.stripeKeyValid}');
-      print('📋 [PHASE 1] Test mode: ${report.isTestMode}');
-      print('📋 [PHASE 1] Demo mode: ${report.isDemoMode}');
-      print('📋 [PHASE 1] Base URL valid: ${report.baseUrlValid}');
+      print('[CONSOLE]📋 [PHASE 1] Stripe key valid: ${report.stripeKeyValid}');
+      print('[CONSOLE]📋 [PHASE 1] Test mode: ${report.isTestMode}');
+      print('[CONSOLE]📋 [PHASE 1] Demo mode: ${report.isDemoMode}');
+      print('[CONSOLE]📋 [PHASE 1] Base URL valid: ${report.baseUrlValid}');
     }
   }
 
   /// FASE 2: Test connettività
   static Future<void> _phase2ConnectivityCheck(Dio dio, StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      print('🌐 [PHASE 2] Connectivity check...');
+      print('[CONSOLE]🌐 [PHASE 2] Connectivity check...');
     }
 
     try {
@@ -105,7 +105,7 @@ class StripeSuperDebug {
       report.baseApiResponse = response.data.toString();
 
       if (verbose) {
-        print('✅ [PHASE 2] Base API reachable: ${report.baseApiReachable}');
+        print('[CONSOLE]✅ [PHASE 2] Base API reachable: ${report.baseApiReachable}');
       }
 
       // Test 2: Stripe directory
@@ -148,8 +148,8 @@ class StripeSuperDebug {
       report.connectivityScore = _calculateConnectivityScore(report);
 
       if (verbose) {
-        print('🌐 [PHASE 2] Stripe directory accessible: ${report.stripeDirectoryAccessible}');
-        print('🌐 [PHASE 2] PHP files accessible: ${report.phpFilesAccessible}');
+        print('[CONSOLE]🌐 [PHASE 2] Stripe directory accessible: ${report.stripeDirectoryAccessible}');
+        print('[CONSOLE]🌐 [PHASE 2] PHP files accessible: ${report.phpFilesAccessible}');
       }
 
     } catch (e) {
@@ -158,7 +158,7 @@ class StripeSuperDebug {
       report.connectivityScore = 0;
 
       if (verbose) {
-        print('❌ [PHASE 2] Connectivity error: $e');
+        print('[CONSOLE]❌ [PHASE 2] Connectivity error: $e');
       }
     }
   }
@@ -166,7 +166,7 @@ class StripeSuperDebug {
   /// FASE 3: Test autenticazione
   static Future<void> _phase3AuthenticationCheck(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      print('🔐 [PHASE 3] Authentication check...');
+      print('[CONSOLE]🔐 [PHASE 3] Authentication check...');
     }
 
     try {
@@ -186,9 +186,9 @@ class StripeSuperDebug {
       report.authenticationScore = report.authenticationWorking ? 100 : 0;
 
       if (verbose) {
-        print('🔐 [PHASE 3] User authenticated: ${report.userAuthenticated}');
-        print('🔐 [PHASE 3] Token available: ${report.tokenAvailable}');
-        print('🔐 [PHASE 3] User ID: ${report.userId}');
+        print('[CONSOLE]🔐 [PHASE 3] User authenticated: ${report.userAuthenticated}');
+        print('[CONSOLE]🔐 [PHASE 3] Token available: ${report.tokenAvailable}');
+        print('[CONSOLE]🔐 [PHASE 3] User ID: ${report.userId}');
       }
 
     } catch (e) {
@@ -197,7 +197,7 @@ class StripeSuperDebug {
       report.authenticationScore = 0;
 
       if (verbose) {
-        print('❌ [PHASE 3] Authentication error: $e');
+        print('[CONSOLE]❌ [PHASE 3] Authentication error: $e');
       }
     }
   }
@@ -205,7 +205,7 @@ class StripeSuperDebug {
   /// FASE 4: Test endpoint Stripe INTELLIGENTI
   static Future<void> _phase4StripeEndpointsSmartCheck(Dio dio, StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      print('🎯 [PHASE 4] Smart Stripe endpoints check...');
+      print('[CONSOLE]🎯 [PHASE 4] Smart Stripe endpoints check...');
     }
 
     // Store per Payment Intent ID creato per test successivi
@@ -281,7 +281,7 @@ class StripeSuperDebug {
     report.stripeEndpointsScore = (successfulEndpoints / 5 * 100).round();
 
     if (verbose) {
-      print('🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/5');
+      print('[CONSOLE]🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/5');
     }
   }
 
@@ -321,7 +321,7 @@ class StripeSuperDebug {
             paymentIntentId = paymentIntentData['payment_intent_id'] as String?;
 
             if (verbose && paymentIntentId != null) {
-              print('🎯 [SMART TEST] Extracted Payment Intent ID: ${paymentIntentId!.substring(0, 20)}...');
+              print('[CONSOLE]🎯 [SMART TEST] Extracted Payment Intent ID: ${paymentIntentId!.substring(0, 20)}...');
             }
           }
         } else {
@@ -351,7 +351,7 @@ class StripeSuperDebug {
     if (realPaymentIntentId == null) {
       // Nessun Payment Intent ID reale disponibile - testa solo connettività
       if (verbose) {
-        print('🎯 [SMART TEST] No real Payment Intent ID - testing connectivity only');
+        print('[CONSOLE]🎯 [SMART TEST] No real Payment Intent ID - testing connectivity only');
       }
 
       try {
@@ -391,7 +391,7 @@ class StripeSuperDebug {
     } else {
       // Test con Payment Intent ID reale
       if (verbose) {
-        print('🎯 [SMART TEST] Testing with real Payment Intent ID: ${realPaymentIntentId.substring(0, 20)}...');
+        print('[CONSOLE]🎯 [SMART TEST] Testing with real Payment Intent ID: ${realPaymentIntentId.substring(0, 20)}...');
       }
 
       try {
@@ -555,7 +555,7 @@ class StripeSuperDebug {
   /// FASE 5: Analisi e raccomandazioni
   static Future<void> _phase5AnalysisAndRecommendations(StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      print('🔍 [PHASE 5] Analysis and recommendations...');
+      print('[CONSOLE]🔍 [PHASE 5] Analysis and recommendations...');
     }
 
     // Calcola score generale
@@ -579,8 +579,8 @@ class StripeSuperDebug {
     report.quickFixes = _generateQuickFixes(report);
 
     if (verbose) {
-      print('🔍 [PHASE 5] System status: ${report.systemStatus}');
-      print('🔍 [PHASE 5] Recommendations: ${report.recommendations.length}');
+      print('[CONSOLE]🔍 [PHASE 5] System status: ${report.systemStatus}');
+      print('[CONSOLE]🔍 [PHASE 5] Recommendations: ${report.recommendations.length}');
     }
   }
 
@@ -707,76 +707,76 @@ class StripeSuperDebug {
 
   /// Stampa report completo
   static void printFullReport(StripeSystemReport report) {
-    print('');
-    print('🚀 STRIPE SUPER DIAGNOSTIC REPORT');
-    print('================================================');
-    print('📊 Overall Score: ${report.overallScore}/100');
-    print('🏥 System Status: ${report.systemStatus}');
-    print('');
+    print('[CONSOLE]');
+    print('[CONSOLE]🚀 STRIPE SUPER DIAGNOSTIC REPORT');
+    print('[CONSOLE]================================================');
+    print('[CONSOLE]📊 Overall Score: ${report.overallScore}/100');
+    print('[CONSOLE]🏥 System Status: ${report.systemStatus}');
+    print('[CONSOLE]');
 
     // Configurazione
-    print('📋 CONFIGURATION (Score: ${report.configurationScore}/100)');
-    print('   Stripe key set: ${report.stripeKeySet}');
-    print('   Stripe key valid: ${report.stripeKeyValid}');
-    print('   Test mode: ${report.isTestMode}');
-    print('   Demo mode: ${report.isDemoMode}');
-    print('   Base URL valid: ${report.baseUrlValid}');
-    print('');
+    print('[CONSOLE]📋 CONFIGURATION (Score: ${report.configurationScore}/100)');
+    print('[CONSOLE]   Stripe key set: ${report.stripeKeySet}');
+    print('[CONSOLE]   Stripe key valid: ${report.stripeKeyValid}');
+    print('[CONSOLE]   Test mode: ${report.isTestMode}');
+    print('[CONSOLE]   Demo mode: ${report.isDemoMode}');
+    print('[CONSOLE]   Base URL valid: ${report.baseUrlValid}');
+    print('[CONSOLE]');
 
     // Connettività
-    print('🌐 CONNECTIVITY (Score: ${report.connectivityScore}/100)');
-    print('   Base API reachable: ${report.baseApiReachable}');
-    print('   Stripe directory accessible: ${report.stripeDirectoryAccessible}');
-    print('   PHP Files:');
+    print('[CONSOLE]🌐 CONNECTIVITY (Score: ${report.connectivityScore}/100)');
+    print('[CONSOLE]   Base API reachable: ${report.baseApiReachable}');
+    print('[CONSOLE]   Stripe directory accessible: ${report.stripeDirectoryAccessible}');
+    print('[CONSOLE]   PHP Files:');
     report.phpFilesAccessible.forEach((file, accessible) {
-      print('     $file: ${accessible ? "✅" : "❌"}');
+      print('[CONSOLE]     $file: ${accessible ? "✅" : "❌"}');
     });
-    print('');
+    print('[CONSOLE]');
 
     // Autenticazione
-    print('🔐 AUTHENTICATION (Score: ${report.authenticationScore}/100)');
-    print('   User authenticated: ${report.userAuthenticated}');
-    print('   Token available: ${report.tokenAvailable}');
-    print('   User ID: ${report.userId}');
-    print('   Token preview: ${report.tokenPreview}');
-    print('');
+    print('[CONSOLE]🔐 AUTHENTICATION (Score: ${report.authenticationScore}/100)');
+    print('[CONSOLE]   User authenticated: ${report.userAuthenticated}');
+    print('[CONSOLE]   Token available: ${report.tokenAvailable}');
+    print('[CONSOLE]   User ID: ${report.userId}');
+    print('[CONSOLE]   Token preview: ${report.tokenPreview}');
+    print('[CONSOLE]');
 
     // Endpoints
-    print('🎯 STRIPE ENDPOINTS (Score: ${report.stripeEndpointsScore}/100)');
+    print('[CONSOLE]🎯 STRIPE ENDPOINTS (Score: ${report.stripeEndpointsScore}/100)');
     report.endpointResults.forEach((name, result) {
       final status = result.isWorking ? "✅" : result.isReachable ? "⚠️" : "❌";
-      print('   $status $name: ${result.statusMessage}');
+      print('[CONSOLE]   $status $name: ${result.statusMessage}');
       if (!result.isWorking && result.errorReason != null) {
-        print('     Error: ${result.errorReason}');
+        print('[CONSOLE]     Error: ${result.errorReason}');
       }
     });
-    print('');
+    print('[CONSOLE]');
 
     // Raccomandazioni
     if (report.recommendations.isNotEmpty) {
-      print('💡 RECOMMENDATIONS:');
+      print('[CONSOLE]💡 RECOMMENDATIONS:');
       for (final rec in report.recommendations) {
-        print('   $rec');
+        print('[CONSOLE]   $rec');
       }
-      print('');
+      print('[CONSOLE]');
     }
 
     // Fix rapidi
     if (report.quickFixes.isNotEmpty) {
-      print('🔧 QUICK FIXES:');
+      print('[CONSOLE]🔧 QUICK FIXES:');
       for (final fix in report.quickFixes) {
-        print('   • $fix');
+        print('[CONSOLE]   • $fix');
       }
-      print('');
+      print('[CONSOLE]');
     }
 
-    print('================================================');
-    print('');
+    print('[CONSOLE]================================================');
+    print('[CONSOLE]');
   }
 
   /// Test rapido per problemi comuni
   static Future<StripeQuickTestResults> runQuickTest(Dio dio) async {
-    print('⚡ [QUICK TEST] Running quick Stripe test...');
+    print('[CONSOLE]⚡ [QUICK TEST] Running quick Stripe test...');
 
     final results = StripeQuickTestResults();
 
@@ -826,8 +826,8 @@ class StripeSuperDebug {
     results.overallSuccess = passedTests >= 3; // 3 su 4 test devono passare
     results.score = (passedTests / 4 * 100).round();
 
-    print('⚡ [QUICK TEST] Score: ${results.score}/100');
-    print('⚡ [QUICK TEST] Overall success: ${results.overallSuccess}');
+    print('[CONSOLE]⚡ [QUICK TEST] Score: ${results.score}/100');
+    print('[CONSOLE]⚡ [QUICK TEST] Overall success: ${results.overallSuccess}');
 
     return results;
   }

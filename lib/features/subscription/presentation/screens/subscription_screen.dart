@@ -27,7 +27,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     // Se Stripe non è pronto, inizializzalo
     if (stripeBloc.state is! StripeReady) {
-      print('🔧 [SUBSCRIPTION] Stripe not ready, initializing...');
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe not ready, initializing...');
       stripeBloc.add(const InitializeStripeEvent());
 
       // Aspetta un po' per l'inizializzazione
@@ -46,14 +46,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: BlocConsumer<StripeBloc, StripeState>(
         listener: (context, state) {
-          print('🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
+          print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
 
           if (state is StripePaymentReady) {
-            print('🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
             // 🔧 FIX: Apri Payment Sheet direttamente quando pronto
             _presentPaymentSheet(context, state);
           } else if (state is StripePaymentSuccess) {
-            print('🔧 [SUBSCRIPTION] Payment Success');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Success');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -67,8 +67,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             // 🔧 Ricarica subscription dopo successo
             context.read<StripeBloc>().add(const LoadCurrentSubscriptionEvent());
           } else if (state is StripeErrorState) {
-            print('🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
-            print('🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -80,7 +80,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             );
           } else if (state is StripePaymentLoading) {
-            print('🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
           }
         },
         builder: (context, state) {
@@ -991,9 +991,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   void _startSubscriptionPayment(String planId) {
     final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
 
-    print('🔧 [SUBSCRIPTION] Starting payment for plan: $planId');
-    print('🔧 [SUBSCRIPTION] Price ID: $priceId');
-    print('🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
+    print('[CONSOLE]🔧 [SUBSCRIPTION] Starting payment for plan: $planId');
+    print('[CONSOLE]🔧 [SUBSCRIPTION] Price ID: $priceId');
+    print('[CONSOLE]🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
 
     // 🔧 FIX: Solo crea Payment Intent, NON navigare
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
@@ -1005,7 +1005,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       },
     ));
 
-    print('🔧 [SUBSCRIPTION] CreateSubscriptionPaymentEvent sent');
+    print('[CONSOLE]🔧 [SUBSCRIPTION] CreateSubscriptionPaymentEvent sent');
     // 🔧 Il Payment Sheet si aprirà automaticamente nel listener quando pronto
   }
 

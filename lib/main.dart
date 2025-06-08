@@ -32,30 +32,30 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('🚀 FITGYMTRACK STARTED - CLEAN USER TESTING MODE');
-  print('📱 App orientation locked to PORTRAIT only');
-  print('🧪 Auto-debug DISABLED - Testing natural user flow');
+  print('[CONSOLE]🚀 FITGYMTRACK STARTED - CLEAN USER TESTING MODE');
+  print('[CONSOLE]📱 App orientation locked to PORTRAIT only');
+  print('[CONSOLE]🧪 Auto-debug DISABLED - Testing natural user flow');
 
   // 🔧 Inizializzazione dependency injection
   await DependencyInjection.init();
 
   // 💳 SILENT configurazione check (no verbose output)
-  print('🔍 Running silent Stripe configuration check...');
+  print('[CONSOLE]🔍 Running silent Stripe configuration check...');
   final stripeCheck = await StripeConfigurationChecker.checkConfiguration();
 
   // Only print summary for clean testing
-  print('✅ Stripe Configuration: ${stripeCheck.isValid ? "VALID" : "NEEDS ATTENTION"}');
+  print('[CONSOLE]✅ Stripe Configuration: ${stripeCheck.isValid ? "VALID" : "NEEDS ATTENTION"}');
 
   // 💳 Verifica salute sistema generale
   final systemHealthy = DependencyInjection.checkSystemHealth();
-  print('🏥 System health: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
+  print('[CONSOLE]🏥 System health: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
   // 🧪 BACKGROUND DEBUG - Only if enabled
   if (ENABLE_AUTO_DEBUG) {
-    print('🚀 Running background diagnostic...');
+    print('[CONSOLE]🚀 Running background diagnostic...');
     _runSuperStripeDebugInBackground();
   } else {
-    print('🧪 Auto-debug disabled - Clean testing mode active');
+    print('[CONSOLE]🧪 Auto-debug disabled - Clean testing mode active');
   }
 
   runApp(FitGymTrackApp(
@@ -67,7 +67,7 @@ void main() async {
 /// 🚀 Background diagnostic (only when ENABLE_AUTO_DEBUG = true)
 Future<void> _runSuperStripeDebugInBackground() async {
   try {
-    print('🚀 [BACKGROUND] Running diagnostic...');
+    print('[CONSOLE]🚀 [BACKGROUND] Running diagnostic...');
     await Future.delayed(const Duration(seconds: 3));
 
     final dio = getIt<Dio>();
@@ -76,11 +76,11 @@ Future<void> _runSuperStripeDebugInBackground() async {
       verbose: false, // Silent background mode
     );
 
-    print('🚀 [BACKGROUND] Diagnostic completed - Score: ${report.overallScore}/100');
-    print('🏥 [BACKGROUND] Status: ${report.systemStatus}');
+    print('[CONSOLE]🚀 [BACKGROUND] Diagnostic completed - Score: ${report.overallScore}/100');
+    print('[CONSOLE]🏥 [BACKGROUND] Status: ${report.systemStatus}');
 
   } catch (e) {
-    print('❌ [BACKGROUND] Diagnostic failed: $e');
+    print('[CONSOLE]❌ [BACKGROUND] Diagnostic failed: $e');
   }
 }
 
@@ -140,12 +140,12 @@ class FitGymTrackApp extends StatelessWidget {
 
                 // 🔧 CLEAN initialization - only if config is valid
                 if (stripeConfigValid && !StripeConfig.isDemoMode) {
-                  print('💳 Initializing Stripe for clean testing...');
+                  print('[CONSOLE]💳 Initializing Stripe for clean testing...');
                   stripeBloc.add(const InitializeStripeEvent());
                 } else if (StripeConfig.isDemoMode) {
-                  print('⚠️ STRIPE: Demo mode - limited functionality');
+                  print('[CONSOLE]⚠️ STRIPE: Demo mode - limited functionality');
                 } else {
-                  print('❌ STRIPE: Invalid configuration');
+                  print('[CONSOLE]❌ STRIPE: Invalid configuration');
                 }
 
                 return stripeBloc;

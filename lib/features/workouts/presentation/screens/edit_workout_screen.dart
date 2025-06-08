@@ -63,7 +63,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _loadWorkoutDetails() {
-    print('🔄 Loading workout details for ID: ${widget.workoutId}');
+    print('[CONSOLE]🔄 Loading workout details for ID: ${widget.workoutId}');
 
     // Controlla se i dati sono già disponibili nel BLoC
     final currentState = _workoutBloc.state;
@@ -71,7 +71,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     if (currentState is WorkoutPlanDetailsLoaded &&
         currentState.workoutPlan.id == widget.workoutId) {
       // ✅ Dati già disponibili, usali direttamente
-      print('✅ Using existing loaded data');
+      print('[CONSOLE]✅ Using existing loaded data');
       _resetState(currentState.workoutPlan, currentState.exercises);
       return;
     }
@@ -82,7 +82,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         final existingPlan = currentState.workoutPlans.firstWhere(
               (plan) => plan.id == widget.workoutId,
         );
-        print('✅ Found plan in loaded plans: ${existingPlan.nome}');
+        print('[CONSOLE]✅ Found plan in loaded plans: ${existingPlan.nome}');
 
         // Se ha già gli esercizi, usa quelli
         if (existingPlan.esercizi.isNotEmpty) {
@@ -94,7 +94,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           return;
         }
       } catch (e) {
-        print('⚠️ Plan not found in current plans, loading details...');
+        print('[CONSOLE]⚠️ Plan not found in current plans, loading details...');
       }
     }
 
@@ -154,9 +154,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         );
       }).toList();
 
-      print('Esercizi da rimuovere: ${exercisesToRemove.length}');
+      print('[CONSOLE]Esercizi da rimuovere: ${exercisesToRemove.length}');
       for (final toRemove in exercisesToRemove) {
-        print('🗑️ Rimuovi esercizio_id: ${toRemove.id}');
+        print('[CONSOLE]🗑️ Rimuovi esercizio_id: ${toRemove.id}');
       }
     }
 
@@ -188,11 +188,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _exercises.removeAt(index);
       _removedExercises.add(exerciseToRemove);
 
-      print('🔍 ESERCIZIO RIMOSSO:');
-      print('- Nome: ${exerciseToRemove.nome}');
-      print('- esercizio_id (exercise.id): ${exerciseToRemove.id}');
-      print('- Totale esercizi rimossi: ${_removedExercises.length}');
-      print('- Esercizi rimanenti: ${_exercises.length}');
+      print('[CONSOLE]🔍 ESERCIZIO RIMOSSO:');
+      print('[CONSOLE]- Nome: ${exerciseToRemove.nome}');
+      print('[CONSOLE]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
+      print('[CONSOLE]- Totale esercizi rimossi: ${_removedExercises.length}');
+      print('[CONSOLE]- Esercizi rimanenti: ${_exercises.length}');
 
       _markAsChanged();
     });
@@ -237,7 +237,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _resetState(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    print('🔄 Resetting state with: ${workoutPlan.nome}');
+    print('[CONSOLE]🔄 Resetting state with: ${workoutPlan.nome}');
 
     _originalWorkoutPlan = workoutPlan;
     _exercises = List.from(exercises);
@@ -250,7 +250,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _isLoading = false; // ✅ SEMPRE reset loading
     });
 
-    print('✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
+    print('[CONSOLE]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
   }
 
   // ✅ AGGIORNATO: Gestione back migliorata

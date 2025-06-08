@@ -15,16 +15,16 @@ class PlateauDependencyInjection {
   static void registerPlateauServices() {
     final getIt = GetIt.instance;
 
-    print('🎯 [PLATEAU DI] Registering plateau services...');
+    print('[CONSOLE]🎯 [PLATEAU DI] Registering plateau services...');
 
     // ============================================================================
     // PLATEAU DETECTOR SERVICE
     // ============================================================================
 
-    print('🔧 [PLATEAU DI] Registering PlateauDetector...');
+    print('[CONSOLE]🔧 [PLATEAU DI] Registering PlateauDetector...');
     getIt.registerLazySingleton<PlateauDetector>(() {
       final config = createDefaultPlateauConfig();
-      print('🎯 [PLATEAU DI] PlateauDetector config: ${config.toJson()}');
+      print('[CONSOLE]🎯 [PLATEAU DI] PlateauDetector config: ${config.toJson()}');
       return PlateauDetector(config: config);
     });
 
@@ -32,15 +32,15 @@ class PlateauDependencyInjection {
     // PLATEAU BLOC (SINGLETON)
     // ============================================================================
 
-    print('🔧 [PLATEAU DI] Registering PlateauBloc as singleton...');
+    print('[CONSOLE]🔧 [PLATEAU DI] Registering PlateauBloc as singleton...');
     getIt.registerLazySingleton<PlateauBloc>(() {
-      print('🏗️ [PLATEAU DI] Creating PlateauBloc instance...');
+      print('[CONSOLE]🏗️ [PLATEAU DI] Creating PlateauBloc instance...');
       return PlateauBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
     });
 
-    print('✅ [PLATEAU DI] Plateau services registered successfully!');
+    print('[CONSOLE]✅ [PLATEAU DI] Plateau services registered successfully!');
   }
 
   /// Aggiorna la configurazione del plateau detector
@@ -48,7 +48,7 @@ class PlateauDependencyInjection {
     final getIt = GetIt.instance;
 
     if (getIt.isRegistered<PlateauDetector>()) {
-      print('🔄 [PLATEAU DI] Updating PlateauDetector configuration...');
+      print('[CONSOLE]🔄 [PLATEAU DI] Updating PlateauDetector configuration...');
 
       // Riregistra con nuova configurazione
       getIt.unregister<PlateauDetector>();
@@ -60,7 +60,7 @@ class PlateauDependencyInjection {
         plateauBloc.updateConfig(newConfig);
       }
 
-      print('✅ [PLATEAU DI] PlateauDetector configuration updated');
+      print('[CONSOLE]✅ [PLATEAU DI] PlateauDetector configuration updated');
     }
   }
 
@@ -68,7 +68,7 @@ class PlateauDependencyInjection {
   static void resetPlateauServices() {
     final getIt = GetIt.instance;
 
-    print('🔄 [PLATEAU DI] Resetting plateau services...');
+    print('[CONSOLE]🔄 [PLATEAU DI] Resetting plateau services...');
 
     if (getIt.isRegistered<PlateauBloc>()) {
       final plateauBloc = getIt<PlateauBloc>();
@@ -80,7 +80,7 @@ class PlateauDependencyInjection {
       getIt.unregister<PlateauDetector>();
     }
 
-    print('✅ [PLATEAU DI] Plateau services reset');
+    print('[CONSOLE]✅ [PLATEAU DI] Plateau services reset');
   }
 
   /// Verifica se i servizi plateau sono registrati
@@ -170,18 +170,18 @@ class PlateauSystemChecker {
 
       // Verifica registrazione servizi
       if (!getIt.isRegistered<PlateauDetector>()) {
-        print('❌ [PLATEAU CHECK] PlateauDetector not registered');
+        print('[CONSOLE]❌ [PLATEAU CHECK] PlateauDetector not registered');
         return false;
       }
 
       if (!getIt.isRegistered<PlateauBloc>()) {
-        print('❌ [PLATEAU CHECK] PlateauBloc not registered');
+        print('[CONSOLE]❌ [PLATEAU CHECK] PlateauBloc not registered');
         return false;
       }
 
       // Verifica dipendenze
       if (!getIt.isRegistered<WorkoutRepository>()) {
-        print('❌ [PLATEAU CHECK] WorkoutRepository not registered (required dependency)');
+        print('[CONSOLE]❌ [PLATEAU CHECK] WorkoutRepository not registered (required dependency)');
         return false;
       }
 
@@ -189,14 +189,14 @@ class PlateauSystemChecker {
       final plateauDetector = getIt<PlateauDetector>();
       final plateauBloc = getIt<PlateauBloc>();
 
-      print('✅ [PLATEAU CHECK] All plateau services are healthy');
-      print('🎯 [PLATEAU CHECK] PlateauDetector config: ${plateauDetector.config.toJson()}');
-      print('🎯 [PLATEAU CHECK] PlateauBloc state: ${plateauBloc.state.runtimeType}');
+      print('[CONSOLE]✅ [PLATEAU CHECK] All plateau services are healthy');
+      print('[CONSOLE]🎯 [PLATEAU CHECK] PlateauDetector config: ${plateauDetector.config.toJson()}');
+      print('[CONSOLE]🎯 [PLATEAU CHECK] PlateauBloc state: ${plateauBloc.state.runtimeType}');
 
       return true;
 
     } catch (e) {
-      print('💥 [PLATEAU CHECK] Error checking plateau system health: $e');
+      print('[CONSOLE]💥 [PLATEAU CHECK] Error checking plateau system health: $e');
       return false;
     }
   }

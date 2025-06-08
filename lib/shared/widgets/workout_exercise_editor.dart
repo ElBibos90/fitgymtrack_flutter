@@ -73,11 +73,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   void _saveChanges() {
     // 🔧 DEBUG: Log dei valori prima dell'update
-    print('Saving changes for exercise: ${widget.exercise.nome}');
-    print('  - selectedSetType: "$_selectedSetType"');
-    print('  - linkedToPrevious: $_linkedToPrevious');
-    print('  - isIsometric: $_isIsometric');
-    print('  - notes: "${_notesController.text}"');
+    print('[CONSOLE]Saving changes for exercise: ${widget.exercise.nome}');
+    print('[CONSOLE]  - selectedSetType: "$_selectedSetType"');
+    print('[CONSOLE]  - linkedToPrevious: $_linkedToPrevious');
+    print('[CONSOLE]  - isIsometric: $_isIsometric');
+    print('[CONSOLE]  - notes: "${_notesController.text}"');
 
     final updatedExercise = widget.exercise.safeCopy(
       serie: int.tryParse(_serieController.text) ?? widget.exercise.serie,
@@ -91,11 +91,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
 
     // 🔧 DEBUG: Log del risultato dopo safeCopy
-    print('After safeCopy:');
-    print('  - setType: "${updatedExercise.setType}"');
-    print('  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
-    print('  - isIsometricInt: ${updatedExercise.isIsometricInt}');
-    print('  - note: "${updatedExercise.note}"');
+    print('[CONSOLE]After safeCopy:');
+    print('[CONSOLE]  - setType: "${updatedExercise.setType}"');
+    print('[CONSOLE]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
+    print('[CONSOLE]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
+    print('[CONSOLE]  - note: "${updatedExercise.note}"');
 
     widget.onUpdate(updatedExercise);
 

@@ -136,7 +136,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 (plan) => plan.id == widget.workoutId,
           );
 
-          print('✅ Found existing plan in state: ${existingPlan.nome}');
+          print('[CONSOLE]✅ Found existing plan in state: ${existingPlan.nome}');
 
           // Usa i dati reali della scheda
           _populateFieldsFromWorkoutPlan(existingPlan);
@@ -150,12 +150,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           _loadAvailableExercises();
           return;
         } catch (e) {
-          print('⚠️ Plan not found in current state, loading from scratch');
+          print('[CONSOLE]⚠️ Plan not found in current state, loading from scratch');
         }
       }
 
       // Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
-      print('🔄 Loading workout plans first to get correct name...');
+      print('[CONSOLE]🔄 Loading workout plans first to get correct name...');
       if (_currentUserId != null) {
         _workoutBloc.loadWorkoutPlans(_currentUserId!);
         // Carica anche esercizi disponibili
@@ -166,7 +166,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Popola i campi con i dati reali della scheda
   void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
-    print('✅ Populating fields with real workout data: ${workoutPlan.nome}');
+    print('[CONSOLE]✅ Populating fields with real workout data: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -179,7 +179,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _populateFieldsFromWorkoutData(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    print('✅ Populating fields with workout: ${workoutPlan.nome}');
+    print('[CONSOLE]✅ Populating fields with workout: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -192,7 +192,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   /// Carica esercizi disponibili per il dialog di selezione
   void _loadAvailableExercises() {
     if (_currentUserId != null) {
-      print('Loading available exercises for user: $_currentUserId');
+      print('[CONSOLE]Loading available exercises for user: $_currentUserId');
       setState(() {
         _isLoadingAvailableExercises = true;
       });
@@ -202,7 +202,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
-    print('Adding exercise from dialog: ${exerciseItem.nome}');
+    print('[CONSOLE]Adding exercise from dialog: ${exerciseItem.nome}');
 
     // Converte ExerciseItem a WorkoutExercise
     final workoutExercise = WorkoutExercise(
@@ -299,7 +299,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                     final existingPlan = state.workoutPlans.firstWhere(
                           (plan) => plan.id == widget.workoutId,
                     );
-                    print('✅ Found plan after loading: ${existingPlan.nome}');
+                    print('[CONSOLE]✅ Found plan after loading: ${existingPlan.nome}');
                     _populateFieldsFromWorkoutPlan(existingPlan);
 
                     // Ora carica anche gli esercizi
@@ -310,11 +310,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                       _loadAvailableExercises();
                     }
                   } catch (e) {
-                    print('❌ Plan not found even after loading: ${e}');
+                    print('[CONSOLE]❌ Plan not found even after loading: ${e}');
                   }
                 } else if (state is AvailableExercisesLoaded) {
                   // Gestisce il caricamento degli esercizi disponibili
-                  print('✅ Available exercises loaded: ${state.availableExercises.length}');
+                  print('[CONSOLE]✅ Available exercises loaded: ${state.availableExercises.length}');
                   setState(() {
                     _availableExercises = state.availableExercises;
                     _isLoadingAvailableExercises = false;
@@ -665,11 +665,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _createWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('Creating exercise: ${exercise.nome}');
-      print('  - setType: "${exercise.setType}"');
-      print('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('  - note: "${exercise.note}"');
+      print('[CONSOLE]Creating exercise: ${exercise.nome}');
+      print('[CONSOLE]  - setType: "${exercise.setType}"');
+      print('[CONSOLE]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      print('[CONSOLE]  - isIsometricInt: ${exercise.isIsometricInt}');
+      print('[CONSOLE]  - note: "${exercise.note}"');
 
       return WorkoutExerciseRequest(
         id: exercise.id,
@@ -688,9 +688,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      print('ExerciseRequest $i:');
-      print('  - setType: "${req.setType}"');
-      print('  - linkedToPrevious: ${req.linkedToPrevious}');
+      print('[CONSOLE]ExerciseRequest $i:');
+      print('[CONSOLE]  - setType: "${req.setType}"');
+      print('[CONSOLE]  - linkedToPrevious: ${req.linkedToPrevious}');
     }
 
     final request = CreateWorkoutPlanRequest(
@@ -702,18 +702,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('Creating workout: ${request.nome}');
+    print('[CONSOLE]Creating workout: ${request.nome}');
     _workoutBloc.createWorkout(request);
   }
 
   void _updateWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
-      print('  - setType: "${exercise.setType}"');
-      print('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('  - note: "${exercise.note}"');
+      print('[CONSOLE]Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
+      print('[CONSOLE]  - setType: "${exercise.setType}"');
+      print('[CONSOLE]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      print('[CONSOLE]  - isIsometricInt: ${exercise.isIsometricInt}');
+      print('[CONSOLE]  - note: "${exercise.note}"');
 
       return WorkoutExerciseRequest(
         id: exercise.id,
@@ -732,12 +732,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      print('ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
-      print('  - setType: "${req.setType}"');
-      print('  - linkedToPrevious: ${req.linkedToPrevious}');
+      print('[CONSOLE]ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
+      print('[CONSOLE]  - setType: "${req.setType}"');
+      print('[CONSOLE]  - linkedToPrevious: ${req.linkedToPrevious}');
 
       if (req.schedaEsercizioId == null) {
-        print('ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
+        print('[CONSOLE]ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
       }
     }
 
@@ -751,8 +751,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
-    print('Updating workout - Esercizi count: ${request.esercizi.length}');
+    print('[CONSOLE]Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
+    print('[CONSOLE]Updating workout - Esercizi count: ${request.esercizi.length}');
 
     _workoutBloc.updateWorkout(request);
   }

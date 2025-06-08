@@ -113,7 +113,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   @override
   void initState() {
     super.initState();
-    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] initState - Scheda: ${widget.schedaId}");
+    print("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] initState - Scheda: ${widget.schedaId}");
     _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
     _plateauBloc = context.read<PlateauBloc>(); // 🎯 INITIALIZE PLATEAU BLOC
     _initializeAnimations();
@@ -122,7 +122,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   @override
   void dispose() {
-    debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] dispose");
+    print("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] dispose");
     _workoutTimer?.cancel();
     _slideController.dispose();
     _pulseController.dispose();
@@ -194,7 +194,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        debugPrint('🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        print('[CONSOLE]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -246,7 +246,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        debugPrint('🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        print('[CONSOLE]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -278,14 +278,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _invalidateCacheForExercise(int exerciseId) {
     _cachedWeights.remove(exerciseId);
     _cachedReps.remove(exerciseId);
-    debugPrint('🔧 [CACHE] Invalidated cache for exercise $exerciseId');
+    print('[CONSOLE]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
   }
 
   /// 🔧 PERFORMANCE FIX: Pulisce tutta la cache
   void _clearCache() {
     _cachedWeights.clear();
     _cachedReps.clear();
-    debugPrint('🔧 [CACHE] Cache cleared');
+    print('[CONSOLE]🔧 [CACHE] Cache cleared');
   }
 
   // ============================================================================
@@ -359,7 +359,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _slideController.forward();
 
     } catch (e) {
-      debugPrint("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] Error initializing: $e");
+      print("🚀 [SINGLE EXERCISE + PLATEAU MINIMALE] Error initializing: $e");
       setState(() {
         _currentStatus = "Errore inizializzazione: $e";
       });
@@ -391,7 +391,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleExitConfirmed() {
-    debugPrint("🚪 [EXIT] User confirmed exit - cancelling workout");
+    print("🚪 [EXIT] User confirmed exit - cancelling workout");
 
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
@@ -402,7 +402,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleCompleteConfirmed() {
-    debugPrint("✅ [COMPLETE] User confirmed completion");
+    print("✅ [COMPLETE] User confirmed completion");
 
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
@@ -436,9 +436,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       groups.add(currentGroup);
     }
 
-    debugPrint("🚀 [GROUPING] Created ${groups.length} exercise groups:");
+    print("🚀 [GROUPING] Created ${groups.length} exercise groups:");
     for (int i = 0; i < groups.length; i++) {
-      debugPrint("  Group $i: ${groups[i].map((e) => e.nome).join(', ')}");
+      print("  Group $i: ${groups[i].map((e) => e.nome).join(', ')}");
     }
 
     return groups;
@@ -540,7 +540,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _startRecoveryTimer(int seconds, String exerciseName) {
-    debugPrint("🔄 [RECOVERY POPUP] Starting recovery timer: $seconds seconds for $exerciseName");
+    print("🔄 [RECOVERY POPUP] Starting recovery timer: $seconds seconds for $exerciseName");
 
     setState(() {
       _isRecoveryTimerActive = true;
@@ -550,7 +550,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _stopRecoveryTimer() {
-    debugPrint("⏹️ [RECOVERY POPUP] Recovery timer stopped");
+    print("⏹️ [RECOVERY POPUP] Recovery timer stopped");
 
     setState(() {
       _isRecoveryTimerActive = false;
@@ -560,7 +560,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onRecoveryTimerComplete() {
-    debugPrint("✅ [RECOVERY POPUP] Recovery completed!");
+    print("✅ [RECOVERY POPUP] Recovery completed!");
 
     setState(() {
       _isRecoveryTimerActive = false;
@@ -582,7 +582,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _startIsometricTimer(WorkoutExercise exercise) {
     final seconds = _getEffectiveReps(exercise);
 
-    debugPrint("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
+    print("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
 
     setState(() {
       _isIsometricTimerActive = true;
@@ -593,7 +593,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onIsometricTimerComplete() {
-    debugPrint("✅ [ISOMETRIC] Isometric timer completed!");
+    print("✅ [ISOMETRIC] Isometric timer completed!");
 
     if (_pendingIsometricExercise != null) {
       final state = _getCurrentState();
@@ -617,7 +617,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onIsometricTimerCancelled() {
-    debugPrint("❌ [ISOMETRIC] Isometric timer cancelled");
+    print("❌ [ISOMETRIC] Isometric timer cancelled");
 
     setState(() {
       _isIsometricTimerActive = false;
@@ -668,7 +668,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
 
-    debugPrint("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
+    print("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
 
     CustomSnackbar.show(
       context,
@@ -690,21 +690,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final weight = _getEffectiveWeight(exercise);
     final reps = _getEffectiveReps(exercise);
 
-    debugPrint("🎯 [PLATEAU MINIMALE] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+    print("🎯 [PLATEAU MINIMALE] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
 
     _plateauBloc.analyzeExercisePlateau(exerciseId, exercise.nome, weight, reps);
   }
 
   /// 🎯 NUOVO: Auto-trigger plateau per tutti gli esercizi
   void _triggerPlateauAnalysisForAllExercises(WorkoutSessionActive state) {
-    debugPrint("🎯 [AUTO-TRIGGER] Starting plateau analysis for all exercises");
+    print("🎯 [AUTO-TRIGGER] Starting plateau analysis for all exercises");
 
     for (final exercise in state.exercises) {
       final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
       final weight = _getEffectiveWeight(exercise);
       final reps = _getEffectiveReps(exercise);
 
-      debugPrint("🎯 [PLATEAU] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+      print("🎯 [PLATEAU] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
       _triggerPlateauAnalysisForExercise(exercise);
 
       // Delay tra analisi per evitare spam
@@ -794,7 +794,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    debugPrint("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
+    print("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
 
     final effectiveWeight = _getEffectiveWeight(exercise);
     final effectiveReps = _getEffectiveReps(exercise);
@@ -901,7 +901,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
     }
 
-    debugPrint("🎉 [AUTO-ROTATION] All exercises in group are completed!");
+    print("🎉 [AUTO-ROTATION] All exercises in group are completed!");
     return isNewGroup ? 0 : _currentExerciseInGroup;
   }
 
@@ -911,7 +911,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleCompleteWorkout(WorkoutSessionActive state) {
-    debugPrint("🚀 [SINGLE EXERCISE] Completing workout");
+    print("🚀 [SINGLE EXERCISE] Completing workout");
 
     _stopWorkoutTimer();
     _completeButtonController.stop();
@@ -2308,7 +2308,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   void _handleBlocStateChanges(BuildContext context, ActiveWorkoutState state) {
     if (state is WorkoutSessionStarted) {
-      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
+      print("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
       _startWorkoutTimer();
 
       CustomSnackbar.show(
@@ -2319,7 +2319,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionActive) {
-      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
+      print("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
 
       if (_workoutTimer == null) {
         _startWorkoutTimer();
@@ -2335,7 +2335,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionCompleted) {
-      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
+      print("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2345,7 +2345,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionCancelled) {
-      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
+      print("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2363,7 +2363,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is ActiveWorkoutError) {
-      debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
+      print("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
 
       CustomSnackbar.show(
         context,
@@ -2378,7 +2378,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is PlateauDetected) {
       final activePlateaus = state.activePlateaus;
       if (activePlateaus.isNotEmpty) {
-        debugPrint("🎯 [PLATEAU MINIMALE] Plateau rilevati: ${activePlateaus.length}");
+        print("🎯 [PLATEAU MINIMALE] Plateau rilevati: ${activePlateaus.length}");
 
         // 🔧 MINIMALE: Solo notifica discreta, NO banner invasivo
         CustomSnackbar.show(
@@ -2391,7 +2391,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is PlateauError) {
-      debugPrint("🎯 [PLATEAU MINIMALE] Error: ${state.message}");
+      print("🎯 [PLATEAU MINIMALE] Error: ${state.message}");
       // Don't show error to user - plateau is optional feature
     }
   }
