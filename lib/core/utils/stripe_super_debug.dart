@@ -5,7 +5,7 @@ import '../services/session_service.dart';
 import '../config/environment.dart';
 import '../config/stripe_config.dart';
 
-/// Super Debug Utility per Stripe - VERSIONE INTELLIGENTE E COMPLETA
+/// Super Debug Utility per Stripe - VERSIONE INTELLIGENTE CON SMART TEST
 class StripeSuperDebug {
   static final SessionService _sessionService = SessionService();
 
@@ -39,11 +39,11 @@ class StripeSuperDebug {
     await _phase3AuthenticationCheck(report, verbose);
 
     // ============================================================================
-    // FASE 4: STRIPE ENDPOINTS
+    // FASE 4: STRIPE ENDPOINTS INTELLIGENTI
     // ============================================================================
 
     if (report.authenticationWorking) {
-      await _phase4StripeEndpointsCheck(dio, report, verbose);
+      await _phase4StripeEndpointsSmartCheck(dio, report, verbose);
     } else {
       if (verbose) {
         developer.log('⚠️ [SUPER DEBUG] Skipping Stripe endpoints - authentication failed', name: 'StripeSuperDebug');
@@ -96,7 +96,7 @@ class StripeSuperDebug {
     }
 
     try {
-      // Test 1: Base API connectivity
+      // Test 1: Base API connectivity con GET
       final response = await dio.get('/auth.php', queryParameters: {
         'action': 'verify_token',
       }).timeout(const Duration(seconds: 10));
@@ -202,90 +202,276 @@ class StripeSuperDebug {
     }
   }
 
-  /// FASE 4: Test endpoint Stripe
-  static Future<void> _phase4StripeEndpointsCheck(Dio dio, StripeSystemReport report, bool verbose) async {
+  /// FASE 4: Test endpoint Stripe INTELLIGENTI
+  static Future<void> _phase4StripeEndpointsSmartCheck(Dio dio, StripeSystemReport report, bool verbose) async {
     if (verbose) {
-      developer.log('🎯 [PHASE 4] Stripe endpoints check...', name: 'StripeSuperDebug');
+      developer.log('🎯 [PHASE 4] Smart Stripe endpoints check...', name: 'StripeSuperDebug');
     }
 
-    final endpoints = [
-      StripeEndpointTest(
-        name: 'customer',
-        endpoint: '/stripe/customer.php',
-        method: 'POST',
-        data: {
-          'user_id': report.userId ?? 999999,
-          'email': report.userEmail ?? 'test@example.com',
-          'name': 'Debug Test User',
-        },
-      ),
-      StripeEndpointTest(
-        name: 'subscription',
-        endpoint: '/stripe/subscription.php',
-        method: 'GET',
-        queryParams: {
-          'user_id': (report.userId ?? 999999).toString(),
-        },
-      ),
-      StripeEndpointTest(
-        name: 'subscription_payment',
-        endpoint: '/stripe/create-subscription-payment-intent.php',
-        method: 'POST',
-        data: {
-          'user_id': report.userId ?? 999999,
-          'price_id': StripeConfig.subscriptionPlans['premium_monthly']?.stripePriceId ?? 'price_test_123',
-          'metadata': {'test': true},
-        },
-      ),
-      StripeEndpointTest(
-        name: 'donation_payment',
-        endpoint: '/stripe/create-donation-payment-intent.php',
-        method: 'POST',
+    // Store per Payment Intent ID creato per test successivi
+    String? createdPaymentIntentId;
+    int successfulEndpoints = 0;
+
+    // ============================================================================
+    // TEST 1: CUSTOMER
+    // ============================================================================
+    final customerResult = await _testSingleEndpoint(dio, StripeEndpointTest(
+      name: 'customer',
+      endpoint: '/stripe/customer.php',
+      method: 'POST',
+      data: {
+        'user_id': report.userId ?? 999999,
+        'email': report.userEmail ?? 'test@example.com',
+        'name': 'Debug Test User',
+      },
+    ), verbose);
+
+    report.endpointResults['customer'] = customerResult;
+    if (customerResult.isWorking) successfulEndpoints++;
+
+    // ============================================================================
+    // TEST 2: SUBSCRIPTION
+    // ============================================================================
+    final subscriptionResult = await _testSingleEndpoint(dio, StripeEndpointTest(
+      name: 'subscription',
+      endpoint: '/stripe/subscription.php',
+      method: 'GET',
+      queryParams: {
+        'user_id': (report.userId ?? 999999).toString(),
+      },
+    ), verbose);
+
+    report.endpointResults['subscription'] = subscriptionResult;
+    if (subscriptionResult.isWorking) successfulEndpoints++;
+
+    // ============================================================================
+    // TEST 3: SUBSCRIPTION PAYMENT
+    // ============================================================================
+    final subscriptionPaymentResult = await _testSingleEndpoint(dio, StripeEndpointTest(
+      name: 'subscription_payment',
+      endpoint: '/stripe/create-subscription-payment-intent.php',
+      method: 'POST',
+      data: {
+        'user_id': report.userId ?? 999999,
+        'price_id': StripeConfig.subscriptionPlans['premium_monthly']?.stripePriceId ?? 'price_test_123',
+        'metadata': {'debug_test': true},
+      },
+    ), verbose);
+
+    report.endpointResults['subscription_payment'] = subscriptionPaymentResult;
+    if (subscriptionPaymentResult.isWorking) successfulEndpoints++;
+
+    // ============================================================================
+    // TEST 4: DONATION PAYMENT (e salva Payment Intent ID)
+    // ============================================================================
+    final donationPaymentResult = await _testDonationPaymentAndExtractId(dio, report, verbose);
+    report.endpointResults['donation_payment'] = donationPaymentResult.result;
+    if (donationPaymentResult.result.isWorking) {
+      successfulEndpoints++;
+      createdPaymentIntentId = donationPaymentResult.paymentIntentId;
+    }
+
+    // ============================================================================
+    // TEST 5: CONFIRM PAYMENT (usa Payment Intent ID reale se disponibile)
+    // ============================================================================
+    final confirmPaymentResult = await _testConfirmPaymentIntelligent(dio, createdPaymentIntentId, verbose);
+    report.endpointResults['confirm_payment'] = confirmPaymentResult;
+    if (confirmPaymentResult.isWorking) successfulEndpoints++;
+
+    report.stripeEndpointsScore = (successfulEndpoints / 5 * 100).round();
+
+    if (verbose) {
+      developer.log('🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/5', name: 'StripeSuperDebug');
+    }
+  }
+
+  /// Test intelligente del donation payment che estrae il Payment Intent ID
+  static Future<DonationTestResult> _testDonationPaymentAndExtractId(
+      Dio dio,
+      StripeSystemReport report,
+      bool verbose
+      ) async {
+    final result = StripeEndpointResult(name: 'donation_payment');
+    String? paymentIntentId;
+
+    try {
+      final response = await dio.post(
+        '/stripe/create-donation-payment-intent.php',
         data: {
           'user_id': report.userId ?? 999999,
           'amount': 500,
           'currency': 'eur',
-          'metadata': {'test': true},
+          'metadata': {'debug_test': true},
         },
-      ),
-      StripeEndpointTest(
-        name: 'confirm_payment',
-        endpoint: '/stripe/confirm-payment.php',
-        method: 'POST',
-        data: {
-          'payment_intent_id': 'pi_test_1234567890',
-          'subscription_type': 'premium',
-        },
-      ),
-    ];
+      ).timeout(const Duration(seconds: 10));
 
-    int successfulEndpoints = 0;
+      result.isReachable = true;
+      result.statusCode = response.statusCode ?? 0;
 
-    for (final endpointTest in endpoints) {
-      final result = await _testSingleEndpoint(dio, endpointTest, verbose);
-      report.endpointResults[endpointTest.name] = result;
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final responseData = response.data as Map<String, dynamic>;
 
-      if (result.isWorking) {
-        successfulEndpoints++;
+        if (responseData['success'] == true) {
+          result.isWorking = true;
+          result.statusMessage = 'Working correctly';
+
+          // Estrai Payment Intent ID per test successivi
+          final paymentIntentData = responseData['data']?['payment_intent'];
+          if (paymentIntentData is Map<String, dynamic>) {
+            paymentIntentId = paymentIntentData['payment_intent_id'] as String?;
+
+            if (verbose && paymentIntentId != null) {
+              developer.log('🎯 [SMART TEST] Extracted Payment Intent ID: ${paymentIntentId!.substring(0, 20)}...', name: 'StripeSuperDebug');
+            }
+          }
+        } else {
+          result.isWorking = false;
+          result.statusMessage = 'API error: ${responseData['message'] ?? 'unknown'}';
+        }
+      } else {
+        result.isWorking = false;
+        result.statusMessage = 'Invalid response format';
       }
 
+    } catch (e) {
+      _handleEndpointError(result, e);
+    }
+
+    return DonationTestResult(result: result, paymentIntentId: paymentIntentId);
+  }
+
+  /// Test intelligente del confirm payment
+  static Future<StripeEndpointResult> _testConfirmPaymentIntelligent(
+      Dio dio,
+      String? realPaymentIntentId,
+      bool verbose
+      ) async {
+    final result = StripeEndpointResult(name: 'confirm_payment');
+
+    if (realPaymentIntentId == null) {
+      // Nessun Payment Intent ID reale disponibile - testa solo connettività
       if (verbose) {
-        final status = result.isWorking ? '✅' : result.isReachable ? '⚠️' : '❌';
-        developer.log(
-            '$status [PHASE 4] ${endpointTest.name}: ${result.statusMessage}',
-            name: 'StripeSuperDebug'
-        );
+        developer.log('🎯 [SMART TEST] No real Payment Intent ID - testing connectivity only', name: 'StripeSuperDebug');
+      }
+
+      try {
+        final response = await dio.post(
+          '/stripe/confirm-payment.php',
+          data: {
+            'payment_intent_id': 'pi_test_connectivity_check',
+            'subscription_type': 'donation',
+          },
+        ).timeout(const Duration(seconds: 10));
+
+        result.isReachable = true;
+        result.statusCode = response.statusCode ?? 0;
+
+        // Per il test di connettività, anche un errore "Payment Intent non trovato" è OK
+        if (response.statusCode == 200) {
+          if (response.data is Map<String, dynamic>) {
+            final responseData = response.data as Map<String, dynamic>;
+            if (responseData['message']?.toString().contains('Payment Intent non trovato') == true) {
+              result.isWorking = true; // Endpoint funziona ma non trova ID (normale)
+              result.statusMessage = 'Working (connectivity verified)';
+            } else {
+              result.isWorking = responseData['success'] == true;
+              result.statusMessage = responseData['success'] == true
+                  ? 'Working correctly'
+                  : 'API error: ${responseData['message'] ?? 'unknown'}';
+            }
+          }
+        } else {
+          result.isWorking = false;
+          result.statusMessage = 'HTTP error ${response.statusCode}';
+        }
+
+      } catch (e) {
+        _handleEndpointError(result, e);
+      }
+    } else {
+      // Test con Payment Intent ID reale
+      if (verbose) {
+        developer.log('🎯 [SMART TEST] Testing with real Payment Intent ID: ${realPaymentIntentId.substring(0, 20)}...', name: 'StripeSuperDebug');
+      }
+
+      try {
+        final response = await dio.post(
+          '/stripe/confirm-payment.php',
+          data: {
+            'payment_intent_id': realPaymentIntentId,
+            'subscription_type': 'donation',
+          },
+        ).timeout(const Duration(seconds: 10));
+
+        result.isReachable = true;
+        result.statusCode = response.statusCode ?? 0;
+
+        if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+          final responseData = response.data as Map<String, dynamic>;
+
+          // Con Payment Intent reale, potrebbe fallire per altri motivi (es. non succeeded)
+          // ma l'importante è che l'endpoint sia raggiungibile e funzionale
+          if (responseData['message']?.toString().contains('non completato') == true ||
+              responseData['message']?.toString().contains('requires_payment_method') == true) {
+            result.isWorking = true; // Endpoint funziona, Payment Intent solo non è completed
+            result.statusMessage = 'Working (payment not completed yet)';
+          } else {
+            result.isWorking = responseData['success'] == true;
+            result.statusMessage = responseData['success'] == true
+                ? 'Working correctly'
+                : 'API error: ${responseData['message'] ?? 'unknown'}';
+          }
+        } else {
+          result.isWorking = false;
+          result.statusMessage = 'Invalid response format';
+        }
+
+      } catch (e) {
+        _handleEndpointError(result, e);
       }
     }
 
-    report.stripeEndpointsScore = (successfulEndpoints / endpoints.length * 100).round();
+    return result;
+  }
 
-    if (verbose) {
-      developer.log('🎯 [PHASE 4] Successful endpoints: $successfulEndpoints/${endpoints.length}', name: 'StripeSuperDebug');
+  /// Gestisce errori comuni degli endpoint
+  static void _handleEndpointError(StripeEndpointResult result, dynamic e) {
+    if (e is DioException) {
+      result.statusCode = e.response?.statusCode ?? 0;
+      result.responsePreview = e.response?.data?.toString() ?? 'No response data';
+
+      switch (e.response?.statusCode) {
+        case 404:
+          result.isReachable = false;
+          result.statusMessage = 'Endpoint not found';
+          result.errorReason = 'HTTP 404 - File does not exist';
+          break;
+        case 405:
+          result.isReachable = true;
+          result.isWorking = false;
+          result.statusMessage = 'Method not allowed';
+          result.errorReason = 'HTTP 405 - Method not supported';
+          break;
+        case 500:
+          result.isReachable = true;
+          result.isWorking = false;
+          result.statusMessage = 'Server error';
+          result.errorReason = 'HTTP 500 - PHP or server error';
+          break;
+        default:
+          result.isReachable = true;
+          result.isWorking = false;
+          result.statusMessage = 'HTTP error ${e.response?.statusCode}';
+          result.errorReason = e.message ?? 'Unknown HTTP error';
+      }
+    } else {
+      result.isReachable = false;
+      result.statusMessage = 'Network error';
+      result.errorReason = e.toString();
     }
   }
 
-  /// Test di un singolo endpoint
+  /// Test di un singolo endpoint (versione generica)
   static Future<StripeEndpointResult> _testSingleEndpoint(
       Dio dio,
       StripeEndpointTest endpointTest,
@@ -360,39 +546,7 @@ class StripeSuperDebug {
       }
 
     } catch (e) {
-      if (e is DioException) {
-        result.statusCode = e.response?.statusCode ?? 0;
-        result.responsePreview = e.response?.data?.toString() ?? 'No response data';
-
-        switch (e.response?.statusCode) {
-          case 404:
-            result.isReachable = false;
-            result.statusMessage = 'Endpoint not found';
-            result.errorReason = 'HTTP 404 - File does not exist';
-            break;
-          case 405:
-            result.isReachable = true;
-            result.isWorking = false;
-            result.statusMessage = 'Method not allowed';
-            result.errorReason = 'HTTP 405 - ${endpointTest.method} not supported';
-            break;
-          case 500:
-            result.isReachable = true;
-            result.isWorking = false;
-            result.statusMessage = 'Server error';
-            result.errorReason = 'HTTP 500 - PHP or server error';
-            break;
-          default:
-            result.isReachable = true;
-            result.isWorking = false;
-            result.statusMessage = 'HTTP error ${e.response?.statusCode}';
-            result.errorReason = e.message ?? 'Unknown HTTP error';
-        }
-      } else {
-        result.isReachable = false;
-        result.statusMessage = 'Network error';
-        result.errorReason = e.toString();
-      }
+      _handleEndpointError(result, e);
     }
 
     return result;
@@ -748,6 +902,13 @@ class StripeEndpointResult {
   String? responsePreview;
 
   StripeEndpointResult({required this.name});
+}
+
+class DonationTestResult {
+  final StripeEndpointResult result;
+  final String? paymentIntentId;
+
+  DonationTestResult({required this.result, this.paymentIntentId});
 }
 
 class StripeQuickTestResults {
