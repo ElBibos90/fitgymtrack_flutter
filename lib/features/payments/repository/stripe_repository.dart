@@ -87,6 +87,7 @@ class StripeRepository {
   // ============================================================================
 
   /// Crea un Payment Intent per una subscription
+  /// Crea un Payment Intent per una subscription - FIXED VERSION
   Future<Result<StripePaymentIntentResponse>> createSubscriptionPaymentIntent({
     required String priceId,
     Map<String, dynamic>? metadata,
@@ -132,17 +133,47 @@ class StripeRepository {
         retryOnFailure: true,
       );
 
-      if (response['success'] == true && response['payment_intent'] != null) {
-        final paymentIntent = StripePaymentIntentResponse.fromJson(response['payment_intent']);
+      developer.log('🔧 [STRIPE REPO] Full response: $response', name: 'StripeRepository');
 
-        developer.log(
-          '✅ [STRIPE REPO] Payment intent created: ${paymentIntent.paymentIntentId}',
-          name: 'StripeRepository',
-        );
+      // 🔧 FIX: Parsing corretto della risposta - SUPPORTA ENTRAMBI I FORMATI
+      if (response['success'] == true) {
+        Map<String, dynamic>? paymentIntentData;
 
-        return paymentIntent;
+        // Controlla nuovo formato: data.payment_intent
+        if (response['data'] != null && response['data']['payment_intent'] != null) {
+          paymentIntentData = response['data']['payment_intent'];
+          developer.log('🔧 [STRIPE REPO] Using new format: data.payment_intent', name: 'StripeRepository');
+        }
+        // Controlla vecchio formato: payment_intent diretto
+        else if (response['payment_intent'] != null) {
+          paymentIntentData = response['payment_intent'];
+          developer.log('🔧 [STRIPE REPO] Using old format: payment_intent', name: 'StripeRepository');
+        }
+
+        if (paymentIntentData != null) {
+          try {
+            final paymentIntent = StripePaymentIntentResponse.fromJson(paymentIntentData);
+
+            developer.log(
+              '✅ [STRIPE REPO] Payment intent created successfully: ${paymentIntent.paymentIntentId}',
+              name: 'StripeRepository',
+            );
+
+            return paymentIntent;
+          } catch (e) {
+            developer.log('❌ [STRIPE REPO] JSON parsing error: $e', name: 'StripeRepository');
+            developer.log('❌ [STRIPE REPO] Payment intent data: $paymentIntentData', name: 'StripeRepository');
+            throw Exception('Error parsing payment intent response: $e');
+          }
+        } else {
+          developer.log('❌ [STRIPE REPO] Payment intent data not found in response', name: 'StripeRepository');
+          developer.log('❌ [STRIPE REPO] Response structure: ${response.keys.toList()}', name: 'StripeRepository');
+          throw Exception('Payment intent data not found in response. Available keys: ${response.keys.toList()}');
+        }
       } else {
-        throw Exception(response['message'] ?? 'Errore nella creazione del payment intent per subscription');
+        final errorMessage = response['message'] ?? 'Errore nella creazione del payment intent per subscription';
+        developer.log('❌ [STRIPE REPO] Server returned success=false: $errorMessage', name: 'StripeRepository');
+        throw Exception(errorMessage);
       }
     });
   }

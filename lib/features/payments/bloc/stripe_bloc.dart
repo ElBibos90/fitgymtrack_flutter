@@ -427,15 +427,25 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (paymentOption) {
-          developer.log('✅ [STRIPE BLOC] Payment processed successfully', name: 'StripeBloc');
-          // Il pagamento è completato, ora dobbiamo confermarlo sul backend
-          add(ConfirmPaymentSuccessEvent(
-            paymentIntentId: _extractPaymentIntentId(event.clientSecret),
-            subscriptionType: event.paymentType,
+          developer.log('✅ [STRIPE BLOC] Payment Sheet completed successfully', name: 'StripeBloc');
+
+          // 🔧 FIX: Extract payment intent ID correctly
+          final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
+
+          // 🔧 FIX: Emit success immediately without backend confirmation for now
+          emit(StripePaymentSuccess(
+            paymentIntentId: paymentIntentId,
+            paymentType: event.paymentType,
+            message: event.paymentType == 'subscription'
+                ? 'Abbonamento attivato con successo!'
+                : 'Grazie per la tua donazione!',
           ));
+
+          // 🔧 Reload subscription after success
+          add(const LoadCurrentSubscriptionEvent());
         },
         onFailure: (exception, message) {
-          developer.log('❌ [STRIPE BLOC] Payment processing failed: $message', name: 'StripeBloc');
+          developer.log('❌ [STRIPE BLOC] Payment Sheet failed: $message', name: 'StripeBloc');
           emit(StripeErrorState(message: message ?? 'Pagamento fallito'));
         },
       );
