@@ -1,7 +1,7 @@
 // lib/shared/widgets/exercise_selection_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:developer' as developer;
+
 
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
@@ -384,7 +384,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
           size: 24.sp,
         ),
         onTap: isSelected ? null : () {
-          developer.log('Selected exercise: ${exercise.nome}', name: 'ExerciseSelectionDialog');
+          print('Selected exercise: ${exercise.nome}');
           widget.onExerciseSelected(exercise);
         },
       ),

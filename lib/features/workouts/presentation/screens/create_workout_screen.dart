@@ -1,5 +1,5 @@
 // lib/features/workouts/presentation/screens/create_workout_screen.dart
-import 'dart:developer' as developer;
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -136,7 +136,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 (plan) => plan.id == widget.workoutId,
           );
 
-          developer.log('✅ Found existing plan in state: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
+          print('✅ Found existing plan in state: ${existingPlan.nome}');
 
           // Usa i dati reali della scheda
           _populateFieldsFromWorkoutPlan(existingPlan);
@@ -150,12 +150,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           _loadAvailableExercises();
           return;
         } catch (e) {
-          developer.log('⚠️ Plan not found in current state, loading from scratch', name: 'CreateWorkoutScreen');
+          print('⚠️ Plan not found in current state, loading from scratch');
         }
       }
 
       // Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
-      developer.log('🔄 Loading workout plans first to get correct name...', name: 'CreateWorkoutScreen');
+      print('🔄 Loading workout plans first to get correct name...');
       if (_currentUserId != null) {
         _workoutBloc.loadWorkoutPlans(_currentUserId!);
         // Carica anche esercizi disponibili
@@ -166,7 +166,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Popola i campi con i dati reali della scheda
   void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
-    developer.log('✅ Populating fields with real workout data: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
+    print('✅ Populating fields with real workout data: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -179,7 +179,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _populateFieldsFromWorkoutData(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    developer.log('✅ Populating fields with workout: ${workoutPlan.nome}', name: 'CreateWorkoutScreen');
+    print('✅ Populating fields with workout: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -192,7 +192,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   /// Carica esercizi disponibili per il dialog di selezione
   void _loadAvailableExercises() {
     if (_currentUserId != null) {
-      developer.log('Loading available exercises for user: $_currentUserId', name: 'CreateWorkoutScreen');
+      print('Loading available exercises for user: $_currentUserId');
       setState(() {
         _isLoadingAvailableExercises = true;
       });
@@ -202,7 +202,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
-    developer.log('Adding exercise from dialog: ${exerciseItem.nome}', name: 'CreateWorkoutScreen');
+    print('Adding exercise from dialog: ${exerciseItem.nome}');
 
     // Converte ExerciseItem a WorkoutExercise
     final workoutExercise = WorkoutExercise(
@@ -299,7 +299,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                     final existingPlan = state.workoutPlans.firstWhere(
                           (plan) => plan.id == widget.workoutId,
                     );
-                    developer.log('✅ Found plan after loading: ${existingPlan.nome}', name: 'CreateWorkoutScreen');
+                    print('✅ Found plan after loading: ${existingPlan.nome}');
                     _populateFieldsFromWorkoutPlan(existingPlan);
 
                     // Ora carica anche gli esercizi
@@ -310,11 +310,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                       _loadAvailableExercises();
                     }
                   } catch (e) {
-                    developer.log('❌ Plan not found even after loading: ${e}', name: 'CreateWorkoutScreen');
+                    print('❌ Plan not found even after loading: ${e}');
                   }
                 } else if (state is AvailableExercisesLoaded) {
                   // Gestisce il caricamento degli esercizi disponibili
-                  developer.log('✅ Available exercises loaded: ${state.availableExercises.length}', name: 'CreateWorkoutScreen');
+                  print('✅ Available exercises loaded: ${state.availableExercises.length}');
                   setState(() {
                     _availableExercises = state.availableExercises;
                     _isLoadingAvailableExercises = false;
@@ -665,11 +665,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _createWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      developer.log('Creating exercise: ${exercise.nome}', name: 'CreateWorkoutScreen');
-      developer.log('  - setType: "${exercise.setType}"', name: 'CreateWorkoutScreen');
-      developer.log('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}', name: 'CreateWorkoutScreen');
-      developer.log('  - isIsometricInt: ${exercise.isIsometricInt}', name: 'CreateWorkoutScreen');
-      developer.log('  - note: "${exercise.note}"', name: 'CreateWorkoutScreen');
+      print('Creating exercise: ${exercise.nome}');
+      print('  - setType: "${exercise.setType}"');
+      print('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      print('  - isIsometricInt: ${exercise.isIsometricInt}');
+      print('  - note: "${exercise.note}"');
 
       return WorkoutExerciseRequest(
         id: exercise.id,
@@ -688,9 +688,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      developer.log('ExerciseRequest $i:', name: 'CreateWorkoutScreen');
-      developer.log('  - setType: "${req.setType}"', name: 'CreateWorkoutScreen');
-      developer.log('  - linkedToPrevious: ${req.linkedToPrevious}', name: 'CreateWorkoutScreen');
+      print('ExerciseRequest $i:');
+      print('  - setType: "${req.setType}"');
+      print('  - linkedToPrevious: ${req.linkedToPrevious}');
     }
 
     final request = CreateWorkoutPlanRequest(
@@ -702,18 +702,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    developer.log('Creating workout: ${request.nome}', name: 'CreateWorkoutScreen');
+    print('Creating workout: ${request.nome}');
     _workoutBloc.createWorkout(request);
   }
 
   void _updateWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      developer.log('Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})', name: 'CreateWorkoutScreen');
-      developer.log('  - setType: "${exercise.setType}"', name: 'CreateWorkoutScreen');
-      developer.log('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}', name: 'CreateWorkoutScreen');
-      developer.log('  - isIsometricInt: ${exercise.isIsometricInt}', name: 'CreateWorkoutScreen');
-      developer.log('  - note: "${exercise.note}"', name: 'CreateWorkoutScreen');
+      print('Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
+      print('  - setType: "${exercise.setType}"');
+      print('  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      print('  - isIsometricInt: ${exercise.isIsometricInt}');
+      print('  - note: "${exercise.note}"');
 
       return WorkoutExerciseRequest(
         id: exercise.id,
@@ -732,12 +732,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      developer.log('ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}', name: 'CreateWorkoutScreen');
-      developer.log('  - setType: "${req.setType}"', name: 'CreateWorkoutScreen');
-      developer.log('  - linkedToPrevious: ${req.linkedToPrevious}', name: 'CreateWorkoutScreen');
+      print('ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
+      print('  - setType: "${req.setType}"');
+      print('  - linkedToPrevious: ${req.linkedToPrevious}');
 
       if (req.schedaEsercizioId == null) {
-        developer.log('ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!', name: 'CreateWorkoutScreen');
+        print('ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
       }
     }
 
@@ -751,8 +751,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    developer.log('Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}', name: 'CreateWorkoutScreen');
-    developer.log('Updating workout - Esercizi count: ${request.esercizi.length}', name: 'CreateWorkoutScreen');
+    print('Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
+    print('Updating workout - Esercizi count: ${request.esercizi.length}');
 
     _workoutBloc.updateWorkout(request);
   }

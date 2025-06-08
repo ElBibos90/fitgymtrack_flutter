@@ -1,6 +1,5 @@
 // lib/core/utils/stripe_final_test_utility.dart
 import 'package:dio/dio.dart';
-import 'dart:developer' as developer;
 import '../services/session_service.dart';
 import '../config/environment.dart';
 import '../config/stripe_config.dart';
@@ -17,7 +16,7 @@ class StripeFinalTestUtility {
     bool verbose = true,
   }) async {
     if (verbose) {
-      developer.log('🎯 [FINAL TEST] Starting comprehensive final test...', name: 'StripeFinalTestUtility');
+      print('🎯 [FINAL TEST] Starting comprehensive final test...');
     }
 
     final result = StripeFinalTestResult();
@@ -36,7 +35,7 @@ class StripeFinalTestUtility {
       await _phase2SystemTest(dio, result, verbose);
     } else {
       if (verbose) {
-        developer.log('⚠️ [FINAL TEST] Pre-test failed - skipping system test', name: 'StripeFinalTestUtility');
+        print('⚠️ [FINAL TEST] Pre-test failed - skipping system test');
       }
     }
 
@@ -61,7 +60,7 @@ class StripeFinalTestUtility {
     _phase5GenerateReport(result, verbose);
 
     if (verbose) {
-      developer.log('🎯 [FINAL TEST] Test completed - Success: ${result.overallSuccess}', name: 'StripeFinalTestUtility');
+      print('🎯 [FINAL TEST] Test completed - Success: ${result.overallSuccess}');
     }
 
     return result;
@@ -70,7 +69,7 @@ class StripeFinalTestUtility {
   /// FASE 1: Validazione pre-test
   static Future<void> _phase1PreTestValidation(StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      developer.log('📋 [PHASE 1] Pre-test validation...', name: 'StripeFinalTestUtility');
+      print('📋 [PHASE 1] Pre-test validation...');
     }
 
     // Test configurazione Stripe
@@ -97,17 +96,17 @@ class StripeFinalTestUtility {
         result.dependencyInjectionWorking;
 
     if (verbose) {
-      developer.log('📋 [PHASE 1] Config valid: ${result.stripeConfigValid}', name: 'StripeFinalTestUtility');
-      developer.log('📋 [PHASE 1] Environment valid: ${result.environmentConfigValid}', name: 'StripeFinalTestUtility');
-      developer.log('📋 [PHASE 1] DI working: ${result.dependencyInjectionWorking}', name: 'StripeFinalTestUtility');
-      developer.log('📋 [PHASE 1] Pre-test passed: ${result.preTestPassed}', name: 'StripeFinalTestUtility');
+      print('📋 [PHASE 1] Config valid: ${result.stripeConfigValid}');
+      print('📋 [PHASE 1] Environment valid: ${result.environmentConfigValid}');
+      print('📋 [PHASE 1] DI working: ${result.dependencyInjectionWorking}');
+      print('📋 [PHASE 1] Pre-test passed: ${result.preTestPassed}');
     }
   }
 
   /// FASE 2: Test sistema completo
   static Future<void> _phase2SystemTest(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      developer.log('🏗️ [PHASE 2] System test...', name: 'StripeFinalTestUtility');
+      print('🏗️ [PHASE 2] System test...');
     }
 
     try {
@@ -118,7 +117,7 @@ class StripeFinalTestUtility {
       result.userId = user?.id;
 
       if (verbose) {
-        developer.log('🔐 [PHASE 2] Authentication working: ${result.authenticationWorking}', name: 'StripeFinalTestUtility');
+        print('🔐 [PHASE 2] Authentication working: ${result.authenticationWorking}');
       }
 
       // Test connettività API base
@@ -150,7 +149,7 @@ class StripeFinalTestUtility {
           result.superDebugScore >= 50;
 
       if (verbose) {
-        developer.log('🏗️ [PHASE 2] System test passed: ${result.systemTestPassed}', name: 'StripeFinalTestUtility');
+        print('🏗️ [PHASE 2] System test passed: ${result.systemTestPassed}');
       }
 
     } catch (e) {
@@ -158,7 +157,7 @@ class StripeFinalTestUtility {
       result.systemTestErrors.add('System test failed: $e');
 
       if (verbose) {
-        developer.log('❌ [PHASE 2] System test error: $e', name: 'StripeFinalTestUtility');
+        print('❌ [PHASE 2] System test error: $e');
       }
     }
   }
@@ -236,7 +235,7 @@ class StripeFinalTestUtility {
         }
 
         if (verbose) {
-          developer.log('🎯 [ENDPOINT] ${endpointConfig['name']}: ${isWorking ? "✅" : "❌"}', name: 'StripeFinalTestUtility');
+          print('🎯 [ENDPOINT] ${endpointConfig['name']}: ${isWorking ? "✅" : "❌"}');
         }
 
       } catch (e) {
@@ -244,7 +243,7 @@ class StripeFinalTestUtility {
         result.endpointErrors[endpointConfig['name'] as String] = e.toString();
 
         if (verbose) {
-          developer.log('❌ [ENDPOINT] ${endpointConfig['name']}: $e', name: 'StripeFinalTestUtility');
+          print('❌ [ENDPOINT] ${endpointConfig['name']}: $e');
         }
       }
     }
@@ -256,7 +255,7 @@ class StripeFinalTestUtility {
   /// FASE 3: Recovery automatico
   static Future<void> _phase3AutoRecovery(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      developer.log('🔄 [PHASE 3] Attempting auto-recovery...', name: 'StripeFinalTestUtility');
+      print('🔄 [PHASE 3] Attempting auto-recovery...');
     }
 
     result.attemptedRecovery = true;
@@ -270,7 +269,7 @@ class StripeFinalTestUtility {
         result.recoveryActions.add('Authentication session cleared');
 
         if (verbose) {
-          developer.log('🔄 [RECOVERY] Authentication session cleared', name: 'StripeFinalTestUtility');
+          print('🔄 [RECOVERY] Authentication session cleared');
         }
       } catch (e) {
         result.recoveryErrors.add('Auth recovery failed: $e');
@@ -289,7 +288,7 @@ class StripeFinalTestUtility {
           result.recoveryActions.add('Base API connection recovered with extended timeout');
 
           if (verbose) {
-            developer.log('✅ [RECOVERY] Base API recovered', name: 'StripeFinalTestUtility');
+            print('✅ [RECOVERY] Base API recovered');
           }
         }
       } catch (e) {
@@ -306,7 +305,7 @@ class StripeFinalTestUtility {
         result.recoveryActions.add('Critical endpoints recovered after retry');
 
         if (verbose) {
-          developer.log('✅ [RECOVERY] Critical endpoints recovered', name: 'StripeFinalTestUtility');
+          print('✅ [RECOVERY] Critical endpoints recovered');
         }
       }
     }
@@ -320,14 +319,14 @@ class StripeFinalTestUtility {
     result.recoverySuccessful = result.baseApiWorking && result.criticalEndpointsWorking >= 1;
 
     if (verbose) {
-      developer.log('🔄 [PHASE 3] Recovery successful: ${result.recoverySuccessful}', name: 'StripeFinalTestUtility');
+      print('🔄 [PHASE 3] Recovery successful: ${result.recoverySuccessful}');
     }
   }
 
   /// FASE 4: Validazione finale
   static Future<void> _phase4FinalValidation(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      developer.log('✅ [PHASE 4] Final validation...', name: 'StripeFinalTestUtility');
+      print('✅ [PHASE 4] Final validation...');
     }
 
     // Test finale rapido
@@ -337,7 +336,7 @@ class StripeFinalTestUtility {
       result.finalQuickTestPassed = quickResults.overallSuccess;
 
       if (verbose) {
-        developer.log('🧪 [PHASE 4] Quick test score: ${result.finalQuickTestScore}/100', name: 'StripeFinalTestUtility');
+        print('🧪 [PHASE 4] Quick test score: ${result.finalQuickTestScore}/100');
       }
     } catch (e) {
       result.finalQuickTestPassed = false;
@@ -353,8 +352,8 @@ class StripeFinalTestUtility {
         result.meetsMinimumCriteria;
 
     if (verbose) {
-      developer.log('✅ [PHASE 4] Meets minimum criteria: ${result.meetsMinimumCriteria}', name: 'StripeFinalTestUtility');
-      developer.log('✅ [PHASE 4] Overall success: ${result.overallSuccess}', name: 'StripeFinalTestUtility');
+      print('✅ [PHASE 4] Meets minimum criteria: ${result.meetsMinimumCriteria}');
+      print('✅ [PHASE 4] Overall success: ${result.overallSuccess}');
     }
   }
 
@@ -370,7 +369,7 @@ class StripeFinalTestUtility {
   /// FASE 5: Generazione report
   static void _phase5GenerateReport(StripeFinalTestResult result, bool verbose) {
     if (verbose) {
-      developer.log('📊 [PHASE 5] Generating final report...', name: 'StripeFinalTestUtility');
+      print('📊 [PHASE 5] Generating final report...');
     }
 
     // Calcola punteggio finale
@@ -391,7 +390,7 @@ class StripeFinalTestUtility {
     result.nextSteps = _generateNextSteps(result);
 
     if (verbose) {
-      developer.log('📊 [PHASE 5] Final score: ${result.finalScore}/100', name: 'StripeFinalTestUtility');
+      print('📊 [PHASE 5] Final score: ${result.finalScore}/100');
     }
   }
 

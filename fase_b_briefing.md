@@ -8,7 +8,7 @@
 - ✅ **Timer Recupero** - 90 secondi tra serie con controllo utente
 - ✅ **Progress Tracking** - Contatori 1/3, 2/3, 3/3 funzionanti
 - ✅ **BLoC Stabile** - Stati gestiti correttamente (WorkoutSessionActive)
-- ✅ **Logging System** - debugPrint() funzionante, developer.log() sostituito
+- ✅ **Logging System** - print() funzionante, developer.log() sostituito
 
 ### **🛠️ File Principali Coinvolti:**
 ```

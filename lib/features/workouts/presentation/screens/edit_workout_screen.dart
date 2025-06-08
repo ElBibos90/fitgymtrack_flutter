@@ -1,5 +1,5 @@
 // lib/features/workouts/presentation/screens/edit_workout_screen.dart
-import 'dart:developer' as developer;
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,7 +63,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _loadWorkoutDetails() {
-    developer.log('🔄 Loading workout details for ID: ${widget.workoutId}', name: 'EditWorkoutScreen');
+    print('🔄 Loading workout details for ID: ${widget.workoutId}');
 
     // Controlla se i dati sono già disponibili nel BLoC
     final currentState = _workoutBloc.state;
@@ -71,7 +71,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     if (currentState is WorkoutPlanDetailsLoaded &&
         currentState.workoutPlan.id == widget.workoutId) {
       // ✅ Dati già disponibili, usali direttamente
-      developer.log('✅ Using existing loaded data', name: 'EditWorkoutScreen');
+      print('✅ Using existing loaded data');
       _resetState(currentState.workoutPlan, currentState.exercises);
       return;
     }
@@ -82,7 +82,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         final existingPlan = currentState.workoutPlans.firstWhere(
               (plan) => plan.id == widget.workoutId,
         );
-        developer.log('✅ Found plan in loaded plans: ${existingPlan.nome}', name: 'EditWorkoutScreen');
+        print('✅ Found plan in loaded plans: ${existingPlan.nome}');
 
         // Se ha già gli esercizi, usa quelli
         if (existingPlan.esercizi.isNotEmpty) {
@@ -94,7 +94,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           return;
         }
       } catch (e) {
-        developer.log('⚠️ Plan not found in current plans, loading details...', name: 'EditWorkoutScreen');
+        print('⚠️ Plan not found in current plans, loading details...');
       }
     }
 
@@ -154,9 +154,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         );
       }).toList();
 
-      developer.log('Esercizi da rimuovere: ${exercisesToRemove.length}', name: 'EditWorkoutScreen');
+      print('Esercizi da rimuovere: ${exercisesToRemove.length}');
       for (final toRemove in exercisesToRemove) {
-        developer.log('🗑️ Rimuovi esercizio_id: ${toRemove.id}', name: 'EditWorkoutScreen');
+        print('🗑️ Rimuovi esercizio_id: ${toRemove.id}');
       }
     }
 
@@ -188,11 +188,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _exercises.removeAt(index);
       _removedExercises.add(exerciseToRemove);
 
-      developer.log('🔍 ESERCIZIO RIMOSSO:', name: 'EditWorkoutScreen');
-      developer.log('- Nome: ${exerciseToRemove.nome}', name: 'EditWorkoutScreen');
-      developer.log('- esercizio_id (exercise.id): ${exerciseToRemove.id}', name: 'EditWorkoutScreen');
-      developer.log('- Totale esercizi rimossi: ${_removedExercises.length}', name: 'EditWorkoutScreen');
-      developer.log('- Esercizi rimanenti: ${_exercises.length}', name: 'EditWorkoutScreen');
+      print('🔍 ESERCIZIO RIMOSSO:');
+      print('- Nome: ${exerciseToRemove.nome}');
+      print('- esercizio_id (exercise.id): ${exerciseToRemove.id}');
+      print('- Totale esercizi rimossi: ${_removedExercises.length}');
+      print('- Esercizi rimanenti: ${_exercises.length}');
 
       _markAsChanged();
     });
@@ -237,7 +237,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _resetState(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    developer.log('🔄 Resetting state with: ${workoutPlan.nome}', name: 'EditWorkoutScreen');
+    print('🔄 Resetting state with: ${workoutPlan.nome}');
 
     _originalWorkoutPlan = workoutPlan;
     _exercises = List.from(exercises);
@@ -250,7 +250,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _isLoading = false; // ✅ SEMPRE reset loading
     });
 
-    developer.log('✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}', name: 'EditWorkoutScreen');
+    print('✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
   }
 
   // ✅ AGGIORNATO: Gestione back migliorata

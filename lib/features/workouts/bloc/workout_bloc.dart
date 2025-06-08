@@ -1,7 +1,7 @@
 // lib/features/workouts/bloc/workout_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'dart:developer' as developer;
+
 
 import '../repository/workout_repository.dart';
 import '../models/workout_plan_models.dart';
@@ -283,20 +283,20 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
     // ✅ Salva l'ultimo userId per refresh automatici
     _lastUserId = event.userId;
 
-    developer.log('Loading workout plans for user: ${event.userId}', name: 'WorkoutBloc');
+    print('Loading workout plans for user: ${event.userId}');
 
     final result = await _workoutRepository.getWorkoutPlans(event.userId);
 
     result.fold(
       onSuccess: (workoutPlans) {
-        developer.log('Successfully loaded ${workoutPlans.length} workout plans', name: 'WorkoutBloc');
+        print('Successfully loaded ${workoutPlans.length} workout plans');
         emit(WorkoutPlansLoaded(
           workoutPlans: workoutPlans,
           userId: event.userId,
         ));
       },
       onFailure: (exception, message) {
-        developer.log('Error loading workout plans: $message', name: 'WorkoutBloc', error: exception);
+        print('Error loading workout plans: $message');
         emit(WorkoutError(
           message: message ?? 'Errore nel caricamento delle schede di allenamento',
           exception: exception,
@@ -310,21 +310,21 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       RefreshWorkoutPlansAfterOperation event,
       Emitter<WorkoutState> emit,
       ) async {
-    developer.log('Auto-refreshing workout plans after ${event.operation}', name: 'WorkoutBloc');
+    print('Auto-refreshing workout plans after ${event.operation}');
 
     // Ricarica silenziosamente le schede senza mostrare loading
     final result = await _workoutRepository.getWorkoutPlans(event.userId);
 
     result.fold(
       onSuccess: (workoutPlans) {
-        developer.log('Successfully auto-refreshed ${workoutPlans.length} workout plans', name: 'WorkoutBloc');
+        print('Successfully auto-refreshed ${workoutPlans.length} workout plans');
         emit(WorkoutPlansLoaded(
           workoutPlans: workoutPlans,
           userId: event.userId,
         ));
       },
       onFailure: (exception, message) {
-        developer.log('Error auto-refreshing workout plans: $message', name: 'WorkoutBloc', error: exception);
+        print('Error auto-refreshing workout plans: $message');
         // Non emettiamo errore per refresh automatico, manteniamo lo stato precedente
       },
     );
@@ -337,20 +337,20 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Caricamento esercizi...'));
 
-    developer.log('Loading exercises for workout: ${event.schedaId}', name: 'WorkoutBloc');
+    print('Loading exercises for workout: ${event.schedaId}');
 
     final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
     result.fold(
       onSuccess: (exercises) {
-        developer.log('Successfully loaded ${exercises.length} exercises', name: 'WorkoutBloc');
+        print('Successfully loaded ${exercises.length} exercises');
         emit(WorkoutExercisesLoaded(
           exercises: exercises,
           schedaId: event.schedaId,
         ));
       },
       onFailure: (exception, message) {
-        developer.log('Error loading exercises: $message', name: 'WorkoutBloc', error: exception);
+        print('Error loading exercises: $message');
         emit(WorkoutError(
           message: message ?? 'Errore nel caricamento degli esercizi',
           exception: exception,
@@ -365,21 +365,21 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Caricamento esercizi disponibili...'));
 
-    developer.log('Loading available exercises for user: ${event.userId}', name: 'WorkoutBloc');
+    print('Loading available exercises for user: ${event.userId}');
 
     try {
       final result = await _workoutRepository.getAvailableExercises(event.userId);
 
       result.fold(
         onSuccess: (exercises) {
-          developer.log('Successfully loaded ${exercises.length} available exercises', name: 'WorkoutBloc');
+          print('Successfully loaded ${exercises.length} available exercises');
           emit(AvailableExercisesLoaded(
             availableExercises: exercises,
             userId: event.userId,
           ));
         },
         onFailure: (exception, message) {
-          developer.log('Error loading available exercises: $message', name: 'WorkoutBloc', error: exception);
+          print('Error loading available exercises: $message');
           emit(WorkoutError(
             message: message ?? 'Errore nel caricamento degli esercizi disponibili',
             exception: exception,
@@ -387,7 +387,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         },
       );
     } catch (e) {
-      developer.log('Exception in _onGetAvailableExercises: $e', name: 'WorkoutBloc', error: e);
+      print('Exception in _onGetAvailableExercises: $e');
       emit(WorkoutError(
         message: 'Errore nell\'elaborazione degli esercizi disponibili: ${e.toString()}',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -402,13 +402,13 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Creazione scheda in corso...'));
 
-    developer.log('Creating workout plan: ${event.request.nome}', name: 'WorkoutBloc');
+    print('Creating workout plan: ${event.request.nome}');
 
     final result = await _workoutRepository.createWorkoutPlan(event.request);
 
     result.fold(
       onSuccess: (response) {
-        developer.log('Successfully created workout plan', name: 'WorkoutBloc');
+        print('Successfully created workout plan');
         emit(WorkoutPlanCreated(
           response: response,
           message: response.message,
@@ -423,7 +423,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         }
       },
       onFailure: (exception, message) {
-        developer.log('Error creating workout plan: $message', name: 'WorkoutBloc', error: exception);
+        print('Error creating workout plan: $message');
         emit(WorkoutError(
           message: message ?? 'Errore nella creazione della scheda',
           exception: exception,
@@ -439,13 +439,13 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Aggiornamento scheda in corso...'));
 
-    developer.log('Updating workout plan: ${event.request.schedaId}', name: 'WorkoutBloc');
+    print('Updating workout plan: ${event.request.schedaId}');
 
     final result = await _workoutRepository.updateWorkoutPlan(event.request);
 
     result.fold(
       onSuccess: (response) {
-        developer.log('Successfully updated workout plan', name: 'WorkoutBloc');
+        print('Successfully updated workout plan');
         emit(WorkoutPlanUpdated(
           response: response,
           message: response.message,
@@ -460,7 +460,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         }
       },
       onFailure: (exception, message) {
-        developer.log('Error updating workout plan: $message', name: 'WorkoutBloc', error: exception);
+        print('Error updating workout plan: $message');
         emit(WorkoutError(
           message: message ?? 'Errore nell\'aggiornamento della scheda',
           exception: exception,
@@ -476,13 +476,13 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Eliminazione scheda in corso...'));
 
-    developer.log('Deleting workout plan: ${event.schedaId}', name: 'WorkoutBloc');
+    print('Deleting workout plan: ${event.schedaId}');
 
     final result = await _workoutRepository.deleteWorkoutPlan(event.schedaId);
 
     result.fold(
       onSuccess: (response) {
-        developer.log('Successfully deleted workout plan', name: 'WorkoutBloc');
+        print('Successfully deleted workout plan');
         emit(WorkoutPlanDeleted(
           response: response,
           message: response.message,
@@ -497,7 +497,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         }
       },
       onFailure: (exception, message) {
-        developer.log('Error deleting workout plan: $message', name: 'WorkoutBloc', error: exception);
+        print('Error deleting workout plan: $message');
         emit(WorkoutError(
           message: message ?? 'Errore nell\'eliminazione della scheda',
           exception: exception,
@@ -513,14 +513,14 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Caricamento dettagli scheda...'));
 
-    developer.log('Loading workout plan with existing data: ${event.workoutPlan.nome}', name: 'WorkoutBloc');
+    print('Loading workout plan with existing data: ${event.workoutPlan.nome}');
 
     try {
       final result = await _workoutRepository.getWorkoutExercises(event.schedaId);
 
       result.fold(
         onSuccess: (exercises) {
-          developer.log('Successfully loaded workout plan with data: ${exercises.length} exercises', name: 'WorkoutBloc');
+          print('Successfully loaded workout plan with data: ${exercises.length} exercises');
 
           final workoutPlan = event.workoutPlan.copyWith(esercizi: exercises);
 
@@ -530,7 +530,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           ));
         },
         onFailure: (exception, message) {
-          developer.log('Error loading workout plan with data: $message', name: 'WorkoutBloc', error: exception);
+          print('Error loading workout plan with data: $message');
           emit(WorkoutError(
             message: message ?? 'Errore nel caricamento dei dettagli della scheda',
             exception: exception,
@@ -538,7 +538,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         },
       );
     } catch (e) {
-      developer.log('Exception in _onLoadWorkoutPlanWithData: $e', name: 'WorkoutBloc', error: e);
+      print('Exception in _onLoadWorkoutPlanWithData: $e');
       emit(WorkoutError(
         message: 'Errore nell\'elaborazione dei dettagli della scheda: ${e.toString()}',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -552,7 +552,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Caricamento dettagli scheda...'));
 
-    developer.log('Loading workout plan details: ${event.schedaId}', name: 'WorkoutBloc');
+    print('Loading workout plan details: ${event.schedaId}');
 
     try {
       // ✅ FIX: Prima assicuriamoci di avere le schede caricate
@@ -564,16 +564,16 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           workoutPlan = (state as WorkoutPlansLoaded).workoutPlans.firstWhere(
                 (plan) => plan.id == event.schedaId,
           );
-          developer.log('✅ Found existing plan: ${workoutPlan.nome}', name: 'WorkoutBloc');
+          print('✅ Found existing plan: ${workoutPlan.nome}');
         } catch (e) {
-          developer.log('⚠️ Plan not found in current state', name: 'WorkoutBloc');
+          print('⚠️ Plan not found in current state');
           workoutPlan = null;
         }
       }
 
       // Se non abbiamo la scheda, dobbiamo caricarla prima
       if (workoutPlan == null && _lastUserId != null) {
-        developer.log('🔄 Loading workout plans first to get real data...', name: 'WorkoutBloc');
+        print('🔄 Loading workout plans first to get real data...');
 
         // Carica le schede prima
         final plansResult = await _workoutRepository.getWorkoutPlans(_lastUserId!);
@@ -582,14 +582,14 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           onSuccess: (plans) {
             try {
               workoutPlan = plans.firstWhere((plan) => plan.id == event.schedaId);
-              developer.log('✅ Found plan after loading: ${workoutPlan!.nome}', name: 'WorkoutBloc');
+              print('✅ Found plan after loading: ${workoutPlan!.nome}');
             } catch (e) {
-              developer.log('❌ Plan still not found after loading', name: 'WorkoutBloc');
+              print('❌ Plan still not found after loading');
               workoutPlan = null;
             }
           },
           onFailure: (exception, message) {
-            developer.log('❌ Failed to load plans: $message', name: 'WorkoutBloc');
+            print('❌ Failed to load plans: $message');
             workoutPlan = null;
           },
         );
@@ -600,11 +600,11 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
 
       exercisesResult.fold(
         onSuccess: (exercises) {
-          developer.log('Successfully loaded workout plan details', name: 'WorkoutBloc');
+          print('Successfully loaded workout plan details');
 
           // Se ancora non abbiamo la scheda, usa un fallback MA con avviso
           if (workoutPlan == null) {
-            developer.log('⚠️ Using fallback workout plan data', name: 'WorkoutBloc');
+            print('⚠️ Using fallback workout plan data');
             workoutPlan = WorkoutPlan(
               id: event.schedaId,
               nome: 'Scheda Sconosciuta #${event.schedaId}',
@@ -623,7 +623,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
           ));
         },
         onFailure: (exception, message) {
-          developer.log('Error loading workout plan details: $message', name: 'WorkoutBloc', error: exception);
+          print('Error loading workout plan details: $message');
           emit(WorkoutError(
             message: message ?? 'Errore nel caricamento dei dettagli della scheda',
             exception: exception,
@@ -631,7 +631,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         },
       );
     } catch (e) {
-      developer.log('Exception in _onGetWorkoutPlanDetails: $e', name: 'WorkoutBloc', error: e);
+      print('Exception in _onGetWorkoutPlanDetails: $e');
       emit(WorkoutError(
         message: 'Errore nell\'elaborazione dei dettagli della scheda',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -643,7 +643,7 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ResetWorkoutState event,
       Emitter<WorkoutState> emit,
       ) async {
-    developer.log('Resetting workout state', name: 'WorkoutBloc');
+    print('Resetting workout state');
     _lastUserId = null; // ✅ Reset anche il tracking userId
     emit(const WorkoutInitial());
   }

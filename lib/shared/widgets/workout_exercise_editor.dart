@@ -1,7 +1,7 @@
 // lib/shared/widgets/workout_exercise_editor.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:developer' as developer;
+
 
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
@@ -73,11 +73,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   void _saveChanges() {
     // 🔧 DEBUG: Log dei valori prima dell'update
-    developer.log('Saving changes for exercise: ${widget.exercise.nome}', name: 'WorkoutExerciseEditor');
-    developer.log('  - selectedSetType: "$_selectedSetType"', name: 'WorkoutExerciseEditor');
-    developer.log('  - linkedToPrevious: $_linkedToPrevious', name: 'WorkoutExerciseEditor');
-    developer.log('  - isIsometric: $_isIsometric', name: 'WorkoutExerciseEditor');
-    developer.log('  - notes: "${_notesController.text}"', name: 'WorkoutExerciseEditor');
+    print('Saving changes for exercise: ${widget.exercise.nome}');
+    print('  - selectedSetType: "$_selectedSetType"');
+    print('  - linkedToPrevious: $_linkedToPrevious');
+    print('  - isIsometric: $_isIsometric');
+    print('  - notes: "${_notesController.text}"');
 
     final updatedExercise = widget.exercise.safeCopy(
       serie: int.tryParse(_serieController.text) ?? widget.exercise.serie,
@@ -91,11 +91,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
 
     // 🔧 DEBUG: Log del risultato dopo safeCopy
-    developer.log('After safeCopy:', name: 'WorkoutExerciseEditor');
-    developer.log('  - setType: "${updatedExercise.setType}"', name: 'WorkoutExerciseEditor');
-    developer.log('  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}', name: 'WorkoutExerciseEditor');
-    developer.log('  - isIsometricInt: ${updatedExercise.isIsometricInt}', name: 'WorkoutExerciseEditor');
-    developer.log('  - note: "${updatedExercise.note}"', name: 'WorkoutExerciseEditor');
+    print('After safeCopy:');
+    print('  - setType: "${updatedExercise.setType}"');
+    print('  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
+    print('  - isIsometricInt: ${updatedExercise.isIsometricInt}');
+    print('  - note: "${updatedExercise.note}"');
 
     widget.onUpdate(updatedExercise);
 

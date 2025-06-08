@@ -1,5 +1,5 @@
 // lib/core/utils/result.dart
-import 'dart:developer' as developer;
+
 
 /// Pattern Result per gestire operazioni async in modo sicuro
 /// Evita exceptions non gestite e fornisce un pattern consistente
@@ -96,17 +96,12 @@ class Result<T> {
   /// Helper per eseguire operazioni async con gestione errori automatica
   static Future<Result<T>> tryCallAsync<T>(Future<T> Function() operation) async {
     try {
-      developer.log('Executing async operation...', name: 'Result');
+      print('Executing async operation...');
       final result = await operation();
-      developer.log('Async operation completed successfully', name: 'Result');
+      print('Async operation completed successfully');
       return Result.success(result);
     } catch (e, stackTrace) {
-      developer.log(
-        'Async operation failed: $e',
-        name: 'Result',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      print('Async operation failed: $e');
 
       // Gestione di diversi tipi di eccezioni
       if (e is Exception) {
@@ -126,7 +121,7 @@ class Result<T> {
       final result = operation();
       return Result.success(result);
     } catch (e) {
-      developer.log('Sync operation failed: $e', name: 'Result', error: e);
+      print('Sync operation failed: $e');
 
       if (e is Exception) {
         return Result.error(e.toString(), e);
