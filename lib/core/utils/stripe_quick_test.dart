@@ -135,7 +135,7 @@ class StripeQuickTest {
 
       final response = await dio.post('/stripe/create-subscription-payment-intent.php', data: {
         'user_id': userId,
-        'price_id': 'price_premium_monthly_test',
+        'price_id': 'price_1RXVOfHHtQGHyul9qMGFmpmO',
         'metadata': {'test': true},
       });
 

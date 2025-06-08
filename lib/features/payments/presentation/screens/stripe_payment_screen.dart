@@ -629,7 +629,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   // Action methods
 
   void _startSubscriptionPayment(String planId) {
-    final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_premium_monthly_test';
+    final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
 
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
       priceId: priceId,

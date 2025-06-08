@@ -41,7 +41,7 @@ class StripeConfig {
       id: 'premium_monthly',
       name: 'Premium Mensile',
       description: 'Tutte le funzionalità Premium',
-      stripePriceId: 'price_premium_monthly_test', // SOSTITUIRE CON PRICE ID REALE
+      stripePriceId: 'price_1RXVOfHHtQGHyul9qMGFmpmO', // SOSTITUIRE CON PRICE ID REALE
       amount: 499, // €4.99 in centesimi
       interval: 'month',
       features: [

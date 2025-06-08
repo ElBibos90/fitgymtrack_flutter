@@ -525,7 +525,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 // 💳 Naviga alla schermata di pagamento Stripe
                 context.push('/payment/subscription', extra: {
                   'plan_id': 'premium_monthly',
-                  'price_id': 'price_premium_monthly_test',
+                  'price_id': 'price_1RXVOfHHtQGHyul9qMGFmpmO',
                 });
               },
               icon: const Icon(Icons.payment),

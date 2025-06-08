@@ -86,7 +86,7 @@ class StripeDebugUtility {
       }),
       EndpointConfig('/stripe/create-subscription-payment-intent.php', 'POST', {
         'user_id': report.userId ?? 1,
-        'price_id': 'price_premium_monthly_test',
+        'price_id': 'price_1RXVOfHHtQGHyul9qMGFmpmO',
         'metadata': {},
       }),
       EndpointConfig('/stripe/create-donation-payment-intent.php', 'POST', {
