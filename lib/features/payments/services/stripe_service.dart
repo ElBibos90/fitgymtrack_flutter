@@ -6,7 +6,7 @@ import '../../../core/config/stripe_config.dart';
 import '../models/stripe_models.dart';
 import '../../../core/utils/result.dart';
 
-/// Servizio per gestire le operazioni Stripe nel client - VERSIONE DEFINITIVA E ROBUSTA
+/// Servizio per gestire le operazioni Stripe nel client - VERSIONE FINALE CORRETTA
 class StripeService {
   static bool _isInitialized = false;
   static String? _lastError;
@@ -14,7 +14,7 @@ class StripeService {
   static int _initAttempts = 0;
   static String? _currentPublishableKey;
 
-  /// Inizializza Stripe SDK con gestione errori super robusta
+  /// Inizializza Stripe SDK con gestione errori super robusta (unchanged)
   static Future<Result<bool>> initialize() async {
     if (_isInitialized && _currentPublishableKey == StripeConfig.publishableKey) {
       print('[CONSOLE]✅ [STRIPE SERVICE] Already initialized with current key');
@@ -104,7 +104,7 @@ class StripeService {
     });
   }
 
-  /// Inizializzazione in modalità demo
+  /// Inizializzazione in modalità demo (unchanged)
   static Future<bool> _initializeDemoMode() async {
     print('[CONSOLE]🎭 [STRIPE SERVICE] Initializing in DEMO mode...');
 
@@ -130,7 +130,7 @@ class StripeService {
     }
   }
 
-  /// Inizializzazione in modalità degraded (solo funzioni base)
+  /// Inizializzazione in modalità degraded (unchanged)
   static Future<bool> _initializeDegradedMode() async {
     print('[CONSOLE]⚙️ [STRIPE SERVICE] Initializing in DEGRADED mode...');
 
@@ -153,7 +153,7 @@ class StripeService {
     }
   }
 
-  /// Applica le impostazioni Stripe con retry super intelligente
+  /// Applica le impostazioni Stripe con retry super intelligente (unchanged)
   static Future<void> _applySettingsWithSuperRetry() async {
     int attempts = 0;
     const maxAttempts = 7;
@@ -242,7 +242,7 @@ class StripeService {
     }
   }
 
-  /// Retry automatico dell'inizializzazione con analisi errore
+  /// Retry automatico dell'inizializzazione con analisi errore (unchanged)
   static Future<bool> _retryInitialization() async {
     try {
       _isInitialized = false;
@@ -261,7 +261,7 @@ class StripeService {
     }
   }
 
-  /// Determina se dovremmo fare retry dell'inizializzazione
+  /// Determina se dovremmo fare retry dell'inizializzazione (unchanged)
   static bool _shouldRetryWithDelay(String error) {
     const retryableErrors = [
       'network',
@@ -278,20 +278,20 @@ class StripeService {
     return retryableErrors.any((retryable) => errorLower.contains(retryable));
   }
 
-  /// Verifica se Stripe è inizializzato
+  /// Verifica se Stripe è inizializzato (unchanged)
   static bool get isInitialized => _isInitialized;
 
-  /// Ultimo errore di inizializzazione
+  /// Ultimo errore di inizializzazione (unchanged)
   static String? get lastError => _lastError;
 
-  /// Numero di tentativi di inizializzazione
+  /// Numero di tentativi di inizializzazione (unchanged)
   static int get initAttempts => _initAttempts;
 
   // ============================================================================
-  // PAYMENT SHEET OPERATIONS - VERSIONE ROBUSTA
+  // 🔧 FIX: PAYMENT SHEET OPERATIONS - GESTIONE CORRETTA DEL SUCCESSO
   // ============================================================================
 
-  /// Presenta Payment Sheet per il pagamento con gestione errori super robusta
+  /// 🔧 FIX: Presenta Payment Sheet per il pagamento con gestione corretta del successo
   static Future<Result<PaymentSheetPaymentOption?>> presentPaymentSheet({
     required String clientSecret,
     String? customerId,
@@ -356,11 +356,37 @@ class StripeService {
 
         print('[CONSOLE]🔧 [STRIPE SERVICE] Presenting Payment Sheet to user...');
 
-        final result = await Stripe.instance.presentPaymentSheet();
+        try {
+          final result = await Stripe.instance.presentPaymentSheet();
 
-        print('[CONSOLE]✅ [STRIPE SERVICE] Payment Sheet completed successfully');
+          print('[CONSOLE]✅ [STRIPE SERVICE] Payment Sheet completed successfully');
+          print('[CONSOLE]🔧 [STRIPE SERVICE] Payment result type: ${result.runtimeType}');
+          print('[CONSOLE]🔧 [STRIPE SERVICE] Payment result: $result');
 
-        return result;
+          // 🔧 FIX: Il completamento senza eccezioni è SEMPRE un successo
+          // Non importa se il result è null, questo è normale per i pagamenti riusciti
+          return result;
+
+        } catch (e) {
+          print('[CONSOLE]❌ [STRIPE SERVICE] Payment Sheet presentation failed: $e');
+
+          // 🔧 FIX: Gestione intelligente degli errori del Payment Sheet
+          if (e is StripeException) {
+            final errorInfo = handleStripeException(e);
+            throw Exception(errorInfo['user_message'] ?? errorInfo['message']);
+          }
+
+          // Gestione errori specifici di cancellazione utente
+          final errorMessage = e.toString().toLowerCase();
+          if (errorMessage.contains('canceled') ||
+              errorMessage.contains('cancelled') ||
+              errorMessage.contains('user_cancel')) {
+            throw Exception('Pagamento annullato dall\'utente');
+          }
+
+          // Altri errori
+          throw Exception('Errore durante il pagamento: $e');
+        }
 
       } catch (e) {
         print('[CONSOLE]❌ [STRIPE SERVICE] Payment Sheet error: $e');
@@ -402,7 +428,7 @@ class StripeService {
     });
   }
 
-  /// Conferma pagamento con Payment Method
+  /// Conferma pagamento con Payment Method (unchanged)
   static Future<Result<PaymentIntent>> confirmPayment({
     required String clientSecret,
     PaymentMethodParams? paymentMethodParams,
@@ -430,7 +456,7 @@ class StripeService {
     });
   }
 
-  /// Crea Payment Method da carta
+  /// Crea Payment Method da carta (unchanged)
   static Future<Result<PaymentMethod>> createPaymentMethod({
     required PaymentMethodParams params,
   }) async {
@@ -455,10 +481,10 @@ class StripeService {
   }
 
   // ============================================================================
-  // GOOGLE PAY / APPLE PAY OPERATIONS
+  // GOOGLE PAY / APPLE PAY OPERATIONS (unchanged)
   // ============================================================================
 
-  /// Verifica se Google Pay è disponibile
+  /// Verifica se Google Pay è disponibile (unchanged)
   static Future<Result<bool>> isGooglePaySupported() async {
     if (!_isInitialized) {
       final initResult = await initialize();
@@ -480,7 +506,7 @@ class StripeService {
     });
   }
 
-  /// Presenta Google Pay
+  /// Presenta Google Pay (unchanged)
   static Future<Result<void>> presentGooglePay({
     required String clientSecret,
     required bool isPaymentIntent,
@@ -514,7 +540,7 @@ class StripeService {
     });
   }
 
-  /// Ottiene l'aspetto migliorato per Payment Sheet
+  /// Ottiene l'aspetto migliorato per Payment Sheet (unchanged)
   static PaymentSheetAppearance _getEnhancedAppearance() {
     return const PaymentSheetAppearance(
       colors: PaymentSheetAppearanceColors(
@@ -553,7 +579,7 @@ class StripeService {
     );
   }
 
-  /// Gestisce gli errori Stripe con messaggi user-friendly migliorati
+  /// Gestisce gli errori Stripe con messaggi user-friendly migliorati (unchanged)
   static Map<String, dynamic> handleStripeException(StripeException exception) {
     print('[CONSOLE]❌ [STRIPE SERVICE] Stripe exception: ${exception.error}');
 
@@ -633,7 +659,7 @@ class StripeService {
     };
   }
 
-  /// Crea parametri per Payment Method da carta manuale
+  /// Crea parametri per Payment Method da carta manuale (unchanged)
   static PaymentMethodParams createCardPaymentMethodParams({
     BillingDetails? billingDetails,
   }) {
@@ -644,7 +670,7 @@ class StripeService {
     );
   }
 
-  /// Force re-initialization con reset completo e recovery
+  /// Force re-initialization con reset completo e recovery (unchanged)
   static Future<Result<bool>> forceReinitialize() async {
     print('[CONSOLE]🔄 [STRIPE SERVICE] Forcing complete re-initialization...');
 
@@ -659,7 +685,7 @@ class StripeService {
     return await initialize();
   }
 
-  /// Health check super completo per Stripe
+  /// Health check super completo per Stripe (unchanged)
   static Future<Map<String, dynamic>> healthCheck() async {
     final health = {
       'is_initialized': _isInitialized,
@@ -702,7 +728,7 @@ class StripeService {
     return health;
   }
 
-  /// Test rapido di inizializzazione con recovery automatico
+  /// Test rapido di inizializzazione con recovery automatico (unchanged)
   static Future<bool> quickHealthTest() async {
     try {
       if (!_isInitialized) {
@@ -733,7 +759,7 @@ class StripeService {
     }
   }
 
-  /// Cleanup risorse
+  /// Cleanup risorse (unchanged)
   static void dispose() {
     print('[CONSOLE]🔧 [STRIPE SERVICE] Disposing Stripe service...');
     _isInitialized = false;
@@ -743,12 +769,12 @@ class StripeService {
     _currentPublishableKey = null;
   }
 
-  /// Reset per testing
+  /// Reset per testing (unchanged)
   static void reset() {
     dispose();
   }
 
-  /// Informazioni diagnostiche super complete
+  /// Informazioni diagnostiche super complete (unchanged)
   static Map<String, dynamic> getDiagnosticInfo() {
     return {
       'service_info': {
@@ -789,7 +815,7 @@ class StripeService {
     };
   }
 
-  /// Stampa informazioni diagnostiche super dettagliate per debug
+  /// Stampa informazioni diagnostiche super dettagliate per debug (unchanged)
   static void printDiagnosticInfo() {
     final info = getDiagnosticInfo();
     print('[CONSOLE]');

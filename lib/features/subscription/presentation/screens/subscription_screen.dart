@@ -48,20 +48,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         listener: (context, state) {
           print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
 
+          // 🔧 FIX: Log dettagliato per ogni stato
           if (state is StripePaymentReady) {
             print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntent.paymentIntentId}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret.substring(0, 20)}...');
             // 🔧 FIX: Apri Payment Sheet direttamente quando pronto
             _presentPaymentSheet(context, state);
           } else if (state is StripePaymentSuccess) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Success');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Success!');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntentId}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Success Message: ${state.message}');
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
                 backgroundColor: AppColors.success,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                duration: Duration(seconds: 4),
               ),
             );
             // 🔧 Ricarica subscription dopo successo
@@ -69,18 +83,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           } else if (state is StripeErrorState) {
             print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
             print('[CONSOLE]🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Error Model: ${state.stripeError}');
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(state.message),
+                content: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
                 backgroundColor: AppColors.error,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
+                duration: Duration(seconds: 5),
               ),
             );
           } else if (state is StripePaymentLoading) {
             print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+          } else if (state is StripeInitializing) {
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Initializing...');
+          } else if (state is StripeReady) {
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Ready!');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Customer: ${state.customer?.id ?? 'None'}');
+            print('[CONSOLE]🔧 [SUBSCRIPTION] Subscription: ${state.subscription?.id ?? 'None'}');
           }
         },
         builder: (context, state) {
@@ -1012,6 +1042,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   /// 🔧 FIX: Presenta Payment Sheet direttamente
   Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
     try {
+      print('[CONSOLE]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION START ===');
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret}');
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Amount: €${state.paymentIntent.amount / 100}');
+
       // Mostra loading snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1035,13 +1070,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       );
 
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Sending ProcessPaymentEvent...');
+
       // Presenta Payment Sheet
       context.read<StripeBloc>().add(ProcessPaymentEvent(
         clientSecret: state.paymentIntent.clientSecret,
         paymentType: state.paymentType,
       ));
 
+      print('[CONSOLE]🔧 [SUBSCRIPTION] ProcessPaymentEvent sent successfully');
+      print('[CONSOLE]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION END ===');
+
     } catch (e) {
+      print('[CONSOLE]❌ [SUBSCRIPTION] Error in _presentPaymentSheet: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore apertura pagamento: $e'),

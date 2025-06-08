@@ -8,7 +8,7 @@ import '../models/stripe_models.dart';
 import '../../../core/utils/result.dart';
 
 // ============================================================================
-// EVENTS
+// EVENTS (unchanged)
 // ============================================================================
 
 abstract class StripeEvent extends Equatable {
@@ -122,7 +122,7 @@ class ResetStripeStateEvent extends StripeEvent {
 }
 
 // ============================================================================
-// STATES
+// STATES (unchanged)
 // ============================================================================
 
 abstract class StripeState extends Equatable {
@@ -259,7 +259,7 @@ class StripeOperationSuccess extends StripeState {
 }
 
 // ============================================================================
-// BLOC
+// BLOC - VERSIONE FINALE CORRETTA
 // ============================================================================
 
 class StripeBloc extends Bloc<StripeEvent, StripeState> {
@@ -302,8 +302,8 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         return;
       }
 
-      // Ottieni o crea customer
-      final customerResult = await _repository.getOrCreateCustomer();
+      // Ottieni o crea customer con retry per evitare duplicati
+      final customerResult = await _getOrCreateCustomerWithRetry();
 
       if (customerResult.isSuccess) {
         _currentCustomer = customerResult.data!;
@@ -334,7 +334,25 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Crea Payment Intent per subscription
+  /// Ottieni customer con retry per evitare duplicati
+  Future<Result<StripeCustomer>> _getOrCreateCustomerWithRetry() async {
+    print('[CONSOLE]🔧 [STRIPE BLOC] Getting customer with retry protection...');
+
+    // Primo tentativo
+    final firstResult = await _repository.getOrCreateCustomer();
+    if (firstResult.isSuccess) {
+      return firstResult;
+    }
+
+    // Attendi e riprova una volta in caso di race condition
+    await Future.delayed(const Duration(milliseconds: 500));
+    print('[CONSOLE]🔧 [STRIPE BLOC] Retrying customer creation...');
+
+    final retryResult = await _repository.getOrCreateCustomer();
+    return retryResult;
+  }
+
+  /// Crea Payment Intent per subscription (unchanged)
   Future<void> _onCreateSubscriptionPayment(
       CreateSubscriptionPaymentEvent event,
       Emitter<StripeState> emit,
@@ -371,7 +389,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Crea Payment Intent per donazione
+  /// Crea Payment Intent per donazione (unchanged)
   Future<void> _onCreateDonationPayment(
       CreateDonationPaymentEvent event,
       Emitter<StripeState> emit,
@@ -408,7 +426,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Processa il pagamento tramite Payment Sheet
+  /// 🔧 FIX FINALE: Processa il pagamento tramite Payment Sheet con gestione CORRETTA del successo
   Future<void> _onProcessPayment(
       ProcessPaymentEvent event,
       Emitter<StripeState> emit,
@@ -425,38 +443,72 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         customerId: _currentCustomer?.id,
       );
 
-      result.fold(
-        onSuccess: (paymentOption) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Payment Sheet completed successfully');
+      // 🔧 FIX CRITICO: Analizza correttamente il Result
+      print('[CONSOLE]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
+      print('[CONSOLE]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
+      print('[CONSOLE]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
 
-          // 🔧 FIX: Extract payment intent ID correctly
-          final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
+      if (result.isSuccess) {
+        // ✅ SUCCESSO: Result è success significa che Payment Sheet è completato con successo
+        final paymentOption = result.data;
 
-          // 🔧 FIX: Emit success immediately without backend confirmation for now
-          emit(StripePaymentSuccess(
-            paymentIntentId: paymentIntentId,
-            paymentType: event.paymentType,
-            message: event.paymentType == 'subscription'
-                ? 'Abbonamento attivato con successo!'
-                : 'Grazie per la tua donazione!',
-          ));
+        print('[CONSOLE]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
+        print('[CONSOLE]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
 
-          // 🔧 Reload subscription after success
-          add(const LoadCurrentSubscriptionEvent());
-        },
-        onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Payment Sheet failed: $message');
-          emit(StripeErrorState(message: message ?? 'Pagamento fallito'));
-        },
-      );
+        final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
+
+        print('[CONSOLE]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
+
+        // 🔧 FIX: Emetti SEMPRE successo quando result.isSuccess = true
+        emit(StripePaymentSuccess(
+          paymentIntentId: paymentIntentId,
+          paymentType: event.paymentType,
+          message: event.paymentType == 'subscription'
+              ? 'Abbonamento attivato con successo!'
+              : 'Grazie per la tua donazione!',
+        ));
+
+        // Refresh dei dati dopo successo
+        add(const LoadCurrentSubscriptionEvent());
+        _refreshCustomerData();
+
+      } else {
+        // ❌ ERRORE: Result è failure significa che c'è stato un vero errore
+        final errorMessage = result.message ?? 'Pagamento fallito';
+
+        print('[CONSOLE]❌ [STRIPE BLOC] Payment Sheet failed with error: $errorMessage');
+
+        // Gestione errori specifici
+        if (errorMessage.toLowerCase().contains('cancel') ||
+            errorMessage.toLowerCase().contains('user_cancel')) {
+          emit(const StripeErrorState(message: 'Pagamento annullato dall\'utente'));
+        } else {
+          emit(StripeErrorState(message: errorMessage));
+        }
+      }
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment processing error: $e');
+      print('[CONSOLE]❌ [STRIPE BLOC] Payment processing exception: $e');
       emit(StripeErrorState(message: 'Errore elaborazione pagamento: $e'));
     }
   }
 
-  /// Conferma il successo del pagamento
+  /// Aggiorna i dati del customer dopo il pagamento
+  Future<void> _refreshCustomerData() async {
+    try {
+      print('[CONSOLE]🔧 [STRIPE BLOC] Refreshing customer data after payment...');
+
+      final customerResult = await _repository.getOrCreateCustomer();
+      if (customerResult.isSuccess) {
+        _currentCustomer = customerResult.data!;
+        print('[CONSOLE]✅ [STRIPE BLOC] Customer data refreshed');
+      }
+    } catch (e) {
+      print('[CONSOLE]⚠️ [STRIPE BLOC] Could not refresh customer data: $e');
+    }
+  }
+
+  /// Conferma il successo del pagamento (unchanged)
   Future<void> _onConfirmPaymentSuccess(
       ConfirmPaymentSuccessEvent event,
       Emitter<StripeState> emit,
@@ -498,7 +550,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Carica la subscription corrente
+  /// Carica la subscription corrente (unchanged)
   Future<void> _onLoadCurrentSubscription(
       LoadCurrentSubscriptionEvent event,
       Emitter<StripeState> emit,
@@ -535,7 +587,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Cancella subscription
+  /// Cancella subscription (unchanged)
   Future<void> _onCancelSubscription(
       CancelSubscriptionEvent event,
       Emitter<StripeState> emit,
@@ -574,7 +626,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Riattiva subscription
+  /// Riattiva subscription (unchanged)
   Future<void> _onReactivateSubscription(
       ReactivateSubscriptionEvent event,
       Emitter<StripeState> emit,
@@ -608,7 +660,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Carica metodi di pagamento
+  /// Carica metodi di pagamento (unchanged)
   Future<void> _onLoadPaymentMethods(
       LoadPaymentMethodsEvent event,
       Emitter<StripeState> emit,
@@ -637,7 +689,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Elimina metodo di pagamento
+  /// Elimina metodo di pagamento (unchanged)
   Future<void> _onDeletePaymentMethod(
       DeletePaymentMethodEvent event,
       Emitter<StripeState> emit,
@@ -673,7 +725,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Sincronizza status subscription
+  /// Sincronizza status subscription (unchanged)
   Future<void> _onSyncSubscriptionStatus(
       SyncSubscriptionStatusEvent event,
       Emitter<StripeState> emit,
@@ -707,7 +759,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Reset stato
+  /// Reset stato (unchanged)
   void _onResetStripeState(
       ResetStripeStateEvent event,
       Emitter<StripeState> emit,
@@ -721,21 +773,21 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     emit(const StripeInitial());
   }
 
-  /// Helper per estrarre Payment Intent ID dal client secret
+  /// Helper per estrarre Payment Intent ID dal client secret (unchanged)
   String _extractPaymentIntentId(String clientSecret) {
     return clientSecret.split('_secret_')[0];
   }
 
-  /// Getter per i dati correnti
+  /// Getter per i dati correnti (unchanged)
   StripeCustomer? get currentCustomer => _currentCustomer;
   StripeSubscription? get currentSubscription => _currentSubscription;
   List<StripePaymentMethod> get paymentMethods => _paymentMethods;
 
-  /// Verifica se l'utente ha una subscription attiva
+  /// Verifica se l'utente ha una subscription attiva (unchanged)
   bool get hasActiveSubscription =>
       _currentSubscription?.isActive ?? false;
 
-  /// Verifica se la subscription sta per scadere
+  /// Verifica se la subscription sta per scadere (unchanged)
   bool get isSubscriptionExpiring =>
       _currentSubscription?.isExpiring ?? false;
 }

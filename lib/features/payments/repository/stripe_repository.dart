@@ -12,6 +12,10 @@ class StripeRepository {
   final Dio _dio;
   final SessionService _sessionService;
 
+  // 🔧 FIX: Cache customer per evitare chiamate multiple
+  StripeCustomer? _cachedCustomer;
+  bool _customerCreationInProgress = false;
+
   StripeRepository({
     required ApiClient apiClient,
     required Dio dio,
@@ -35,62 +39,98 @@ class StripeRepository {
   static const String _confirmPaymentEndpoint = '$_stripePath/confirm-payment.php';
 
   // ============================================================================
-  // 🔧 CUSTOMER OPERATIONS - CORRETTE
+  // 🔧 CUSTOMER OPERATIONS - CORRETTE E ROBUSTE
   // ============================================================================
 
-  /// Crea o ottiene un cliente Stripe per l'utente corrente
+  /// 🔧 FIX: Crea o ottiene un cliente Stripe per l'utente corrente con protezione duplicati
   Future<Result<StripeCustomer>> getOrCreateCustomer() async {
     print('[CONSOLE]🔧 [STRIPE REPO] Getting or creating Stripe customer...');
 
-    return Result.tryCallAsync(() async {
-      // Verifica autenticazione
-      final authResult = await _validateAuthentication();
-      if (authResult.isFailure) {
-        throw Exception('Authentication failed: ${authResult.message}');
+    // 🔧 FIX: Se abbiamo già un customer in cache, usalo
+    if (_cachedCustomer != null) {
+      print('[CONSOLE]✅ [STRIPE REPO] Using cached customer: ${_cachedCustomer!.id}');
+      return Result.success(_cachedCustomer!);
+    }
+
+    // 🔧 FIX: Se c'è già una creazione in corso, aspetta
+    if (_customerCreationInProgress) {
+      print('[CONSOLE]⏳ [STRIPE REPO] Customer creation already in progress, waiting...');
+
+      // Aspetta che la creazione finisca
+      int attempts = 0;
+      while (_customerCreationInProgress && attempts < 10) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        attempts++;
       }
 
-      final user = authResult.data!;
-
-      // 🔧 FIX: Dati customer con validazione
-      final customerData = {
-        'user_id': user.id,
-        'email': user.email ?? 'user${user.id}@fitgymtrack.com',
-        'name': user.username ?? 'User ${user.id}',
-      };
-
-      print('[CONSOLE]🔧 [STRIPE REPO] Customer data: $customerData');
-
-      // 🔧 FIX: POST corretto con gestione errori
-      final response = await _makeAuthenticatedRequest(
-        method: 'POST',
-        endpoint: _customerEndpoint,
-        data: customerData,
-      );
-
-      if (response['success'] == true && response['customer'] != null) {
-        final customer = StripeCustomer.fromJson(response['customer']);
-
-        print('[CONSOLE]✅ [STRIPE REPO] Customer obtained: ${customer.id}');
-
-        return customer;
-      } else {
-        throw Exception(response['message'] ?? 'Errore nella creazione del cliente Stripe');
+      // Se il customer è stato creato nel frattempo, restituiscilo
+      if (_cachedCustomer != null) {
+        print('[CONSOLE]✅ [STRIPE REPO] Customer created by parallel request: ${_cachedCustomer!.id}');
+        return Result.success(_cachedCustomer!);
       }
-    });
+    }
+
+    // 🔧 FIX: Marca che stiamo creando il customer
+    _customerCreationInProgress = true;
+
+    try {
+      return await Result.tryCallAsync(() async {
+        // Verifica autenticazione
+        final authResult = await _validateAuthentication();
+        if (authResult.isFailure) {
+          throw Exception('Authentication failed: ${authResult.message}');
+        }
+
+        final user = authResult.data!;
+
+        // 🔧 FIX: Dati customer con validazione e timestamp unico
+        final customerData = {
+          'user_id': user.id,
+          'email': user.email ?? 'user${user.id}@fitgymtrack.com',
+          'name': user.username ?? 'User ${user.id}',
+          'timestamp': DateTime.now().millisecondsSinceEpoch, // Per identificare la richiesta
+        };
+
+        print('[CONSOLE]🔧 [STRIPE REPO] Customer data: $customerData');
+
+        // 🔧 FIX: POST con retry automatico per gestire race conditions
+        final response = await _makeAuthenticatedRequestWithRetry(
+          method: 'POST',
+          endpoint: _customerEndpoint,
+          data: customerData,
+          maxRetries: 3,
+          retryDelay: const Duration(milliseconds: 1000),
+        );
+
+        if (response['success'] == true && response['customer'] != null) {
+          final customer = StripeCustomer.fromJson(response['customer']);
+
+          // 🔧 FIX: Cache del customer per evitare future chiamate
+          _cachedCustomer = customer;
+
+          print('[CONSOLE]✅ [STRIPE REPO] Customer obtained and cached: ${customer.id}');
+
+          return customer;
+        } else {
+          throw Exception(response['message'] ?? 'Errore nella creazione del cliente Stripe');
+        }
+      });
+    } finally {
+      // 🔧 FIX: Marca che la creazione è finita
+      _customerCreationInProgress = false;
+    }
   }
 
   // ============================================================================
   // 🔧 PAYMENT INTENT OPERATIONS - CORRETTE E VALIDATE
   // ============================================================================
 
-  /// Crea un Payment Intent per una subscription
   /// Crea un Payment Intent per una subscription - FIXED VERSION
   Future<Result<StripePaymentIntentResponse>> createSubscriptionPaymentIntent({
     required String priceId,
     Map<String, dynamic>? metadata,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Creating subscription payment intent for price: $priceId',
+    print('[CONSOLE]🔧 [STRIPE REPO] Creating subscription payment intent for price: $priceId',
     );
 
     return Result.tryCallAsync(() async {
@@ -150,8 +190,7 @@ class StripeRepository {
           try {
             final paymentIntent = StripePaymentIntentResponse.fromJson(paymentIntentData);
 
-            print(
-              '✅ [STRIPE REPO] Payment intent created successfully: ${paymentIntent.paymentIntentId}',
+            print('[CONSOLE]✅ [STRIPE REPO] Payment intent created successfully: ${paymentIntent.paymentIntentId}',
             );
 
             return paymentIntent;
@@ -178,8 +217,7 @@ class StripeRepository {
     required int amount, // in centesimi
     Map<String, dynamic>? metadata,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}',
+    print('[CONSOLE]🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}',
     );
 
     return Result.tryCallAsync(() async {
@@ -225,8 +263,7 @@ class StripeRepository {
       if (response['success'] == true && response['payment_intent'] != null) {
         final paymentIntent = StripePaymentIntentResponse.fromJson(response['payment_intent']);
 
-        print(
-          '✅ [STRIPE REPO] Donation payment intent created: ${paymentIntent.paymentIntentId}',
+        print('[CONSOLE] ✅ [STRIPE REPO] Donation payment intent created: ${paymentIntent.paymentIntentId}',
         );
 
         return paymentIntent;
@@ -241,8 +278,7 @@ class StripeRepository {
     required String paymentIntentId,
     required String subscriptionType,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId',
+    print('[CONSOLE]🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId',
     );
 
     return Result.tryCallAsync(() async {
@@ -270,8 +306,7 @@ class StripeRepository {
       );
 
       if (response['success'] == true) {
-        print(
-          '✅ [STRIPE REPO] Payment confirmed successfully',
+        print('[CONSOLE]✅ [STRIPE REPO] Payment confirmed successfully',
         );
 
         return true;
@@ -312,14 +347,12 @@ class StripeRepository {
         if (response['subscription'] != null) {
           final subscription = StripeSubscription.fromJson(response['subscription']);
 
-          print(
-            '✅ [STRIPE REPO] Current subscription found: ${subscription.id} (${subscription.status})',
+          print('[CONSOLE]✅ [STRIPE REPO] Current subscription found: ${subscription.id} (${subscription.status})',
           );
 
           return subscription;
         } else {
-          print(
-            '✅ [STRIPE REPO] No current subscription found',
+          print('[CONSOLE]✅ [STRIPE REPO] No current subscription found',
           );
 
           return null;
@@ -335,8 +368,7 @@ class StripeRepository {
     required String subscriptionId,
     bool immediately = false,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Canceling subscription: $subscriptionId (immediately: $immediately)',
+    print('[CONSOLE]🔧 [STRIPE REPO] Canceling subscription: $subscriptionId (immediately: $immediately)',
     );
 
     return Result.tryCallAsync(() async {
@@ -364,8 +396,7 @@ class StripeRepository {
       );
 
       if (response['success'] == true) {
-        print(
-          '✅ [STRIPE REPO] Subscription canceled successfully',
+        print('[CONSOLE]✅ [STRIPE REPO] Subscription canceled successfully',
         );
 
         return true;
@@ -379,8 +410,7 @@ class StripeRepository {
   Future<Result<StripeSubscription>> reactivateSubscription({
     required String subscriptionId,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Reactivating subscription: $subscriptionId',
+    print('[CONSOLE]🔧 [STRIPE REPO] Reactivating subscription: $subscriptionId',
     );
 
     return Result.tryCallAsync(() async {
@@ -409,8 +439,7 @@ class StripeRepository {
       if (response['success'] == true && response['subscription'] != null) {
         final subscription = StripeSubscription.fromJson(response['subscription']);
 
-        print(
-          '✅ [STRIPE REPO] Subscription reactivated: ${subscription.id}',
+        print('[CONSOLE]✅ [STRIPE REPO] Subscription reactivated: ${subscription.id}',
         );
 
         return subscription;
@@ -452,15 +481,13 @@ class StripeRepository {
             .map((pm) => StripePaymentMethod.fromJson(pm))
             .toList();
 
-        print(
-          '✅ [STRIPE REPO] Retrieved ${paymentMethods.length} payment methods',
+        print('[CONSOLE]✅ [STRIPE REPO] Retrieved ${paymentMethods.length} payment methods',
         );
 
         return paymentMethods;
       } else {
         // Non è un errore se non ci sono metodi di pagamento
-        print(
-          '✅ [STRIPE REPO] No payment methods found',
+        print('[CONSOLE]✅ [STRIPE REPO] No payment methods found',
         );
 
         return <StripePaymentMethod>[];
@@ -472,8 +499,7 @@ class StripeRepository {
   Future<Result<bool>> deletePaymentMethod({
     required String paymentMethodId,
   }) async {
-    print(
-      '🔧 [STRIPE REPO] Deleting payment method: $paymentMethodId',
+    print('[CONSOLE]🔧 [STRIPE REPO] Deleting payment method: $paymentMethodId',
     );
 
     return Result.tryCallAsync(() async {
@@ -493,8 +519,7 @@ class StripeRepository {
       );
 
       if (response['success'] == true) {
-        print(
-          '✅ [STRIPE REPO] Payment method deleted successfully',
+        print('[CONSOLE]✅ [STRIPE REPO] Payment method deleted successfully',
         );
 
         return true;
@@ -528,8 +553,7 @@ class StripeRepository {
       );
 
       if (response['success'] == true) {
-        print(
-          '✅ [STRIPE REPO] Subscription status synced successfully',
+        print('[CONSOLE]✅ [STRIPE REPO] Subscription status synced successfully',
         );
 
         return true;
@@ -558,6 +582,43 @@ class StripeRepository {
 
       return user;
     });
+  }
+
+  /// 🔧 FIX: Nuova versione con retry automatico per race conditions
+  Future<Map<String, dynamic>> _makeAuthenticatedRequestWithRetry({
+    required String method,
+    required String endpoint,
+    Map<String, dynamic>? data,
+    Map<String, dynamic>? queryParameters,
+    int maxRetries = 3,
+    Duration retryDelay = const Duration(milliseconds: 1000),
+  }) async {
+    int attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        return await _makeAuthenticatedRequest(
+          method: method,
+          endpoint: endpoint,
+          data: data,
+          queryParameters: queryParameters,
+          retryOnFailure: false, // Gestisco i retry qui
+          timeoutSeconds: 15,
+        );
+      } catch (e) {
+        attempt++;
+
+        if (attempt >= maxRetries) {
+          print('[CONSOLE]❌ [STRIPE REPO] Max retries reached for $endpoint: $e');
+          rethrow;
+        }
+
+        print('[CONSOLE]⏳ [STRIPE REPO] Request failed (attempt $attempt/$maxRetries), retrying in ${retryDelay.inMilliseconds}ms: $e');
+        await Future.delayed(retryDelay);
+      }
+    }
+
+    throw Exception('Unexpected end of retry loop');
   }
 
   /// Esegue richieste autenticate con gestione errori robusta
@@ -751,8 +812,8 @@ class StripeRepository {
 
         print(
           isSuccess
-              ? '✅ [STRIPE REPO] Backend connection successful'
-              : '⚠️ [STRIPE REPO] Backend responded but format unexpected',
+              ? '[CONSOLE]✅ [STRIPE REPO] Backend connection successful'
+              : '[CONSOLE]⚠️ [STRIPE REPO] Backend responded but format unexpected',
         );
 
         return isSuccess;
@@ -763,10 +824,19 @@ class StripeRepository {
     });
   }
 
+  /// 🔧 FIX: Clear cache (utile per logout/login)
+  void clearCache() {
+    print('[CONSOLE]🔧 [STRIPE REPO] Clearing cache...');
+    _cachedCustomer = null;
+    _customerCreationInProgress = false;
+  }
+
   /// Informazioni di debug per troubleshooting
   Map<String, dynamic> getDebugInfo() {
     return {
       'base_url': _dio.options.baseUrl,
+      'cached_customer': _cachedCustomer?.id,
+      'customer_creation_in_progress': _customerCreationInProgress,
       'endpoints': {
         'customer': _customerEndpoint,
         'subscription': _subscriptionEndpoint,
@@ -798,6 +868,8 @@ class StripeRepository {
     print('[CONSOLE]🔍 STRIPE REPOSITORY DEBUG INFO');
     print('[CONSOLE]================================');
     print('[CONSOLE]Base URL: ${info['base_url']}');
+    print('[CONSOLE]Cached Customer: ${info['cached_customer'] ?? 'None'}');
+    print('[CONSOLE]Creation In Progress: ${info['customer_creation_in_progress']}');
     print('[CONSOLE]');
     print('[CONSOLE]Endpoints:');
     (info['endpoints'] as Map).forEach((key, value) {
