@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -14,6 +15,9 @@ import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 import 'features/subscription/presentation/screens/subscription_screen.dart';
 import 'core/utils/stripe_configuration_checker.dart';
+import 'core/utils/stripe_debug_utility.dart';
+import 'core/utils/stripe_quick_test.dart';
+import 'core/config/stripe_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +28,9 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('🚨 MAIN STARTED - Using REAL repositories only + STRIPE PAYMENTS!');
+  print('🚨 MAIN STARTED - STRIPE DEBUG MODE ENABLED!');
   print('📱 App orientation locked to PORTRAIT only');
-  print('💳 Stripe payments system enabled');
+  print('💳 Stripe payments system with enhanced debugging');
 
   // 🔧 FIX: Inizializzazione semplificata - solo repository reali + Stripe
   await DependencyInjection.init();
@@ -36,11 +40,46 @@ void main() async {
   final stripeCheck = await StripeConfigurationChecker.checkConfiguration();
   StripeConfigurationChecker.printCheckResult(stripeCheck);
 
+  // 🔧 DEBUG: Stampa configurazione Stripe
+  StripeConfig.printDebugInfo();
+
   // 💳 Verifica salute sistema generale
   final systemHealthy = DependencyInjection.checkSystemHealth();
   print('🏥 System health check: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
+  // 🔍 DEBUG: Test di connettività Stripe in background
+  _runStripeDebugInBackground();
+
   runApp(FitGymTrackApp(stripeConfigValid: stripeCheck.isValid));
+}
+
+/// Esegue il diagnostic Stripe in background per il debug
+Future<void> _runStripeDebugInBackground() async {
+  try {
+    print('🔍 [MAIN] Running Stripe diagnostic in background...');
+
+    // Attendi che l'app sia inizializzata
+    await Future.delayed(const Duration(seconds: 2));
+
+    final dio = getIt<Dio>();
+    final report = await StripeDebugUtility.runFullDiagnostic(dio: dio);
+
+    print('🔍 [MAIN] Stripe diagnostic completed:');
+    print('🔍 [MAIN] Overall Health: ${report.overallHealth}');
+    print('🔍 [MAIN] User Authenticated: ${report.userAuthenticated}');
+    print('🔍 [MAIN] Base API Working: ${report.baseApiWorking}');
+    print('🔍 [MAIN] Stripe Directory Exists: ${report.stripeDirectoryExists}');
+
+    final workingEndpoints = report.endpointTests.values.where((test) => test.isWorking).length;
+    print('🔍 [MAIN] Working Endpoints: $workingEndpoints/${report.endpointTests.length}');
+
+    if (report.overallHealth != 'HEALTHY') {
+      print('⚠️ [MAIN] Stripe system needs attention! Run full diagnostic for details.');
+    }
+
+  } catch (e) {
+    print('❌ [MAIN] Background Stripe diagnostic failed: $e');
+  }
 }
 
 class FitGymTrackApp extends StatelessWidget {
@@ -327,8 +366,8 @@ class _SplashScreenState extends State<SplashScreen>
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
+@override
+State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -554,83 +593,34 @@ class DashboardPage extends StatelessWidget {
 
           SizedBox(height: 16.h),
 
-          // 💳 Pulsante per testare pagamenti Stripe - SEMPLIFICATO E MIGLIORATO
+          // 🧪 PULSANTE QUICK TEST STRIPE - PRINCIPALE
           SizedBox(
             width: double.infinity,
-            child: BlocBuilder<StripeBloc, StripeState>(
-              builder: (context, state) {
-                final isReady = state is StripeReady;
-                final isError = state is StripeErrorState;
-                final isLoading = state is StripeInitializing;
-
-                return ElevatedButton.icon(
-                  onPressed: isReady
-                      ? () {
-                    print('💳 [DASHBOARD] Navigating to Stripe payment...');
-                    context.go('/payment/donation');
-                  }
-                      : isError
-                      ? () {
-                    // 🔧 Retry inizializzazione
-                    print('💳 [DASHBOARD] Retrying Stripe initialization...');
-                    context.read<StripeBloc>().add(const InitializeStripeEvent());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('🔄 Tentativo di riconnessione Stripe...'),
-                        backgroundColor: Colors.blue,
-                      ),
-                    );
-                  }
-                      : null,
-                  icon: isLoading
-                      ? SizedBox(
-                    width: 16.w,
-                    height: 16.w,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                      : Icon(
-                    isReady
-                        ? Icons.payment
-                        : isError
-                        ? Icons.refresh
-                        : Icons.payment_outlined,
-                  ),
-                  label: Text(
-                    isReady
-                        ? 'Testa Pagamento Stripe ✓'
-                        : isError
-                        ? 'Riprova Stripe'
-                        : isLoading
-                        ? 'Inizializzazione...'
-                        : 'Stripe non pronto',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    backgroundColor: isReady
-                        ? Colors.green
-                        : isError
-                        ? Colors.orange
-                        : null,
-                    foregroundColor: isReady || isError ? Colors.white : null,
-                  ),
-                );
-              },
+            child: ElevatedButton.icon(
+              onPressed: () => _runQuickTestAndShow(context),
+              icon: const Icon(Icons.flash_on),
+              label: const Text('🧪 Testa Pagamento Stripe ✓'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
 
-          SizedBox(height: 16.h),
+          SizedBox(height: 8.h),
 
+          // 🔍 PULSANTE DEBUG STRIPE - SECONDARIO
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => context.go('/stats'),
-              icon: const Icon(Icons.analytics),
-              label: const Text('Vedi Statistiche'),
-              style: OutlinedButton.styleFrom(
+            child: ElevatedButton.icon(
+              onPressed: () => _runStripeDebugAndShow(context),
+              icon: const Icon(Icons.bug_report),
+              label: const Text('🔍 Debug Completo Stripe'),
+              style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 12.h),
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
               ),
             ),
           ),
@@ -683,6 +673,199 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 🔍 Esegue il debug Stripe e mostra il risultato
+  Future<void> _runStripeDebugAndShow(BuildContext context) async {
+    // Mostra loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final dio = getIt<Dio>();
+      final report = await StripeDebugUtility.runFullDiagnostic(dio: dio);
+
+      // Chiudi loading
+      Navigator.of(context).pop();
+
+      // Mostra risultato
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('🔍 Stripe Debug Report'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Overall Health: ${report.overallHealth}'),
+                const SizedBox(height: 16),
+                Text('🔐 Authentication:'),
+                Text('  User Auth: ${report.userAuthenticated}'),
+                Text('  Token: ${report.tokenAvailable}'),
+                Text('  User ID: ${report.userId}'),
+                const SizedBox(height: 16),
+                Text('🔗 Connectivity:'),
+                Text('  Base API: ${report.baseApiWorking}'),
+                Text('  Stripe Dir: ${report.stripeDirectoryExists}'),
+                const SizedBox(height: 16),
+                Text('🎯 Endpoints:'),
+                ...report.endpointTests.entries.map((entry) =>
+                    Text('  ${entry.key}: ${entry.value.isWorking ? "✅" : "❌"}')),
+                const SizedBox(height: 16),
+                if (report.overallHealth != 'HEALTHY') ...[
+                  Text('🔧 Possible Issues:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('• Check if Stripe PHP files exist on server'),
+                  Text('• Verify .htaccess configuration'),
+                  Text('• Check authentication token'),
+                  Text('• Verify endpoint URLs match backend'),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                StripeDebugUtility.printDetailedReport(report);
+              },
+              child: const Text('Print to Console'),
+            ),
+          ],
+        ),
+      );
+
+    } catch (e) {
+      // Chiudi loading
+      Navigator.of(context).pop();
+
+      // Mostra errore
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Debug failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// 🧪 Esegue il quick test Stripe e mostra il risultato
+  Future<void> _runQuickTestAndShow(BuildContext context) async {
+    // Mostra loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Testing Stripe endpoints...', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final dio = getIt<Dio>();
+      final results = await StripeQuickTest.runQuickTest(dio);
+
+      // Chiudi loading
+      Navigator.of(context).pop();
+
+      // Mostra risultato
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('🧪 Stripe Quick Test'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Status: ${results.statusText}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: results.overallSuccess ? Colors.green : Colors.red,
+                  ),
+                ),
+                Text('Success Rate: ${results.successRate.toStringAsFixed(1)}%'),
+                Text('Tests Passed: ${results.passedTests}/${results.totalTests}'),
+                const SizedBox(height: 16),
+
+                Text('🔐 Authentication: ${results.authTest ? "✅" : "❌"}'),
+                if (results.authError != null) Text('   ${results.authError}'),
+
+                Text('👤 Customer: ${results.customerTest ? "✅" : "❌"}'),
+                if (results.customerError != null) Text('   ${results.customerError}'),
+
+                Text('📋 Subscription: ${results.subscriptionTest ? "✅" : "❌"}'),
+                if (results.subscriptionError != null) Text('   ${results.subscriptionError}'),
+
+                Text('💳 Sub Payment: ${results.subscriptionPaymentTest ? "✅" : "❌"}'),
+                if (results.subscriptionPaymentError != null) Text('   ${results.subscriptionPaymentError}'),
+
+                Text('🎁 Donation: ${results.donationPaymentTest ? "✅" : "❌"}'),
+                if (results.donationPaymentError != null) Text('   ${results.donationPaymentError}'),
+
+                const SizedBox(height: 16),
+
+                if (!results.overallSuccess) ...[
+                  Text('🔧 Next Steps:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('• Check backend Stripe configuration'),
+                  Text('• Verify PHP files uploaded correctly'),
+                  Text('• Check server error logs'),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                StripeQuickTest.printResults(results);
+              },
+              child: const Text('Print to Console'),
+            ),
+            if (results.overallSuccess)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.go('/payment/donation');
+                },
+                child: const Text('🚀 Test Real Payment'),
+              ),
+          ],
+        ),
+      );
+
+    } catch (e) {
+      // Chiudi loading
+      Navigator.of(context).pop();
+
+      // Mostra errore
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Quick test failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
 

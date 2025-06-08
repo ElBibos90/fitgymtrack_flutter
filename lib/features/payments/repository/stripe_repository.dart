@@ -6,7 +6,7 @@ import '../../../core/network/api_client.dart';
 import '../models/stripe_models.dart';
 import '../../../core/services/session_service.dart';
 
-/// Repository per gestire le operazioni Stripe tramite API backend
+/// Repository per gestire le operazioni Stripe tramite API backend - FIXED per 404
 class StripeRepository {
   final ApiClient _apiClient;
   final Dio _dio;
@@ -19,6 +19,26 @@ class StripeRepository {
   })  : _apiClient = apiClient,
         _dio = dio,
         _sessionService = sessionService;
+
+  // ============================================================================
+  // 🔧 FIX: ENDPOINT CORRETTI CON .php
+  // ============================================================================
+
+  /// Base path per tutti gli endpoint Stripe
+  static const String _stripePath = '/stripe';
+
+  /// Endpoint corretti con estensione .php
+  static const String _customerEndpoint = '$_stripePath/customer.php';
+  static const String _subscriptionEndpoint = '$_stripePath/subscription.php';
+  static const String _createSubscriptionPaymentEndpoint = '$_stripePath/create-subscription-payment-intent.php';
+  static const String _createDonationPaymentEndpoint = '$_stripePath/create-donation-payment-intent.php';
+  static const String _confirmPaymentEndpoint = '$_stripePath/confirm-payment.php';
+  static const String _paymentMethodsEndpoint = '$_stripePath/payment-methods.php';
+  static const String _cancelSubscriptionEndpoint = '$_stripePath/cancel-subscription.php';
+  static const String _reactivateSubscriptionEndpoint = '$_stripePath/reactivate-subscription.php';
+  static const String _syncSubscriptionEndpoint = '$_stripePath/sync-subscription.php';
+  static const String _pricesEndpoint = '$_stripePath/prices.php';
+  static const String _paymentStatusEndpoint = '$_stripePath/payment-status.php';
 
   // ============================================================================
   // CUSTOMER OPERATIONS
@@ -34,7 +54,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.post('/stripe/customer', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_customerEndpoint, data: {
         'user_id': user.id,
         'email': user.email,
         'name': user.username,
@@ -76,7 +97,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.post('/stripe/create-subscription-payment-intent', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_createSubscriptionPaymentEndpoint, data: {
         'user_id': user.id,
         'price_id': priceId,
         'metadata': metadata ?? {},
@@ -114,7 +136,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.post('/stripe/create-donation-payment-intent', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_createDonationPaymentEndpoint, data: {
         'user_id': user.id,
         'amount': amount,
         'currency': 'eur',
@@ -148,7 +171,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.post('/stripe/confirm-payment', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_confirmPaymentEndpoint, data: {
         'payment_intent_id': paymentIntentId,
         'subscription_type': subscriptionType,
       });
@@ -183,7 +207,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.post('/stripe/create-subscription', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_subscriptionEndpoint, data: {
         'customer_id': customerId,
         'price_id': priceId,
         'metadata': metadata ?? {},
@@ -215,7 +240,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.get('/stripe/subscription', queryParameters: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.get(_subscriptionEndpoint, queryParameters: {
         'user_id': user.id,
       });
 
@@ -255,7 +281,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.post('/stripe/cancel-subscription', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_cancelSubscriptionEndpoint, data: {
         'subscription_id': subscriptionId,
         'immediately': immediately,
       });
@@ -284,7 +311,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.post('/stripe/reactivate-subscription', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_reactivateSubscriptionEndpoint, data: {
         'subscription_id': subscriptionId,
       });
 
@@ -318,7 +346,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.get('/stripe/payment-methods', queryParameters: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.get(_paymentMethodsEndpoint, queryParameters: {
         'user_id': user.id,
       });
 
@@ -351,7 +380,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.delete('/stripe/payment-method', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.delete(_paymentMethodsEndpoint, data: {
         'payment_method_id': paymentMethodId,
       });
 
@@ -370,37 +400,6 @@ class StripeRepository {
   }
 
   // ============================================================================
-  // WEBHOOK VALIDATION
-  // ============================================================================
-
-  /// Valida un webhook Stripe (per test)
-  Future<Result<bool>> validateWebhook({
-    required String payload,
-    required String signature,
-  }) async {
-    developer.log('🔧 [STRIPE REPO] Validating webhook...', name: 'StripeRepository');
-
-    return Result.tryCallAsync(() async {
-      final response = await _dio.post('/stripe/validate-webhook', data: {
-        'payload': payload,
-        'signature': signature,
-      });
-
-      final data = response.data;
-      if (data['success'] == true) {
-        developer.log(
-          '✅ [STRIPE REPO] Webhook validated successfully',
-          name: 'StripeRepository',
-        );
-
-        return true;
-      } else {
-        throw Exception(data['message'] ?? 'Webhook non valido');
-      }
-    });
-  }
-
-  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 
@@ -409,7 +408,8 @@ class StripeRepository {
     developer.log('🔧 [STRIPE REPO] Getting available prices...', name: 'StripeRepository');
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.get('/stripe/prices');
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.get(_pricesEndpoint);
 
       final data = response.data;
       if (data['success'] == true && data['prices'] != null) {
@@ -440,7 +440,8 @@ class StripeRepository {
     );
 
     return Result.tryCallAsync(() async {
-      final response = await _dio.get('/stripe/payment-status', queryParameters: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.get(_paymentStatusEndpoint, queryParameters: {
         'payment_intent_id': paymentIntentId,
       });
 
@@ -470,7 +471,8 @@ class StripeRepository {
         throw Exception('Utente non autenticato');
       }
 
-      final response = await _dio.post('/stripe/sync-subscription', data: {
+      // 🔧 FIX: Usa endpoint corretto con .php
+      final response = await _dio.post(_syncSubscriptionEndpoint, data: {
         'user_id': user.id,
       });
 
@@ -486,5 +488,73 @@ class StripeRepository {
         throw Exception(data['message'] ?? 'Errore nella sincronizzazione');
       }
     });
+  }
+
+  // ============================================================================
+  // 🔧 DEBUG E TESTING
+  // ============================================================================
+
+  /// Test di connettività con backend Stripe
+  Future<Result<bool>> testConnection() async {
+    developer.log('🔧 [STRIPE REPO] Testing backend connection...', name: 'StripeRepository');
+
+    return Result.tryCallAsync(() async {
+      try {
+        // Test semplice: tenta di ottenere prezzi disponibili
+        final response = await _dio.get(_pricesEndpoint);
+        final data = response.data;
+
+        final isSuccess = data['success'] == true;
+        developer.log(
+          isSuccess
+              ? '✅ [STRIPE REPO] Backend connection successful'
+              : '⚠️ [STRIPE REPO] Backend responded but with error: ${data['message']}',
+          name: 'StripeRepository',
+        );
+
+        return isSuccess;
+      } catch (e) {
+        developer.log('❌ [STRIPE REPO] Backend connection failed: $e', name: 'StripeRepository');
+        throw Exception('Impossibile connettersi al backend Stripe: $e');
+      }
+    });
+  }
+
+  /// Informazioni di debug per troubleshooting
+  Map<String, dynamic> getDebugInfo() {
+    return {
+      'base_url': _dio.options.baseUrl,
+      'endpoints': {
+        'customer': _customerEndpoint,
+        'subscription': _subscriptionEndpoint,
+        'create_subscription_payment': _createSubscriptionPaymentEndpoint,
+        'create_donation_payment': _createDonationPaymentEndpoint,
+        'confirm_payment': _confirmPaymentEndpoint,
+        'payment_methods': _paymentMethodsEndpoint,
+        'prices': _pricesEndpoint,
+      },
+      'headers': _dio.options.headers,
+      'timeout': {
+        'connect': _dio.options.connectTimeout?.inMilliseconds,
+        'receive': _dio.options.receiveTimeout?.inMilliseconds,
+        'send': _dio.options.sendTimeout?.inMilliseconds,
+      },
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+  }
+
+  /// Stampa informazioni di debug
+  void printDebugInfo() {
+    final info = getDebugInfo();
+    print('🔍 STRIPE REPOSITORY DEBUG INFO');
+    print('================================');
+    print('Base URL: ${info['base_url']}');
+    print('Endpoints:');
+    (info['endpoints'] as Map).forEach((key, value) {
+      print('  $key: ${info['base_url']}$value');
+    });
+    print('Headers: ${info['headers']}');
+    print('Timeouts: ${info['timeout']}');
+    print('================================');
   }
 }
