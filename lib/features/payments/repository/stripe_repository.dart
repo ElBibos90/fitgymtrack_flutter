@@ -6,7 +6,7 @@ import '../../../core/network/api_client.dart';
 import '../models/stripe_models.dart';
 import '../../../core/services/session_service.dart';
 
-/// Repository per gestire le operazioni Stripe tramite API backend - VERSIONE CORRETTA E ROBUSTA
+/// Repository per gestire le operazioni Stripe tramite API backend - VERSIONE FINALE CON POST-PAYMENT FIX
 class StripeRepository {
   final ApiClient _apiClient;
   final Dio _dio;
@@ -317,12 +317,15 @@ class StripeRepository {
   }
 
   // ============================================================================
-  // 🔧 SUBSCRIPTION OPERATIONS - IMPLEMENTAZIONE COMPLETA
+  // 🔧 SUBSCRIPTION OPERATIONS - IMPLEMENTAZIONE COMPLETA CON POST-PAYMENT FIX
   // ============================================================================
 
-  /// Ottiene la subscription corrente dell'utente
-  Future<Result<StripeSubscription?>> getCurrentSubscription() async {
-    print('[CONSOLE]🔧 [STRIPE REPO] Getting current subscription...');
+  /// 🚀 NUOVA: Ottiene la subscription corrente con retry intelligente post-pagamento
+  Future<Result<StripeSubscription?>> getCurrentSubscription({
+    bool retryForRecentPayment = false,
+    int maxRetries = 3,
+  }) async {
+    print('[CONSOLE]🔧 [STRIPE REPO] Getting current subscription (retryForRecentPayment: $retryForRecentPayment)...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -332,35 +335,87 @@ class StripeRepository {
       }
 
       final user = authResult.data!;
+      StripeSubscription? subscription;
+      int attempt = 0;
 
-      // 🔧 FIX: GET con query parameters
-      final response = await _makeAuthenticatedRequest(
-        method: 'GET',
-        endpoint: _subscriptionEndpoint,
-        queryParameters: {
-          'user_id': user.id.toString(),
-          'include_cancelled': 'true', // Include anche quelle cancellate
-        },
-      );
+      // 🔧 FIX: Retry loop per gestire subscriptions appena create
+      while (attempt < maxRetries) {
+        attempt++;
 
-      if (response['success'] == true) {
-        if (response['subscription'] != null) {
-          final subscription = StripeSubscription.fromJson(response['subscription']);
+        print('[CONSOLE]🔧 [STRIPE REPO] Attempt $attempt/$maxRetries to get subscription');
 
-          print('[CONSOLE]✅ [STRIPE REPO] Current subscription found: ${subscription.id} (${subscription.status})',
+        try {
+          // 🔧 FIX: GET con query parameters + include incomplete subscriptions
+          final response = await _makeAuthenticatedRequest(
+            method: 'GET',
+            endpoint: _subscriptionEndpoint,
+            queryParameters: {
+              'user_id': user.id.toString(),
+              'include_cancelled': 'true',
+              'include_incomplete': 'true', // 🚀 NUOVO: Include subscription incomplete
+              'include_recent': retryForRecentPayment ? 'true' : 'false', // 🚀 NUOVO: Include subscription recenti
+            },
           );
 
-          return subscription;
-        } else {
-          print('[CONSOLE]✅ [STRIPE REPO] No current subscription found',
-          );
+          if (response['success'] == true) {
+            if (response['subscription'] != null) {
+              subscription = StripeSubscription.fromJson(response['subscription']);
 
+              print('[CONSOLE]✅ [STRIPE REPO] Current subscription found: ${subscription!.id} (${subscription!.status})',
+              );
+
+              return subscription;
+            } else if (response['subscriptions'] != null && response['subscriptions'] is List) {
+              // 🚀 NUOVO: Gestisce array di subscriptions e prende la più recente
+              final subscriptionsList = response['subscriptions'] as List;
+
+              if (subscriptionsList.isNotEmpty) {
+                // Prendi la prima (più recente) subscription
+                subscription = StripeSubscription.fromJson(subscriptionsList.first);
+
+                print('[CONSOLE]✅ [STRIPE REPO] Found subscription from list: ${subscription!.id} (${subscription!.status})',
+                );
+
+                return subscription;
+              }
+            }
+          }
+
+          // Se non trova subscription e stiamo facendo retry per recent payment
+          if (retryForRecentPayment && attempt < maxRetries) {
+            print('[CONSOLE]⏳ [STRIPE REPO] No subscription found on attempt $attempt, retrying in ${attempt * 2} seconds...');
+            await Future.delayed(Duration(seconds: attempt * 2));
+            continue;
+          }
+
+          // Se non trova nulla
+          print('[CONSOLE]✅ [STRIPE REPO] No current subscription found');
           return null;
+
+        } catch (e) {
+          print('[CONSOLE]❌ [STRIPE REPO] Error getting subscription on attempt $attempt: $e');
+
+          if (attempt >= maxRetries) {
+            rethrow;
+          }
+
+          // Retry con delay
+          await Future.delayed(Duration(seconds: attempt * 2));
         }
-      } else {
-        throw Exception(response['message'] ?? 'Errore nel recupero della subscription');
       }
+
+      return null;
     });
+  }
+
+  /// 🚀 NUOVA: Wrapper per chiamate post-pagamento con retry automatico
+  Future<Result<StripeSubscription?>> getCurrentSubscriptionAfterPayment() async {
+    print('[CONSOLE]🚀 [STRIPE REPO] Getting subscription after payment with intelligent retry...');
+
+    return await getCurrentSubscription(
+      retryForRecentPayment: true,
+      maxRetries: 5, // Più tentativi per post-pagamento
+    );
   }
 
   /// Cancella una subscription

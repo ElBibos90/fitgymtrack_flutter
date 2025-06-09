@@ -75,7 +75,12 @@ class ConfirmPaymentSuccessEvent extends StripeEvent {
 }
 
 class LoadCurrentSubscriptionEvent extends StripeEvent {
-  const LoadCurrentSubscriptionEvent();
+  final bool afterPayment; // 🚀 NUOVO: Indica se è dopo un pagamento
+
+  const LoadCurrentSubscriptionEvent({this.afterPayment = false});
+
+  @override
+  List<Object?> get props => [afterPayment];
 }
 
 class CancelSubscriptionEvent extends StripeEvent {
@@ -259,7 +264,7 @@ class StripeOperationSuccess extends StripeState {
 }
 
 // ============================================================================
-// BLOC - VERSIONE FINALE CORRETTA
+// BLOC - VERSIONE FINALE CON SMART POST-PAYMENT HANDLING
 // ============================================================================
 
 class StripeBloc extends Bloc<StripeEvent, StripeState> {
@@ -468,8 +473,12 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
               : 'Grazie per la tua donazione!',
         ));
 
-        // Refresh dei dati dopo successo
-        add(const LoadCurrentSubscriptionEvent());
+        // 🚀 NUOVA: Refresh intelligente dei dati dopo successo
+        if (event.paymentType == 'subscription') {
+          print('[CONSOLE]🚀 [STRIPE BLOC] Payment is subscription - loading with post-payment retry');
+          add(const LoadCurrentSubscriptionEvent(afterPayment: true));
+        }
+
         _refreshCustomerData();
 
       } else {
@@ -527,7 +536,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
           // Ricarica la subscription se è un pagamento di abbonamento
           if (event.subscriptionType == 'subscription') {
-            add(const LoadCurrentSubscriptionEvent());
+            add(const LoadCurrentSubscriptionEvent(afterPayment: true));
           }
 
           emit(StripePaymentSuccess(
@@ -550,20 +559,34 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// Carica la subscription corrente (unchanged)
+  /// 🚀 NUOVA: Carica la subscription corrente con gestione post-pagamento intelligente
   Future<void> _onLoadCurrentSubscription(
       LoadCurrentSubscriptionEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Loading current subscription...');
+    print('[CONSOLE]🔧 [STRIPE BLOC] Loading current subscription (afterPayment: ${event.afterPayment})...');
 
     try {
-      final result = await _repository.getCurrentSubscription();
+      Result<StripeSubscription?> result;
+
+      if (event.afterPayment) {
+        // 🚀 USA IL NUOVO METODO con retry automatico per post-pagamento
+        print('[CONSOLE]🚀 [STRIPE BLOC] Using post-payment retry logic...');
+        result = await _repository.getCurrentSubscriptionAfterPayment();
+      } else {
+        // Usa il metodo normale
+        result = await _repository.getCurrentSubscription();
+      }
 
       result.fold(
         onSuccess: (subscription) {
           _currentSubscription = subscription;
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription loaded');
+
+          if (subscription != null) {
+            print('[CONSOLE]✅ [STRIPE BLOC] Subscription loaded: ${subscription.id} (${subscription.status})');
+          } else {
+            print('[CONSOLE]✅ [STRIPE BLOC] No subscription found');
+          }
 
           if (state is StripeReady) {
             emit((state as StripeReady).copyWith(subscription: subscription));
@@ -577,14 +600,68 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         },
         onFailure: (exception, message) {
           print('[CONSOLE]❌ [STRIPE BLOC] Subscription loading failed: $message');
-          emit(StripeErrorState(message: message ?? 'Errore caricamento subscription'));
+
+          // 🔧 FIX: Se è dopo un pagamento e fallisce, NON emettere errore che confonde l'utente
+          // Il pagamento è comunque riuscito, semplicemente la subscription non è ancora visibile
+          if (event.afterPayment) {
+            print('[CONSOLE]⚠️ [STRIPE BLOC] Post-payment subscription loading failed - this is OK, subscription may take time to appear');
+
+            // Emetti uno stato di successo comunque, senza subscription
+            if (state is StripeReady) {
+              emit((state as StripeReady).copyWith(subscription: null));
+            } else {
+              emit(StripeReady(
+                customer: _currentCustomer,
+                subscription: null,
+                paymentMethods: _paymentMethods,
+              ));
+            }
+
+            // 🚀 OPZIONALE: Programma un retry futuro
+            _scheduleDelayedSubscriptionRetry();
+
+          } else {
+            // Solo per caricamenti normali (non post-pagamento) mostra errore
+            emit(StripeErrorState(message: message ?? 'Errore caricamento subscription'));
+          }
         },
       );
 
     } catch (e) {
       print('[CONSOLE]❌ [STRIPE BLOC] Subscription loading error: $e');
-      emit(StripeErrorState(message: 'Errore caricamento subscription: $e'));
+
+      // 🔧 FIX: Stessa logica per le eccezioni
+      if (event.afterPayment) {
+        print('[CONSOLE]⚠️ [STRIPE BLOC] Post-payment subscription loading exception - this is OK');
+
+        if (state is StripeReady) {
+          emit((state as StripeReady).copyWith(subscription: null));
+        } else {
+          emit(StripeReady(
+            customer: _currentCustomer,
+            subscription: null,
+            paymentMethods: _paymentMethods,
+          ));
+        }
+
+        _scheduleDelayedSubscriptionRetry();
+
+      } else {
+        emit(StripeErrorState(message: 'Errore imprevisto: $e'));
+      }
     }
+  }
+
+  /// 🚀 NUOVA: Programma un retry ritardato per caricare la subscription
+  void _scheduleDelayedSubscriptionRetry() {
+    print('[CONSOLE]🚀 [STRIPE BLOC] Scheduling delayed subscription retry in 10 seconds...');
+
+    Future.delayed(const Duration(seconds: 10), () {
+      if (!isClosed) {
+        print('[CONSOLE]🚀 [STRIPE BLOC] Executing delayed subscription retry...');
+        add(const LoadCurrentSubscriptionEvent(afterPayment: false));
+      }
+    });
   }
 
   /// Cancella subscription (unchanged)

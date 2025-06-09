@@ -16,11 +16,13 @@ import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 import 'features/subscription/presentation/screens/subscription_screen.dart';
 import 'core/utils/stripe_configuration_checker.dart';
 import 'core/utils/stripe_super_debug.dart';
+import 'core/utils/stripe_testing_utils.dart'; // 🚀 NUOVO: Import testing utils
 import 'core/config/stripe_config.dart';
 
 // 🔧 CONFIGURATION FLAGS
 const bool ENABLE_AUTO_DEBUG = false; // 🚨 DISABLED for clean user testing
 const bool ENABLE_DEBUG_BUTTONS = true; // Keep manual debug available
+const bool ENABLE_STRIPE_TESTING = true; // 🚀 NUOVO: Enable testing features
 const bool PRODUCTION_MODE = false; // Will be true for production
 
 void main() async {
@@ -39,6 +41,11 @@ void main() async {
   // 🔧 Inizializzazione dependency injection
   await DependencyInjection.init();
 
+  // 🚀 NUOVO: Sistema di testing Stripe
+  if (ENABLE_STRIPE_TESTING) {
+    await _runStartupStripeTests();
+  }
+
   // 💳 SILENT configurazione check (no verbose output)
   print('[CONSOLE]🔍 Running silent Stripe configuration check...');
   final stripeCheck = await StripeConfigurationChecker.checkConfiguration();
@@ -54,6 +61,33 @@ void main() async {
     stripeConfigValid: stripeCheck.isValid,
     productionMode: PRODUCTION_MODE,
   ));
+}
+
+/// 🚀 NUOVO: Esegue test di startup per Stripe
+Future<void> _runStartupStripeTests() async {
+  print('[CONSOLE]🧪 STARTUP STRIPE TESTING ENABLED');
+
+  try {
+    // 1. Quick configuration test
+    print('[CONSOLE]🧪 [STARTUP] Testing Stripe configuration...');
+    final configValid = StripeTestingUtils.validateConfiguration();
+    print('[CONSOLE]🧪 [STARTUP] Configuration valid: ${configValid ? "✅" : "❌"}');
+
+    // 2. Print test cards for reference
+    if (configValid) {
+      StripeTestingUtils.printTestCards();
+    }
+
+    // 3. Quick health check (non-blocking)
+    print('[CONSOLE]🧪 [STARTUP] Running quick health check...');
+    final isHealthy = await StripeTestingUtils.quickHealthCheck();
+    print('[CONSOLE]🧪 [STARTUP] System healthy: ${isHealthy ? "✅" : "❌"}');
+
+    print('[CONSOLE]🧪 [STARTUP] Stripe testing completed');
+
+  } catch (e) {
+    print('[CONSOLE]❌ [STARTUP] Stripe testing failed: $e');
+  }
 }
 
 class FitGymTrackApp extends StatelessWidget {
@@ -253,7 +287,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// 🏠 CLEAN HomeScreen - User-focused dashboard
+// 🏠 CLEAN HomeScreen - User-focused dashboard con testing integrato
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -351,6 +385,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   case 'full_debug':
                     _runFullDebug(context);
                     break;
+                  case 'stripe_test': // 🚀 NUOVO
+                    _runStripeTests(context);
+                    break;
+                  case 'post_payment_test': // 🚀 NUOVO
+                    _runPostPaymentTest(context);
+                    break;
+                  case 'diagnostic_report': // 🚀 NUOVO
+                    _generateDiagnosticReport(context);
+                    break;
                 }
               },
               itemBuilder: (context) => [
@@ -374,6 +417,40 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                // 🚀 NUOVO: Opzioni di testing
+                if (ENABLE_STRIPE_TESTING) ...[
+                  const PopupMenuDivider(),
+                  const PopupMenuItem(
+                    value: 'stripe_test',
+                    child: Row(
+                      children: [
+                        Icon(Icons.science, size: 16),
+                        SizedBox(width: 8),
+                        Text('Stripe Test'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'post_payment_test',
+                    child: Row(
+                      children: [
+                        Icon(Icons.timeline, size: 16),
+                        SizedBox(width: 8),
+                        Text('Post-Payment Test'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'diagnostic_report',
+                    child: Row(
+                      children: [
+                        Icon(Icons.assessment, size: 16),
+                        SizedBox(width: 8),
+                        Text('Diagnostic Report'),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -414,6 +491,198 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     context.read<StripeBloc>().add(const InitializeStripeEvent());
+  }
+
+  /// 🚀 NUOVO: Run comprehensive Stripe tests
+  Future<void> _runStripeTests(BuildContext context) async {
+    if (!ENABLE_STRIPE_TESTING) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Running comprehensive Stripe tests...')),
+    );
+
+    try {
+      final result = await StripeTestingUtils.runFullSystemTest(verbose: true);
+
+      final message = 'Stripe Test: ${result.success ? "PASS" : "FAIL"} (${result.overallScore}/100)';
+      final backgroundColor = result.success ? Colors.green : Colors.red;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Show detailed results dialog
+      if (context.mounted) {
+        _showTestResultDialog(context, 'Stripe System Test', result.success, [
+          'Overall Score: ${result.overallScore}/100',
+          'Configuration: ${result.configurationValid ? "✅" : "❌"}',
+          'Service Init: ${result.serviceInitialized ? "✅" : "❌"}',
+          'Repository: ${result.repositoryConnected ? "✅" : "❌"}',
+          'Google Pay: ${result.googlePaySupported ? "✅" : "❌"}',
+          'Duration: ${result.testDuration.inMilliseconds}ms',
+        ]);
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Stripe test failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// 🚀 NUOVO: Run post-payment flow test
+  Future<void> _runPostPaymentTest(BuildContext context) async {
+    if (!ENABLE_STRIPE_TESTING) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Testing post-payment flow...')),
+    );
+
+    try {
+      final result = await StripeTestingUtils.simulatePostPaymentFlow(verbose: true);
+
+      final message = 'Post-Payment Test: ${result.success ? "PASS" : "FAIL"} (${result.score}/100)';
+      final backgroundColor = result.success ? Colors.green : Colors.orange;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Show detailed results dialog
+      if (context.mounted) {
+        _showTestResultDialog(context, 'Post-Payment Test', result.success, [
+          'Score: ${result.score}/100',
+          'Subscription Loading: ${result.subscriptionLoadingWorked ? "✅" : "❌"}',
+          'Race Protection: ${result.customerRaceProtectionWorked ? "✅" : "❌"}',
+          'Error Handling: ${result.errorHandlingWorked ? "✅" : "❌"}',
+          'Duration: ${result.testDuration.inMilliseconds}ms',
+        ]);
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Post-payment test failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// 🚀 NUOVO: Generate comprehensive diagnostic report
+  Future<void> _generateDiagnosticReport(BuildContext context) async {
+    if (!ENABLE_STRIPE_TESTING) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generating diagnostic report...')),
+    );
+
+    try {
+      final report = await StripeTestingUtils.generateDiagnosticReport();
+
+      // Print report to console
+      StripeTestingUtils.printDiagnosticReport(report);
+
+      final message = 'Diagnostic Report: ${report.overallHealthScore}/100 (Check console for details)';
+      final backgroundColor = report.overallHealthScore >= 75 ? Colors.green : Colors.orange;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+
+      // Show summary dialog
+      if (context.mounted) {
+        _showDiagnosticSummaryDialog(context, report);
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Diagnostic report failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// 🚀 NUOVO: Show test result dialog
+  void _showTestResultDialog(BuildContext context, String title, bool success, List<String> details) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: success ? Colors.green : Colors.red,
+            ),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: details.map((detail) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(detail, style: const TextStyle(fontSize: 14)),
+          )).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🚀 NUOVO: Show diagnostic summary dialog
+  void _showDiagnosticSummaryDialog(BuildContext context, StripeDiagnosticReport report) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Diagnostic Summary'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Overall Health: ${report.overallHealthScore}/100',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('System Test: ${report.systemTestResult.overallScore}/100'),
+            Text('Post-Payment: ${report.postPaymentTestResult.score}/100'),
+            const SizedBox(height: 8),
+            Text('Generated in: ${report.generationDuration.inMilliseconds}ms'),
+            const SizedBox(height: 8),
+            const Text('Check console for full details',
+                style: TextStyle(fontStyle: FontStyle.italic)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 💳 CLEAN status dialog
@@ -719,25 +988,25 @@ class WorkoutsPage extends StatelessWidget {
 class StatsPage extends StatelessWidget {
   const StatsPage({super.key});
 
-@override
-Widget build(BuildContext context) {
-  return const Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.analytics,
-          size: 64,
-          color: Colors.grey,
-        ),
-        SizedBox(height: 16),
-        Text(
-          'Statistiche',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        Text('Prossima implementazione...'),
-      ],
-    ),
-  );
-}
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.analytics,
+            size: 64,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Statistiche',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          Text('Prossima implementazione...'),
+        ],
+      ),
+    );
+  }
 }
