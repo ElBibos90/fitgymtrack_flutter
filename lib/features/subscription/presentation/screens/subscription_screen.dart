@@ -14,28 +14,35 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
+  bool _hasTriedInitialization = false;
+
   @override
   void initState() {
     super.initState();
-    // 🔧 FIX: Forza inizializzazione Stripe se necessario
-    _initializeStripeAndSubscription();
+    // 🔧 FIX: NON inizializzare Stripe automaticamente
+    // Stripe verrà inizializzato solo quando l'utente clicca "Sottoscrivi"
+    print('[CONSOLE]💳 [SUBSCRIPTION] Screen loaded - Stripe NOT initialized yet');
   }
 
-  /// 🔧 Inizializza Stripe e carica subscription
-  Future<void> _initializeStripeAndSubscription() async {
-    final stripeBloc = context.read<StripeBloc>();
-
-    // Se Stripe non è pronto, inizializzalo
-    if (stripeBloc.state is! StripeReady) {
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe not ready, initializing...');
-      stripeBloc.add(const InitializeStripeEvent());
-
-      // Aspetta un po' per l'inizializzazione
-      await Future.delayed(const Duration(milliseconds: 500));
+  /// 🔧 FIX: Inizializza Stripe SOLO quando l'utente vuole sottoscrivere
+  void _initializeStripeForPayment() {
+    if (_hasTriedInitialization) {
+      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe already initialized or tried');
+      return;
     }
 
-    // Carica sempre la subscription corrente
-    stripeBloc.add(const LoadCurrentSubscriptionEvent());
+    print('[CONSOLE]💳 [SUBSCRIPTION] User wants to subscribe - initializing Stripe now...');
+    _hasTriedInitialization = true;
+
+    final stripeBloc = context.read<StripeBloc>();
+
+    // Se Stripe non è ancora inizializzato, inizializzalo ora
+    if (stripeBloc.state is StripeInitial) {
+      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe not ready, initializing for payment...');
+      stripeBloc.add(const InitializeStripeEvent());
+    } else {
+      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe already ready, proceeding with payment...');
+    }
   }
 
   @override
@@ -240,7 +247,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       icon = Icons.sync;
       color = AppColors.info;
     } else {
-      icon = Icons.payment;
+      // 🔧 FIX: StripeInitial = pronto per inizializzazione
+      icon = Icons.payment_outlined;
       color = Colors.grey;
     }
 
@@ -306,7 +314,51 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ],
         ),
       );
-    } else if (state is! StripeReady) {
+    } else if (state is StripeInitial) {
+      // 🔧 FIX: Stripe non ancora inizializzato - BANNER INFORMATIVO
+      return Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.blue.shade900.withOpacity(0.2) : Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: Colors.blue.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.blue,
+              size: 24.sp,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pagamenti su richiesta',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    'I pagamenti verranno attivati quando clicchi "Sottoscrivi"',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (state is StripeErrorState) {
       return Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -381,7 +433,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Modalità Stripe',
+                  'Pagamenti Pronti',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
@@ -389,7 +441,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ),
                 Text(
-                  'Pagamenti reali tramite Stripe (modalità test)',
+                  'Sistema di pagamento Stripe attivo e pronto',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
@@ -643,8 +695,43 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
         SizedBox(height: 16.h),
 
-        // Premium Plan
-        if (state is StripeReady) ...[
+        // Premium Plan con gestione stati corretta
+        if (state is StripeInitial) ...[
+          // 🔧 FIX: Stripe non ancora inizializzato - BUTTON NORMALE
+          _buildPlanCard(
+            name: 'Premium',
+            price: '€4.99/mese',
+            description: 'Tutte le funzionalità',
+            features: [
+              'Schede di allenamento illimitate',
+              'Esercizi personalizzati illimitati',
+              'Statistiche avanzate',
+              'Backup automatico su cloud',
+              'Nessuna pubblicità',
+              'Supporto prioritario',
+            ],
+            isActive: false,
+            isPremium: true,
+            isDarkMode: isDarkMode,
+            onTap: () => _startSubscriptionPayment('premium_monthly'),
+          ),
+        ] else if (state is StripeInitializing) ...[
+          // Stripe si sta inizializzando
+          _buildPlanCard(
+            name: 'Premium',
+            price: '€4.99/mese',
+            description: 'Inizializzazione...',
+            features: [
+              'Connessione al sistema di pagamento in corso...',
+              'Attendere qualche secondo',
+            ],
+            isActive: false,
+            isPremium: true,
+            isDarkMode: isDarkMode,
+            isDisabled: true,
+            onTap: null,
+          ),
+        ] else if (state is StripeReady) ...[
           _buildPlanCard(
             name: 'Premium',
             price: '€4.99/mese',
@@ -665,22 +752,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             onTap: state is StripePaymentLoading
                 ? null
                 : () => _startSubscriptionPayment('premium_monthly'),
-          ),
-        ] else if (state is StripeInitializing) ...[
-          // Stripe si sta inizializzando
-          _buildPlanCard(
-            name: 'Premium',
-            price: '€4.99/mese',
-            description: 'Inizializzazione...',
-            features: [
-              'Connessione al sistema di pagamento in corso...',
-              'Attendere qualche secondo',
-            ],
-            isActive: false,
-            isPremium: true,
-            isDarkMode: isDarkMode,
-            isDisabled: true,
-            onTap: null,
           ),
         ] else if (state is StripePaymentLoading) ...[
           // Show Premium plan as loading during payment creation
@@ -1021,11 +1092,70 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   void _startSubscriptionPayment(String planId) {
     final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
 
-    print('[CONSOLE]🔧 [SUBSCRIPTION] Starting payment for plan: $planId');
+    print('[CONSOLE]🔧 [SUBSCRIPTION] User clicked subscribe for plan: $planId');
     print('[CONSOLE]🔧 [SUBSCRIPTION] Price ID: $priceId');
     print('[CONSOLE]🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
 
-    // 🔧 FIX: Solo crea Payment Intent, NON navigare
+    // 🔧 FIX: Inizializza Stripe se necessario PRIMA di creare il pagamento
+    _initializeStripeForPayment();
+
+    final stripeBloc = context.read<StripeBloc>();
+    final currentState = stripeBloc.state;
+
+    if (currentState is StripeInitial || currentState is StripeInitializing) {
+      // Stripe si sta inizializzando o deve essere inizializzato
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe not ready yet, will create payment when ready');
+
+      // Aspetta che Stripe sia pronto, poi crea il pagamento
+      _waitForStripeAndCreatePayment(planId, priceId);
+    } else if (currentState is StripeReady) {
+      // Stripe è pronto, crea subito il pagamento
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe ready, creating payment immediately');
+      _createPaymentIntent(planId, priceId);
+    } else {
+      // Errore o stato sconosciuto
+      print('[CONSOLE]❌ [SUBSCRIPTION] Stripe in error state: ${currentState.runtimeType}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore nel sistema di pagamento. Riprova.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  /// Aspetta che Stripe sia pronto e poi crea il pagamento
+  void _waitForStripeAndCreatePayment(String planId, String priceId) {
+    print('[CONSOLE]🔧 [SUBSCRIPTION] Waiting for Stripe to be ready...');
+
+    // Listener temporaneo per aspettare che Stripe sia pronto
+    final subscription = context.read<StripeBloc>().stream.listen((state) {
+      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe state update while waiting: ${state.runtimeType}');
+
+      if (state is StripeReady) {
+        print('[CONSOLE]✅ [SUBSCRIPTION] Stripe now ready, creating payment');
+        _createPaymentIntent(planId, priceId);
+      } else if (state is StripeErrorState) {
+        print('[CONSOLE]❌ [SUBSCRIPTION] Stripe failed during initialization: ${state.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore inizializzazione pagamenti: ${state.message}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
+
+    // Cancella il listener dopo 30 secondi per evitare memory leak
+    Future.delayed(const Duration(seconds: 30), () {
+      subscription.cancel();
+    });
+  }
+
+  /// Crea il Payment Intent
+  void _createPaymentIntent(String planId, String priceId) {
+    print('[CONSOLE]🔧 [SUBSCRIPTION] Creating payment intent...');
+
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
       priceId: priceId,
       metadata: {

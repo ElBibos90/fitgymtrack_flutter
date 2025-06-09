@@ -32,9 +32,9 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('[CONSOLE]🚀 FITGYMTRACK STARTED - CLEAN USER TESTING MODE');
+  print('[CONSOLE]🚀 FITGYMTRACK STARTED - LAZY STRIPE LOADING MODE');
   print('[CONSOLE]📱 App orientation locked to PORTRAIT only');
-  print('[CONSOLE]🧪 Auto-debug DISABLED - Testing natural user flow');
+  print('[CONSOLE]💳 Stripe will be loaded ONLY when user needs payments');
 
   // 🔧 Inizializzazione dependency injection
   await DependencyInjection.init();
@@ -50,38 +50,10 @@ void main() async {
   final systemHealthy = DependencyInjection.checkSystemHealth();
   print('[CONSOLE]🏥 System health: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
-  // 🧪 BACKGROUND DEBUG - Only if enabled
-  if (ENABLE_AUTO_DEBUG) {
-    print('[CONSOLE]🚀 Running background diagnostic...');
-    _runSuperStripeDebugInBackground();
-  } else {
-    print('[CONSOLE]🧪 Auto-debug disabled - Clean testing mode active');
-  }
-
   runApp(FitGymTrackApp(
     stripeConfigValid: stripeCheck.isValid,
     productionMode: PRODUCTION_MODE,
   ));
-}
-
-/// 🚀 Background diagnostic (only when ENABLE_AUTO_DEBUG = true)
-Future<void> _runSuperStripeDebugInBackground() async {
-  try {
-    print('[CONSOLE]🚀 [BACKGROUND] Running diagnostic...');
-    await Future.delayed(const Duration(seconds: 3));
-
-    final dio = getIt<Dio>();
-    final report = await StripeSuperDebug.runSuperDiagnostic(
-      dio: dio,
-      verbose: false, // Silent background mode
-    );
-
-    print('[CONSOLE]🚀 [BACKGROUND] Diagnostic completed - Score: ${report.overallScore}/100');
-    print('[CONSOLE]🏥 [BACKGROUND] Status: ${report.systemStatus}');
-
-  } catch (e) {
-    print('[CONSOLE]❌ [BACKGROUND] Diagnostic failed: $e');
-  }
 }
 
 class FitGymTrackApp extends StatelessWidget {
@@ -128,27 +100,18 @@ class FitGymTrackApp extends StatelessWidget {
               create: (context) => getIt<PlateauBloc>(),
             ),
 
-            // SUBSCRIPTION & PAYMENT BLOC PROVIDERS
+            // SUBSCRIPTION BLOC PROVIDER
             BlocProvider<SubscriptionBloc>(
               create: (context) => getIt<SubscriptionBloc>(),
             ),
 
-            // 💳 STRIPE BLOC PROVIDER - CLEAN INITIALIZATION
+            // 💳 STRIPE BLOC PROVIDER - LAZY LOADING ONLY
             BlocProvider<StripeBloc>(
               create: (context) {
-                final stripeBloc = getIt<StripeBloc>();
-
-                // 🔧 CLEAN initialization - only if config is valid
-                if (stripeConfigValid && !StripeConfig.isDemoMode) {
-                  print('[CONSOLE]💳 Initializing Stripe for clean testing...');
-                  stripeBloc.add(const InitializeStripeEvent());
-                } else if (StripeConfig.isDemoMode) {
-                  print('[CONSOLE]⚠️ STRIPE: Demo mode - limited functionality');
-                } else {
-                  print('[CONSOLE]❌ STRIPE: Invalid configuration');
-                }
-
-                return stripeBloc;
+                print('[CONSOLE]💳 StripeBloc created - waiting for user action');
+                // 🔧 FIX: NON inizializzare Stripe automaticamente
+                // Stripe verrà inizializzato solo quando l'utente ne avrà bisogno
+                return getIt<StripeBloc>();
               },
             ),
           ],
@@ -166,7 +129,7 @@ class FitGymTrackApp extends StatelessWidget {
   }
 }
 
-// 🚀 CLEAN SplashScreen - No aggressive debug
+// 🚀 CLEAN SplashScreen - No Stripe loading
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -178,7 +141,6 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  String _stripeStatus = 'Connecting...';
 
   @override
   void initState() {
@@ -198,39 +160,6 @@ class _SplashScreenState extends State<SplashScreen>
     ));
 
     _animationController.forward();
-
-    // 💳 CLEAN Stripe initialization
-    _initializeStripeClean();
-  }
-
-  Future<void> _initializeStripeClean() async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (mounted) {
-        if (StripeConfig.isDemoMode) {
-          setState(() {
-            _stripeStatus = 'Demo mode';
-          });
-        } else if (!StripeConfig.isValidKey(StripeConfig.publishableKey)) {
-          setState(() {
-            _stripeStatus = 'Configuration needed';
-          });
-        } else {
-          setState(() {
-            _stripeStatus = 'Connecting...';
-          });
-          context.read<StripeBloc>().add(const InitializeStripeEvent());
-        }
-      }
-
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _stripeStatus = 'Offline mode';
-        });
-      }
-    }
   }
 
   @override
@@ -307,63 +236,13 @@ class _SplashScreenState extends State<SplashScreen>
 
               SizedBox(height: 16.h),
 
-              // 💳 CLEAN Stripe status indicator
-              BlocListener<StripeBloc, StripeState>(
-                listener: (context, state) {
-                  if (state is StripeReady) {
-                    setState(() {
-                      _stripeStatus = 'Ready';
-                    });
-                  } else if (state is StripeErrorState) {
-                    setState(() {
-                      _stripeStatus = 'Offline mode';
-                    });
-                  } else if (state is StripeInitializing) {
-                    setState(() {
-                      _stripeStatus = 'Connecting...';
-                    });
-                  }
-                },
-                child: BlocBuilder<StripeBloc, StripeState>(
-                  builder: (context, state) {
-                    IconData icon;
-                    Color color;
-                    String statusText;
-
-                    if (state is StripeReady) {
-                      icon = Icons.check_circle;
-                      color = Colors.green;
-                      statusText = 'Payments ready';
-                    } else if (state is StripeErrorState) {
-                      icon = Icons.info_outline;
-                      color = Colors.orange;
-                      statusText = 'Offline mode';
-                    } else {
-                      icon = Icons.payment;
-                      color = Colors.blue;
-                      statusText = _stripeStatus;
-                    }
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          icon,
-                          color: color,
-                          size: 16.sp,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: Colors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+              // 💳 NO STRIPE STATUS - Solo loading app
+              Text(
+                'Caricamento app...',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -433,9 +312,15 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         actions: [
-          // 💳 CLEAN Stripe status indicator
+          // 💳 STRIPE STATUS - Solo quando inizializzato
           BlocBuilder<StripeBloc, StripeState>(
             builder: (context, state) {
+              // 🔧 FIX: Mostra indicator solo se Stripe è stato inizializzato
+              if (state is StripeInitial) {
+                // Stripe non ancora inizializzato - non mostrare nulla
+                return const SizedBox.shrink();
+              }
+
               return IconButton(
                 icon: Icon(
                   state is StripeReady
@@ -460,8 +345,8 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: const Icon(Icons.bug_report, color: Colors.grey),
               onSelected: (value) {
                 switch (value) {
-                  case 'quick_test':
-                    _runQuickTest(context);
+                  case 'init_stripe':
+                    _initStripeManually(context);
                     break;
                   case 'full_debug':
                     _runFullDebug(context);
@@ -470,12 +355,12 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               itemBuilder: (context) => [
                 const PopupMenuItem(
-                  value: 'quick_test',
+                  value: 'init_stripe',
                   child: Row(
                     children: [
-                      Icon(Icons.flash_on, size: 16),
+                      Icon(Icons.payment, size: 16),
                       SizedBox(width: 8),
-                      Text('Quick Test'),
+                      Text('Init Stripe'),
                     ],
                   ),
                 ),
@@ -520,6 +405,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// 💳 Manual Stripe initialization for testing
+  void _initStripeManually(BuildContext context) {
+    print('[CONSOLE]🧪 [DEBUG] Manual Stripe initialization triggered');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Initializing Stripe manually...')),
+    );
+
+    context.read<StripeBloc>().add(const InitializeStripeEvent());
+  }
+
   /// 💳 CLEAN status dialog
   void _showStripeStatusDialog(BuildContext context, StripeState state) {
     String title;
@@ -534,10 +430,14 @@ class _HomeScreenState extends State<HomeScreen> {
       message = 'Payment system is not available.\n\n'
           'App works in offline mode.\n'
           'You can still use workouts and stats.';
-    } else {
+    } else if (state is StripeInitializing) {
       title = '⏳ Connecting';
       message = 'Payment system is starting up...\n\n'
           'Please wait a moment.';
+    } else {
+      title = '💤 Payments Not Loaded';
+      message = 'Payment system will be loaded when you need it.\n\n'
+          'Go to Subscription tab to enable payments.';
     }
 
     showDialog(
@@ -546,13 +446,13 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(title),
         content: Text(message),
         actions: [
-          if (state is StripeErrorState)
+          if (state is StripeErrorState || state is StripeInitial)
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 context.read<StripeBloc>().add(const InitializeStripeEvent());
               },
-              child: const Text('Retry'),
+              child: const Text('Load Now'),
             ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -563,34 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// 🧪 Manual debug tools
-  Future<void> _runQuickTest(BuildContext context) async {
-    if (!ENABLE_DEBUG_BUTTONS) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Running quick test...')),
-    );
-
-    try {
-      final dio = getIt<Dio>();
-      final results = await StripeSuperDebug.runQuickTest(dio);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Quick test: ${results.statusText} (${results.score}/100)'),
-          backgroundColor: results.overallSuccess ? Colors.green : Colors.orange,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Quick test failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
+  /// 🧪 Full debug
   Future<void> _runFullDebug(BuildContext context) async {
     if (!ENABLE_DEBUG_BUTTONS) return;
 
@@ -727,56 +600,58 @@ class DashboardPage extends StatelessWidget {
           // 🎯 PREMIUM UPGRADE CALL-TO-ACTION - Navigate to tab instead of route
           BlocBuilder<StripeBloc, StripeState>(
             builder: (context, state) {
-              if (state is StripeReady) {
-                return Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16.w),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade400, Colors.blue.shade400],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '🚀 Passa a Premium',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        'Sblocca tutte le funzionalità per €4.99/mese',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 12.h),
-                      ElevatedButton(
-                        onPressed: () {
-                          // 🔧 FIX: Navigate to subscription tab instead of separate route
-                          final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                          homeState?.navigateToSubscriptionTab();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.purple.shade600,
-                          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-                        ),
-                        child: const Text('Scopri Premium'),
-                      ),
-                    ],
-                  ),
-                );
+              // 🔧 FIX: Mostra CTA solo se Stripe NON è in errore
+              if (state is StripeErrorState) {
+                return const SizedBox.shrink();
               }
-              return const SizedBox.shrink();
+
+              return Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple.shade400, Colors.blue.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '🚀 Passa a Premium',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Sblocca tutte le funzionalità per €4.99/mese',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 12.h),
+                    ElevatedButton(
+                      onPressed: () {
+                        // 🔧 FIX: Navigate to subscription tab instead of separate route
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        homeState?.navigateToSubscriptionTab();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.purple.shade600,
+                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+                      ),
+                      child: const Text('Scopri Premium'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],
@@ -844,25 +719,25 @@ class WorkoutsPage extends StatelessWidget {
 class StatsPage extends StatelessWidget {
   const StatsPage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.analytics,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Statistiche',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text('Prossima implementazione...'),
-        ],
-      ),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+  return const Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.analytics,
+          size: 64,
+          color: Colors.grey,
+        ),
+        SizedBox(height: 16),
+        Text(
+          'Statistiche',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        Text('Prossima implementazione...'),
+      ],
+    ),
+  );
+}
 }
