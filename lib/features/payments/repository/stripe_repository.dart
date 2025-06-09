@@ -111,6 +111,20 @@ class StripeRepository {
           print('[CONSOLE]✅ [STRIPE REPO] Customer obtained and cached: ${customer.id}');
 
           return customer;
+        } else if (response['message']?.contains('Cliente esistente') == true) {
+          // 🔧 FIX: Se il customer esiste già, è comunque un successo
+          print('[CONSOLE]✅ [STRIPE REPO] Customer already exists - treating as success');
+
+          if (response['customer'] != null) {
+            final customer = StripeCustomer.fromJson(response['customer']);
+            _cachedCustomer = customer;
+            return customer;
+          } else {
+            // Se non abbiamo customer data, fai una chiamata di recovery
+            print('[CONSOLE]🔧 [STRIPE REPO] Recovering existing customer...');
+            // Per ora, riprova una volta
+            throw Exception('Customer exists but data not returned - retry needed');
+          }
         } else {
           throw Exception(response['message'] ?? 'Errore nella creazione del cliente Stripe');
         }
