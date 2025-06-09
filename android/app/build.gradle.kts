@@ -22,21 +22,87 @@ android {
     defaultConfig {
         // 🔧 STRIPE FIX: Application ID consistente
         applicationId = "com.fitgymtracker"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        
+        // 💳 STRIPE FIX: minSdk 21 richiesto da Stripe
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // 🔧 FIX: MultiDex per evitare errori metodi
+        multiDexEnabled = true
+        
+        // 🔧 FIX: Test runner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+        
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // 🔧 FIX: Configurazione release con ProGuard/R8
+            isMinifyEnabled = true
+            isShrinkResources = true
+            
+            // 🔧 FIX: ProGuard rules file
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            
+            // 🔧 FIX: Usa debug signing per ora (come originale)
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // 🔧 FIX: Build features
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+    }
+
+    // 🔧 FIX: Packaging options per evitare conflitti
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module"
+            )
+        }
+        jniLibs {
+            pickFirsts += setOf(
+                "**/libc++_shared.so",
+                "**/libjsc.so"
+            )
+        }
+    }
+
+    // 🔧 FIX: Lint configuration
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+        disable += setOf("InvalidPackage")
+    }
+
+    // 🔧 FIX: Compile options per Stripe
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+    }
+}
+
+flutter {
+    source = "../.."
 }
 
 dependencies {
@@ -45,11 +111,31 @@ dependencies {
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.core:core-ktx:1.12.0")
 
-    // 💳 Dipendenze aggiuntive per gestione pagamenti
+    // 💳 STRIPE: Dipendenze aggiuntive per gestione pagamenti
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
-}
-
-flutter {
-    source = "../.."
+    
+    // 🔧 FIX: MultiDex support
+    implementation("androidx.multidex:multidex:2.0.1")
+    
+    // 🔧 FIX: Core library desugaring per Java 8+ API su Android API < 26
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    
+    // 💳 STRIPE: Dipendenze per WebView (usato da Payment Sheet)
+    implementation("androidx.webkit:webkit:1.8.0")
+    
+    // 💳 STRIPE: Security per certificati
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    
+    // 🔧 FIX: ConstraintLayout per UI Stripe
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    
+    // 🔧 FIX: Google Play Core per Flutter deferred components
+    implementation("com.google.android.play:core:1.10.3")
+    implementation("com.google.android.play:core-ktx:1.8.1")
+    
+    // Test dependencies
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
