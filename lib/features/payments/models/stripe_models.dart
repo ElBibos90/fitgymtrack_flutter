@@ -129,17 +129,18 @@ class StripeSubscription {
   }
 }
 
-/// Item di una subscription Stripe
+/// 🔧 FIXED: Item di una subscription Stripe con quantity default
 @JsonSerializable()
 class StripeSubscriptionItem {
   final String id;
   final StripePrice price;
+  @JsonKey(defaultValue: 1) // 🚀 FIX: Default value for missing quantity
   final int quantity;
 
   const StripeSubscriptionItem({
     required this.id,
     required this.price,
-    required this.quantity,
+    this.quantity = 1, // 🚀 FIX: Default value in constructor
   });
 
   factory StripeSubscriptionItem.fromJson(Map<String, dynamic> json) =>
@@ -148,23 +149,26 @@ class StripeSubscriptionItem {
   Map<String, dynamic> toJson() => _$StripeSubscriptionItemToJson(this);
 }
 
-/// Prezzo Stripe
+/// 🔧 ENHANCED: Prezzo Stripe con null safety migliorata
 @JsonSerializable()
 class StripePrice {
   final String id;
+  @JsonKey(defaultValue: 0) // 🚀 FIX: Default value for missing amount
   final int amount; // in centesimi
+  @JsonKey(defaultValue: 'eur') // 🚀 FIX: Default currency
   final String currency;
+  @JsonKey(defaultValue: 'month') // 🚀 FIX: Default interval
   final String interval; // month, year
-  @JsonKey(name: 'interval_count')
+  @JsonKey(name: 'interval_count', defaultValue: 1) // 🚀 FIX: Default interval count
   final int intervalCount;
   final StripeProduct product;
 
   const StripePrice({
     required this.id,
-    required this.amount,
-    required this.currency,
-    required this.interval,
-    required this.intervalCount,
+    this.amount = 0,
+    this.currency = 'eur',
+    this.interval = 'month',
+    this.intervalCount = 1,
     required this.product,
   });
 
@@ -180,17 +184,18 @@ class StripePrice {
   }
 }
 
-/// Prodotto Stripe
+/// 🔧 ENHANCED: Prodotto Stripe con null safety migliorata
 @JsonSerializable()
 class StripeProduct {
   final String id;
+  @JsonKey(defaultValue: 'Product') // 🚀 FIX: Default name
   final String name;
   final String? description;
   final Map<String, dynamic>? metadata;
 
   const StripeProduct({
     required this.id,
-    required this.name,
+    this.name = 'Product',
     this.description,
     this.metadata,
   });

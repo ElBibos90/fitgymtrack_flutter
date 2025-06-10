@@ -87,7 +87,7 @@ StripeSubscriptionItem _$StripeSubscriptionItemFromJson(
     StripeSubscriptionItem(
       id: json['id'] as String,
       price: StripePrice.fromJson(json['price'] as Map<String, dynamic>),
-      quantity: (json['quantity'] as num).toInt(),
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
     );
 
 Map<String, dynamic> _$StripeSubscriptionItemToJson(
@@ -100,10 +100,10 @@ Map<String, dynamic> _$StripeSubscriptionItemToJson(
 
 StripePrice _$StripePriceFromJson(Map<String, dynamic> json) => StripePrice(
       id: json['id'] as String,
-      amount: (json['amount'] as num).toInt(),
-      currency: json['currency'] as String,
-      interval: json['interval'] as String,
-      intervalCount: (json['interval_count'] as num).toInt(),
+      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      currency: json['currency'] as String? ?? 'eur',
+      interval: json['interval'] as String? ?? 'month',
+      intervalCount: (json['interval_count'] as num?)?.toInt() ?? 1,
       product: StripeProduct.fromJson(json['product'] as Map<String, dynamic>),
     );
 
@@ -120,7 +120,7 @@ Map<String, dynamic> _$StripePriceToJson(StripePrice instance) =>
 StripeProduct _$StripeProductFromJson(Map<String, dynamic> json) =>
     StripeProduct(
       id: json['id'] as String,
-      name: json['name'] as String,
+      name: json['name'] as String? ?? 'Product',
       description: json['description'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
