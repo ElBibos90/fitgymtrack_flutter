@@ -295,7 +295,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       InitializeStripeEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Initializing Stripe...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Initializing Stripe...');
     emit(const StripeInitializing());
 
     try {
@@ -312,7 +312,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       if (customerResult.isSuccess) {
         _currentCustomer = customerResult.data!;
-        print('[CONSOLE]✅ [STRIPE BLOC] Customer loaded: ${_currentCustomer!.id}');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Customer loaded: ${_currentCustomer!.id}');
       }
 
       // Carica subscription corrente
@@ -321,7 +321,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       if (subscriptionResult.isSuccess) {
         _currentSubscription = subscriptionResult.data;
         if (_currentSubscription != null) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription loaded: ${_currentSubscription!.id}');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription loaded: ${_currentSubscription!.id}');
         }
       }
 
@@ -331,17 +331,17 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         paymentMethods: _paymentMethods,
       ));
 
-      print('[CONSOLE]✅ [STRIPE BLOC] Stripe initialized successfully');
+      print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Stripe initialized successfully');
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Initialization error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Initialization error: $e');
       emit(StripeErrorState(message: 'Errore inizializzazione: $e'));
     }
   }
 
   /// Ottieni customer con retry per evitare duplicati
   Future<Result<StripeCustomer>> _getOrCreateCustomerWithRetry() async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Getting customer with retry protection...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Getting customer with retry protection...');
 
     // Primo tentativo
     final firstResult = await _repository.getOrCreateCustomer();
@@ -351,7 +351,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
     // Attendi e riprova una volta in caso di race condition
     await Future.delayed(const Duration(milliseconds: 500));
-    print('[CONSOLE]🔧 [STRIPE BLOC] Retrying customer creation...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Retrying customer creation...');
 
     final retryResult = await _repository.getOrCreateCustomer();
     return retryResult;
@@ -362,7 +362,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       CreateSubscriptionPaymentEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Creating subscription payment...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Creating subscription payment...');
     emit(const StripePaymentLoading(
       paymentType: 'subscription',
       message: 'Preparazione pagamento...',
@@ -376,20 +376,20 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (paymentIntent) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription payment intent created');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription payment intent created');
           emit(StripePaymentReady(
             paymentIntent: paymentIntent,
             paymentType: 'subscription',
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Payment intent creation failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment intent creation failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore creazione pagamento'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment creation error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment creation error: $e');
       emit(StripeErrorState(message: 'Errore imprevisto: $e'));
     }
   }
@@ -399,7 +399,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       CreateDonationPaymentEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Creating donation payment...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Creating donation payment...');
     emit(const StripePaymentLoading(
       paymentType: 'donation',
       message: 'Preparazione donazione...',
@@ -413,20 +413,20 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (paymentIntent) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Donation payment intent created');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Donation payment intent created');
           emit(StripePaymentReady(
             paymentIntent: paymentIntent,
             paymentType: 'donation',
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Donation payment creation failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Donation payment creation failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore creazione donazione'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Donation creation error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Donation creation error: $e');
       emit(StripeErrorState(message: 'Errore imprevisto: $e'));
     }
   }
@@ -437,7 +437,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       ProcessPaymentEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Processing payment...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Processing payment...');
     emit(StripePaymentLoading(
       paymentType: event.paymentType,
       message: 'Elaborazione pagamento...',
@@ -450,23 +450,23 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       );
 
       // 🔧 FIX CRITICO: Analizza correttamente il Result
-      print('[CONSOLE]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
-      print('[CONSOLE]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
-      print('[CONSOLE]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
 
       if (result.isSuccess) {
         // ✅ SUCCESSO: Result è success significa che Payment Sheet è completato con successo
         final paymentOption = result.data;
 
-        print('[CONSOLE]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
-        print('[CONSOLE]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
+        print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
 
         final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
 
-        print('[CONSOLE]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
 
         // 🚀 CRITICAL FIX: Chiama backend per confermare e sincronizzare DB
-        print('[CONSOLE]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
+        print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
 
         try {
           final confirmResult = await _repository.confirmPaymentSuccess(
@@ -475,7 +475,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           );
 
           if (confirmResult.isSuccess) {
-            print('[CONSOLE]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
+            print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
 
             // Emetti successo solo DOPO conferma backend
             emit(StripePaymentSuccess(
@@ -488,14 +488,14 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
             // 🚀 Refresh intelligente dei dati dopo conferma backend
             if (event.paymentType == 'subscription') {
-              print('[CONSOLE]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
+              print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
               add(const LoadCurrentSubscriptionEvent(afterPayment: true));
             }
 
             _refreshCustomerData();
 
           } else {
-            print('[CONSOLE]❌ [STRIPE BLOC] Backend confirmation failed: ${confirmResult.message}');
+            print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation failed: ${confirmResult.message}');
 
             // Payment Sheet è riuscito ma backend ha fallito - mostra warning
             emit(StripePaymentSuccess(
@@ -511,7 +511,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           }
 
         } catch (confirmError) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Backend confirmation error: $confirmError');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation error: $confirmError');
 
           // Payment Sheet è riuscito ma backend non risponde - mostra warning
           emit(StripePaymentSuccess(
@@ -534,7 +534,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         // ❌ ERRORE: Result è failure significa che c'è stato un vero errore
         final errorMessage = result.message ?? 'Pagamento fallito';
 
-        print('[CONSOLE]❌ [STRIPE BLOC] Payment Sheet failed with error: $errorMessage');
+        print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment Sheet failed with error: $errorMessage');
 
         // Gestione errori specifici
         if (errorMessage.toLowerCase().contains('cancel') ||
@@ -546,7 +546,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       }
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment processing exception: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment processing exception: $e');
       emit(StripeErrorState(message: 'Errore elaborazione pagamento: $e'));
     }
   }
@@ -554,15 +554,15 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
   /// Aggiorna i dati del customer dopo il pagamento
   Future<void> _refreshCustomerData() async {
     try {
-      print('[CONSOLE]🔧 [STRIPE BLOC] Refreshing customer data after payment...');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Refreshing customer data after payment...');
 
       final customerResult = await _repository.getOrCreateCustomer();
       if (customerResult.isSuccess) {
         _currentCustomer = customerResult.data!;
-        print('[CONSOLE]✅ [STRIPE BLOC] Customer data refreshed');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Customer data refreshed');
       }
     } catch (e) {
-      print('[CONSOLE]⚠️ [STRIPE BLOC] Could not refresh customer data: $e');
+      print('[CONSOLE] [stripe_bloc]⚠️ [STRIPE BLOC] Could not refresh customer data: $e');
     }
   }
 
@@ -571,7 +571,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       ConfirmPaymentSuccessEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Confirming payment success...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Confirming payment success...');
 
     try {
       final result = await _repository.confirmPaymentSuccess(
@@ -581,7 +581,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (success) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Payment confirmed successfully');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment confirmed successfully');
 
           // Ricarica la subscription se è un pagamento di abbonamento
           if (event.subscriptionType == 'subscription') {
@@ -597,13 +597,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Payment confirmation failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment confirmation failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore conferma pagamento'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment confirmation error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment confirmation error: $e');
       emit(StripeErrorState(message: 'Errore conferma pagamento: $e'));
     }
   }
@@ -613,14 +613,14 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       LoadCurrentSubscriptionEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Loading current subscription (afterPayment: ${event.afterPayment})...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Loading current subscription (afterPayment: ${event.afterPayment})...');
 
     try {
       Result<StripeSubscription?> result;
 
       if (event.afterPayment) {
         // 🚀 USA IL NUOVO METODO con retry automatico per post-pagamento
-        print('[CONSOLE]🚀 [STRIPE BLOC] Using post-payment retry logic...');
+        print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Using post-payment retry logic...');
         result = await _repository.getCurrentSubscriptionAfterPayment();
       } else {
         // Usa il metodo normale
@@ -632,9 +632,9 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           _currentSubscription = subscription;
 
           if (subscription != null) {
-            print('[CONSOLE]✅ [STRIPE BLOC] Subscription loaded: ${subscription.id} (${subscription.status})');
+            print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription loaded: ${subscription.id} (${subscription.status})');
           } else {
-            print('[CONSOLE]✅ [STRIPE BLOC] No subscription found');
+            print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] No subscription found');
           }
 
           if (state is StripeReady) {
@@ -648,12 +648,12 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           }
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Subscription loading failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription loading failed: $message');
 
           // 🔧 FIX: Se è dopo un pagamento e fallisce, NON emettere errore che confonde l'utente
           // Il pagamento è comunque riuscito, semplicemente la subscription non è ancora visibile
           if (event.afterPayment) {
-            print('[CONSOLE]⚠️ [STRIPE BLOC] Post-payment subscription loading failed - this is OK, subscription may take time to appear');
+            print('[CONSOLE] [stripe_bloc]⚠️ [STRIPE BLOC] Post-payment subscription loading failed - this is OK, subscription may take time to appear');
 
             // Emetti uno stato di successo comunque, senza subscription
             if (state is StripeReady) {
@@ -677,11 +677,11 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Subscription loading error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription loading error: $e');
 
       // 🔧 FIX: Stessa logica per le eccezioni
       if (event.afterPayment) {
-        print('[CONSOLE]⚠️ [STRIPE BLOC] Post-payment subscription loading exception - this is OK');
+        print('[CONSOLE] [stripe_bloc]⚠️ [STRIPE BLOC] Post-payment subscription loading exception - this is OK');
 
         if (state is StripeReady) {
           emit((state as StripeReady).copyWith(subscription: null));
@@ -703,11 +703,11 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
   /// 🚀 NUOVA: Programma un retry ritardato per caricare la subscription
   void _scheduleDelayedSubscriptionRetry() {
-    print('[CONSOLE]🚀 [STRIPE BLOC] Scheduling delayed subscription retry in 10 seconds...');
+    print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Scheduling delayed subscription retry in 10 seconds...');
 
     Future.delayed(const Duration(seconds: 10), () {
       if (!isClosed) {
-        print('[CONSOLE]🚀 [STRIPE BLOC] Executing delayed subscription retry...');
+        print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Executing delayed subscription retry...');
         add(const LoadCurrentSubscriptionEvent(afterPayment: false));
       }
     });
@@ -718,7 +718,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       CancelSubscriptionEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Canceling subscription...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Canceling subscription...');
 
     try {
       final result = await _repository.cancelSubscription(
@@ -728,7 +728,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (success) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription canceled');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription canceled');
 
           // Ricarica la subscription
           add(const LoadCurrentSubscriptionEvent());
@@ -741,13 +741,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Subscription cancellation failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription cancellation failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore cancellazione subscription'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Subscription cancellation error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription cancellation error: $e');
       emit(StripeErrorState(message: 'Errore cancellazione subscription: $e'));
     }
   }
@@ -757,7 +757,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       ReactivateSubscriptionEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Reactivating subscription...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Reactivating subscription...');
 
     try {
       final result = await _repository.reactivateSubscription(
@@ -767,7 +767,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       result.fold(
         onSuccess: (subscription) {
           _currentSubscription = subscription;
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription reactivated');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription reactivated');
 
           emit(StripeSubscriptionUpdated(
             subscription: subscription,
@@ -775,13 +775,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Subscription reactivation failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription reactivation failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore riattivazione subscription'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Subscription reactivation error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription reactivation error: $e');
       emit(StripeErrorState(message: 'Errore riattivazione subscription: $e'));
     }
   }
@@ -791,7 +791,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       LoadPaymentMethodsEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Loading payment methods...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Loading payment methods...');
 
     try {
       final result = await _repository.getPaymentMethods();
@@ -799,18 +799,18 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       result.fold(
         onSuccess: (paymentMethods) {
           _paymentMethods = paymentMethods;
-          print('[CONSOLE]✅ [STRIPE BLOC] Payment methods loaded');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment methods loaded');
 
           emit(StripePaymentMethodsLoaded(paymentMethods: paymentMethods));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Payment methods loading failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment methods loading failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore caricamento metodi di pagamento'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment methods loading error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment methods loading error: $e');
       emit(StripeErrorState(message: 'Errore caricamento metodi di pagamento: $e'));
     }
   }
@@ -820,7 +820,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       DeletePaymentMethodEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Deleting payment method...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Deleting payment method...');
 
     try {
       final result = await _repository.deletePaymentMethod(
@@ -829,7 +829,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
       result.fold(
         onSuccess: (success) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Payment method deleted');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment method deleted');
 
           // Ricarica metodi di pagamento
           add(const LoadPaymentMethodsEvent());
@@ -840,13 +840,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Payment method deletion failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment method deletion failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore eliminazione metodo di pagamento'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Payment method deletion error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment method deletion error: $e');
       emit(StripeErrorState(message: 'Errore eliminazione metodo di pagamento: $e'));
     }
   }
@@ -856,14 +856,14 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       SyncSubscriptionStatusEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Syncing subscription status...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Syncing subscription status...');
 
     try {
       final result = await _repository.syncSubscriptionStatus();
 
       result.fold(
         onSuccess: (success) {
-          print('[CONSOLE]✅ [STRIPE BLOC] Subscription status synced');
+          print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Subscription status synced');
 
           // Ricarica la subscription
           add(const LoadCurrentSubscriptionEvent());
@@ -874,13 +874,13 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           ));
         },
         onFailure: (exception, message) {
-          print('[CONSOLE]❌ [STRIPE BLOC] Subscription sync failed: $message');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription sync failed: $message');
           emit(StripeErrorState(message: message ?? 'Errore sincronizzazione'));
         },
       );
 
     } catch (e) {
-      print('[CONSOLE]❌ [STRIPE BLOC] Subscription sync error: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Subscription sync error: $e');
       emit(StripeErrorState(message: 'Errore sincronizzazione: $e'));
     }
   }
@@ -890,7 +890,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       ResetStripeStateEvent event,
       Emitter<StripeState> emit,
       ) {
-    print('[CONSOLE]🔧 [STRIPE BLOC] Resetting state...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Resetting state...');
 
     _currentCustomer = null;
     _currentSubscription = null;

@@ -194,7 +194,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        print('[CONSOLE]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -246,7 +246,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        print('[CONSOLE]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -278,14 +278,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _invalidateCacheForExercise(int exerciseId) {
     _cachedWeights.remove(exerciseId);
     _cachedReps.remove(exerciseId);
-    print('[CONSOLE]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
+    print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
   }
 
   /// 🔧 PERFORMANCE FIX: Pulisce tutta la cache
   void _clearCache() {
     _cachedWeights.clear();
     _cachedReps.clear();
-    print('[CONSOLE]🔧 [CACHE] Cache cleared');
+    print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Cache cleared');
   }
 
   // ============================================================================

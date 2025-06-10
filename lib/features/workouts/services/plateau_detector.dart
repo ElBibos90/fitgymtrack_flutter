@@ -20,37 +20,37 @@ class PlateauDetector {
     required int currentReps,
     required Map<int, List<CompletedSeriesData>> historicData,
   }) async {
-    print('[CONSOLE]=== 🎯 ANALISI PLATEAU ESERCIZIO $exerciseId ($exerciseName) ===');
-    print('[CONSOLE]Peso corrente: $currentWeight, Reps correnti: $currentReps');
-    print('[CONSOLE]Dati storici disponibili: ${historicData[exerciseId]?.length ?? 0} serie');
+    print('[CONSOLE] [plateau_detector]=== 🎯 ANALISI PLATEAU ESERCIZIO $exerciseId ($exerciseName) ===');
+    print('[CONSOLE] [plateau_detector]Peso corrente: $currentWeight, Reps correnti: $currentReps');
+    print('[CONSOLE] [plateau_detector]Dati storici disponibili: ${historicData[exerciseId]?.length ?? 0} serie');
 
     final exerciseHistory = historicData[exerciseId];
 
     // Se non ci sono dati storici, prova plateau simulato per test
     if (exerciseHistory == null || exerciseHistory.isEmpty) {
-      print('[CONSOLE]⚠️ Nessun dato storico - controllo plateau simulato');
+      print('[CONSOLE] [plateau_detector]⚠️ Nessun dato storico - controllo plateau simulato');
       return _checkSimulatedPlateau(exerciseId, exerciseName, currentWeight, currentReps);
     }
 
     // 🔧 FIX: Raggruppa le serie per sessione di allenamento (per timestamp/data)
     final sessionGroups = _groupSeriesBySession(exerciseHistory);
-    print('[CONSOLE]📅 Sessioni raggruppate: ${sessionGroups.length}');
+    print('[CONSOLE] [plateau_detector]📅 Sessioni raggruppate: ${sessionGroups.length}');
 
     if (sessionGroups.length < config.minSessionsForPlateau) {
-      print('[CONSOLE]⚠️ Sessioni insufficienti: ${sessionGroups.length} < ${config.minSessionsForPlateau}');
+      print('[CONSOLE] [plateau_detector]⚠️ Sessioni insufficienti: ${sessionGroups.length} < ${config.minSessionsForPlateau}');
       return _tryDetectWithLimitedData(exerciseId, exerciseName, currentWeight, currentReps, exerciseHistory);
     }
 
     // 🔧 FIX: Prendi le ultime N sessioni per confronto serie per serie
     final recentSessions = sessionGroups.take(config.minSessionsForPlateau).toList();
-    print('[CONSOLE]🔍 Analizzando le ultime ${config.minSessionsForPlateau} sessioni per confronto serie per serie');
+    print('[CONSOLE] [plateau_detector]🔍 Analizzando le ultime ${config.minSessionsForPlateau} sessioni per confronto serie per serie');
 
     // 📊 DEBUG: Log dettagliato delle sessioni
     for (int i = 0; i < recentSessions.length; i++) {
       final session = recentSessions[i];
-      print('[CONSOLE]📅 Sessione $i (${session.length} serie):');
+      print('[CONSOLE] [plateau_detector]📅 Sessione $i (${session.length} serie):');
       for (final series in session) {
-        print('[CONSOLE]   Serie ${series.serieNumber ?? "?"}: ${series.peso}kg x ${series.ripetizioni} (timestamp: ${series.timestamp})');
+        print('[CONSOLE] [plateau_detector]   Serie ${series.serieNumber ?? "?"}: ${series.peso}kg x ${series.ripetizioni} (timestamp: ${series.timestamp})');
       }
     }
 
@@ -73,29 +73,29 @@ class PlateauDetector {
     required List<List<CompletedSeriesData>> recentSessions,
     required int sessionsCount,
   }) {
-    print('[CONSOLE]🔍 === CONFRONTO SERIE PER SERIE PERFEZIONATO ===');
+    print('[CONSOLE] [plateau_detector]🔍 === CONFRONTO SERIE PER SERIE PERFEZIONATO ===');
 
     // 🔧 FIX: Organizza le serie per numero di serie (1, 2, 3, ecc.)
     final Map<int, List<CompletedSeriesData>> seriesByNumber = {};
 
     for (int sessionIndex = 0; sessionIndex < recentSessions.length; sessionIndex++) {
       final session = recentSessions[sessionIndex];
-      print('[CONSOLE]📅 Processando Sessione $sessionIndex: ${session.length} serie');
+      print('[CONSOLE] [plateau_detector]📅 Processando Sessione $sessionIndex: ${session.length} serie');
 
       for (final series in session) {
         final serieNumber = series.serieNumber ?? 1;
         seriesByNumber.putIfAbsent(serieNumber, () => []);
         seriesByNumber[serieNumber]!.add(series);
-        print('[CONSOLE]   ➕ Serie $serieNumber: ${series.peso}kg x ${series.ripetizioni} → aggiunta al gruppo');
+        print('[CONSOLE] [plateau_detector]   ➕ Serie $serieNumber: ${series.peso}kg x ${series.ripetizioni} → aggiunta al gruppo');
       }
     }
 
-    print('[CONSOLE]📊 Organizzazione finale per numero di serie:');
+    print('[CONSOLE] [plateau_detector]📊 Organizzazione finale per numero di serie:');
     seriesByNumber.forEach((serieNumber, seriesList) {
-      print('[CONSOLE]📍 Serie $serieNumber: ${seriesList.length} occorrenze nelle sessioni');
+      print('[CONSOLE] [plateau_detector]📍 Serie $serieNumber: ${seriesList.length} occorrenze nelle sessioni');
       for (int i = 0; i < seriesList.length; i++) {
         final series = seriesList[i];
-        print('[CONSOLE]    Occorrenza $i: ${series.peso}kg x ${series.ripetizioni}');
+        print('[CONSOLE] [plateau_detector]    Occorrenza $i: ${series.peso}kg x ${series.ripetizioni}');
       }
     });
 
@@ -108,17 +108,17 @@ class PlateauDetector {
       final serieNumber = entry.key;
       final seriesList = entry.value;
 
-      print('[CONSOLE]🔍 === CONTROLLO PLATEAU SERIE $serieNumber ===');
+      print('[CONSOLE] [plateau_detector]🔍 === CONTROLLO PLATEAU SERIE $serieNumber ===');
 
       // ✅ LOGICA CORRETTA: Verifica se questa serie appare in tutte le sessioni richieste
       if (seriesList.length >= sessionsCount) {
         // 🔧 FIX: Prendi le ultime N occorrenze (ordinate per sessione più recente)
         final recentSeriesForThisNumber = seriesList.take(sessionsCount).toList();
 
-        print('[CONSOLE]📋 Serie $serieNumber - Controllo ${recentSeriesForThisNumber.length} occorrenze:');
+        print('[CONSOLE] [plateau_detector]📋 Serie $serieNumber - Controllo ${recentSeriesForThisNumber.length} occorrenze:');
         for (int index = 0; index < recentSeriesForThisNumber.length; index++) {
           final series = recentSeriesForThisNumber[index];
-          print('[CONSOLE]   Sessione $index: ${series.peso}kg x ${series.ripetizioni}');
+          print('[CONSOLE] [plateau_detector]   Sessione $index: ${series.peso}kg x ${series.ripetizioni}');
         }
 
         // ✅ LOGICA PLATEAU: Verifica se peso e ripetizioni sono rimasti costanti
@@ -128,7 +128,7 @@ class PlateauDetector {
         final areRepsConstant = recentSeriesForThisNumber.every((series) =>
         (series.ripetizioni - firstSeries.ripetizioni).abs() <= config.repsTolerance);
 
-        print('[CONSOLE]   🔍 Serie $serieNumber: peso costante=$isWeightConstant, reps costanti=$areRepsConstant');
+        print('[CONSOLE] [plateau_detector]   🔍 Serie $serieNumber: peso costante=$isWeightConstant, reps costanti=$areRepsConstant');
 
         // 🔧 FIX: Per la serie 1, controlla anche i valori correnti dell'allenamento attivo
         bool currentMatchesPattern = true;
@@ -137,9 +137,9 @@ class PlateauDetector {
               (currentWeight - firstSeries.peso).abs() <= config.weightTolerance &&
                   (currentReps - firstSeries.ripetizioni).abs() <= config.repsTolerance;
 
-          print('[CONSOLE]   🎯 Serie $serieNumber (CORRENTE): valori attuali corrispondono=$currentMatchesPattern');
-          print('[CONSOLE]       Peso attuale: $currentWeight vs storico: ${firstSeries.peso}');
-          print('[CONSOLE]       Reps attuali: $currentReps vs storico: ${firstSeries.ripetizioni}');
+          print('[CONSOLE] [plateau_detector]   🎯 Serie $serieNumber (CORRENTE): valori attuali corrispondono=$currentMatchesPattern');
+          print('[CONSOLE] [plateau_detector]       Peso attuale: $currentWeight vs storico: ${firstSeries.peso}');
+          print('[CONSOLE] [plateau_detector]       Reps attuali: $currentReps vs storico: ${firstSeries.ripetizioni}');
         }
 
         // ✅ PLATEAU RILEVATO se tutti i criteri sono soddisfatti
@@ -149,26 +149,26 @@ class PlateauDetector {
         if (isPlateauForThisSeries) {
           plateauDetectedCount++;
           plateauSeriesNumbers.add(serieNumber);
-          print('[CONSOLE]🚨 PLATEAU CONFERMATO per Serie $serieNumber!');
+          print('[CONSOLE] [plateau_detector]🚨 PLATEAU CONFERMATO per Serie $serieNumber!');
         } else {
-          print('[CONSOLE]✅ Serie $serieNumber: NO plateau (criteri non soddisfatti)');
+          print('[CONSOLE] [plateau_detector]✅ Serie $serieNumber: NO plateau (criteri non soddisfatti)');
         }
       } else {
-        print('[CONSOLE]⏭️ Serie $serieNumber: dati insufficienti (${seriesList.length}/$sessionsCount sessioni)');
+        print('[CONSOLE] [plateau_detector]⏭️ Serie $serieNumber: dati insufficienti (${seriesList.length}/$sessionsCount sessioni)');
       }
     }
 
-    print('[CONSOLE]📈 === RISULTATO FINALE ===');
-    print('[CONSOLE]Serie in plateau: $plateauDetectedCount/$totalSeriesChecked');
-    print('[CONSOLE]Serie con plateau: $plateauSeriesNumbers');
+    print('[CONSOLE] [plateau_detector]📈 === RISULTATO FINALE ===');
+    print('[CONSOLE] [plateau_detector]Serie in plateau: $plateauDetectedCount/$totalSeriesChecked');
+    print('[CONSOLE] [plateau_detector]Serie con plateau: $plateauSeriesNumbers');
 
     // 🔧 FIX: Considera plateau se almeno il 50% delle serie sono in plateau (minimo 1)
     final plateauThreshold = (totalSeriesChecked / 2).ceil().clamp(1, totalSeriesChecked);
-    print('[CONSOLE]🎯 Soglia plateau: $plateauThreshold serie');
+    print('[CONSOLE] [plateau_detector]🎯 Soglia plateau: $plateauThreshold serie');
 
     if (plateauDetectedCount >= plateauThreshold) {
-      print('[CONSOLE]🚨 === PLATEAU CONFERMATO PER ESERCIZIO $exerciseId ($exerciseName) ===');
-      print('[CONSOLE]   Serie in plateau: $plateauDetectedCount/$totalSeriesChecked (soglia: $plateauThreshold)');
+      print('[CONSOLE] [plateau_detector]🚨 === PLATEAU CONFERMATO PER ESERCIZIO $exerciseId ($exerciseName) ===');
+      print('[CONSOLE] [plateau_detector]   Serie in plateau: $plateauDetectedCount/$totalSeriesChecked (soglia: $plateauThreshold)');
 
       // 🔧 FIX: Usa i valori della serie 1 come rappresentativi (o la prima serie disponibile)
       final representativeSeries = seriesByNumber[1]?.first ?? seriesByNumber.values.first.first;
@@ -189,7 +189,7 @@ class PlateauDetector {
       );
     }
 
-    print('[CONSOLE]✅ Nessun plateau significativo rilevato per $exerciseName');
+    print('[CONSOLE] [plateau_detector]✅ Nessun plateau significativo rilevato per $exerciseName');
     return null;
   }
 
@@ -202,7 +202,7 @@ class PlateauDetector {
     required Map<int, int> currentReps,
     required Map<int, List<CompletedSeriesData>> historicData,
   }) async {
-    print('[CONSOLE]🔍 === ANALISI PLATEAU GRUPPO: $groupName ($groupType) ===');
+    print('[CONSOLE] [plateau_detector]🔍 === ANALISI PLATEAU GRUPPO: $groupName ($groupType) ===');
 
     final List<PlateauInfo> groupPlateaus = [];
 
@@ -211,7 +211,7 @@ class PlateauDetector {
       final weight = currentWeights[exerciseId] ?? exercise.peso;
       final reps = currentReps[exerciseId] ?? exercise.ripetizioni;
 
-      print('[CONSOLE]🔍 Analizzando esercizio: ${exercise.nome} (ID: $exerciseId)');
+      print('[CONSOLE] [plateau_detector]🔍 Analizzando esercizio: ${exercise.nome} (ID: $exerciseId)');
 
       final plateau = await detectPlateau(
         exerciseId: exerciseId,
@@ -223,9 +223,9 @@ class PlateauDetector {
 
       if (plateau != null) {
         groupPlateaus.add(plateau);
-        print('[CONSOLE]🚨 Plateau rilevato per ${exercise.nome}');
+        print('[CONSOLE] [plateau_detector]🚨 Plateau rilevato per ${exercise.nome}');
       } else {
-        print('[CONSOLE]✅ Nessun plateau per ${exercise.nome}');
+        print('[CONSOLE] [plateau_detector]✅ Nessun plateau per ${exercise.nome}');
       }
     }
 
@@ -237,15 +237,15 @@ class PlateauDetector {
       analyzedAt: DateTime.now(),
     );
 
-    print('[CONSOLE]📊 RISULTATO GRUPPO: ${analysis.exercisesInPlateau}/${analysis.totalExercises} esercizi in plateau (${analysis.plateauPercentage.toStringAsFixed(1)}%)');
+    print('[CONSOLE] [plateau_detector]📊 RISULTATO GRUPPO: ${analysis.exercisesInPlateau}/${analysis.totalExercises} esercizi in plateau (${analysis.plateauPercentage.toStringAsFixed(1)}%)');
 
     return analysis;
   }
 
   /// 🔧 FIX: Raggruppa le serie per sessione di allenamento più intelligente
   List<List<CompletedSeriesData>> _groupSeriesBySession(List<CompletedSeriesData> series) {
-    print('[CONSOLE]📅 === RAGGRUPPAMENTO SERIE PER SESSIONE ===');
-    print('[CONSOLE]Raggruppamento ${series.length} serie per sessione...');
+    print('[CONSOLE] [plateau_detector]📅 === RAGGRUPPAMENTO SERIE PER SESSIONE ===');
+    print('[CONSOLE] [plateau_detector]Raggruppamento ${series.length} serie per sessione...');
 
     if (series.isEmpty) return [];
 
@@ -253,10 +253,10 @@ class PlateauDetector {
     final sortedSeries = List<CompletedSeriesData>.from(series);
     sortedSeries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-    print('[CONSOLE]📊 Serie ordinate per timestamp (più recente prima):');
+    print('[CONSOLE] [plateau_detector]📊 Serie ordinate per timestamp (più recente prima):');
     for (int i = 0; i < sortedSeries.length && i < 10; i++) {  // Log solo prime 10 per performance
       final s = sortedSeries[i];
-      print('[CONSOLE]   $i: Serie ${s.serieNumber ?? "?"} - ${s.peso}kg x ${s.ripetizioni} (${s.timestamp})');
+      print('[CONSOLE] [plateau_detector]   $i: Serie ${s.serieNumber ?? "?"} - ${s.peso}kg x ${s.ripetizioni} (${s.timestamp})');
     }
 
     // 🔧 FIX: Raggruppa per data (primi 10 caratteri del timestamp)
@@ -277,16 +277,16 @@ class PlateauDetector {
 
     final orderedSessionGroups = sessionGroups.map((entry) => entry.value).toList();
 
-    print('[CONSOLE]📅 Raggruppamento finale: ${orderedSessionGroups.length} sessioni');
+    print('[CONSOLE] [plateau_detector]📅 Raggruppamento finale: ${orderedSessionGroups.length} sessioni');
     for (int index = 0; index < orderedSessionGroups.length; index++) {
       final session = orderedSessionGroups[index];
       final dateKey = sessionGroups[index].key;
-      print('[CONSOLE]   Sessione $index ($dateKey): ${session.length} serie');
+      print('[CONSOLE] [plateau_detector]   Sessione $index ($dateKey): ${session.length} serie');
     }
 
     // 🔧 FIX: Se abbiamo solo una sessione ma molte serie, prova un raggruppamento alternativo
     if (orderedSessionGroups.length == 1 && series.length >= 6) {
-      print('[CONSOLE]⚠️ Tentativo raggruppamento alternativo per serie multiple...');
+      print('[CONSOLE] [plateau_detector]⚠️ Tentativo raggruppamento alternativo per serie multiple...');
 
       final List<List<CompletedSeriesData>> alternativeGroups = [];
       const seriesPerSession = 3;
@@ -299,7 +299,7 @@ class PlateauDetector {
         }
       }
 
-      print('[CONSOLE]📅 Raggruppamento alternativo: ${alternativeGroups.length} sessioni simulate');
+      print('[CONSOLE] [plateau_detector]📅 Raggruppamento alternativo: ${alternativeGroups.length} sessioni simulate');
       return alternativeGroups;
     }
 
@@ -314,7 +314,7 @@ class PlateauDetector {
       int currentReps,
       List<CompletedSeriesData> exerciseHistory,
       ) {
-    print('[CONSOLE]⚠️ === RILEVAMENTO CON DATI LIMITATI ===');
+    print('[CONSOLE] [plateau_detector]⚠️ === RILEVAMENTO CON DATI LIMITATI ===');
 
     // Se abbiamo almeno una serie storica, confrontala con i valori correnti
     if (exerciseHistory.isNotEmpty) {
@@ -322,12 +322,12 @@ class PlateauDetector {
       final weightMatch = (currentWeight - lastSeries.peso).abs() <= config.weightTolerance;
       final repsMatch = (currentReps - lastSeries.ripetizioni).abs() <= config.repsTolerance;
 
-      print('[CONSOLE]Confronto con ultima serie: peso match=$weightMatch, reps match=$repsMatch');
-      print('[CONSOLE]   Corrente: ${currentWeight}kg x $currentReps');
-      print('[CONSOLE]   Storico: ${lastSeries.peso}kg x ${lastSeries.ripetizioni}');
+      print('[CONSOLE] [plateau_detector]Confronto con ultima serie: peso match=$weightMatch, reps match=$repsMatch');
+      print('[CONSOLE] [plateau_detector]   Corrente: ${currentWeight}kg x $currentReps');
+      print('[CONSOLE] [plateau_detector]   Storico: ${lastSeries.peso}kg x ${lastSeries.ripetizioni}');
 
       if (weightMatch && repsMatch) {
-        print('[CONSOLE]🚨 PLATEAU LIMITATO rilevato per esercizio $exerciseId ($exerciseName)!');
+        print('[CONSOLE] [plateau_detector]🚨 PLATEAU LIMITATO rilevato per esercizio $exerciseId ($exerciseName)!');
 
         return PlateauInfo(
           exerciseId: exerciseId,
@@ -346,7 +346,7 @@ class PlateauDetector {
       }
     }
 
-    print('[CONSOLE]✅ Nessun plateau rilevato con dati limitati');
+    print('[CONSOLE] [plateau_detector]✅ Nessun plateau rilevato con dati limitati');
     return null;
   }
 
@@ -358,11 +358,11 @@ class PlateauDetector {
       int currentReps,
       ) {
     if (!config.enableSimulatedPlateau) {
-      print('[CONSOLE]🚫 Plateau simulato disabilitato in configurazione');
+      print('[CONSOLE] [plateau_detector]🚫 Plateau simulato disabilitato in configurazione');
       return null;
     }
 
-    print('[CONSOLE]🧪 === TEST PLATEAU SIMULATO ===');
+    print('[CONSOLE] [plateau_detector]🧪 === TEST PLATEAU SIMULATO ===');
 
     // 🔧 FIX: Logica migliorata per plateau simulato
     final isTypicalPlateauWeight = currentWeight > 0 && (
@@ -372,14 +372,14 @@ class PlateauDetector {
 
     final isTypicalePlateauReps = currentReps >= 6 && currentReps <= 15; // Range tipico
 
-    print('[CONSOLE]Test plateau simulato:');
-    print('[CONSOLE]   Peso tipico: $isTypicalPlateauWeight (${currentWeight}kg)');
-    print('[CONSOLE]   Reps tipiche: $isTypicalePlateauReps ($currentReps reps)');
-    print('[CONSOLE]   ID pari: ${exerciseId % 2 == 0}');
+    print('[CONSOLE] [plateau_detector]Test plateau simulato:');
+    print('[CONSOLE] [plateau_detector]   Peso tipico: $isTypicalPlateauWeight (${currentWeight}kg)');
+    print('[CONSOLE] [plateau_detector]   Reps tipiche: $isTypicalePlateauReps ($currentReps reps)');
+    print('[CONSOLE] [plateau_detector]   ID pari: ${exerciseId % 2 == 0}');
 
     // 🔧 FIX: Plateau simulato su esercizi con ID pari
     if (isTypicalPlateauWeight && isTypicalePlateauReps && exerciseId % 2 == 0) {
-      print('[CONSOLE]🚨 PLATEAU SIMULATO rilevato per esercizio $exerciseId ($exerciseName) (per testing)!');
+      print('[CONSOLE] [plateau_detector]🚨 PLATEAU SIMULATO rilevato per esercizio $exerciseId ($exerciseName) (per testing)!');
 
       return PlateauInfo(
         exerciseId: exerciseId,
@@ -403,7 +403,7 @@ class PlateauDetector {
     final hasKeyword = supersetKeywords.any((keyword) => exerciseNameLower.contains(keyword));
 
     if (hasKeyword && currentWeight >= 10 && exerciseId % 3 == 1) {
-      print('[CONSOLE]🚨 PLATEAU SIMULATO SUPERSET rilevato per $exerciseId ($exerciseName) (per testing superset/circuit)!');
+      print('[CONSOLE] [plateau_detector]🚨 PLATEAU SIMULATO SUPERSET rilevato per $exerciseId ($exerciseName) (per testing superset/circuit)!');
 
       return PlateauInfo(
         exerciseId: exerciseId,
@@ -421,7 +421,7 @@ class PlateauDetector {
       );
     }
 
-    print('[CONSOLE]✅ Nessun plateau simulato per questo esercizio');
+    print('[CONSOLE] [plateau_detector]✅ Nessun plateau simulato per questo esercizio');
     return null;
   }
 

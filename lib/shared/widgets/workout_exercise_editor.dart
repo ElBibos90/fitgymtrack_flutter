@@ -73,11 +73,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   void _saveChanges() {
     // 🔧 DEBUG: Log dei valori prima dell'update
-    print('[CONSOLE]Saving changes for exercise: ${widget.exercise.nome}');
-    print('[CONSOLE]  - selectedSetType: "$_selectedSetType"');
-    print('[CONSOLE]  - linkedToPrevious: $_linkedToPrevious');
-    print('[CONSOLE]  - isIsometric: $_isIsometric');
-    print('[CONSOLE]  - notes: "${_notesController.text}"');
+    print('[CONSOLE] [workout_exercise_editor]Saving changes for exercise: ${widget.exercise.nome}');
+    print('[CONSOLE] [workout_exercise_editor]  - selectedSetType: "$_selectedSetType"');
+    print('[CONSOLE] [workout_exercise_editor]  - linkedToPrevious: $_linkedToPrevious');
+    print('[CONSOLE] [workout_exercise_editor]  - isIsometric: $_isIsometric');
+    print('[CONSOLE] [workout_exercise_editor]  - notes: "${_notesController.text}"');
 
     final updatedExercise = widget.exercise.safeCopy(
       serie: int.tryParse(_serieController.text) ?? widget.exercise.serie,
@@ -91,11 +91,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
 
     // 🔧 DEBUG: Log del risultato dopo safeCopy
-    print('[CONSOLE]After safeCopy:');
-    print('[CONSOLE]  - setType: "${updatedExercise.setType}"');
-    print('[CONSOLE]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
-    print('[CONSOLE]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
-    print('[CONSOLE]  - note: "${updatedExercise.note}"');
+    print('[CONSOLE] [workout_exercise_editor]After safeCopy:');
+    print('[CONSOLE] [workout_exercise_editor]  - setType: "${updatedExercise.setType}"');
+    print('[CONSOLE] [workout_exercise_editor]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
+    print('[CONSOLE] [workout_exercise_editor]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
+    print('[CONSOLE] [workout_exercise_editor]  - note: "${updatedExercise.note}"');
 
     widget.onUpdate(updatedExercise);
 

@@ -14,7 +14,7 @@ import '../../../core/di/dependency_injection.dart';
 // 🛠️ Helper function for logging
 void _plateauLog(String message, {String name = 'PlateauBloc'}) {
   if (kDebugMode) {
-    print('[CONSOLE][$name] $message');
+    print('[CONSOLE] [plateau_bloc][$name] $message');
   }
 }
 

@@ -98,70 +98,70 @@ class StripeConfigurationChecker {
 
   /// Stampa il risultato della verifica
   static void printCheckResult(StripeConfigCheckResult result) {
-    print('[CONSOLE]');
-    print('[CONSOLE]🔍 STRIPE CONFIGURATION CHECK RESULTS');
-    print('[CONSOLE]=====================================');
+    print('[CONSOLE] [stripe_configuration_checker]');
+    print('[CONSOLE] [stripe_configuration_checker]🔍 STRIPE CONFIGURATION CHECK RESULTS');
+    print('[CONSOLE] [stripe_configuration_checker]=====================================');
 
     if (result.isValid) {
-      print('[CONSOLE]✅ CONFIGURAZIONE VALIDA');
+      print('[CONSOLE] [stripe_configuration_checker]✅ CONFIGURAZIONE VALIDA');
     } else {
-      print('[CONSOLE]❌ CONFIGURAZIONE NON VALIDA');
+      print('[CONSOLE] [stripe_configuration_checker]❌ CONFIGURAZIONE NON VALIDA');
     }
 
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_configuration_checker]');
 
     // Errori
     if (result.errors.isNotEmpty) {
-      print('[CONSOLE]🚨 ERRORI DA RISOLVERE:');
+      print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI DA RISOLVERE:');
       for (final error in result.errors) {
-        print('[CONSOLE]   $error');
+        print('[CONSOLE] [stripe_configuration_checker]   $error');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_configuration_checker]');
     }
 
     // Warning
     if (result.warnings.isNotEmpty) {
-      print('[CONSOLE]⚠️  AVVERTIMENTI:');
+      print('[CONSOLE] [stripe_configuration_checker]⚠️  AVVERTIMENTI:');
       for (final warning in result.warnings) {
-        print('[CONSOLE]   $warning');
+        print('[CONSOLE] [stripe_configuration_checker]   $warning');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_configuration_checker]');
     }
 
     // Info
     if (result.info.isNotEmpty) {
-      print('[CONSOLE]ℹ️  INFORMAZIONI:');
+      print('[CONSOLE] [stripe_configuration_checker]ℹ️  INFORMAZIONI:');
       for (final infoItem in result.info) {
-        print('[CONSOLE]   $infoItem');
+        print('[CONSOLE] [stripe_configuration_checker]   $infoItem');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_configuration_checker]');
     }
 
-    print('[CONSOLE]=====================================');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_configuration_checker]=====================================');
+    print('[CONSOLE] [stripe_configuration_checker]');
   }
 
   /// Test rapido di Stripe
   static Future<bool> quickStripeTest() async {
     try {
-      print('[CONSOLE]🧪 Eseguendo test rapido Stripe...');
+      print('[CONSOLE] [stripe_configuration_checker]🧪 Eseguendo test rapido Stripe...');
 
       // Verifica che le chiavi siano impostate
       if (StripeConfig.publishableKey.isEmpty) {
-        print('[CONSOLE]❌ Test fallito: Publishable key mancante');
+        print('[CONSOLE] [stripe_configuration_checker]❌ Test fallito: Publishable key mancante');
         return false;
       }
 
       if (!StripeConfig.publishableKey.startsWith('pk_')) {
-        print('[CONSOLE]❌ Test fallito: Publishable key formato non valido');
+        print('[CONSOLE] [stripe_configuration_checker]❌ Test fallito: Publishable key formato non valido');
         return false;
       }
 
-      print('[CONSOLE]✅ Test rapido Stripe completato');
+      print('[CONSOLE] [stripe_configuration_checker]✅ Test rapido Stripe completato');
       return true;
 
     } catch (e) {
-      print('[CONSOLE]❌ Test rapido Stripe fallito: $e');
+      print('[CONSOLE] [stripe_configuration_checker]❌ Test rapido Stripe fallito: $e');
       return false;
     }
   }
@@ -197,9 +197,9 @@ extension StripeDebugHelper on StripeConfigCheckResult {
   /// Mostra solo gli errori critici
   void showOnlyErrors() {
     if (errors.isNotEmpty) {
-      print('[CONSOLE]🚨 ERRORI STRIPE CRITICI:');
+      print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI STRIPE CRITICI:');
       for (final error in errors) {
-        print('[CONSOLE]   $error');
+        print('[CONSOLE] [stripe_configuration_checker]   $error');
       }
     }
   }

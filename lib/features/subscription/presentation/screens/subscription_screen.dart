@@ -22,27 +22,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     super.initState();
     // 🔧 FIX: NON inizializzare Stripe automaticamente
     // Stripe verrà inizializzato solo quando l'utente clicca "Sottoscrivi"
-    print('[CONSOLE]💳 [SUBSCRIPTION] Screen loaded - Stripe NOT initialized yet');
+    print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Screen loaded - Stripe NOT initialized yet');
   }
 
   /// 🔧 FIX: Inizializza Stripe SOLO quando l'utente vuole sottoscrivere
   void _initializeStripeForPayment() {
     if (_hasTriedInitialization) {
-      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe already initialized or tried');
+      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe already initialized or tried');
       return;
     }
 
-    print('[CONSOLE]💳 [SUBSCRIPTION] User wants to subscribe - initializing Stripe now...');
+    print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] User wants to subscribe - initializing Stripe now...');
     _hasTriedInitialization = true;
 
     final stripeBloc = context.read<StripeBloc>();
 
     // Se Stripe non è ancora inizializzato, inizializzalo ora
     if (stripeBloc.state is StripeInitial) {
-      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe not ready, initializing for payment...');
+      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe not ready, initializing for payment...');
       stripeBloc.add(const InitializeStripeEvent());
     } else {
-      print('[CONSOLE]💳 [SUBSCRIPTION] Stripe already ready, proceeding with payment...');
+      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe already ready, proceeding with payment...');
     }
   }
 
@@ -54,20 +54,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: BlocConsumer<StripeBloc, StripeState>(
         listener: (context, state) {
-          print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
+          print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
 
           // 🔧 FIX: Log dettagliato per ogni stato
           if (state is StripePaymentReady) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntent.paymentIntentId}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret.substring(0, 20)}...');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntent.paymentIntentId}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret.substring(0, 20)}...');
             // 🔧 FIX: Apri Payment Sheet direttamente quando pronto
             _presentPaymentSheet(context, state);
           } else if (state is StripePaymentSuccess) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Success!');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntentId}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Success Message: ${state.message}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Success!');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntentId}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Success Message: ${state.message}');
 
             // 🚀 NUOVO: Marca che abbiamo appena completato un pagamento
             _justCompletedPayment = true;
@@ -90,14 +90,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             );
           } else if (state is StripeErrorState) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Error Model: ${state.stripeError}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Error Model: ${state.stripeError}');
 
             // 🚀 NUOVO: Se abbiamo appena completato un pagamento con successo,
             // NON mostrare errori di caricamento subscription come errori gravi
             if (_justCompletedPayment && state.message.contains('caricamento subscription')) {
-              print('[CONSOLE]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
+              print('[CONSOLE] [subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
 
               // Mostra un messaggio informativo invece che un errore
               ScaffoldMessenger.of(context).showSnackBar(
@@ -142,19 +142,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             );
           } else if (state is StripePaymentLoading) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
           } else if (state is StripeInitializing) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Initializing...');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Initializing...');
           } else if (state is StripeReady) {
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe Ready!');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Customer: ${state.customer?.id ?? 'None'}');
-            print('[CONSOLE]🔧 [SUBSCRIPTION] Subscription: ${state.subscription?.id ?? 'None'}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Ready!');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Customer: ${state.customer?.id ?? 'None'}');
+            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Subscription: ${state.subscription?.id ?? 'None'}');
 
             // 🚀 NUOVO: Se abbiamo una subscription dopo un pagamento, resetta il flag
             if (_justCompletedPayment && state.subscription != null) {
               _justCompletedPayment = false;
-              print('[CONSOLE]✅ [SUBSCRIPTION] Subscription loaded after payment - resetting payment flag');
+              print('[CONSOLE] [subscription_screen]✅ [SUBSCRIPTION] Subscription loaded after payment - resetting payment flag');
             }
           }
         },
@@ -1282,9 +1282,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   void _startSubscriptionPayment(String planId) {
     final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
 
-    print('[CONSOLE]🔧 [SUBSCRIPTION] User clicked subscribe for plan: $planId');
-    print('[CONSOLE]🔧 [SUBSCRIPTION] Price ID: $priceId');
-    print('[CONSOLE]🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] User clicked subscribe for plan: $planId');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Price ID: $priceId');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
 
     // 🔧 FIX: Inizializza Stripe se necessario PRIMA di creare il pagamento
     _initializeStripeForPayment();
@@ -1294,17 +1294,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     if (currentState is StripeInitial || currentState is StripeInitializing) {
       // Stripe si sta inizializzando o deve essere inizializzato
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe not ready yet, will create payment when ready');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe not ready yet, will create payment when ready');
 
       // Aspetta che Stripe sia pronto, poi crea il pagamento
       _waitForStripeAndCreatePayment(planId, priceId);
     } else if (currentState is StripeReady) {
       // Stripe è pronto, crea subito il pagamento
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe ready, creating payment immediately');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe ready, creating payment immediately');
       _createPaymentIntent(planId, priceId);
     } else {
       // Errore o stato sconosciuto
-      print('[CONSOLE]❌ [SUBSCRIPTION] Stripe in error state: ${currentState.runtimeType}');
+      print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Stripe in error state: ${currentState.runtimeType}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore nel sistema di pagamento. Riprova.'),
@@ -1316,17 +1316,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   /// Aspetta che Stripe sia pronto e poi crea il pagamento
   void _waitForStripeAndCreatePayment(String planId, String priceId) {
-    print('[CONSOLE]🔧 [SUBSCRIPTION] Waiting for Stripe to be ready...');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Waiting for Stripe to be ready...');
 
     // Listener temporaneo per aspettare che Stripe sia pronto
     final subscription = context.read<StripeBloc>().stream.listen((state) {
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Stripe state update while waiting: ${state.runtimeType}');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe state update while waiting: ${state.runtimeType}');
 
       if (state is StripeReady) {
-        print('[CONSOLE]✅ [SUBSCRIPTION] Stripe now ready, creating payment');
+        print('[CONSOLE] [subscription_screen]✅ [SUBSCRIPTION] Stripe now ready, creating payment');
         _createPaymentIntent(planId, priceId);
       } else if (state is StripeErrorState) {
-        print('[CONSOLE]❌ [SUBSCRIPTION] Stripe failed during initialization: ${state.message}');
+        print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Stripe failed during initialization: ${state.message}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Errore inizializzazione pagamenti: ${state.message}'),
@@ -1344,7 +1344,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   /// Crea il Payment Intent
   void _createPaymentIntent(String planId, String priceId) {
-    print('[CONSOLE]🔧 [SUBSCRIPTION] Creating payment intent...');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Creating payment intent...');
 
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
       priceId: priceId,
@@ -1355,17 +1355,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       },
     ));
 
-    print('[CONSOLE]🔧 [SUBSCRIPTION] CreateSubscriptionPaymentEvent sent');
+    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] CreateSubscriptionPaymentEvent sent');
     // 🔧 Il Payment Sheet si aprirà automaticamente nel listener quando pronto
   }
 
   /// 🔧 FIX: Presenta Payment Sheet direttamente
   Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
     try {
-      print('[CONSOLE]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION START ===');
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret}');
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Amount: €${state.paymentIntent.amount / 100}');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION START ===');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret}');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Amount: €${state.paymentIntent.amount / 100}');
 
       // Mostra loading snackbar
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1390,7 +1390,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       );
 
-      print('[CONSOLE]🔧 [SUBSCRIPTION] Sending ProcessPaymentEvent...');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Sending ProcessPaymentEvent...');
 
       // Presenta Payment Sheet
       context.read<StripeBloc>().add(ProcessPaymentEvent(
@@ -1398,11 +1398,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         paymentType: state.paymentType,
       ));
 
-      print('[CONSOLE]🔧 [SUBSCRIPTION] ProcessPaymentEvent sent successfully');
-      print('[CONSOLE]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION END ===');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] ProcessPaymentEvent sent successfully');
+      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION END ===');
 
     } catch (e) {
-      print('[CONSOLE]❌ [SUBSCRIPTION] Error in _presentPaymentSheet: $e');
+      print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Error in _presentPaymentSheet: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore apertura pagamento: $e'),
