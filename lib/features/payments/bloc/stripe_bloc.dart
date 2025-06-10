@@ -432,6 +432,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
   }
 
   /// 🔧 FIX FINALE: Processa il pagamento tramite Payment Sheet con gestione CORRETTA del successo
+  /// 🔧 FIX FINALE: Processa il pagamento tramite Payment Sheet con gestione CORRETTA del successo
   Future<void> _onProcessPayment(
       ProcessPaymentEvent event,
       Emitter<StripeState> emit,
@@ -464,22 +465,70 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
         print('[CONSOLE]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
 
-        // 🔧 FIX: Emetti SEMPRE successo quando result.isSuccess = true
-        emit(StripePaymentSuccess(
-          paymentIntentId: paymentIntentId,
-          paymentType: event.paymentType,
-          message: event.paymentType == 'subscription'
-              ? 'Abbonamento attivato con successo!'
-              : 'Grazie per la tua donazione!',
-        ));
+        // 🚀 CRITICAL FIX: Chiama backend per confermare e sincronizzare DB
+        print('[CONSOLE]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
 
-        // 🚀 NUOVA: Refresh intelligente dei dati dopo successo
-        if (event.paymentType == 'subscription') {
-          print('[CONSOLE]🚀 [STRIPE BLOC] Payment is subscription - loading with post-payment retry');
-          add(const LoadCurrentSubscriptionEvent(afterPayment: true));
+        try {
+          final confirmResult = await _repository.confirmPaymentSuccess(
+            paymentIntentId: paymentIntentId,
+            subscriptionType: event.paymentType,
+          );
+
+          if (confirmResult.isSuccess) {
+            print('[CONSOLE]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
+
+            // Emetti successo solo DOPO conferma backend
+            emit(StripePaymentSuccess(
+              paymentIntentId: paymentIntentId,
+              paymentType: event.paymentType,
+              message: event.paymentType == 'subscription'
+                  ? 'Abbonamento attivato con successo!'
+                  : 'Grazie per la tua donazione!',
+            ));
+
+            // 🚀 Refresh intelligente dei dati dopo conferma backend
+            if (event.paymentType == 'subscription') {
+              print('[CONSOLE]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
+              add(const LoadCurrentSubscriptionEvent(afterPayment: true));
+            }
+
+            _refreshCustomerData();
+
+          } else {
+            print('[CONSOLE]❌ [STRIPE BLOC] Backend confirmation failed: ${confirmResult.message}');
+
+            // Payment Sheet è riuscito ma backend ha fallito - mostra warning
+            emit(StripePaymentSuccess(
+              paymentIntentId: paymentIntentId,
+              paymentType: event.paymentType,
+              message: 'Pagamento completato. Sincronizzazione in corso...',
+            ));
+
+            // Prova comunque a ricaricare
+            if (event.paymentType == 'subscription') {
+              add(const LoadCurrentSubscriptionEvent(afterPayment: true));
+            }
+          }
+
+        } catch (confirmError) {
+          print('[CONSOLE]❌ [STRIPE BLOC] Backend confirmation error: $confirmError');
+
+          // Payment Sheet è riuscito ma backend non risponde - mostra warning
+          emit(StripePaymentSuccess(
+            paymentIntentId: paymentIntentId,
+            paymentType: event.paymentType,
+            message: 'Pagamento completato. Verifica in corso...',
+          ));
+
+          // Prova comunque a ricaricare dopo un delay
+          Future.delayed(const Duration(seconds: 3), () {
+            if (!isClosed) {
+              if (event.paymentType == 'subscription') {
+                add(const LoadCurrentSubscriptionEvent(afterPayment: true));
+              }
+            }
+          });
         }
-
-        _refreshCustomerData();
 
       } else {
         // ❌ ERRORE: Result è failure significa che c'è stato un vero errore
