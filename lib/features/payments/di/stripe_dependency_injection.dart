@@ -12,13 +12,13 @@ class StripeDependencyInjection {
   static void registerStripeServices() {
     final getIt = GetIt.instance;
 
-    print('[CONSOLE]🔧 [STRIPE DI] Registering Stripe services...');
+    print('[CONSOLE] [stripe_dependency_injection]🔧 [STRIPE DI] Registering Stripe services...');
 
     // ============================================================================
     // STRIPE REPOSITORY
     // ============================================================================
 
-    print('[CONSOLE]🔧 [STRIPE DI] Registering StripeRepository...');
+    print('[CONSOLE] [stripe_dependency_injection]🔧 [STRIPE DI] Registering StripeRepository...');
 
     // Verifica che le dipendenze esistano
     if (!getIt.isRegistered<ApiClient>()) {
@@ -32,7 +32,7 @@ class StripeDependencyInjection {
     }
 
     getIt.registerLazySingleton<StripeRepository>(() {
-      print('[CONSOLE]🏗️ [STRIPE DI] Creating StripeRepository instance...');
+      print('[CONSOLE] [stripe_dependency_injection]🏗️ [STRIPE DI] Creating StripeRepository instance...');
       return StripeRepository(
         apiClient: getIt<ApiClient>(),
         dio: getIt<Dio>(),
@@ -44,16 +44,16 @@ class StripeDependencyInjection {
     // STRIPE BLOC
     // ============================================================================
 
-    print('[CONSOLE]🔧 [STRIPE DI] Registering StripeBloc...');
+    print('[CONSOLE] [stripe_dependency_injection]🔧 [STRIPE DI] Registering StripeBloc...');
 
     getIt.registerFactory<StripeBloc>(() {
-      print('[CONSOLE]🏗️ [STRIPE DI] Creating StripeBloc instance...');
+      print('[CONSOLE] [stripe_dependency_injection]🏗️ [STRIPE DI] Creating StripeBloc instance...');
       return StripeBloc(
         repository: getIt<StripeRepository>(),
       );
     });
 
-    print('[CONSOLE]✅ [STRIPE DI] Stripe services registered successfully!');
+    print('[CONSOLE] [stripe_dependency_injection]✅ [STRIPE DI] Stripe services registered successfully!');
   }
 
   /// Verifica se i servizi Stripe sono registrati
@@ -82,28 +82,28 @@ class StripeDependencyInjection {
 
       // Verifica registrazione servizi
       if (!getIt.isRegistered<StripeRepository>()) {
-        print('[CONSOLE]❌ [STRIPE CHECK] StripeRepository not registered');
+        print('[CONSOLE] [stripe_dependency_injection]❌ [STRIPE CHECK] StripeRepository not registered');
         return false;
       }
 
       if (!getIt.isRegistered<StripeBloc>()) {
-        print('[CONSOLE]❌ [STRIPE CHECK] StripeBloc not registered');
+        print('[CONSOLE] [stripe_dependency_injection]❌ [STRIPE CHECK] StripeBloc not registered');
         return false;
       }
 
       // Verifica dipendenze
       if (!getIt.isRegistered<ApiClient>()) {
-        print('[CONSOLE]❌ [STRIPE CHECK] ApiClient not registered (required dependency)');
+        print('[CONSOLE] [stripe_dependency_injection]❌ [STRIPE CHECK] ApiClient not registered (required dependency)');
         return false;
       }
 
       if (!getIt.isRegistered<Dio>()) {
-        print('[CONSOLE]❌ [STRIPE CHECK] Dio not registered (required dependency)');
+        print('[CONSOLE] [stripe_dependency_injection]❌ [STRIPE CHECK] Dio not registered (required dependency)');
         return false;
       }
 
       if (!getIt.isRegistered<SessionService>()) {
-        print('[CONSOLE]❌ [STRIPE CHECK] SessionService not registered (required dependency)');
+        print('[CONSOLE] [stripe_dependency_injection]❌ [STRIPE CHECK] SessionService not registered (required dependency)');
         return false;
       }
 
@@ -111,14 +111,14 @@ class StripeDependencyInjection {
       final stripeRepository = getIt<StripeRepository>();
       final stripeBloc = getIt<StripeBloc>();
 
-      print('[CONSOLE]✅ [STRIPE CHECK] All Stripe services are healthy');
-      print('[CONSOLE]🎯 [STRIPE CHECK] StripeService initialized: ${StripeService.isInitialized}');
-      print('[CONSOLE]🎯 [STRIPE CHECK] StripeBloc state: ${stripeBloc.state.runtimeType}');
+      print('[CONSOLE] [stripe_dependency_injection]✅ [STRIPE CHECK] All Stripe services are healthy');
+      print('[CONSOLE] [stripe_dependency_injection]🎯 [STRIPE CHECK] StripeService initialized: ${StripeService.isInitialized}');
+      print('[CONSOLE] [stripe_dependency_injection]🎯 [STRIPE CHECK] StripeBloc state: ${stripeBloc.state.runtimeType}');
 
       return true;
 
     } catch (e) {
-      print('[CONSOLE]💥 [STRIPE CHECK] Error checking Stripe system health: $e');
+      print('[CONSOLE] [stripe_dependency_injection]💥 [STRIPE CHECK] Error checking Stripe system health: $e');
       return false;
     }
   }
@@ -144,7 +144,7 @@ class StripeDependencyInjection {
   static void resetStripeServices() {
     final getIt = GetIt.instance;
 
-    print('[CONSOLE]🔄 [STRIPE DI] Resetting Stripe services...');
+    print('[CONSOLE] [stripe_dependency_injection]🔄 [STRIPE DI] Resetting Stripe services...');
 
     if (getIt.isRegistered<StripeBloc>()) {
       // Reset del BLoC se possibile
@@ -152,7 +152,7 @@ class StripeDependencyInjection {
         final stripeBloc = getIt<StripeBloc>();
         stripeBloc.add(const ResetStripeStateEvent());
       } catch (e) {
-        print('[CONSOLE]⚠️ [STRIPE DI] Could not reset StripeBloc: $e');
+        print('[CONSOLE] [stripe_dependency_injection]⚠️ [STRIPE DI] Could not reset StripeBloc: $e');
       }
       getIt.unregister<StripeBloc>();
     }
@@ -164,17 +164,17 @@ class StripeDependencyInjection {
     // Reset del servizio Stripe
     StripeService.reset();
 
-    print('[CONSOLE]✅ [STRIPE DI] Stripe services reset');
+    print('[CONSOLE] [stripe_dependency_injection]✅ [STRIPE DI] Stripe services reset');
   }
 
   /// Reinizializza i servizi Stripe
   static Future<void> reinitializeStripeServices() async {
-    print('[CONSOLE]🔄 [STRIPE DI] Reinitializing Stripe services...');
+    print('[CONSOLE] [stripe_dependency_injection]🔄 [STRIPE DI] Reinitializing Stripe services...');
 
     resetStripeServices();
     await Future.delayed(const Duration(milliseconds: 200));
     registerStripeServices();
 
-    print('[CONSOLE]✅ [STRIPE DI] Stripe services reinitialized');
+    print('[CONSOLE] [stripe_dependency_injection]✅ [STRIPE DI] Stripe services reinitialized');
   }
 }

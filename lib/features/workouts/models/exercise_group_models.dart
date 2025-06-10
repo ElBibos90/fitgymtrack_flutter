@@ -7,7 +7,7 @@ import 'active_workout_models.dart';
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ExerciseGroupModels'}) {
   // if (kDebugMode) {
-  //   print('[CONSOLE][$name] $message');
+  //   print('[CONSOLE] [exercise_group_models][$name] $message');
   // }
 }
 

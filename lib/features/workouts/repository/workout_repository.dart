@@ -27,7 +27,7 @@ class WorkoutRepository {
   Future<Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) async {
     // ... metodo invariato ...
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting workout plans for user: $userId');
+      print('[CONSOLE] [workout_repository]Getting workout plans for user: $userId');
 
       final response = await _apiClient.getWorkouts(userId);
 
@@ -41,7 +41,7 @@ class WorkoutRepository {
               .map((json) => WorkoutPlan.fromJson(json))
               .toList();
 
-          print('[CONSOLE]Basic workout plans loaded: ${workoutPlansBasic.length}');
+          print('[CONSOLE] [workout_repository]Basic workout plans loaded: ${workoutPlansBasic.length}');
 
           final List<WorkoutPlan> completeWorkoutPlans = [];
 
@@ -53,10 +53,10 @@ class WorkoutRepository {
               exercisesResult.fold(
                 onSuccess: (fetchedExercises) {
                   exercises = fetchedExercises;
-                  print('[CONSOLE]Loaded ${exercises.length} exercises for plan ${basicPlan.nome}');
+                  print('[CONSOLE] [workout_repository]Loaded ${exercises.length} exercises for plan ${basicPlan.nome}');
                 },
                 onFailure: (exception, message) {
-                  print('[CONSOLE]Failed to load exercises for plan ${basicPlan.nome}: $message');
+                  print('[CONSOLE] [workout_repository]Failed to load exercises for plan ${basicPlan.nome}: $message');
                   exercises = [];
                 },
               );
@@ -65,15 +65,15 @@ class WorkoutRepository {
               completeWorkoutPlans.add(completePlan);
 
             } catch (e) {
-              print('[CONSOLE]Error loading exercises for plan ${basicPlan.nome}: $e');
+              print('[CONSOLE] [workout_repository]Error loading exercises for plan ${basicPlan.nome}: $e');
               completeWorkoutPlans.add(basicPlan);
             }
           }
 
-          print('[CONSOLE]Successfully loaded ${completeWorkoutPlans.length} complete workout plans');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${completeWorkoutPlans.length} complete workout plans');
 
           for (final plan in completeWorkoutPlans) {
-            print('[CONSOLE]Plan "${plan.nome}": ${plan.esercizi.length} exercises');
+            print('[CONSOLE] [workout_repository]Plan "${plan.nome}": ${plan.esercizi.length} exercises');
           }
 
           return completeWorkoutPlans;
@@ -88,7 +88,7 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting exercises for workout: $schedaId');
+      print('[CONSOLE] [workout_repository]Getting exercises for workout: $schedaId');
 
       final response = await _apiClient.getWorkoutExercises(schedaId);
 
@@ -102,7 +102,7 @@ class WorkoutRepository {
               .map((json) => WorkoutExercise.fromJson(json))
               .toList();
 
-          print('[CONSOLE]Successfully loaded ${exercises.length} exercises');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${exercises.length} exercises');
           return exercises;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi');
@@ -119,7 +119,7 @@ class WorkoutRepository {
 
   Future<Result<DeleteWorkoutPlanResponse>> deleteWorkoutPlan(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Deleting workout plan: $schedaId');
+      print('[CONSOLE] [workout_repository]Deleting workout plan: $schedaId');
 
       // ✅ NUOVO: Richiesta DELETE manuale con form-data nel body
       final response = await _dio.delete(
@@ -132,7 +132,7 @@ class WorkoutRepository {
         ),
       );
 
-      print('[CONSOLE]DELETE response: ${response.data}');
+      print('[CONSOLE] [workout_repository]DELETE response: ${response.data}');
 
       if (response.data != null && response.data is Map<String, dynamic>) {
         return DeleteWorkoutPlanResponse.fromJson(response.data);
@@ -148,28 +148,28 @@ class WorkoutRepository {
 
   Future<Result<UpdateWorkoutPlanResponse>> updateWorkoutPlan(UpdateWorkoutPlanRequest request) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Updating workout plan: ${request.schedaId}');
+      print('[CONSOLE] [workout_repository]Updating workout plan: ${request.schedaId}');
 
       final requestJson = request.toJson();
 
-      print('[CONSOLE]Update Request JSON: ${jsonEncode(requestJson)}');
-      print('[CONSOLE]Scheda ID: ${request.schedaId}');
-      print('[CONSOLE]User ID: ${request.userId}');
-      print('[CONSOLE]Nome: ${request.nome}');
-      print('[CONSOLE]Numero esercizi: ${request.esercizi.length}');
+      print('[CONSOLE] [workout_repository]Update Request JSON: ${jsonEncode(requestJson)}');
+      print('[CONSOLE] [workout_repository]Scheda ID: ${request.schedaId}');
+      print('[CONSOLE] [workout_repository]User ID: ${request.userId}');
+      print('[CONSOLE] [workout_repository]Nome: ${request.nome}');
+      print('[CONSOLE] [workout_repository]Numero esercizi: ${request.esercizi.length}');
 
       // ✅ NUOVO: Log degli esercizi da rimuovere
       if (request.rimuovi != null && request.rimuovi!.isNotEmpty) {
-        print('[CONSOLE]Esercizi da rimuovere: ${request.rimuovi!.length}');
+        print('[CONSOLE] [workout_repository]Esercizi da rimuovere: ${request.rimuovi!.length}');
         for (final toRemove in request.rimuovi!) {
-          print('[CONSOLE]Rimuovi esercizio ID: ${toRemove.id} (questo è esercizio_id, non scheda_esercizio_id)');
+          print('[CONSOLE] [workout_repository]Rimuovi esercizio ID: ${toRemove.id} (questo è esercizio_id, non scheda_esercizio_id)');
         }
       }
 
       final eserciziJson = requestJson['esercizi'] as List<dynamic>;
       for (int i = 0; i < eserciziJson.length; i++) {
         final esercizioJson = eserciziJson[i] as Map<String, dynamic>;
-        print('[CONSOLE]Esercizio $i JSON: ${jsonEncode(esercizioJson)}');
+        print('[CONSOLE] [workout_repository]Esercizio $i JSON: ${jsonEncode(esercizioJson)}');
       }
 
       final response = await _apiClient.updateWorkoutStandalone(requestJson, action: "update");
@@ -188,10 +188,10 @@ class WorkoutRepository {
 
   Future<Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Creating workout plan: ${request.nome}');
+      print('[CONSOLE] [workout_repository]Creating workout plan: ${request.nome}');
 
       final requestJson = request.toJson();
-      print('[CONSOLE]Create Request JSON: ${jsonEncode(requestJson)}');
+      print('[CONSOLE] [workout_repository]Create Request JSON: ${jsonEncode(requestJson)}');
 
       final response = await _apiClient.createWorkoutStandalone(requestJson);
 
@@ -205,7 +205,7 @@ class WorkoutRepository {
 
   Future<Result<List<ExerciseItem>>> getAvailableExercises(int userId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting available exercises for user: $userId');
+      print('[CONSOLE] [workout_repository]Getting available exercises for user: $userId');
 
       final response = await _apiClient.getAvailableExercises(userId);
 
@@ -219,7 +219,7 @@ class WorkoutRepository {
               .map((json) => ExerciseItem.fromJson(json))
               .toList();
 
-          print('[CONSOLE]Successfully loaded ${exercises.length} available exercises');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${exercises.length} available exercises');
           return exercises;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi disponibili');
@@ -236,7 +236,7 @@ class WorkoutRepository {
 
   Future<Result<StartWorkoutResponse>> startWorkout(int userId, int schedaId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Starting workout for user: $userId, scheda: $schedaId');
+      print('[CONSOLE] [workout_repository]Starting workout for user: $userId, scheda: $schedaId');
 
       final sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}_${userId}_$schedaId';
 
@@ -258,7 +258,7 @@ class WorkoutRepository {
 
   Future<Result<List<CompletedSeriesData>>> getCompletedSeries(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting completed series for workout: $allenamentoId');
+      print('[CONSOLE] [workout_repository]Getting completed series for workout: $allenamentoId');
 
       final response = await _apiClient.getCompletedSeries(allenamentoId);
 
@@ -272,7 +272,7 @@ class WorkoutRepository {
               .map((json) => CompletedSeriesData.fromJson(json))
               .toList();
 
-          print('[CONSOLE]Successfully loaded ${completedSeries.length} completed series');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${completedSeries.length} completed series');
           return completedSeries;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
@@ -289,7 +289,7 @@ class WorkoutRepository {
       String requestId,
       ) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Saving completed series for workout: $allenamentoId');
+      print('[CONSOLE] [workout_repository]Saving completed series for workout: $allenamentoId');
 
       final request = SaveCompletedSeriesRequest(
         allenamentoId: allenamentoId,
@@ -313,7 +313,7 @@ class WorkoutRepository {
         String? note,
       }) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Completing workout: $allenamentoId, duration: $durataTotale');
+      print('[CONSOLE] [workout_repository]Completing workout: $allenamentoId, duration: $durataTotale');
 
       final request = CompleteWorkoutRequest(
         allenamentoId: allenamentoId,
@@ -338,7 +338,7 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutHistory>>> getWorkoutHistory(int userId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting workout history for user: $userId');
+      print('[CONSOLE] [workout_repository]Getting workout history for user: $userId');
 
       final response = await _apiClient.getWorkoutHistory(userId);
 
@@ -352,7 +352,7 @@ class WorkoutRepository {
               .map((json) => WorkoutHistory.fromMap(json))
               .toList();
 
-          print('[CONSOLE]Successfully loaded ${workoutHistory.length} workout history entries');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${workoutHistory.length} workout history entries');
           return workoutHistory;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero della cronologia allenamenti');
@@ -365,7 +365,7 @@ class WorkoutRepository {
 
   Future<Result<List<CompletedSeriesData>>> getWorkoutSeriesDetail(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting series details for workout: $allenamentoId');
+      print('[CONSOLE] [workout_repository]Getting series details for workout: $allenamentoId');
 
       final response = await _apiClient.getWorkoutSeriesDetail(allenamentoId);
 
@@ -379,7 +379,7 @@ class WorkoutRepository {
               .map((json) => CompletedSeriesData.fromJson(json))
               .toList();
 
-          print('[CONSOLE]Successfully loaded ${seriesDetails.length} series details');
+          print('[CONSOLE] [workout_repository]Successfully loaded ${seriesDetails.length} series details');
           return seriesDetails;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
@@ -392,7 +392,7 @@ class WorkoutRepository {
 
   Future<Result<bool>> deleteCompletedSeries(String seriesId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Deleting completed series: $seriesId');
+      print('[CONSOLE] [workout_repository]Deleting completed series: $seriesId');
 
       final request = DeleteSeriesRequest(serieId: seriesId);
       final response = await _apiClient.deleteCompletedSeries(request.toJson());
@@ -414,7 +414,7 @@ class WorkoutRepository {
         String? notes,
       }) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Updating completed series: $seriesId');
+      print('[CONSOLE] [workout_repository]Updating completed series: $seriesId');
 
       final request = UpdateSeriesRequest(
         serieId: seriesId,
@@ -437,7 +437,7 @@ class WorkoutRepository {
 
   Future<Result<bool>> deleteWorkout(int workoutId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Deleting workout: $workoutId');
+      print('[CONSOLE] [workout_repository]Deleting workout: $workoutId');
 
       final response = await _apiClient.deleteWorkoutFromHistory({
         'allenamento_id': workoutId,
@@ -458,7 +458,7 @@ class WorkoutRepository {
 
   Future<Result<UserStats>> getUserStats(int userId) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting user stats for: $userId');
+      print('[CONSOLE] [workout_repository]Getting user stats for: $userId');
 
       final response = await _apiClient.getUserStats();
 
@@ -480,7 +480,7 @@ class WorkoutRepository {
 
   Future<Result<PeriodStats>> getPeriodStats(String period) async {
     return await Result.tryCallAsync(() async {
-      print('[CONSOLE]Getting period stats for: $period');
+      print('[CONSOLE] [workout_repository]Getting period stats for: $period');
 
       final response = await _apiClient.getPeriodStats(period);
 

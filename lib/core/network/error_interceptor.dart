@@ -55,7 +55,7 @@ class ErrorInterceptor extends Interceptor {
         errorMessage = 'Errore di rete sconosciuto';
     }
 
-    print('[CONSOLE]API Error: $errorMessage');
+    print('[CONSOLE] [error_interceptor]API Error: $errorMessage');
 
     final customError = DioException(
       requestOptions: err.requestOptions,

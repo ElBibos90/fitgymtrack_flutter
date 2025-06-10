@@ -34,9 +34,9 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('[CONSOLE]🚀 FITGYMTRACK STARTED - LAZY STRIPE LOADING MODE');
-  print('[CONSOLE]📱 App orientation locked to PORTRAIT only');
-  print('[CONSOLE]💳 Stripe will be loaded ONLY when user needs payments');
+  print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED - LAZY STRIPE LOADING MODE');
+  print('[CONSOLE] [main]📱 App orientation locked to PORTRAIT only');
+  print('[CONSOLE] [main]💳 Stripe will be loaded ONLY when user needs payments');
 
   // 🔧 Inizializzazione dependency injection
   await DependencyInjection.init();
@@ -47,15 +47,15 @@ void main() async {
   }
 
   // 💳 SILENT configurazione check (no verbose output)
-  print('[CONSOLE]🔍 Running silent Stripe configuration check...');
+  print('[CONSOLE] [main]🔍 Running silent Stripe configuration check...');
   final stripeCheck = await StripeConfigurationChecker.checkConfiguration();
 
   // Only print summary for clean testing
-  print('[CONSOLE]✅ Stripe Configuration: ${stripeCheck.isValid ? "VALID" : "NEEDS ATTENTION"}');
+  print('[CONSOLE] [main]✅ Stripe Configuration: ${stripeCheck.isValid ? "VALID" : "NEEDS ATTENTION"}');
 
   // 💳 Verifica salute sistema generale
   final systemHealthy = DependencyInjection.checkSystemHealth();
-  print('[CONSOLE]🏥 System health: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
+  print('[CONSOLE] [main]🏥 System health: ${systemHealthy ? "✅ HEALTHY" : "❌ ISSUES"}');
 
   runApp(FitGymTrackApp(
     stripeConfigValid: stripeCheck.isValid,
@@ -65,13 +65,13 @@ void main() async {
 
 /// 🚀 NUOVO: Esegue test di startup per Stripe
 Future<void> _runStartupStripeTests() async {
-  print('[CONSOLE]🧪 STARTUP STRIPE TESTING ENABLED');
+  print('[CONSOLE] [main]🧪 STARTUP STRIPE TESTING ENABLED');
 
   try {
     // 1. Quick configuration test
-    print('[CONSOLE]🧪 [STARTUP] Testing Stripe configuration...');
+    print('[CONSOLE] [main]🧪 [STARTUP] Testing Stripe configuration...');
     final configValid = StripeTestingUtils.validateConfiguration();
-    print('[CONSOLE]🧪 [STARTUP] Configuration valid: ${configValid ? "✅" : "❌"}');
+    print('[CONSOLE] [main]🧪 [STARTUP] Configuration valid: ${configValid ? "✅" : "❌"}');
 
     // 2. Print test cards for reference
     if (configValid) {
@@ -79,14 +79,14 @@ Future<void> _runStartupStripeTests() async {
     }
 
     // 3. Quick health check (non-blocking)
-    print('[CONSOLE]🧪 [STARTUP] Running quick health check...');
+    print('[CONSOLE] [main]🧪 [STARTUP] Running quick health check...');
     final isHealthy = await StripeTestingUtils.quickHealthCheck();
-    print('[CONSOLE]🧪 [STARTUP] System healthy: ${isHealthy ? "✅" : "❌"}');
+    print('[CONSOLE] [main]🧪 [STARTUP] System healthy: ${isHealthy ? "✅" : "❌"}');
 
-    print('[CONSOLE]🧪 [STARTUP] Stripe testing completed');
+    print('[CONSOLE] [main]🧪 [STARTUP] Stripe testing completed');
 
   } catch (e) {
-    print('[CONSOLE]❌ [STARTUP] Stripe testing failed: $e');
+    print('[CONSOLE] [main]❌ [STARTUP] Stripe testing failed: $e');
   }
 }
 
@@ -142,7 +142,7 @@ class FitGymTrackApp extends StatelessWidget {
             // 💳 STRIPE BLOC PROVIDER - LAZY LOADING ONLY
             BlocProvider<StripeBloc>(
               create: (context) {
-                print('[CONSOLE]💳 StripeBloc created - waiting for user action');
+                print('[CONSOLE] [main]💳 StripeBloc created - waiting for user action');
                 // 🔧 FIX: NON inizializzare Stripe automaticamente
                 // Stripe verrà inizializzato solo quando l'utente ne avrà bisogno
                 return getIt<StripeBloc>();
@@ -484,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 💳 Manual Stripe initialization for testing
   void _initStripeManually(BuildContext context) {
-    print('[CONSOLE]🧪 [DEBUG] Manual Stripe initialization triggered');
+    print('[CONSOLE] [main]🧪 [DEBUG] Manual Stripe initialization triggered');
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Initializing Stripe manually...')),

@@ -15,7 +15,7 @@ class ApiLevelHelper {
       final int apiLevel = await _channel.invokeMethod('getApiLevel');
       return apiLevel;
     } catch (e) {
-      print('[CONSOLE]Errore nel rilevare API level: $e');
+      print('[CONSOLE] [api_level_helper]Errore nel rilevare API level: $e');
       return 0;
     }
   }

@@ -109,31 +109,31 @@ class Environment {
 
   /// Mostra informazioni di configurazione per debug
   static void printConfiguration() {
-    print('[CONSOLE]🔧 [ENV] Environment Configuration:');
-    print('[CONSOLE]🔧 [ENV] Base URL: $baseUrl');
-    print('[CONSOLE]🔧 [ENV] Is Debug: $isDebug');
-    print('[CONSOLE]🔧 [ENV] Is Production: $isProduction');
-    print('[CONSOLE]🔧 [ENV] App Version: $fullVersion');
+    print('[CONSOLE] [environment]🔧 [ENV] Environment Configuration:');
+    print('[CONSOLE] [environment]🔧 [ENV] Base URL: $baseUrl');
+    print('[CONSOLE] [environment]🔧 [ENV] Is Debug: $isDebug');
+    print('[CONSOLE] [environment]🔧 [ENV] Is Production: $isProduction');
+    print('[CONSOLE] [environment]🔧 [ENV] App Version: $fullVersion');
   }
 
   /// Valida la configurazione dell'ambiente
   static bool validateConfiguration() {
     if (baseUrl.isEmpty) {
-      print('[CONSOLE]❌ [ENV] ERROR: Base URL is empty');
+      print('[CONSOLE] [environment]❌ [ENV] ERROR: Base URL is empty');
       return false;
     }
 
     if (!baseUrl.startsWith('http')) {
-      print('[CONSOLE]❌ [ENV] ERROR: Base URL must start with http/https');
+      print('[CONSOLE] [environment]❌ [ENV] ERROR: Base URL must start with http/https');
       return false;
     }
 
     if (isProduction && baseUrl.contains('localhost') || baseUrl.contains('192.168')) {
-      print('[CONSOLE]⚠️ [ENV] WARNING: Production mode but using local URL');
+      print('[CONSOLE] [environment]⚠️ [ENV] WARNING: Production mode but using local URL');
       return false;
     }
 
-    print('[CONSOLE]✅ [ENV] Configuration is valid');
+    print('[CONSOLE] [environment]✅ [ENV] Configuration is valid');
     return true;
   }
 }

@@ -16,7 +16,7 @@ class StripeFinalTestUtility {
     bool verbose = true,
   }) async {
     if (verbose) {
-      print('[CONSOLE]🎯 [FINAL TEST] Starting comprehensive final test...');
+      print('[CONSOLE] [stripe_final_test_utility]🎯 [FINAL TEST] Starting comprehensive final test...');
     }
 
     final result = StripeFinalTestResult();
@@ -35,7 +35,7 @@ class StripeFinalTestUtility {
       await _phase2SystemTest(dio, result, verbose);
     } else {
       if (verbose) {
-        print('[CONSOLE]⚠️ [FINAL TEST] Pre-test failed - skipping system test');
+        print('[CONSOLE] [stripe_final_test_utility]⚠️ [FINAL TEST] Pre-test failed - skipping system test');
       }
     }
 
@@ -60,7 +60,7 @@ class StripeFinalTestUtility {
     _phase5GenerateReport(result, verbose);
 
     if (verbose) {
-      print('[CONSOLE]🎯 [FINAL TEST] Test completed - Success: ${result.overallSuccess}');
+      print('[CONSOLE] [stripe_final_test_utility]🎯 [FINAL TEST] Test completed - Success: ${result.overallSuccess}');
     }
 
     return result;
@@ -69,7 +69,7 @@ class StripeFinalTestUtility {
   /// FASE 1: Validazione pre-test
   static Future<void> _phase1PreTestValidation(StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      print('[CONSOLE]📋 [PHASE 1] Pre-test validation...');
+      print('[CONSOLE] [stripe_final_test_utility]📋 [PHASE 1] Pre-test validation...');
     }
 
     // Test configurazione Stripe
@@ -96,17 +96,17 @@ class StripeFinalTestUtility {
         result.dependencyInjectionWorking;
 
     if (verbose) {
-      print('[CONSOLE]📋 [PHASE 1] Config valid: ${result.stripeConfigValid}');
-      print('[CONSOLE]📋 [PHASE 1] Environment valid: ${result.environmentConfigValid}');
-      print('[CONSOLE]📋 [PHASE 1] DI working: ${result.dependencyInjectionWorking}');
-      print('[CONSOLE]📋 [PHASE 1] Pre-test passed: ${result.preTestPassed}');
+      print('[CONSOLE] [stripe_final_test_utility]📋 [PHASE 1] Config valid: ${result.stripeConfigValid}');
+      print('[CONSOLE] [stripe_final_test_utility]📋 [PHASE 1] Environment valid: ${result.environmentConfigValid}');
+      print('[CONSOLE] [stripe_final_test_utility]📋 [PHASE 1] DI working: ${result.dependencyInjectionWorking}');
+      print('[CONSOLE] [stripe_final_test_utility]📋 [PHASE 1] Pre-test passed: ${result.preTestPassed}');
     }
   }
 
   /// FASE 2: Test sistema completo
   static Future<void> _phase2SystemTest(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      print('[CONSOLE]🏗️ [PHASE 2] System test...');
+      print('[CONSOLE] [stripe_final_test_utility]🏗️ [PHASE 2] System test...');
     }
 
     try {
@@ -117,7 +117,7 @@ class StripeFinalTestUtility {
       result.userId = user?.id;
 
       if (verbose) {
-        print('[CONSOLE]🔐 [PHASE 2] Authentication working: ${result.authenticationWorking}');
+        print('[CONSOLE] [stripe_final_test_utility]🔐 [PHASE 2] Authentication working: ${result.authenticationWorking}');
       }
 
       // Test connettività API base
@@ -149,7 +149,7 @@ class StripeFinalTestUtility {
           result.superDebugScore >= 50;
 
       if (verbose) {
-        print('[CONSOLE]🏗️ [PHASE 2] System test passed: ${result.systemTestPassed}');
+        print('[CONSOLE] [stripe_final_test_utility]🏗️ [PHASE 2] System test passed: ${result.systemTestPassed}');
       }
 
     } catch (e) {
@@ -157,7 +157,7 @@ class StripeFinalTestUtility {
       result.systemTestErrors.add('System test failed: $e');
 
       if (verbose) {
-        print('[CONSOLE]❌ [PHASE 2] System test error: $e');
+        print('[CONSOLE] [stripe_final_test_utility]❌ [PHASE 2] System test error: $e');
       }
     }
   }
@@ -235,7 +235,7 @@ class StripeFinalTestUtility {
         }
 
         if (verbose) {
-          print('[CONSOLE]🎯 [ENDPOINT] ${endpointConfig['name']}: ${isWorking ? "✅" : "❌"}');
+          print('[CONSOLE] [stripe_final_test_utility]🎯 [ENDPOINT] ${endpointConfig['name']}: ${isWorking ? "✅" : "❌"}');
         }
 
       } catch (e) {
@@ -243,7 +243,7 @@ class StripeFinalTestUtility {
         result.endpointErrors[endpointConfig['name'] as String] = e.toString();
 
         if (verbose) {
-          print('[CONSOLE]❌ [ENDPOINT] ${endpointConfig['name']}: $e');
+          print('[CONSOLE] [stripe_final_test_utility]❌ [ENDPOINT] ${endpointConfig['name']}: $e');
         }
       }
     }
@@ -255,7 +255,7 @@ class StripeFinalTestUtility {
   /// FASE 3: Recovery automatico
   static Future<void> _phase3AutoRecovery(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      print('[CONSOLE]🔄 [PHASE 3] Attempting auto-recovery...');
+      print('[CONSOLE] [stripe_final_test_utility]🔄 [PHASE 3] Attempting auto-recovery...');
     }
 
     result.attemptedRecovery = true;
@@ -269,7 +269,7 @@ class StripeFinalTestUtility {
         result.recoveryActions.add('Authentication session cleared');
 
         if (verbose) {
-          print('[CONSOLE]🔄 [RECOVERY] Authentication session cleared');
+          print('[CONSOLE] [stripe_final_test_utility]🔄 [RECOVERY] Authentication session cleared');
         }
       } catch (e) {
         result.recoveryErrors.add('Auth recovery failed: $e');
@@ -288,7 +288,7 @@ class StripeFinalTestUtility {
           result.recoveryActions.add('Base API connection recovered with extended timeout');
 
           if (verbose) {
-            print('[CONSOLE]✅ [RECOVERY] Base API recovered');
+            print('[CONSOLE] [stripe_final_test_utility]✅ [RECOVERY] Base API recovered');
           }
         }
       } catch (e) {
@@ -305,7 +305,7 @@ class StripeFinalTestUtility {
         result.recoveryActions.add('Critical endpoints recovered after retry');
 
         if (verbose) {
-          print('[CONSOLE]✅ [RECOVERY] Critical endpoints recovered');
+          print('[CONSOLE] [stripe_final_test_utility]✅ [RECOVERY] Critical endpoints recovered');
         }
       }
     }
@@ -319,14 +319,14 @@ class StripeFinalTestUtility {
     result.recoverySuccessful = result.baseApiWorking && result.criticalEndpointsWorking >= 1;
 
     if (verbose) {
-      print('[CONSOLE]🔄 [PHASE 3] Recovery successful: ${result.recoverySuccessful}');
+      print('[CONSOLE] [stripe_final_test_utility]🔄 [PHASE 3] Recovery successful: ${result.recoverySuccessful}');
     }
   }
 
   /// FASE 4: Validazione finale
   static Future<void> _phase4FinalValidation(Dio dio, StripeFinalTestResult result, bool verbose) async {
     if (verbose) {
-      print('[CONSOLE]✅ [PHASE 4] Final validation...');
+      print('[CONSOLE] [stripe_final_test_utility]✅ [PHASE 4] Final validation...');
     }
 
     // Test finale rapido
@@ -336,7 +336,7 @@ class StripeFinalTestUtility {
       result.finalQuickTestPassed = quickResults.overallSuccess;
 
       if (verbose) {
-        print('[CONSOLE]🧪 [PHASE 4] Quick test score: ${result.finalQuickTestScore}/100');
+        print('[CONSOLE] [stripe_final_test_utility]🧪 [PHASE 4] Quick test score: ${result.finalQuickTestScore}/100');
       }
     } catch (e) {
       result.finalQuickTestPassed = false;
@@ -352,8 +352,8 @@ class StripeFinalTestUtility {
         result.meetsMinimumCriteria;
 
     if (verbose) {
-      print('[CONSOLE]✅ [PHASE 4] Meets minimum criteria: ${result.meetsMinimumCriteria}');
-      print('[CONSOLE]✅ [PHASE 4] Overall success: ${result.overallSuccess}');
+      print('[CONSOLE] [stripe_final_test_utility]✅ [PHASE 4] Meets minimum criteria: ${result.meetsMinimumCriteria}');
+      print('[CONSOLE] [stripe_final_test_utility]✅ [PHASE 4] Overall success: ${result.overallSuccess}');
     }
   }
 
@@ -369,7 +369,7 @@ class StripeFinalTestUtility {
   /// FASE 5: Generazione report
   static void _phase5GenerateReport(StripeFinalTestResult result, bool verbose) {
     if (verbose) {
-      print('[CONSOLE]📊 [PHASE 5] Generating final report...');
+      print('[CONSOLE] [stripe_final_test_utility]📊 [PHASE 5] Generating final report...');
     }
 
     // Calcola punteggio finale
@@ -390,7 +390,7 @@ class StripeFinalTestUtility {
     result.nextSteps = _generateNextSteps(result);
 
     if (verbose) {
-      print('[CONSOLE]📊 [PHASE 5] Final score: ${result.finalScore}/100');
+      print('[CONSOLE] [stripe_final_test_utility]📊 [PHASE 5] Final score: ${result.finalScore}/100');
     }
   }
 
@@ -495,95 +495,95 @@ class StripeFinalTestUtility {
 
   /// Stampa report finale completo
   static void printFinalReport(StripeFinalTestResult result) {
-    print('[CONSOLE]');
-    print('[CONSOLE]🎯 STRIPE FINAL TEST REPORT');
-    print('[CONSOLE]===========================================================');
-    print('[CONSOLE]📊 Final Score: ${result.finalScore}/100');
-    print('[CONSOLE]✅ Overall Success: ${result.overallSuccess}');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_final_test_utility]');
+    print('[CONSOLE] [stripe_final_test_utility]🎯 STRIPE FINAL TEST REPORT');
+    print('[CONSOLE] [stripe_final_test_utility]===========================================================');
+    print('[CONSOLE] [stripe_final_test_utility]📊 Final Score: ${result.finalScore}/100');
+    print('[CONSOLE] [stripe_final_test_utility]✅ Overall Success: ${result.overallSuccess}');
+    print('[CONSOLE] [stripe_final_test_utility]');
 
     // Pre-test
-    print('[CONSOLE]📋 PRE-TEST VALIDATION:');
-    print('[CONSOLE]   Stripe Config Valid: ${result.stripeConfigValid}');
-    print('[CONSOLE]   Environment Valid: ${result.environmentConfigValid}');
-    print('[CONSOLE]   Dependency Injection: ${result.dependencyInjectionWorking}');
-    print('[CONSOLE]   Demo Mode: ${result.stripeDemoMode}');
-    print('[CONSOLE]   Pre-test Passed: ${result.preTestPassed}');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_final_test_utility]📋 PRE-TEST VALIDATION:');
+    print('[CONSOLE] [stripe_final_test_utility]   Stripe Config Valid: ${result.stripeConfigValid}');
+    print('[CONSOLE] [stripe_final_test_utility]   Environment Valid: ${result.environmentConfigValid}');
+    print('[CONSOLE] [stripe_final_test_utility]   Dependency Injection: ${result.dependencyInjectionWorking}');
+    print('[CONSOLE] [stripe_final_test_utility]   Demo Mode: ${result.stripeDemoMode}');
+    print('[CONSOLE] [stripe_final_test_utility]   Pre-test Passed: ${result.preTestPassed}');
+    print('[CONSOLE] [stripe_final_test_utility]');
 
     // System test
-    print('[CONSOLE]🏗️ SYSTEM TEST:');
-    print('[CONSOLE]   Authentication Working: ${result.authenticationWorking}');
-    print('[CONSOLE]   Base API Working: ${result.baseApiWorking}');
-    print('[CONSOLE]   Critical Endpoints Working: ${result.criticalEndpointsWorking}/${result.totalCriticalEndpoints}');
-    print('[CONSOLE]   Super Debug Score: ${result.superDebugScore}/100');
-    print('[CONSOLE]   System Test Passed: ${result.systemTestPassed}');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_final_test_utility]🏗️ SYSTEM TEST:');
+    print('[CONSOLE] [stripe_final_test_utility]   Authentication Working: ${result.authenticationWorking}');
+    print('[CONSOLE] [stripe_final_test_utility]   Base API Working: ${result.baseApiWorking}');
+    print('[CONSOLE] [stripe_final_test_utility]   Critical Endpoints Working: ${result.criticalEndpointsWorking}/${result.totalCriticalEndpoints}');
+    print('[CONSOLE] [stripe_final_test_utility]   Super Debug Score: ${result.superDebugScore}/100');
+    print('[CONSOLE] [stripe_final_test_utility]   System Test Passed: ${result.systemTestPassed}');
+    print('[CONSOLE] [stripe_final_test_utility]');
 
     // Working/Broken endpoints
     if (result.workingEndpoints.isNotEmpty) {
-      print('[CONSOLE]✅ WORKING ENDPOINTS:');
+      print('[CONSOLE] [stripe_final_test_utility]✅ WORKING ENDPOINTS:');
       for (final endpoint in result.workingEndpoints) {
-        print('[CONSOLE]   ✅ $endpoint');
+        print('[CONSOLE] [stripe_final_test_utility]   ✅ $endpoint');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_final_test_utility]');
     }
 
     if (result.brokenEndpoints.isNotEmpty) {
-      print('[CONSOLE]❌ BROKEN ENDPOINTS:');
+      print('[CONSOLE] [stripe_final_test_utility]❌ BROKEN ENDPOINTS:');
       for (final endpoint in result.brokenEndpoints) {
-        print('[CONSOLE]   ❌ $endpoint');
+        print('[CONSOLE] [stripe_final_test_utility]   ❌ $endpoint');
         if (result.endpointErrors.containsKey(endpoint)) {
-          print('[CONSOLE]      Error: ${result.endpointErrors[endpoint]}');
+          print('[CONSOLE] [stripe_final_test_utility]      Error: ${result.endpointErrors[endpoint]}');
         }
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_final_test_utility]');
     }
 
     // Recovery
     if (result.attemptedRecovery) {
-      print('[CONSOLE]🔄 RECOVERY ATTEMPT:');
-      print('[CONSOLE]   Recovery Successful: ${result.recoverySuccessful}');
+      print('[CONSOLE] [stripe_final_test_utility]🔄 RECOVERY ATTEMPT:');
+      print('[CONSOLE] [stripe_final_test_utility]   Recovery Successful: ${result.recoverySuccessful}');
 
       if (result.recoveryActions.isNotEmpty) {
-        print('[CONSOLE]   Actions Taken:');
+        print('[CONSOLE] [stripe_final_test_utility]   Actions Taken:');
         for (final action in result.recoveryActions) {
-          print('[CONSOLE]     • $action');
+          print('[CONSOLE] [stripe_final_test_utility]     • $action');
         }
       }
 
       if (result.recoveryErrors.isNotEmpty) {
-        print('[CONSOLE]   Recovery Errors:');
+        print('[CONSOLE] [stripe_final_test_utility]   Recovery Errors:');
         for (final error in result.recoveryErrors) {
-          print('[CONSOLE]     • $error');
+          print('[CONSOLE] [stripe_final_test_utility]     • $error');
         }
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_final_test_utility]');
     }
 
     // Final validation
-    print('[CONSOLE]✅ FINAL VALIDATION:');
-    print('[CONSOLE]   Quick Test Score: ${result.finalQuickTestScore}/100');
-    print('[CONSOLE]   Quick Test Passed: ${result.finalQuickTestPassed}');
-    print('[CONSOLE]   Meets Minimum Criteria: ${result.meetsMinimumCriteria}');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_final_test_utility]✅ FINAL VALIDATION:');
+    print('[CONSOLE] [stripe_final_test_utility]   Quick Test Score: ${result.finalQuickTestScore}/100');
+    print('[CONSOLE] [stripe_final_test_utility]   Quick Test Passed: ${result.finalQuickTestPassed}');
+    print('[CONSOLE] [stripe_final_test_utility]   Meets Minimum Criteria: ${result.meetsMinimumCriteria}');
+    print('[CONSOLE] [stripe_final_test_utility]');
 
     // Recommendations
     if (result.finalRecommendations.isNotEmpty) {
-      print('[CONSOLE]💡 FINAL RECOMMENDATIONS:');
+      print('[CONSOLE] [stripe_final_test_utility]💡 FINAL RECOMMENDATIONS:');
       for (final recommendation in result.finalRecommendations) {
-        print('[CONSOLE]   $recommendation');
+        print('[CONSOLE] [stripe_final_test_utility]   $recommendation');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_final_test_utility]');
     }
 
     // Next steps
     if (result.nextSteps.isNotEmpty) {
-      print('[CONSOLE]🚀 NEXT STEPS:');
+      print('[CONSOLE] [stripe_final_test_utility]🚀 NEXT STEPS:');
       for (int i = 0; i < result.nextSteps.length; i++) {
-        print('[CONSOLE]   ${i + 1}. ${result.nextSteps[i]}');
+        print('[CONSOLE] [stripe_final_test_utility]   ${i + 1}. ${result.nextSteps[i]}');
       }
-      print('[CONSOLE]');
+      print('[CONSOLE] [stripe_final_test_utility]');
     }
 
     // System status
@@ -598,9 +598,9 @@ class StripeFinalTestUtility {
       statusIcon = '🔴 CRITICAL';
     }
 
-    print('[CONSOLE]🏥 SYSTEM STATUS: $statusIcon');
-    print('[CONSOLE]===========================================================');
-    print('[CONSOLE]');
+    print('[CONSOLE] [stripe_final_test_utility]🏥 SYSTEM STATUS: $statusIcon');
+    print('[CONSOLE] [stripe_final_test_utility]===========================================================');
+    print('[CONSOLE] [stripe_final_test_utility]');
   }
 }
 
