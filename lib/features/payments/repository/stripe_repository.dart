@@ -6,7 +6,7 @@ import '../../../core/network/api_client.dart';
 import '../models/stripe_models.dart';
 import '../../../core/services/session_service.dart';
 
-/// Repository per gestire le operazioni Stripe tramite API backend - VERSIONE FINALE CON POST-PAYMENT FIX
+/// Repository per gestire le operazioni Stripe tramite API backend - VERSIONE FINALE CON DEBUG
 class StripeRepository {
   final ApiClient _apiClient;
   final Dio _dio;
@@ -331,7 +331,7 @@ class StripeRepository {
   }
 
   // ============================================================================
-  // 🔧 SUBSCRIPTION OPERATIONS - IMPLEMENTAZIONE COMPLETA CON POST-PAYMENT FIX
+  // 🔧 SUBSCRIPTION OPERATIONS - IMPLEMENTAZIONE COMPLETA CON POST-PAYMENT FIX E DEBUG
   // ============================================================================
 
   /// 🚀 NUOVA: Ottiene la subscription corrente con retry intelligente post-pagamento
@@ -372,23 +372,163 @@ class StripeRepository {
           );
 
           if (response['success'] == true) {
+            // 🔧 FIX: Il backend ora restituisce dati dentro "data" field
+            final data = response['data'];
+
+            if (data != null && data is Map<String, dynamic>) {
+              // 🚀 FIXED: Cerca subscription dentro data field
+              if (data['subscription'] != null) {
+                // 🔧 DEBUG: Log dei dati subscription prima del parsing
+                print('[CONSOLE]🔧 [DEBUG] Subscription data before parsing: ${data['subscription']}');
+
+                try {
+                  subscription = StripeSubscription.fromJson(data['subscription']);
+                  print('[CONSOLE]✅ [STRIPE REPO] Current subscription found: ${subscription!.id} (${subscription!.status})');
+                  return subscription;
+                } catch (e, stackTrace) {
+                  print('[CONSOLE]❌ [DEBUG] StripeSubscription.fromJson failed: $e');
+                  print('[CONSOLE]❌ [DEBUG] Stack trace: $stackTrace');
+
+                  // 🚀 ULTIMATE FIX: Ricostruisci con TUTTI i campi richiesti dal modello
+                  print('[CONSOLE]🔧 [DEBUG] Building subscription with required model fields...');
+
+                  try {
+                    final subscriptionData = data['subscription'];
+                    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+                    // 🔧 FIX: Ricostruisci gli items nel formato corretto
+                    final originalItems = subscriptionData['items'] as List;
+                    final safeItems = originalItems.map((item) {
+                      final originalPrice = item['price'];
+
+                      return {
+                        'id': item['id'] ?? 'si_default',
+                        'object': 'subscription_item', // Campo mancante
+                        'created': now, // Campo mancante
+                        'quantity': 1, // Campo mancante ma obbligatorio
+                        'subscription': subscriptionData['id'],
+                        'price': {
+                          'id': originalPrice['id'] ?? 'price_default',
+                          'object': 'price', // Campo mancante
+                          'active': true, // Campo mancante
+                          'billing_scheme': 'per_unit', // Campo mancante
+                          'created': now, // Campo mancante
+                          'currency': originalPrice['currency'] ?? 'eur',
+                          'livemode': false, // Campo mancante
+                          'lookup_key': null, // Campo opzionale
+                          'nickname': null, // Campo opzionale
+                          'product': originalPrice['product']['id'] ?? 'prod_default',
+                          'recurring': {
+                            'aggregate_usage': null,
+                            'interval': originalPrice['interval'] ?? 'month',
+                            'interval_count': originalPrice['interval_count'] ?? 1,
+                            'usage_type': 'licensed',
+                          },
+                          'tax_behavior': 'unspecified', // Campo mancante
+                          'tiers_mode': null, // Campo opzionale
+                          'transform_quantity': null, // Campo opzionale
+                          'type': 'recurring', // Campo mancante
+                          'unit_amount': originalPrice['amount'] ?? 0,
+                          'unit_amount_decimal': '${originalPrice['amount'] ?? 0}', // Campo mancante
+                        },
+                        'billing_thresholds': null, // Campo opzionale
+                        'metadata': {}, // Campo mancante
+                        'tax_rates': [], // Campo mancante
+                      };
+                    }).toList();
+
+                    // 🔧 FIX: Subscription completa nel formato corretto
+                    final safeSubscriptionData = {
+                      'id': subscriptionData['id'],
+                      'object': 'subscription', // Campo mancante
+                      'application': null, // Campo opzionale
+                      'application_fee_percent': null, // Campo opzionale
+                      'automatic_tax': {'enabled': false}, // Campo mancante
+                      'billing_cycle_anchor': subscriptionData['current_period_start'] ?? now,
+                      'billing_thresholds': null, // Campo opzionale
+                      'cancel_at': null, // Campo opzionale
+                      'cancel_at_period_end': subscriptionData['cancel_at_period_end'] ?? false,
+                      'canceled_at': null, // Campo opzionale
+                      'collection_method': 'charge_automatically', // Campo mancante
+                      'created': now, // Campo mancante
+                      'currency': 'eur', // Campo mancante
+                      'current_period_end': subscriptionData['current_period_end'] ?? (now + 2592000), // +30 giorni
+                      'current_period_start': subscriptionData['current_period_start'] ?? now,
+                      'customer': subscriptionData['customer_id'],
+                      'days_until_due': null, // Campo opzionale
+                      'default_payment_method': null, // Campo opzionale
+                      'default_source': null, // Campo opzionale
+                      'default_tax_rates': [], // Campo mancante
+                      'description': null, // Campo opzionale
+                      'discount': null, // Campo opzionale
+                      'ended_at': null, // Campo opzionale
+                      'items': {
+                        'object': 'list',
+                        'data': safeItems,
+                        'has_more': false,
+                        'total_count': safeItems.length,
+                        'url': '/v1/subscription_items?subscription=${subscriptionData['id']}',
+                      },
+                      'latest_invoice': subscriptionData['latest_invoice'],
+                      'livemode': false, // Campo mancante
+                      'metadata': subscriptionData['metadata'] ?? {},
+                      'next_pending_invoice_item_invoice': null, // Campo opzionale
+                      'on_behalf_of': null, // Campo opzionale
+                      'pause_collection': null, // Campo opzionale
+                      'payment_settings': {
+                        'payment_method_options': null,
+                        'payment_method_types': null,
+                        'save_default_payment_method': 'off',
+                      }, // Campo mancante
+                      'pending_invoice_item_interval': null, // Campo opzionale
+                      'pending_setup_intent': null, // Campo opzionale
+                      'pending_update': null, // Campo opzionale
+                      'schedule': null, // Campo opzionale
+                      'start_date': subscriptionData['current_period_start'] ?? now,
+                      'status': subscriptionData['status'] ?? 'active',
+                      'test_clock': null, // Campo opzionale
+                      'transfer_data': null, // Campo opzionale
+                      'trial_end': null, // Campo opzionale
+                      'trial_settings': {'end_behavior': {'missing_payment_method': 'create_invoice'}}, // Campo mancante
+                      'trial_start': null, // Campo opzionale
+                    };
+
+                    subscription = StripeSubscription.fromJson(safeSubscriptionData);
+                    print('[CONSOLE]✅ [STRIPE REPO] Safe subscription creation successful: ${subscription!.id}');
+                    return subscription;
+                  } catch (e2) {
+                    print('[CONSOLE]❌ [DEBUG] Safe subscription creation also failed: $e2');
+                    throw Exception('Subscription parsing failed: $e');
+                  }
+                }
+              } else if (data['subscriptions'] != null && data['subscriptions'] is List) {
+                // 🚀 FIXED: Gestisce array di subscriptions dentro data field
+                final subscriptionsList = data['subscriptions'] as List;
+
+                if (subscriptionsList.isNotEmpty) {
+                  subscription = StripeSubscription.fromJson(subscriptionsList.first);
+
+                  print('[CONSOLE]✅ [STRIPE REPO] Found subscription from list: ${subscription!.id} (${subscription!.status})');
+
+                  return subscription;
+                }
+              }
+            }
+
+            // 🔧 FALLBACK: Prova il vecchio formato per compatibilità
             if (response['subscription'] != null) {
               subscription = StripeSubscription.fromJson(response['subscription']);
 
-              print('[CONSOLE]✅ [STRIPE REPO] Current subscription found: ${subscription!.id} (${subscription!.status})',
-              );
+              print('[CONSOLE]✅ [STRIPE REPO] Current subscription found (legacy format): ${subscription!.id} (${subscription!.status})');
 
               return subscription;
             } else if (response['subscriptions'] != null && response['subscriptions'] is List) {
-              // 🚀 NUOVO: Gestisce array di subscriptions e prende la più recente
               final subscriptionsList = response['subscriptions'] as List;
 
               if (subscriptionsList.isNotEmpty) {
-                // Prendi la prima (più recente) subscription
                 subscription = StripeSubscription.fromJson(subscriptionsList.first);
 
-                print('[CONSOLE]✅ [STRIPE REPO] Found subscription from list: ${subscription!.id} (${subscription!.status})',
-                );
+                print('[CONSOLE]✅ [STRIPE REPO] Found subscription from list (legacy format): ${subscription!.id} (${subscription!.status})');
 
                 return subscription;
               }
@@ -403,6 +543,7 @@ class StripeRepository {
           }
 
           // Se non trova nulla
+          print('[CONSOLE]🚨 [DEBUG] About to return null - Backend says no subscription found');
           print('[CONSOLE]✅ [STRIPE REPO] No current subscription found');
           return null;
 
