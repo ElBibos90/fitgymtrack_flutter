@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/config/stripe_config.dart';
 import '../../../payments/bloc/stripe_bloc.dart';
+import '../../bloc/subscription_bloc.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -15,34 +16,32 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   bool _hasTriedInitialization = false;
-  bool _justCompletedPayment = false; // 🚀 NUOVO: Track se abbiamo appena completato un pagamento
+  bool _justCompletedPayment = false;
 
   @override
   void initState() {
     super.initState();
-    // 🔧 FIX: NON inizializzare Stripe automaticamente
-    // Stripe verrà inizializzato solo quando l'utente clicca "Sottoscrivi"
-    print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Screen loaded - Stripe NOT initialized yet');
+    print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] Screen loaded - Stripe NOT initialized yet');
   }
 
   /// 🔧 FIX: Inizializza Stripe SOLO quando l'utente vuole sottoscrivere
   void _initializeStripeForPayment() {
     if (_hasTriedInitialization) {
-      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe already initialized or tried');
+      print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] Stripe already initialized or tried');
       return;
     }
 
-    print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] User wants to subscribe - initializing Stripe now...');
+    print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] User wants to subscribe - initializing Stripe now...');
     _hasTriedInitialization = true;
 
     final stripeBloc = context.read<StripeBloc>();
 
     // Se Stripe non è ancora inizializzato, inizializzalo ora
     if (stripeBloc.state is StripeInitial) {
-      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe not ready, initializing for payment...');
+      print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] Stripe not ready, initializing for payment...');
       stripeBloc.add(const InitializeStripeEvent());
     } else {
-      print('[CONSOLE] [subscription_screen]💳 [SUBSCRIPTION] Stripe already ready, proceeding with payment...');
+      print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] Stripe already ready, proceeding with payment...');
     }
   }
 
@@ -54,22 +53,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: BlocConsumer<StripeBloc, StripeState>(
         listener: (context, state) {
-          print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
+          print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
 
-          // 🔧 FIX: Log dettagliato per ogni stato
           if (state is StripePaymentReady) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntent.paymentIntentId}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret.substring(0, 20)}...');
-            // 🔧 FIX: Apri Payment Sheet direttamente quando pronto
+            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
             _presentPaymentSheet(context, state);
           } else if (state is StripePaymentSuccess) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Success!');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Intent ID: ${state.paymentIntentId}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Success Message: ${state.message}');
-
-            // 🚀 NUOVO: Marca che abbiamo appena completato un pagamento
+            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Success!');
             _justCompletedPayment = true;
 
             ScaffoldMessenger.of(context).showSnackBar(
@@ -89,41 +79,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 duration: Duration(seconds: 4),
               ),
             );
+
+            // 🔧 FIX: Reload subscription after successful payment
+            context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
           } else if (state is StripeErrorState) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Error code: ${state.errorCode}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Error Model: ${state.stripeError}');
+            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
 
-            // 🚀 NUOVO: Se abbiamo appena completato un pagamento con successo,
-            // NON mostrare errori di caricamento subscription come errori gravi
             if (_justCompletedPayment && state.message.contains('caricamento subscription')) {
-              print('[CONSOLE] [subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
-
-              // Mostra un messaggio informativo invece che un errore
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.white),
-                      SizedBox(width: 8),
-                      Expanded(child: Text('Pagamento completato! L\'abbonamento potrebbe impiegare qualche minuto ad essere attivato.')),
-                    ],
-                  ),
-                  backgroundColor: AppColors.info,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  duration: Duration(seconds: 5),
-                ),
-              );
-
-              // Reset del flag dopo aver gestito l'errore
+              print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
               _justCompletedPayment = false;
-              return; // Non mostrare l'errore rosso
+              return;
             }
 
-            // Per tutti gli altri errori, mostra normalmente
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -141,24 +108,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 duration: Duration(seconds: 5),
               ),
             );
-          } else if (state is StripePaymentLoading) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Loading: ${state.message}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
-          } else if (state is StripeInitializing) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Initializing...');
-          } else if (state is StripeReady) {
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe Ready!');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Customer: ${state.customer?.id ?? 'None'}');
-            print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Subscription: ${state.subscription?.id ?? 'None'}');
-
-            // 🚀 NUOVO: Se abbiamo una subscription dopo un pagamento, resetta il flag
-            if (_justCompletedPayment && state.subscription != null) {
-              _justCompletedPayment = false;
-              print('[CONSOLE] [subscription_screen]✅ [SUBSCRIPTION] Subscription loaded after payment - resetting payment flag');
-            }
           }
         },
-        builder: (context, state) {
+        builder: (context, stripeState) {
           return CustomScrollView(
             slivers: [
               // 🎨 MODERN APP BAR
@@ -167,7 +119,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 floating: true,
                 pinned: true,
                 backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-                automaticallyImplyLeading: false, // Remove back button for tab navigation
+                automaticallyImplyLeading: false,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     'Abbonamento',
@@ -179,13 +131,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                   centerTitle: true,
                 ),
-                actions: [
-                  // Status indicator
-                  Padding(
-                    padding: EdgeInsets.only(right: 16.w),
-                    child: _buildStripeStatusIndicator(state, isDarkMode),
-                  ),
-                ],
               ),
 
               // 🎨 CONTENT
@@ -193,26 +138,29 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 padding: EdgeInsets.all(16.w),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    // 💳 Stripe Status Banner
-                    _buildStripeStatusBanner(state, isDarkMode),
-
-                    SizedBox(height: 24.h),
-
                     // 🔧 Payment Loading Overlay quando necessario
-                    if (state is StripePaymentLoading)
-                      _buildPaymentLoadingOverlay(state, isDarkMode),
+                    if (stripeState is StripePaymentLoading)
+                      _buildPaymentLoadingOverlay(stripeState, isDarkMode),
 
-                    // 🚀 NUOVO: Payment Success Banner se abbiamo appena completato un pagamento
+                    // 🚀 Payment Success Banner se abbiamo appena completato un pagamento
                     if (_justCompletedPayment)
                       _buildPaymentSuccessBanner(isDarkMode),
 
-                    // 📊 Current Plan Card
-                    _buildCurrentPlanCard(state, isDarkMode),
+                    // 📊 Current Plan Card - FIXED: Using SubscriptionBloc
+                    BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                      builder: (context, subscriptionState) {
+                        return _buildCurrentPlanCard(subscriptionState, isDarkMode);
+                      },
+                    ),
 
                     SizedBox(height: 32.h),
 
-                    // 🚀 Available Plans
-                    _buildAvailablePlansSection(state, isDarkMode),
+                    // 🚀 Available Plans - FIXED: Using SubscriptionBloc
+                    BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                      builder: (context, subscriptionState) {
+                        return _buildAvailablePlansSection(subscriptionState, stripeState, isDarkMode);
+                      },
+                    ),
 
                     SizedBox(height: 32.h),
 
@@ -230,7 +178,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  /// 🚀 NUOVO: Banner di successo pagamento
+  /// 🚀 Payment Success Banner
   Widget _buildPaymentSuccessBanner(bool isDarkMode) {
     return Container(
       margin: EdgeInsets.only(bottom: 24.h),
@@ -272,7 +220,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 ),
                 Text(
-                  'Il tuo abbonamento Premium verrà attivato a breve. Grazie!',
+                  'Il tuo abbonamento Premium è attivo!',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
@@ -291,6 +239,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
+      margin: EdgeInsets.only(bottom: 24.h),
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16.r),
@@ -331,307 +280,35 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildStripeStatusIndicator(StripeState state, bool isDarkMode) {
-    IconData icon;
-    Color color;
-
-    if (state is StripeReady) {
-      icon = Icons.check_circle;
-      color = AppColors.success;
-    } else if (state is StripeErrorState) {
-      // 🚀 NUOVO: Se è un errore post-pagamento, usa icona warning invece di error
-      if (_justCompletedPayment) {
-        icon = Icons.info_outlined;
-        color = AppColors.info;
-      } else {
-        icon = Icons.warning_amber_rounded;
-        color = AppColors.warning;
-      }
-    } else if (state is StripeInitializing) {
-      icon = Icons.sync;
-      color = AppColors.info;
-    } else {
-      // 🔧 FIX: StripeInitial = pronto per inizializzazione
-      icon = Icons.payment_outlined;
-      color = Colors.grey;
-    }
-
-    return Container(
-      padding: EdgeInsets.all(8.w),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: color,
-        size: 20.sp,
-      ),
-    );
-  }
-
-  Widget _buildStripeStatusBanner(StripeState state, bool isDarkMode) {
-    if (state is StripeInitializing) {
-      // Stripe si sta inizializzando
-      return Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: isDarkMode ? AppColors.info.withOpacity(0.2) : Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: AppColors.info.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.w,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Inizializzazione Stripe',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'Connessione al sistema di pagamento in corso...',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (state is StripeInitial) {
-      // 🔧 FIX: Stripe non ancora inizializzato - BANNER INFORMATIVO
-      return Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.blue.shade900.withOpacity(0.2) : Colors.blue.shade50,
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: Colors.blue.withOpacity(0.3),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.blue,
-              size: 24.sp,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pagamenti su richiesta',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'I pagamenti verranno attivati quando clicchi "Sottoscrivi"',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (state is StripeErrorState) {
-      // 🚀 NUOVO: Gestione intelligente degli errori
-      if (_justCompletedPayment) {
-        // Mostra banner informativo invece che di errore se abbiamo appena pagato
-        return Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.info.withOpacity(0.2) : Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: AppColors.info.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: AppColors.info,
-                size: 24.sp,
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Abbonamento in attivazione',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Il tuo pagamento è stato completato. L\'abbonamento Premium verrà attivato a breve.',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      } else {
-        // Errore normale
-        return Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.orange.shade900.withOpacity(0.3) : Colors.orange.shade50,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: AppColors.warning.withOpacity(0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                color: AppColors.warning,
-                size: 24.sp,
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Modalità Offline',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'I pagamenti non sono disponibili. L\'app funziona in modalità limitata.',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-
-    // Stripe Ready - Show success banner
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.success.withOpacity(0.1) : Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: AppColors.success.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.check,
-              color: AppColors.success,
-              size: 16.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Pagamenti Pronti',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  'Sistema di pagamento Stripe attivo e pronto',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCurrentPlanCard(StripeState state, bool isDarkMode) {
-    // 🚀 NUOVO: Determine current plan con gestione post-pagamento
+  /// 🔧 FIXED: Current Plan Card using SubscriptionBloc
+  Widget _buildCurrentPlanCard(SubscriptionState subscriptionState, bool isDarkMode) {
+    // 🔧 FIX: Determina stato da SubscriptionBloc, non da StripeBloc
     bool hasPremium = false;
     String planName = 'Piano Free';
     String planDescription = 'Gratuito';
-    List<String> limitations = [
+    List<String> features = [
       'Schede di allenamento (max 3)',
       'Esercizi personalizzati (max 5)',
     ];
 
-    // Se abbiamo una subscription attiva
-    if (state is StripeReady && state.subscription != null) {
-      hasPremium = state.subscription!.isActive;
+    if (subscriptionState is SubscriptionLoaded) {
+      final subscription = subscriptionState.subscription;
+      hasPremium = subscription.isPremium && !subscription.isExpired;
+
       if (hasPremium) {
         planName = 'Piano Premium';
         planDescription = 'Attivo';
-        limitations = ['Accesso completo a tutte le funzionalità'];
+        features = ['Accesso completo a tutte le funzionalità'];
+
+        print('[CONSOLE][subscription_screen]✅ [SUBSCRIPTION] User has Premium: ${subscription.planName} - €${subscription.price}');
+      } else {
+        print('[CONSOLE][subscription_screen]ℹ️ [SUBSCRIPTION] User has Free plan: ${subscription.planName} - €${subscription.price}');
       }
-    }
-    // 🚀 NUOVO: Se abbiamo appena completato un pagamento, mostra "In attivazione"
-    else if (_justCompletedPayment) {
+    } else if (_justCompletedPayment) {
       planName = 'Piano Premium';
       planDescription = 'In attivazione...';
-      limitations = ['Il tuo abbonamento Premium verrà attivato a breve'];
-      hasPremium = true; // Per il styling
+      features = ['Il tuo abbonamento Premium verrà attivato a breve'];
+      hasPremium = true;
     }
 
     return Container(
@@ -704,7 +381,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ],
                 ),
               ),
-              if (hasPremium && !_justCompletedPayment) // Non mostrare ATTIVO se è in attivazione
+              if (hasPremium && !_justCompletedPayment)
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
@@ -720,7 +397,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     ),
                   ),
                 ),
-              if (_justCompletedPayment) // Mostra "IN ATTIVAZIONE" se appena pagato
+              if (_justCompletedPayment)
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
@@ -742,7 +419,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           SizedBox(height: 16.h),
 
           Text(
-            _justCompletedPayment ? 'Stato attivazione' : (hasPremium ? 'Utilizzo attuale' : 'Il tuo piano non include:'),
+            _justCompletedPayment ? 'Stato attivazione' : (hasPremium ? 'Il tuo piano include:' : 'Il tuo piano non include:'),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -752,7 +429,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
           SizedBox(height: 12.h),
 
-          ...limitations.map((limitation) => Padding(
+          ...features.map((feature) => Padding(
             padding: EdgeInsets.symmetric(vertical: 4.h),
             child: Row(
               children: [
@@ -766,7 +443,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 SizedBox(width: 8.w),
                 Expanded(
                   child: Text(
-                    limitation,
+                    feature,
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: hasPremium
@@ -779,13 +456,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
           )),
 
-          if (!hasPremium && !_justCompletedPayment) ...[
+          // 🔧 FIX: Usage indicators only for Free users
+          if (!hasPremium && !_justCompletedPayment && subscriptionState is SubscriptionLoaded) ...[
             SizedBox(height: 8.h),
-
-            // Progress bars
-            _buildUsageIndicator('Schede di allenamento', 2, 3, isDarkMode),
+            _buildUsageIndicator('Schede di allenamento', subscriptionState.subscription.currentCount,
+                subscriptionState.subscription.maxWorkouts ?? 3, isDarkMode),
             SizedBox(height: 8.h),
-            _buildUsageIndicator('Esercizi personalizzati', 3, 5, isDarkMode),
+            _buildUsageIndicator('Esercizi personalizzati', subscriptionState.subscription.currentCustomExercises,
+                subscriptionState.subscription.maxCustomExercises ?? 5, isDarkMode),
           ],
         ],
       ),
@@ -833,7 +511,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  Widget _buildAvailablePlansSection(StripeState state, bool isDarkMode) {
+  /// 🔧 FIXED: Available Plans using SubscriptionBloc
+  Widget _buildAvailablePlansSection(SubscriptionState subscriptionState, StripeState stripeState, bool isDarkMode) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -857,6 +536,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
         // Free Plan
         _buildPlanCard(
+          subscriptionState: subscriptionState,
           name: 'Free',
           price: 'Gratuito',
           description: 'Per iniziare',
@@ -864,140 +544,87 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             'Schede di allenamento (max 3)',
             'Esercizi personalizzati (max 5)',
           ],
-          isActive: !_justCompletedPayment, // Non attivo se abbiamo appena pagato Premium
+          isPremium: false,
           isDarkMode: isDarkMode,
-          onTap: null, // Already active
+          onTap: null, // Can't downgrade to free
         ),
 
         SizedBox(height: 16.h),
 
-        // Premium Plan con gestione stati corretta
-        _buildPremiumPlanForState(state, isDarkMode),
+        // Premium Plan
+        _buildPlanCard(
+          subscriptionState: subscriptionState,
+          stripeState: stripeState,
+          name: 'Premium',
+          price: '€4.99/mese',
+          description: 'Tutte le funzionalità',
+          features: [
+            'Schede di allenamento illimitate',
+            'Esercizi personalizzati illimitati',
+            'Statistiche avanzate',
+            'Backup automatico su cloud',
+            'Nessuna pubblicità',
+            'Supporto prioritario',
+          ],
+          isPremium: true,
+          isDarkMode: isDarkMode,
+          onTap: () => _startSubscriptionPayment('premium_monthly'),
+        ),
       ],
     );
   }
 
-  /// 🚀 NUOVO: Gestisce il plan Premium per tutti gli stati
-  Widget _buildPremiumPlanForState(StripeState state, bool isDarkMode) {
-    if (state is StripeInitial) {
-      // 🔧 FIX: Stripe non ancora inizializzato - BUTTON NORMALE
-      return _buildPlanCard(
-        name: 'Premium',
-        price: '€4.99/mese',
-        description: 'Tutte le funzionalità',
-        features: [
-          'Schede di allenamento illimitate',
-          'Esercizi personalizzati illimitati',
-          'Statistiche avanzate',
-          'Backup automatico su cloud',
-          'Nessuna pubblicità',
-          'Supporto prioritario',
-        ],
-        isActive: _justCompletedPayment, // 🚀 NUOVO: Attivo se abbiamo appena pagato
-        isPremium: true,
-        isDarkMode: isDarkMode,
-        onTap: _justCompletedPayment ? null : () => _startSubscriptionPayment('premium_monthly'),
-      );
-    } else if (state is StripeInitializing) {
-      // Stripe si sta inizializzando
-      return _buildPlanCard(
-        name: 'Premium',
-        price: '€4.99/mese',
-        description: 'Inizializzazione...',
-        features: [
-          'Connessione al sistema di pagamento in corso...',
-          'Attendere qualche secondo',
-        ],
-        isActive: _justCompletedPayment, // 🚀 NUOVO: Attivo se abbiamo appena pagato
-        isPremium: true,
-        isDarkMode: isDarkMode,
-        isDisabled: !_justCompletedPayment, // Disabilitato solo se non abbiamo pagato
-        onTap: null,
-      );
-    } else if (state is StripeReady) {
-      // Determina se l'utente ha già premium
-      final hasActivePremium = state.subscription?.isActive ?? false;
-
-      return _buildPlanCard(
-        name: 'Premium',
-        price: '€4.99/mese',
-        description: 'Tutte le funzionalità',
-        features: [
-          'Schede di allenamento illimitate',
-          'Esercizi personalizzati illimitati',
-          'Statistiche avanzate',
-          'Backup automatico su cloud',
-          'Nessuna pubblicità',
-          'Supporto prioritario',
-        ],
-        isActive: hasActivePremium || _justCompletedPayment, // 🚀 NUOVO: Attivo se ha premium O appena pagato
-        isPremium: true,
-        isDarkMode: isDarkMode,
-        // 🔧 FIX: Disabilita se già ha premium
-        isDisabled: hasActivePremium || _justCompletedPayment,
-        onTap: (hasActivePremium || _justCompletedPayment)
-            ? null
-            : () => _startSubscriptionPayment('premium_monthly'),
-      );
-    } else if (state is StripePaymentLoading) {
-      // Show Premium plan as loading during payment creation
-      return _buildPlanCard(
-        name: 'Premium',
-        price: '€4.99/mese',
-        description: 'Preparazione pagamento...',
-        features: [
-          'Sto creando il pagamento sicuro tramite Stripe...',
-        ],
-        isActive: false,
-        isPremium: true,
-        isDarkMode: isDarkMode,
-        isDisabled: true,
-        onTap: null,
-      );
-    } else {
-      // 🚀 NUOVO: Gestione errori con considerazione post-pagamento
-      return _buildPlanCard(
-        name: 'Premium',
-        price: '€4.99/mese',
-        description: _justCompletedPayment ? 'In attivazione...' : 'Non disponibile',
-        features: _justCompletedPayment
-            ? [
-          'Il tuo abbonamento Premium è stato acquistato',
-          'Attivazione in corso...',
-        ]
-            : [
-          'Pagamenti non disponibili in modalità offline',
-          'Verifica la connessione internet',
-        ],
-        isActive: _justCompletedPayment,
-        isDisabled: !_justCompletedPayment,
-        isPremium: true,
-        isDarkMode: isDarkMode,
-        onTap: _justCompletedPayment ? null : () {
-          // 🔧 Retry Stripe initialization
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Tentativo di riconnessione...'),
-              backgroundColor: AppColors.info,
-            ),
-          );
-          context.read<StripeBloc>().add(const InitializeStripeEvent());
-        },
-      );
-    }
-  }
-
   Widget _buildPlanCard({
+    required SubscriptionState subscriptionState,
+    StripeState? stripeState,
     required String name,
     required String price,
     required String description,
     required List<String> features,
-    required bool isActive,
+    required bool isPremium,
     required bool isDarkMode,
-    bool isPremium = false,
-    bool isDisabled = false,
     VoidCallback? onTap,
   }) {
+    // 🔧 FIXED: Determine if this plan is active using SubscriptionBloc
+    bool isActive = false;
+    bool isDisabled = false;
+    String buttonText = 'SOTTOSCRIVI';
+
+    if (subscriptionState is SubscriptionLoaded) {
+      final subscription = subscriptionState.subscription;
+      final userHasPremium = subscription.isPremium && !subscription.isExpired;
+
+      if (isPremium) {
+        // Premium plan
+        isActive = userHasPremium;
+        isDisabled = userHasPremium || _justCompletedPayment;
+        buttonText = userHasPremium ? 'PIANO ATTUALE' : (_justCompletedPayment ? 'IN ATTIVAZIONE' : 'SOTTOSCRIVI');
+      } else {
+        // Free plan
+        isActive = !userHasPremium;
+        isDisabled = true; // Can't downgrade to free
+        buttonText = !userHasPremium ? 'PIANO ATTUALE' : 'NON DISPONIBILE';
+      }
+    } else if (_justCompletedPayment && isPremium) {
+      isActive = true;
+      isDisabled = true;
+      buttonText = 'IN ATTIVAZIONE';
+    }
+
+    // Handle Stripe states for Premium plan
+    if (isPremium && stripeState != null) {
+      if (stripeState is StripePaymentLoading) {
+        isDisabled = true;
+        buttonText = 'PREPARAZIONE...';
+      } else if (stripeState is StripeInitializing) {
+        isDisabled = true;
+        buttonText = 'INIZIALIZZAZIONE...';
+      } else if (stripeState is StripeErrorState && !isActive) {
+        buttonText = 'RIPROVA';
+        isDisabled = false;
+      }
+    }
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1072,11 +699,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        isDisabled && !isActive ? Icons.block : Icons.check_circle_outline,
+                        Icons.check_circle_outline,
                         size: 16.sp,
-                        color: isDisabled && !isActive
-                            ? Colors.grey
-                            : (isDarkMode ? Colors.green.shade400 : AppColors.success),
+                        color: isDarkMode ? Colors.green.shade400 : AppColors.success,
                       ),
                       SizedBox(width: 8.w),
                       Expanded(
@@ -1084,9 +709,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           feature,
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: isDisabled && !isActive
-                                ? Colors.grey
-                                : (isDarkMode ? Colors.white : AppColors.textPrimary),
+                            color: isDarkMode ? Colors.white : AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -1103,7 +726,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     onPressed: isDisabled ? null : onTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isActive
-                          ? Colors.grey
+                          ? AppColors.success
                           : isPremium && !isDisabled
                           ? (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600)
                           : (isDarkMode ? Colors.grey.shade700 : AppColors.textSecondary),
@@ -1118,11 +741,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       ),
                     ),
                     child: Text(
-                      isActive
-                          ? (_justCompletedPayment ? 'IN ATTIVAZIONE' : 'ATTUALE')
-                          : isDisabled
-                          ? 'NON DISPONIBILE'
-                          : 'SOTTOSCRIVI',
+                      buttonText,
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
@@ -1282,29 +901,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   void _startSubscriptionPayment(String planId) {
     final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
 
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] User clicked subscribe for plan: $planId');
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Price ID: $priceId');
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Current Stripe state: ${context.read<StripeBloc>().state.runtimeType}');
+    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] User clicked subscribe for plan: $planId');
 
-    // 🔧 FIX: Inizializza Stripe se necessario PRIMA di creare il pagamento
+    // 🔧 FIX: Initialize Stripe if necessary BEFORE creating payment
     _initializeStripeForPayment();
 
     final stripeBloc = context.read<StripeBloc>();
     final currentState = stripeBloc.state;
 
     if (currentState is StripeInitial || currentState is StripeInitializing) {
-      // Stripe si sta inizializzando o deve essere inizializzato
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe not ready yet, will create payment when ready');
-
-      // Aspetta che Stripe sia pronto, poi crea il pagamento
+      // Stripe is initializing, wait for it to be ready
       _waitForStripeAndCreatePayment(planId, priceId);
     } else if (currentState is StripeReady) {
-      // Stripe è pronto, crea subito il pagamento
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe ready, creating payment immediately');
+      // Stripe is ready, create payment immediately
       _createPaymentIntent(planId, priceId);
     } else {
-      // Errore o stato sconosciuto
-      print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Stripe in error state: ${currentState.runtimeType}');
+      // Error state
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore nel sistema di pagamento. Riprova.'),
@@ -1314,19 +926,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
   }
 
-  /// Aspetta che Stripe sia pronto e poi crea il pagamento
+  /// Wait for Stripe to be ready and then create payment
   void _waitForStripeAndCreatePayment(String planId, String priceId) {
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Waiting for Stripe to be ready...');
-
-    // Listener temporaneo per aspettare che Stripe sia pronto
     final subscription = context.read<StripeBloc>().stream.listen((state) {
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Stripe state update while waiting: ${state.runtimeType}');
-
       if (state is StripeReady) {
-        print('[CONSOLE] [subscription_screen]✅ [SUBSCRIPTION] Stripe now ready, creating payment');
         _createPaymentIntent(planId, priceId);
       } else if (state is StripeErrorState) {
-        print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Stripe failed during initialization: ${state.message}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Errore inizializzazione pagamenti: ${state.message}'),
@@ -1336,16 +941,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       }
     });
 
-    // Cancella il listener dopo 30 secondi per evitare memory leak
+    // Cancel listener after 30 seconds to avoid memory leak
     Future.delayed(const Duration(seconds: 30), () {
       subscription.cancel();
     });
   }
 
-  /// Crea il Payment Intent
+  /// Create payment intent
   void _createPaymentIntent(String planId, String priceId) {
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Creating payment intent...');
-
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
       priceId: priceId,
       metadata: {
@@ -1354,20 +957,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         'source': 'subscription_screen',
       },
     ));
-
-    print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] CreateSubscriptionPaymentEvent sent');
-    // 🔧 Il Payment Sheet si aprirà automaticamente nel listener quando pronto
   }
 
-  /// 🔧 FIX: Presenta Payment Sheet direttamente
+  /// Present Payment Sheet
   Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
     try {
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION START ===');
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Client Secret: ${state.paymentIntent.clientSecret}');
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Payment Type: ${state.paymentType}');
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Amount: €${state.paymentIntent.amount / 100}');
+      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Presenting Payment Sheet...');
 
-      // Mostra loading snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1390,19 +986,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       );
 
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] Sending ProcessPaymentEvent...');
-
-      // Presenta Payment Sheet
+      // Present Payment Sheet
       context.read<StripeBloc>().add(ProcessPaymentEvent(
         clientSecret: state.paymentIntent.clientSecret,
         paymentType: state.paymentType,
       ));
 
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] ProcessPaymentEvent sent successfully');
-      print('[CONSOLE] [subscription_screen]🔧 [SUBSCRIPTION] === PAYMENT SHEET PRESENTATION END ===');
-
     } catch (e) {
-      print('[CONSOLE] [subscription_screen]❌ [SUBSCRIPTION] Error in _presentPaymentSheet: $e');
+      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] Error in _presentPaymentSheet: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Errore apertura pagamento: $e'),
