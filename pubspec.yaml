@@ -17,7 +17,8 @@ dependencies:
   flutter_screenutil: ^5.9.0
   cached_network_image: ^3.3.1
 
-  wakelock_plus: ^1.2.0
+  # 🔧 FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
+  wakelock_plus: ^1.2.5
 
   # State Management
   flutter_bloc: ^8.1.5

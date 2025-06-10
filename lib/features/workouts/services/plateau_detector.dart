@@ -6,13 +6,42 @@ import '../models/workout_plan_models.dart';
 import '../models/workout_response_types.dart';
 
 /// 🎯 STEP 6: Servizio per il rilevamento plateau
-/// 🔧 FIX: Logica serie-per-serie corretta + debug intensivo
+/// 🔧 FIX: Logica serie-per-serie corretta + debug intensivo + ANTI-SPAM LOGIC
+/// 🔧 FIX 2: Evita trigger multipli con cache intelligente
 class PlateauDetector {
   final PlateauDetectionConfig config;
 
-  const PlateauDetector({required this.config});
+  // 🔧 FIX 2: Cache per evitare analisi multiple
+  final Map<String, PlateauInfo?> _analysisCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
 
-  /// Rileva plateau per un singolo esercizio
+  // 🔧 FIX 2: Durata cache (5 minuti)
+  static const Duration _cacheValidDuration = Duration(minutes: 5);
+
+  PlateauDetector({required this.config});
+
+  /// 🔧 FIX 2: Genera chiave cache per esercizio
+  String _getCacheKey(int exerciseId, double weight, int reps) {
+    return '${exerciseId}_${weight.toStringAsFixed(1)}_$reps';
+  }
+
+  /// 🔧 FIX 2: Controlla se cache è valida
+  bool _isCacheValid(String cacheKey) {
+    final timestamp = _cacheTimestamps[cacheKey];
+    if (timestamp == null) return false;
+
+    final age = DateTime.now().difference(timestamp);
+    return age < _cacheValidDuration;
+  }
+
+  /// 🔧 FIX 2: Salva risultato in cache
+  void _cacheResult(String cacheKey, PlateauInfo? result) {
+    _analysisCache[cacheKey] = result;
+    _cacheTimestamps[cacheKey] = DateTime.now();
+    print('[CONSOLE] [plateau_detector]🔧 [CACHE] Cached result for $cacheKey: ${result != null ? 'PLATEAU' : 'NO_PLATEAU'}');
+  }
+
+  /// Rileva plateau per un singolo esercizio CON CACHE ANTI-SPAM
   Future<PlateauInfo?> detectPlateau({
     required int exerciseId,
     required String exerciseName,
@@ -21,6 +50,16 @@ class PlateauDetector {
     required Map<int, List<CompletedSeriesData>> historicData,
   }) async {
     print('[CONSOLE] [plateau_detector]=== 🎯 ANALISI PLATEAU ESERCIZIO $exerciseId ($exerciseName) ===');
+
+    // 🔧 FIX 2: Controlla cache prima di analizzare
+    final cacheKey = _getCacheKey(exerciseId, currentWeight, currentReps);
+    if (_isCacheValid(cacheKey)) {
+      final cachedResult = _analysisCache[cacheKey];
+      print('[CONSOLE] [plateau_detector]🔧 [CACHE HIT] Using cached result for $cacheKey');
+      return cachedResult;
+    }
+
+    print('[CONSOLE] [plateau_detector]🔧 [CACHE MISS] Proceeding with fresh analysis for $cacheKey');
     print('[CONSOLE] [plateau_detector]Peso corrente: $currentWeight, Reps correnti: $currentReps');
     print('[CONSOLE] [plateau_detector]Dati storici disponibili: ${historicData[exerciseId]?.length ?? 0} serie');
 
@@ -29,7 +68,9 @@ class PlateauDetector {
     // Se non ci sono dati storici, prova plateau simulato per test
     if (exerciseHistory == null || exerciseHistory.isEmpty) {
       print('[CONSOLE] [plateau_detector]⚠️ Nessun dato storico - controllo plateau simulato');
-      return _checkSimulatedPlateau(exerciseId, exerciseName, currentWeight, currentReps);
+      final result = _checkSimulatedPlateau(exerciseId, exerciseName, currentWeight, currentReps);
+      _cacheResult(cacheKey, result);
+      return result;
     }
 
     // 🔧 FIX: Raggruppa le serie per sessione di allenamento (per timestamp/data)
@@ -38,7 +79,9 @@ class PlateauDetector {
 
     if (sessionGroups.length < config.minSessionsForPlateau) {
       print('[CONSOLE] [plateau_detector]⚠️ Sessioni insufficienti: ${sessionGroups.length} < ${config.minSessionsForPlateau}');
-      return _tryDetectWithLimitedData(exerciseId, exerciseName, currentWeight, currentReps, exerciseHistory);
+      final result = _tryDetectWithLimitedData(exerciseId, exerciseName, currentWeight, currentReps, exerciseHistory);
+      _cacheResult(cacheKey, result);
+      return result;
     }
 
     // 🔧 FIX: Prendi le ultime N sessioni per confronto serie per serie
@@ -54,7 +97,7 @@ class PlateauDetector {
       }
     }
 
-    return _detectPlateauSeriesBySeries(
+    final result = _detectPlateauSeriesBySeries(
       exerciseId: exerciseId,
       exerciseName: exerciseName,
       currentWeight: currentWeight,
@@ -62,9 +105,13 @@ class PlateauDetector {
       recentSessions: recentSessions,
       sessionsCount: config.minSessionsForPlateau,
     );
+
+    // 🔧 FIX 2: Salva risultato in cache
+    _cacheResult(cacheKey, result);
+    return result;
   }
 
-  /// 🔧 FIX: Confronto serie per serie PERFEZIONATO
+  /// 🔧 FIX: Confronto serie per serie PERFEZIONATO + MIGLIORATO
   PlateauInfo? _detectPlateauSeriesBySeries({
     required int exerciseId,
     required String exerciseName,
@@ -73,7 +120,7 @@ class PlateauDetector {
     required List<List<CompletedSeriesData>> recentSessions,
     required int sessionsCount,
   }) {
-    print('[CONSOLE] [plateau_detector]🔍 === CONFRONTO SERIE PER SERIE PERFEZIONATO ===');
+    print('[CONSOLE] [plateau_detector]🔍 === CONFRONTO SERIE PER SERIE PERFEZIONATO V2 ===');
 
     // 🔧 FIX: Organizza le serie per numero di serie (1, 2, 3, ecc.)
     final Map<int, List<CompletedSeriesData>> seriesByNumber = {};
@@ -158,13 +205,21 @@ class PlateauDetector {
       }
     }
 
-    print('[CONSOLE] [plateau_detector]📈 === RISULTATO FINALE ===');
+    print('[CONSOLE] [plateau_detector]📈 === RISULTATO FINALE MIGLIORATO ===');
     print('[CONSOLE] [plateau_detector]Serie in plateau: $plateauDetectedCount/$totalSeriesChecked');
     print('[CONSOLE] [plateau_detector]Serie con plateau: $plateauSeriesNumbers');
 
-    // 🔧 FIX: Considera plateau se almeno il 50% delle serie sono in plateau (minimo 1)
-    final plateauThreshold = (totalSeriesChecked / 2).ceil().clamp(1, totalSeriesChecked);
-    print('[CONSOLE] [plateau_detector]🎯 Soglia plateau: $plateauThreshold serie');
+    // 🔧 FIX MIGLIORATO: Soglia plateau dinamica più intelligente
+    int plateauThreshold;
+    if (totalSeriesChecked == 1) {
+      plateauThreshold = 1; // Se c'è solo 1 serie, deve essere in plateau
+    } else if (totalSeriesChecked <= 3) {
+      plateauThreshold = (totalSeriesChecked / 2).ceil(); // 50% per 2-3 serie
+    } else {
+      plateauThreshold = (totalSeriesChecked * 0.6).ceil(); // 60% per 4+ serie
+    }
+
+    print('[CONSOLE] [plateau_detector]🎯 Soglia plateau dinamica: $plateauThreshold serie (su $totalSeriesChecked)');
 
     if (plateauDetectedCount >= plateauThreshold) {
       print('[CONSOLE] [plateau_detector]🚨 === PLATEAU CONFERMATO PER ESERCIZIO $exerciseId ($exerciseName) ===');
@@ -242,9 +297,9 @@ class PlateauDetector {
     return analysis;
   }
 
-  /// 🔧 FIX: Raggruppa le serie per sessione di allenamento più intelligente
+  /// 🔧 FIX: Raggruppa le serie per sessione di allenamento più intelligente + MIGLIORATO
   List<List<CompletedSeriesData>> _groupSeriesBySession(List<CompletedSeriesData> series) {
-    print('[CONSOLE] [plateau_detector]📅 === RAGGRUPPAMENTO SERIE PER SESSIONE ===');
+    print('[CONSOLE] [plateau_detector]📅 === RAGGRUPPAMENTO SERIE PER SESSIONE MIGLIORATO ===');
     print('[CONSOLE] [plateau_detector]Raggruppamento ${series.length} serie per sessione...');
 
     if (series.isEmpty) return [];
@@ -259,7 +314,7 @@ class PlateauDetector {
       print('[CONSOLE] [plateau_detector]   $i: Serie ${s.serieNumber ?? "?"} - ${s.peso}kg x ${s.ripetizioni} (${s.timestamp})');
     }
 
-    // 🔧 FIX: Raggruppa per data (primi 10 caratteri del timestamp)
+    // 🔧 FIX MIGLIORATO: Raggruppa per data (primi 10 caratteri del timestamp)
     final Map<String, List<CompletedSeriesData>> groupedByDate = {};
 
     for (final serie in sortedSeries) {
@@ -284,29 +339,42 @@ class PlateauDetector {
       print('[CONSOLE] [plateau_detector]   Sessione $index ($dateKey): ${session.length} serie');
     }
 
-    // 🔧 FIX: Se abbiamo solo una sessione ma molte serie, prova un raggruppamento alternativo
+    // 🔧 FIX MIGLIORATO: Se abbiamo solo una sessione ma molte serie, prova un raggruppamento alternativo più intelligente
     if (orderedSessionGroups.length == 1 && series.length >= 6) {
       print('[CONSOLE] [plateau_detector]⚠️ Tentativo raggruppamento alternativo per serie multiple...');
 
       final List<List<CompletedSeriesData>> alternativeGroups = [];
-      const seriesPerSession = 3;
 
-      for (int i = 0; i < sortedSeries.length; i += seriesPerSession) {
-        final sessionEnd = (i + seriesPerSession).clamp(0, sortedSeries.length);
-        final sessionSeries = sortedSeries.sublist(i, sessionEnd);
-        if (sessionSeries.isNotEmpty) {
-          alternativeGroups.add(sessionSeries);
-        }
+      // 🔧 MIGLIORAMENTO: Raggruppa per numero di serie identici invece che per numero fisso
+      final Map<int, List<CompletedSeriesData>> seriesByNumber = {};
+
+      for (final serie in sortedSeries) {
+        final serieNumber = serie.serieNumber ?? 1;
+        seriesByNumber.putIfAbsent(serieNumber, () => []);
+        seriesByNumber[serieNumber]!.add(serie);
       }
 
-      print('[CONSOLE] [plateau_detector]📅 Raggruppamento alternativo: ${alternativeGroups.length} sessioni simulate');
-      return alternativeGroups;
+      // Se abbiamo serie raggruppate per numero, dividile in "sessioni simulate"
+      if (seriesByNumber.length >= 2) {
+        final seriesPerSession = (series.length / 3).ceil().clamp(1, 4); // 1-4 serie per sessione
+
+        for (int i = 0; i < sortedSeries.length; i += seriesPerSession) {
+          final sessionEnd = (i + seriesPerSession).clamp(0, sortedSeries.length);
+          final sessionSeries = sortedSeries.sublist(i, sessionEnd);
+          if (sessionSeries.isNotEmpty) {
+            alternativeGroups.add(sessionSeries);
+          }
+        }
+
+        print('[CONSOLE] [plateau_detector]📅 Raggruppamento alternativo migliorato: ${alternativeGroups.length} sessioni simulate');
+        return alternativeGroups;
+      }
     }
 
     return orderedSessionGroups;
   }
 
-  /// Prova a rilevare plateau con dati limitati
+  /// Prova a rilevare plateau con dati limitati (unchanged)
   PlateauInfo? _tryDetectWithLimitedData(
       int exerciseId,
       String exerciseName,
@@ -350,7 +418,7 @@ class PlateauDetector {
     return null;
   }
 
-  /// Rileva plateau "simulato" per testing quando non ci sono dati storici
+  /// Rileva plateau "simulato" per testing quando non ci sono dati storici + MIGLIORATO
   PlateauInfo? _checkSimulatedPlateau(
       int exerciseId,
       String exerciseName,
@@ -362,9 +430,9 @@ class PlateauDetector {
       return null;
     }
 
-    print('[CONSOLE] [plateau_detector]🧪 === TEST PLATEAU SIMULATO ===');
+    print('[CONSOLE] [plateau_detector]🧪 === TEST PLATEAU SIMULATO MIGLIORATO ===');
 
-    // 🔧 FIX: Logica migliorata per plateau simulato
+    // 🔧 FIX MIGLIORATO: Logica più realistica per plateau simulato
     final isTypicalPlateauWeight = currentWeight > 0 && (
         currentWeight % 5 == 0 || // Pesi multipli di 5
             currentWeight % 2.5 == 0   // Pesi multipli di 2.5
@@ -372,13 +440,18 @@ class PlateauDetector {
 
     final isTypicalePlateauReps = currentReps >= 6 && currentReps <= 15; // Range tipico
 
-    print('[CONSOLE] [plateau_detector]Test plateau simulato:');
+    // 🔧 MIGLIORAMENTO: Pattern più realistici
+    final hasRealisticValues = currentWeight >= 5.0 && currentWeight <= 200.0 &&
+        currentReps >= 3 && currentReps <= 20;
+
+    print('[CONSOLE] [plateau_detector]Test plateau simulato migliorato:');
     print('[CONSOLE] [plateau_detector]   Peso tipico: $isTypicalPlateauWeight (${currentWeight}kg)');
     print('[CONSOLE] [plateau_detector]   Reps tipiche: $isTypicalePlateauReps ($currentReps reps)');
-    print('[CONSOLE] [plateau_detector]   ID pari: ${exerciseId % 2 == 0}');
+    print('[CONSOLE] [plateau_detector]   Valori realistici: $hasRealisticValues');
+    print('[CONSOLE] [plateau_detector]   ID check: ${exerciseId % 3 == 0}'); // Cambiato da % 2 a % 3
 
-    // 🔧 FIX: Plateau simulato su esercizi con ID pari
-    if (isTypicalPlateauWeight && isTypicalePlateauReps && exerciseId % 2 == 0) {
+    // 🔧 FIX MIGLIORATO: Plateau simulato su esercizi con ID multiplo di 3 (meno frequente)
+    if (isTypicalPlateauWeight && isTypicalePlateauReps && hasRealisticValues && exerciseId % 3 == 0) {
       print('[CONSOLE] [plateau_detector]🚨 PLATEAU SIMULATO rilevato per esercizio $exerciseId ($exerciseName) (per testing)!');
 
       return PlateauInfo(
@@ -397,12 +470,12 @@ class PlateauDetector {
       );
     }
 
-    // 🔧 FIX: Plateau specifico per superset/circuit (testing avanzato)
+    // 🔧 FIX MIGLIORATO: Plateau specifico per superset/circuit (testing avanzato) - meno aggressivo
     final supersetKeywords = ['chest', 'press', 'fly', 'curl', 'extension', 'raise', 'squat', 'lunge'];
     final exerciseNameLower = exerciseName.toLowerCase();
     final hasKeyword = supersetKeywords.any((keyword) => exerciseNameLower.contains(keyword));
 
-    if (hasKeyword && currentWeight >= 10 && exerciseId % 3 == 1) {
+    if (hasKeyword && currentWeight >= 10 && exerciseId % 5 == 1) { // Cambiato da % 3 a % 5
       print('[CONSOLE] [plateau_detector]🚨 PLATEAU SIMULATO SUPERSET rilevato per $exerciseId ($exerciseName) (per testing superset/circuit)!');
 
       return PlateauInfo(
@@ -425,7 +498,7 @@ class PlateauDetector {
     return null;
   }
 
-  /// Determina il tipo di plateau
+  /// Determina il tipo di plateau (unchanged)
   PlateauType _determinePlateauType(double weight, int reps) {
     if (weight < 10) return PlateauType.lightWeight;
     if (weight > 100) return PlateauType.heavyWeight;
@@ -434,7 +507,7 @@ class PlateauDetector {
     return PlateauType.moderate;
   }
 
-  /// Genera suggerimenti per la progressione
+  /// Genera suggerimenti per la progressione (unchanged)
   List<ProgressionSuggestion> _generateProgressionSuggestions({
     required double currentWeight,
     required int currentReps,
@@ -500,7 +573,7 @@ class PlateauDetector {
     return suggestions..sort((a, b) => b.confidence.compareTo(a.confidence));
   }
 
-  /// Calcola la confidenza per l'aumento di peso
+  /// Calcola la confidenza per l'aumento di peso (unchanged)
   double _calculateWeightIncreaseConfidence(
       double currentWeight,
       List<CompletedSeriesData> history,
@@ -515,7 +588,7 @@ class PlateauDetector {
     return 0.6;
   }
 
-  /// Calcola la confidenza per l'aumento delle ripetizioni
+  /// Calcola la confidenza per l'aumento delle ripetizioni (unchanged)
   double _calculateRepsIncreaseConfidence(
       int currentReps,
       List<CompletedSeriesData> history,
@@ -530,7 +603,7 @@ class PlateauDetector {
     return 0.5;
   }
 
-  /// Calcola statistiche aggregate sui plateau
+  /// Calcola statistiche aggregate sui plateau (unchanged)
   PlateauStatistics calculateStatistics(List<PlateauInfo> allPlateaus) {
     if (allPlateaus.isEmpty) return createEmptyStatistics();
 
@@ -561,9 +634,51 @@ class PlateauDetector {
       averageSessionsInPlateau: totalSessions / allPlateaus.length,
     );
   }
+
+  // 🔧 FIX 2: Metodi per gestire cache
+  void clearCache() {
+    _analysisCache.clear();
+    _cacheTimestamps.clear();
+    print('[CONSOLE] [plateau_detector]🔧 [CACHE] Cache cleared manually');
+  }
+
+  void clearExpiredCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+
+    for (final entry in _cacheTimestamps.entries) {
+      if (now.difference(entry.value) >= _cacheValidDuration) {
+        expiredKeys.add(entry.key);
+      }
+    }
+
+    for (final key in expiredKeys) {
+      _analysisCache.remove(key);
+      _cacheTimestamps.remove(key);
+    }
+
+    if (expiredKeys.isNotEmpty) {
+      print('[CONSOLE] [plateau_detector]🔧 [CACHE] Removed ${expiredKeys.length} expired entries');
+    }
+  }
+
+  int get cacheSize => _analysisCache.length;
+
+  Map<String, String> get cacheStatus {
+    final now = DateTime.now();
+    final status = <String, String>{};
+
+    for (final entry in _cacheTimestamps.entries) {
+      final age = now.difference(entry.value);
+      final result = _analysisCache[entry.key] != null ? 'PLATEAU' : 'NO_PLATEAU';
+      status[entry.key] = '${result} (${age.inMinutes}min ago)';
+    }
+
+    return status;
+  }
 }
 
-/// Helper per il formatting dei pesi
+/// Helper per il formatting dei pesi (unchanged)
 class WeightFormatter {
   static String formatWeight(double weight) {
     if (weight == weight.toInt()) {

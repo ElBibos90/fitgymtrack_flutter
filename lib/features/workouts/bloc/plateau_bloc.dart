@@ -1,4 +1,4 @@
-// lib/features/workouts/bloc/plateau_bloc.dart - PERFORMANCE OPTIMIZED VERSION
+// lib/features/workouts/bloc/plateau_bloc.dart - PERFORMANCE OPTIMIZED VERSION + FIX TRIGGER MULTIPLI
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -195,7 +195,7 @@ class PlateauError extends PlateauState {
 }
 
 // ============================================================================
-// 🚀 PLATEAU BLOC - PERFORMANCE OPTIMIZED VERSION
+// 🚀 PLATEAU BLOC - PERFORMANCE OPTIMIZED VERSION + FIX TRIGGER MULTIPLI
 // ============================================================================
 
 class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
@@ -216,6 +216,15 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
 
   // 🚀 PERFORMANCE: Lista esercizi correnti per caricamento mirato
   Set<int> _currentExerciseIds = {};
+
+  // 🔧 FIX: TRACK ANALISI E DISMISS PER EVITARE TRIGGER MULTIPLI
+  final Set<int> _analyzedExercises = {}; // Esercizi già analizzati
+  final Set<int> _dismissedExercises = {}; // Esercizi con plateau dismissed dall'utente
+  final Map<int, PlateauInfo> _detectedPlateaus = {}; // Cache plateau rilevati
+  final Map<int, DateTime> _lastAnalysisTime = {}; // Timestamp ultima analisi per esercizio
+
+  // 🔧 FIX: Intervallo minimo tra analisi (5 minuti)
+  static const Duration _minAnalysisInterval = Duration(minutes: 5);
 
   PlateauBloc({required WorkoutRepository workoutRepository})
       : _workoutRepository = workoutRepository,
@@ -265,12 +274,63 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     return cacheAge.inMinutes < 5;
   }
 
-  /// 🚀 PERFORMANCE OPTIMIZED: Handler per analizzare un singolo esercizio
+  /// 🔧 FIX: Controlla se l'esercizio può essere analizzato
+  bool _canAnalyzeExercise(int exerciseId) {
+    // 1. Se è dismissed dall'utente, NON analizzare
+    if (_dismissedExercises.contains(exerciseId)) {
+      _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - SKIPPING: dismissed by user');
+      return false;
+    }
+
+    // 2. Se già analizzato recentemente, NON rianalizzare
+    final lastAnalysis = _lastAnalysisTime[exerciseId];
+    if (lastAnalysis != null) {
+      final timeSinceLastAnalysis = DateTime.now().difference(lastAnalysis);
+      if (timeSinceLastAnalysis < _minAnalysisInterval) {
+        _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - SKIPPING: analyzed ${timeSinceLastAnalysis.inMinutes}min ago (min: ${_minAnalysisInterval.inMinutes}min)');
+        return false;
+      }
+    }
+
+    // 3. Se plateau già rilevato e non dismissed, NON rianalizzare
+    if (_detectedPlateaus.containsKey(exerciseId)) {
+      final plateau = _detectedPlateaus[exerciseId]!;
+      if (!plateau.isDismissed) {
+        _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - SKIPPING: plateau already detected and not dismissed');
+        return false;
+      }
+    }
+
+    _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - CAN ANALYZE: passed all checks');
+    return true;
+  }
+
+  /// 🔧 FIX: Registra analisi eseguita
+  void _markExerciseAnalyzed(int exerciseId) {
+    _analyzedExercises.add(exerciseId);
+    _lastAnalysisTime[exerciseId] = DateTime.now();
+    _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - marked as analyzed');
+  }
+
+  /// 🔧 FIX: Registra plateau dismissed
+  void _markExerciseDismissed(int exerciseId) {
+    _dismissedExercises.add(exerciseId);
+    _detectedPlateaus.remove(exerciseId);
+    _plateauLog('🔧 [TRIGGER FIX] Exercise $exerciseId - marked as dismissed');
+  }
+
+  /// 🔧 FIX: Handler per analizzare un singolo esercizio CON CONTROLLI ANTI-SPAM
   Future<void> _onAnalyzeExercisePlateau(
       AnalyzeExercisePlateau event,
       Emitter<PlateauState> emit,
       ) async {
     _plateauLog('🔍 [EVENT] AnalyzeExercisePlateau - Exercise: ${event.exerciseId} (${event.exerciseName})');
+
+    // 🔧 FIX: Controllo se può essere analizzato (anti-spam)
+    if (!_canAnalyzeExercise(event.exerciseId)) {
+      _plateauLog('🔧 [TRIGGER FIX] Skipping analysis for exercise ${event.exerciseId} - already processed');
+      return;
+    }
 
     emit(const PlateauAnalyzing(message: 'Analizzando plateau esercizio...'));
 
@@ -299,6 +359,9 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
       final exerciseData = _historicDataCache[event.exerciseId] ?? [];
       _plateauLog('🎯 [ANALYSIS] Starting plateau detection with ${exerciseData.length} historic series');
 
+      // 🔧 FIX: Marca come analizzato PRIMA della detection
+      _markExerciseAnalyzed(event.exerciseId);
+
       final plateau = await _plateauDetector.detectPlateau(
         exerciseId: event.exerciseId,
         exerciseName: event.exerciseName,
@@ -310,6 +373,9 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
       if (plateau != null) {
         _plateauLog('🚨 [RESULT] Plateau rilevato per ${event.exerciseName}!');
         _plateauLog('🚨 [PLATEAU DETAILS] Type: ${plateau.plateauType}, Sessions: ${plateau.sessionsInPlateau}');
+
+        // 🔧 FIX: Salva plateau rilevato in cache
+        _detectedPlateaus[event.exerciseId] = plateau;
 
         // Aggiorna lo stato con il nuovo plateau
         if (state is PlateauDetected) {
@@ -478,7 +544,7 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     }
   }
 
-  /// 🚀 PERFORMANCE OPTIMIZED: Handler per analizzare workout plateaus
+  /// 🚀 PERFORMANCE OPTIMIZED: Handler per analizzare workout plateaus CON FIX
   Future<void> _onAnalyzeWorkoutPlateaus(
       AnalyzeWorkoutPlateaus event,
       Emitter<PlateauState> emit,
@@ -497,8 +563,17 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
 
       _plateauLog('🚀 [WORKOUT ANALYSIS] Target exercises: $exerciseIds');
 
-      // 🚀 PERFORMANCE: Caricamento mirato solo per esercizi correnti
-      await _loadTargetedHistoricData(event.userId, exerciseIds);
+      // 🔧 FIX: Filtra solo esercizi che possono essere analizzati
+      final exercisesToAnalyze = exerciseIds.where(_canAnalyzeExercise).toList();
+      _plateauLog('🔧 [TRIGGER FIX] Analyzing only ${exercisesToAnalyze.length}/${exerciseIds.length} exercises (others skipped)');
+
+      if (exercisesToAnalyze.isEmpty) {
+        _plateauLog('🔧 [TRIGGER FIX] No exercises to analyze - all were skipped');
+        return;
+      }
+
+      // 🚀 PERFORMANCE: Caricamento mirato solo per esercizi da analizzare
+      await _loadTargetedHistoricData(event.userId, exercisesToAnalyze);
 
       final List<PlateauInfo> allPlateaus = [];
       final List<GroupPlateauAnalysis> groupAnalyses = [];
@@ -507,32 +582,57 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
       final exerciseGroups = _groupExercisesByType(event.exercises);
 
       for (final group in exerciseGroups) {
-        final groupAnalysis = await _plateauDetector.detectGroupPlateau(
-          groupName: group['name'],
-          groupType: group['type'],
-          exercises: group['exercises'],
-          currentWeights: event.currentWeights,
-          currentReps: event.currentReps,
-          historicData: _historicDataCache,
-        );
+        // 🔧 FIX: Filtra esercizi del gruppo che possono essere analizzati
+        final analyzableExercises = group['exercises'].where((ex) {
+          final exId = ex.schedaEsercizioId ?? ex.id;
+          return _canAnalyzeExercise(exId);
+        }).toList();
 
-        groupAnalyses.add(groupAnalysis);
-        allPlateaus.addAll(groupAnalysis.plateauList);
+        if (analyzableExercises.isNotEmpty) {
+          // 🔧 FIX: Marca esercizi come analizzati
+          for (final ex in analyzableExercises) {
+            final exId = ex.schedaEsercizioId ?? ex.id;
+            _markExerciseAnalyzed(exId);
+          }
 
-        _plateauLog('📊 [GROUP] ${group['name']}: ${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} plateau');
+          final groupAnalysis = await _plateauDetector.detectGroupPlateau(
+            groupName: group['name'],
+            groupType: group['type'],
+            exercises: analyzableExercises,
+            currentWeights: event.currentWeights,
+            currentReps: event.currentReps,
+            historicData: _historicDataCache,
+          );
+
+          groupAnalyses.add(groupAnalysis);
+          allPlateaus.addAll(groupAnalysis.plateauList);
+
+          // 🔧 FIX: Salva plateau rilevati in cache
+          for (final plateau in groupAnalysis.plateauList) {
+            _detectedPlateaus[plateau.exerciseId] = plateau;
+          }
+
+          _plateauLog('📊 [GROUP] ${group['name']}: ${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} plateau');
+        } else {
+          _plateauLog('🔧 [TRIGGER FIX] Group ${group['name']}: no exercises to analyze');
+        }
       }
 
       final statistics = _plateauDetector.calculateStatistics(allPlateaus);
 
       _plateauLog('🎯 [RESULT] Totale plateau rilevati: ${allPlateaus.length}');
 
-      emit(PlateauDetected(
-        plateaus: allPlateaus,
-        groupAnalyses: groupAnalyses,
-        statistics: statistics,
-        config: _plateauDetector.config,
-        analyzedAt: DateTime.now(),
-      ));
+      if (allPlateaus.isNotEmpty) {
+        emit(PlateauDetected(
+          plateaus: allPlateaus,
+          groupAnalyses: groupAnalyses,
+          statistics: statistics,
+          config: _plateauDetector.config,
+          analyzedAt: DateTime.now(),
+        ));
+      } else {
+        _plateauLog('✅ [RESULT] Nessun plateau rilevato in questo workout');
+      }
 
     } catch (e) {
       _plateauLog('💥 [ERROR] Error analyzing workout plateaus: $e');
@@ -544,7 +644,7 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
   }
 
   // ============================================================================
-  // OTHER HANDLERS (simplified)
+  // OTHER HANDLERS (updated with dismiss fix)
   // ============================================================================
 
   Future<void> _onAnalyzeGroupPlateau(AnalyzeGroupPlateau event, Emitter<PlateauState> emit) async {
@@ -557,15 +657,31 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
           .map((e) => e.schedaEsercizioId ?? e.id)
           .toList();
 
+      // 🔧 FIX: Filtra solo esercizi che possono essere analizzati
+      final exercisesToAnalyze = exerciseIds.where(_canAnalyzeExercise).toList();
+
+      if (exercisesToAnalyze.isEmpty) {
+        _plateauLog('🔧 [TRIGGER FIX] No exercises to analyze in group - all were skipped');
+        return;
+      }
+
       final userId = await _getUserId();
       if (userId != null) {
-        await _loadTargetedHistoricData(userId, exerciseIds);
+        await _loadTargetedHistoricData(userId, exercisesToAnalyze);
+      }
+
+      // 🔧 FIX: Marca esercizi come analizzati
+      for (final exId in exercisesToAnalyze) {
+        _markExerciseAnalyzed(exId);
       }
 
       final groupAnalysis = await _plateauDetector.detectGroupPlateau(
         groupName: event.groupName,
         groupType: event.groupType,
-        exercises: event.exercises,
+        exercises: event.exercises.where((ex) {
+          final exId = ex.schedaEsercizioId ?? ex.id;
+          return exercisesToAnalyze.contains(exId);
+        }).toList(),
         currentWeights: event.currentWeights,
         currentReps: event.currentReps,
         historicData: _historicDataCache,
@@ -573,7 +689,12 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
 
       _plateauLog('📊 [RESULT] Gruppo ${event.groupName}: ${groupAnalysis.exercisesInPlateau}/${groupAnalysis.totalExercises} esercizi in plateau');
 
-      // Aggiorna lo stato (logica invariata)
+      // 🔧 FIX: Salva plateau rilevati in cache
+      for (final plateau in groupAnalysis.plateauList) {
+        _detectedPlateaus[plateau.exerciseId] = plateau;
+      }
+
+      // Aggiorna lo stato
       if (state is PlateauDetected) {
         final currentState = state as PlateauDetected;
         final updatedPlateaus = [...currentState.plateaus];
@@ -613,8 +734,12 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     }
   }
 
+  /// 🔧 FIX: DismissPlateau with tracking
   Future<void> _onDismissPlateau(DismissPlateau event, Emitter<PlateauState> emit) async {
     _plateauLog('❌ [EVENT] DismissPlateau - Exercise: ${event.exerciseId}');
+
+    // 🔧 FIX: Marca come dismissed per evitare future analisi
+    _markExerciseDismissed(event.exerciseId);
 
     if (state is PlateauDetected) {
       final currentState = state as PlateauDetected;
@@ -629,10 +754,14 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
         plateaus: updatedPlateaus,
         analyzedAt: DateTime.now(),
       ));
+
+      _plateauLog('✅ [DISMISS] Exercise ${event.exerciseId} dismissed and won\'t be reanalyzed');
     }
   }
 
   Future<void> _onApplyProgressionSuggestion(ApplyProgressionSuggestion event, Emitter<PlateauState> emit) async {
+    // 🔧 FIX: Quando applichi una suggestion, marca anche come dismissed
+    _markExerciseDismissed(event.exerciseId);
     add(DismissPlateau(exerciseId: event.exerciseId));
   }
 
@@ -644,12 +773,21 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
     }
   }
 
+  /// 🔧 FIX: Reset with complete cleanup
   Future<void> _onResetPlateauState(ResetPlateauState event, Emitter<PlateauState> emit) async {
+    // 🔧 FIX: Pulisci tutti i tracker
+    _analyzedExercises.clear();
+    _dismissedExercises.clear();
+    _detectedPlateaus.clear();
+    _lastAnalysisTime.clear();
+
     _historicDataCache.clear();
     _cacheTimestamps.clear();
     _currentExerciseIds.clear();
     _cachedUserId = null;
     _isLoadingHistoricData = false;
+
+    _plateauLog('🔧 [RESET] All plateau tracking data cleared');
     emit(const PlateauInitial());
   }
 
@@ -708,16 +846,21 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
   }
 
   // ============================================================================
-  // PUBLIC METHODS (unchanged)
+  // PUBLIC METHODS (updated with checks)
   // ============================================================================
 
   void analyzeExercisePlateau(int exerciseId, String exerciseName, double weight, int reps) {
-    add(AnalyzeExercisePlateau(
-      exerciseId: exerciseId,
-      exerciseName: exerciseName,
-      currentWeight: weight,
-      currentReps: reps,
-    ));
+    // 🔧 FIX: Solo se può essere analizzato
+    if (_canAnalyzeExercise(exerciseId)) {
+      add(AnalyzeExercisePlateau(
+        exerciseId: exerciseId,
+        exerciseName: exerciseName,
+        currentWeight: weight,
+        currentReps: reps,
+      ));
+    } else {
+      _plateauLog('🔧 [PUBLIC] Skipped analysis for exercise $exerciseId - blocked by checks');
+    }
   }
 
   void analyzeGroupPlateau(String groupName, String groupType, List<WorkoutExercise> exercises, Map<int, double> weights, Map<int, int> reps) {
@@ -754,4 +897,14 @@ class PlateauBloc extends Bloc<PlateauEvent, PlateauState> {
   void resetState() {
     add(const ResetPlateauState());
   }
+
+  // 🔧 FIX: Metodi per check manuali
+  bool isExerciseDismissed(int exerciseId) => _dismissedExercises.contains(exerciseId);
+  bool isExerciseAnalyzed(int exerciseId) => _analyzedExercises.contains(exerciseId);
+  PlateauInfo? getCachedPlateau(int exerciseId) => _detectedPlateaus[exerciseId];
+
+  // 🔧 DEBUG: Metodi per ispezionare stato interno
+  Set<int> get debugDismissedExercises => Set.from(_dismissedExercises);
+  Set<int> get debugAnalyzedExercises => Set.from(_analyzedExercises);
+  Map<int, DateTime> get debugLastAnalysisTime => Map.from(_lastAnalysisTime);
 }

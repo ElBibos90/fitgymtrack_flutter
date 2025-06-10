@@ -1,6 +1,7 @@
 // lib/shared/widgets/recovery_timer_popup.dart
 // 🚀 Recovery Timer come Popup - Non invasivo e elegante
 // ✅ IMPROVED: Better readability for timer text + Audio feedback
+// 🔧 FIX 3: SUPERSET - Non parte automaticamente durante superset/circuit
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -15,6 +16,7 @@ import 'dart:async';
 /// ✅ Animazioni fluide
 /// ✅ IMPROVED: Timer text readability
 /// 🔊 AUDIO: beep_countdown.mp3 negli ultimi 3s, timer_complete.mp3 al termine
+/// 🔧 FIX 3: SUPERSET - Logica migliorata per superset/circuit
 class RecoveryTimerPopup extends StatefulWidget {
   final int initialSeconds;
   final bool isActive;
@@ -22,6 +24,11 @@ class RecoveryTimerPopup extends StatefulWidget {
   final VoidCallback onTimerComplete;
   final VoidCallback onTimerStopped;
   final VoidCallback? onTimerDismissed;
+
+  // 🔧 FIX 3: Parametri aggiuntivi per controllo superset
+  final bool isInSuperset;
+  final bool isLastInSuperset;
+  final String? supersetInfo;
 
   const RecoveryTimerPopup({
     super.key,
@@ -31,6 +38,10 @@ class RecoveryTimerPopup extends StatefulWidget {
     required this.onTimerComplete,
     required this.onTimerStopped,
     this.onTimerDismissed,
+    // 🔧 FIX 3: Nuovi parametri
+    this.isInSuperset = false,
+    this.isLastInSuperset = false,
+    this.supersetInfo,
   });
 
   @override
@@ -66,6 +77,14 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     _remainingSeconds = widget.initialSeconds;
     _audioPlayer = AudioPlayer();
     _initializeAnimations();
+
+    // 🔧 FIX 3: Log info superset
+    if (widget.isInSuperset) {
+      print("🔧 [SUPERSET TIMER] Recovery timer for superset exercise: ${widget.exerciseName}");
+      print("🔧 [SUPERSET TIMER] Is last in superset: ${widget.isLastInSuperset}");
+      print("🔧 [SUPERSET TIMER] Superset info: ${widget.supersetInfo}");
+    }
+
     if (widget.isActive) {
       _startTimer();
     }
@@ -128,7 +147,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     _slideController.forward();
   }
 
-  // 🔊 Audio methods
+  // 🔊 Audio methods (unchanged)
   Future<void> _playCountdownBeep() async {
     try {
       print("🔊 [RECOVERY AUDIO] Playing countdown beep");
@@ -260,6 +279,13 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   }
 
   Color _getTimerColor() {
+    // 🔧 FIX 3: Colore diverso per superset
+    if (widget.isInSuperset) {
+      if (_remainingSeconds <= 3) return Colors.deepPurple.shade700;
+      if (_remainingSeconds <= 10) return Colors.deepPurple.shade500;
+      return Colors.deepPurple;
+    }
+
     if (_remainingSeconds <= 3) return Colors.red;
     if (_remainingSeconds <= 10) return Colors.orange;
     return Colors.blue;
@@ -269,6 +295,103 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     return "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+  }
+
+  // 🔧 FIX 3: Header text dinamico per superset
+  String _getHeaderText() {
+    if (widget.isInSuperset) {
+      if (widget.isLastInSuperset) {
+        return 'Recupero ${widget.supersetInfo ?? 'Superset'}';
+      } else {
+        return 'Pausa tra esercizi';
+      }
+    }
+
+    return widget.exerciseName != null
+        ? 'Recupero ${widget.exerciseName}'
+        : 'Recupero';
+  }
+
+  // 🔧 FIX 3: Status message specifico per superset
+  Widget _buildStatusMessage() {
+    if (_isPaused) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Text(
+          '⏸️ Timer in pausa',
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Colors.orange[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    if (_remainingSeconds <= 10 && !_isPaused) {
+      String message;
+      if (widget.isInSuperset && !widget.isLastInSuperset) {
+        message = _remainingSeconds <= 3 ? '🔥 Prossimo esercizio!' : '⚡ Quasi pronto!';
+      } else {
+        message = _remainingSeconds <= 3 ? '🔥 Ultimi secondi!' : '⚡ Quasi pronto!';
+      }
+
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: _getTimerColor().withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_remainingSeconds <= 3) ...[
+              Icon(
+                Icons.volume_up,
+                color: _getTimerColor(),
+                size: 14.sp,
+              ),
+              SizedBox(width: 4.w),
+            ],
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: _getTimerColor(),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 🔧 FIX 3: Info superset quando attivo
+    if (widget.isInSuperset && _remainingSeconds > 10) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: Colors.deepPurple.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Text(
+          widget.isLastInSuperset
+              ? '🔗 Fine ${widget.supersetInfo ?? 'Superset'}'
+              : '🔗 ${widget.supersetInfo ?? 'Superset'} in corso',
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: Colors.deepPurple[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   @override
@@ -312,7 +435,8 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.timer,
+                            // 🔧 FIX 3: Icona diversa per superset
+                            widget.isInSuperset ? Icons.link : Icons.timer,
                             color: _getTimerColor(),
                             size: 20.sp,
                           ),
@@ -330,9 +454,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
-                          widget.exerciseName != null
-                              ? 'Recupero ${widget.exerciseName}'
-                              : 'Recupero',
+                          _getHeaderText(), // 🔧 FIX 3: Header dinamico
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
@@ -463,59 +585,9 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                     ],
                   ),
 
-                  // Status message
-                  if (_isPaused) ...[
-                    SizedBox(height: 8.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Text(
-                        '⏸️ Timer in pausa',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  if (_remainingSeconds <= 10 && !_isPaused) ...[
-                    SizedBox(height: 8.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: _getTimerColor().withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (_remainingSeconds <= 3) ...[
-                            Icon(
-                              Icons.volume_up,
-                              color: _getTimerColor(),
-                              size: 14.sp,
-                            ),
-                            SizedBox(width: 4.w),
-                          ],
-                          Text(
-                            _remainingSeconds <= 3
-                                ? '🔥 Ultimi secondi!'
-                                : '⚡ Quasi pronto!',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: _getTimerColor(),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  // 🔧 FIX 3: Status message dinamico
+                  SizedBox(height: 8.h),
+                  _buildStatusMessage(),
                 ],
               ),
             ),
