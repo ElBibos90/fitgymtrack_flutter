@@ -13,11 +13,48 @@ import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 import '../../bloc/workout_bloc.dart';
-import '../../models/workout_plan_models.dart'; // ✅ AGGIUNTO: Import modelli
+import '../../models/workout_plan_models.dart';
 import '../widgets/workout_widgets.dart';
 
+/// 🚀 NUOVO: Interfaccia per tab con lazy loading
+abstract class LazyLoadableTab {
+  void onTabVisible();
+  void onTabHidden();
+  void forceReload();
+}
+
+/// 🚀 NUOVO: Controller per gestire lazy loading
+class WorkoutTabController implements LazyLoadableTab {
+  _WorkoutPlansScreenState? _state;
+
+  void _attachState(_WorkoutPlansScreenState state) {
+    _state = state;
+  }
+
+  void _detachState() {
+    _state = null;
+  }
+
+  @override
+  void onTabVisible() {
+    _state?._onTabVisible();
+  }
+
+  @override
+  void onTabHidden() {
+    _state?._onTabHidden();
+  }
+
+  @override
+  void forceReload() {
+    _state?._forceReload();
+  }
+}
+
 class WorkoutPlansScreen extends StatefulWidget {
-  const WorkoutPlansScreen({super.key});
+  final WorkoutTabController? controller;
+
+  const WorkoutPlansScreen({super.key, this.controller});
 
   @override
   State<WorkoutPlansScreen> createState() => _WorkoutPlansScreenState();
@@ -27,25 +64,114 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   late WorkoutBloc _workoutBloc;
   late SessionService _sessionService;
 
+  // 🚀 LAZY LOADING: Flag per sapere se abbiamo già caricato i dati
+  bool _hasLoadedData = false;
+  bool _isTabVisible = false;
+
   @override
   void initState() {
     super.initState();
     _workoutBloc = context.read<WorkoutBloc>();
     _sessionService = getIt<SessionService>();
-    _loadWorkoutPlans();
+
+    // 🚀 NUOVO: Collega il controller allo state
+    widget.controller?._attachState(this);
+
+    // 🚀 FIX: NON caricare automaticamente i workout qui!
+    print('[CONSOLE] [workout_plans_screen]🔧 WorkoutPlansScreen initialized - NOT loading data yet');
   }
 
+  @override
+  void dispose() {
+    // 🚀 NUOVO: Scollega il controller
+    widget.controller?._detachState();
+    super.dispose();
+  }
+
+  /// 🚀 METODI PRIVATI chiamati dal controller
+  void _onTabVisible() {
+    print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
+
+    if (!_isTabVisible) {
+      _isTabVisible = true;
+
+      // Carica i dati solo la prima volta che la tab diventa visibile
+      if (!_hasLoadedData) {
+        print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
+        _loadWorkoutPlans();
+        _hasLoadedData = true;
+      }
+    }
+  }
+
+  void _onTabHidden() {
+    print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
+    _isTabVisible = false;
+  }
+
+  void _forceReload() {
+    print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
+
+    if (_isTabVisible) {
+      _loadWorkoutPlans();
+    } else {
+      // Se non è visibile, resetta il flag per ricaricare quando diventerà visibile
+      _hasLoadedData = false;
+    }
+  }
+
+  /// 🚀 NUOVO: Metodo pubblico chiamato dal parent quando la tab diventa visibile
+  void onTabVisible() {
+    print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
+
+    if (!_isTabVisible) {
+      _isTabVisible = true;
+
+      // Carica i dati solo la prima volta che la tab diventa visibile
+      if (!_hasLoadedData) {
+        print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
+        _loadWorkoutPlans();
+        _hasLoadedData = true;
+      }
+    }
+  }
+
+  /// 🚀 NUOVO: Metodo pubblico chiamato dal parent quando la tab diventa nascosta
+  void onTabHidden() {
+    print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
+    _isTabVisible = false;
+  }
+
+  /// 🔧 FIX: Metodo di caricamento ora privato e chiamato solo quando necessario
   Future<void> _loadWorkoutPlans() async {
+    print('[CONSOLE] [workout_plans_screen]📊 Loading workout plans...');
+
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
       _workoutBloc.loadWorkoutPlans(userId);
+    } else {
+      print('[CONSOLE] [workout_plans_screen]❌ No user ID found - cannot load workout plans');
     }
   }
 
   Future<void> _refreshWorkoutPlans() async {
+    print('[CONSOLE] [workout_plans_screen]🔄 Refreshing workout plans...');
+
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
       _workoutBloc.refreshWorkoutPlans(userId);
+    }
+  }
+
+  /// 🚀 NUOVO: Metodo pubblico per forzare il reload (utile per quando si torna da altre schermate)
+  void forceReload() {
+    print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
+
+    if (_isTabVisible) {
+      _loadWorkoutPlans();
+    } else {
+      // Se non è visibile, resetta il flag per ricaricare quando diventerà visibile
+      _hasLoadedData = false;
     }
   }
 
@@ -93,17 +219,70 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   }
 
   Widget _buildContent(WorkoutState state) {
+    // 🚀 NUOVO: Se non abbiamo ancora caricato i dati e la tab non è visibile, mostra loading
+    if (!_hasLoadedData && !_isTabVisible) {
+      return _buildInitialState();
+    }
+
     if (state is WorkoutPlansLoaded) {
       return _buildWorkoutPlansList(state);
     } else if (state is WorkoutError) {
       return _buildErrorState(state);
-    } else if (state is WorkoutInitial) {
-      return _buildEmptyState();
+    } else if (state is WorkoutInitial && !_hasLoadedData) {
+      return _buildInitialState();
     }
 
     // Loading state
     return const Center(
       child: CircularProgressIndicator(),
+    );
+  }
+
+  /// 🚀 NUOVO: Stato iniziale quando non abbiamo ancora caricato
+  Widget _buildInitialState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.fitness_center,
+            size: 80.sp,
+            color: AppColors.textSecondary,
+          ),
+          SizedBox(height: AppConfig.spacingL.h),
+          Text(
+            'Le tue schede di allenamento',
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppConfig.spacingS.h),
+          Text(
+            'Seleziona questa tab per visualizzare le tue schede',
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (_isTabVisible && !_hasLoadedData) ...[
+            SizedBox(height: AppConfig.spacingXL.h),
+            CircularProgressIndicator(
+              color: AppColors.indigo600,
+            ),
+            SizedBox(height: AppConfig.spacingM.h),
+            Text(
+              'Caricamento schede...',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -122,7 +301,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
           workoutPlan: workoutPlan,
           onTap: () => _showWorkoutDetails(workoutPlan),
           onEdit: () => _editWorkout(workoutPlan),
-          onDelete: () => _deleteWorkout(workoutPlan.id), // ✅ Implementata cancellazione
+          onDelete: () => _deleteWorkout(workoutPlan.id),
           onStartWorkout: () => _startWorkout(workoutPlan),
         );
       },
@@ -214,47 +393,22 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: AppColors.indigo600,
-          ),
-          SizedBox(height: AppConfig.spacingL.h),
-          Text(
-            'Caricamento schede...',
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ============================================================================
-  // AZIONI SCHEDE
+  // AZIONI SCHEDE (invariate)
   // ============================================================================
 
   void _showWorkoutDetails(workoutPlan) {
-    // Naviga ai dettagli della scheda
     context.push('/workouts/${workoutPlan.id}');
   }
 
   void _editWorkout(workoutPlan) {
-    // Naviga alla modifica della scheda
     context.push('/workouts/edit/${workoutPlan.id}');
   }
 
   void _startWorkout(workoutPlan) {
-    // Naviga all'allenamento attivo
     context.push('/workouts/${workoutPlan.id}/start');
   }
 
-  // ✅ Implementazione cancellazione scheda
   Future<void> _deleteWorkout(int schedaId) async {
     try {
       _workoutBloc.deleteWorkout(schedaId);

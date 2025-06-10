@@ -224,10 +224,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int _previousIndex = 0; // 🚀 NUOVO: Traccia la tab precedente
 
-  final List<Widget> _pages = [
+  // 🚀 NUOVO: Controller per accedere ai metodi delle tab che supportano lazy loading
+  final WorkoutTabController _workoutController = WorkoutTabController();
+
+  // 🚀 AGGIORNATO: Lista delle pagine con il controller
+  late final List<Widget> _pages = [
     const DashboardPage(),
-    const WorkoutsPage(),
+    WorkoutPlansScreen(controller: _workoutController), // Usa il controller
     const StatsPage(),
     const SubscriptionScreen(),
   ];
@@ -262,10 +267,48 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void navigateToSubscriptionTab() {
+  /// 🚀 NUOVO: Gestisce il cambio di tab con lazy loading
+  void _onTabTapped(int index) {
+    print('[CONSOLE] [main]🔄 Tab changed: $_selectedIndex -> $index');
+
+    _previousIndex = _selectedIndex;
+
     setState(() {
-      _selectedIndex = 3;
+      _selectedIndex = index;
     });
+
+    // 🚀 NUOVO: Gestisci lazy loading per le tab specifiche
+    _handleTabVisibilityChange(_previousIndex, index);
+  }
+
+  /// 🚀 NUOVO: Gestisce la visibilità delle tab per il lazy loading
+  void _handleTabVisibilityChange(int previousIndex, int currentIndex) {
+    // Tab Workouts (index 1)
+    if (currentIndex == 1) {
+      // L'utente ha selezionato la tab workout
+      _workoutController.onTabVisible();
+      print('[CONSOLE] [main]👁️ Workout tab became visible');
+    } else if (previousIndex == 1) {
+      // L'utente ha lasciato la tab workout
+      _workoutController.onTabHidden();
+      print('[CONSOLE] [main]👁️ Workout tab became hidden');
+    }
+
+    // 🚀 FUTURE: Qui possiamo aggiungere lazy loading per altre tab se necessario
+    // if (currentIndex == 2) {
+    //   // Stats tab
+    // } else if (currentIndex == 3) {
+    //   // Subscription tab
+    // }
+  }
+
+  void navigateToSubscriptionTab() {
+    _onTabTapped(3); // Usa il nuovo metodo che gestisce lazy loading
+  }
+
+  /// 🚀 NUOVO: Metodo pubblico per forzare il reload della tab workout
+  void forceWorkoutReload() {
+    _workoutController.forceReload();
   }
 
   @override
@@ -298,11 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onTap: _onTabTapped, // 🚀 AGGIORNATO: Usa il nuovo metodo
         items: _navItems,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -385,7 +424,11 @@ class DashboardPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => context.go('/workouts'),
+                  onPressed: () {
+                    // 🚀 NUOVO: Prima di navigare ai workout, assicurati che la tab sia caricata
+                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                    homeState?._onTabTapped(1); // Vai alla tab workout
+                  },
                   icon: const Icon(Icons.play_arrow),
                   label: const Text('Inizia Allenamento'),
                   style: ElevatedButton.styleFrom(
@@ -635,15 +678,6 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class WorkoutsPage extends StatelessWidget {
-  const WorkoutsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const WorkoutPlansScreen();
   }
 }
 
