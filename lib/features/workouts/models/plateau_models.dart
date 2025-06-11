@@ -1,13 +1,23 @@
 // lib/features/workouts/models/plateau_models.dart
-import 'package:json_annotation/json_annotation.dart';
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
 part 'plateau_models.g.dart';
 
-/// 🎯 STEP 6: Modelli per il sistema di rilevamento plateau
-/// 🔧 FIX: Versione perfezionata con migliore gestione dati storici
+// ============================================================================
+// 🎯 CORE PLATEAU MODELS - STEP 6
+// ============================================================================
 
-/// Informazioni su un plateau rilevato
+/// 🔧 PRIORITÀ PLATEAU - Ordine di importanza
+enum PlateauPriority {
+  none,
+  low,
+  medium,
+  high,
+  critical,
+}
+
+/// Informazioni plateau per un singolo esercizio
 @JsonSerializable()
 class PlateauInfo extends Equatable {
   final int exerciseId;
@@ -32,7 +42,6 @@ class PlateauInfo extends Equatable {
     this.isDismissed = false,
   });
 
-  /// Crea una copia con modifiche
   PlateauInfo copyWith({
     int? exerciseId,
     String? exerciseName,
@@ -246,7 +255,7 @@ enum SuggestionType {
   changeTempo,
 }
 
-/// Configurazione per il rilevamento plateau
+/// 🔧 FIX CRITICO: Configurazione per il rilevamento plateau - TOLLERANZE ESATTE
 @JsonSerializable()
 class PlateauDetectionConfig extends Equatable {
   final int minSessionsForPlateau;
@@ -257,8 +266,8 @@ class PlateauDetectionConfig extends Equatable {
 
   const PlateauDetectionConfig({
     this.minSessionsForPlateau = 3,
-    this.weightTolerance = 1.0,
-    this.repsTolerance = 1,
+    this.weightTolerance = 0.0, // 🔧 FIX: Tolleranza ZERO per confronto ESATTO
+    this.repsTolerance = 0,      // 🔧 FIX: Tolleranza ZERO per confronto ESATTO
     this.enableSimulatedPlateau = false,
     this.autoDetectionEnabled = true,
   });
@@ -347,17 +356,8 @@ class GroupPlateauAnalysis extends Equatable {
   /// 🔧 FIX: Descrizione dettagliata del gruppo
   String get detailedDescription {
     final typeText = groupType == 'superset' ? 'Superset' :
-    groupType == 'circuit' ? 'Circuit' : 'Gruppo';
-
-    return '$typeText $groupName: $exercisesInPlateau/$totalExercises esercizi in plateau '
-        '(${plateauPercentage.toStringAsFixed(1)}%)';
-  }
-
-  /// 🔧 FIX: Severità del gruppo
-  PlateauSeverity get groupSeverity {
-    if (plateauPercentage >= 75.0) return PlateauSeverity.severe;
-    if (plateauPercentage >= 50.0) return PlateauSeverity.moderate;
-    return PlateauSeverity.mild;
+    groupType == 'circuit' ? 'Circuito' : 'Gruppo';
+    return '$typeText "$groupName": $exercisesInPlateau/$totalExercises esercizi in plateau (${plateauPercentage.toStringAsFixed(1)}%)';
   }
 
   @override
@@ -367,15 +367,7 @@ class GroupPlateauAnalysis extends Equatable {
   Map<String, dynamic> toJson() => _$GroupPlateauAnalysisToJson(this);
 }
 
-/// Priorità del plateau
-enum PlateauPriority {
-  none,
-  low,
-  medium,
-  high,
-}
-
-/// Statistiche globali sui plateau
+/// Statistiche globali sui plateau rilevati
 @JsonSerializable()
 class PlateauStatistics extends Equatable {
   final int totalExercisesAnalyzed;
@@ -394,54 +386,22 @@ class PlateauStatistics extends Equatable {
     required this.averageSessionsInPlateau,
   });
 
-  /// Ottiene la percentuale globale di plateau
-  double get globalPlateauPercentage {
+  /// Ottiene la percentuale di plateau
+  double get plateauPercentage {
     if (totalExercisesAnalyzed == 0) return 0.0;
     return (totalPlateauDetected / totalExercisesAnalyzed) * 100;
   }
 
   /// Ottiene il tipo di plateau più comune
-  PlateauType? get mostCommonPlateauType {
+  PlateauType? get mostCommonType {
     if (plateauByType.isEmpty) return null;
-
-    var maxType = plateauByType.entries.first;
-    for (final entry in plateauByType.entries) {
-      if (entry.value > maxType.value) {
-        maxType = entry;
-      }
-    }
-    return maxType.key;
+    return plateauByType.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
 
-  /// Ottiene il tipo di suggerimento più comune
-  SuggestionType? get mostCommonSuggestionType {
+  /// Ottiene il suggerimento più comune
+  SuggestionType? get mostCommonSuggestion {
     if (suggestionsByType.isEmpty) return null;
-
-    var maxType = suggestionsByType.entries.first;
-    for (final entry in suggestionsByType.entries) {
-      if (entry.value > maxType.value) {
-        maxType = entry;
-      }
-    }
-    return maxType.key;
-  }
-
-  /// 🔧 FIX: Descrizione delle statistiche
-  String get summaryDescription {
-    final plateauPerc = globalPlateauPercentage;
-    if (plateauPerc == 0) return 'Nessun plateau rilevato';
-    if (plateauPerc < 25) return 'Pochi plateau (${plateauPerc.toStringAsFixed(1)}%)';
-    if (plateauPerc < 50) return 'Alcuni plateau (${plateauPerc.toStringAsFixed(1)}%)';
-    if (plateauPerc < 75) return 'Molti plateau (${plateauPerc.toStringAsFixed(1)}%)';
-    return 'Plateau diffusi (${plateauPerc.toStringAsFixed(1)}%)';
-  }
-
-  /// 🔧 FIX: Trend generale
-  String get generalTrend {
-    if (totalPlateauDetected == 0) return 'Progressi costanti';
-    if (averageSessionsInPlateau < 3) return 'Stagnazione temporanea';
-    if (averageSessionsInPlateau < 5) return 'Stagnazione preoccupante';
-    return 'Stagnazione prolungata';
+    return suggestionsByType.entries.reduce((a, b) => a.value > b.value ? a : b).key;
   }
 
   @override
@@ -459,37 +419,17 @@ class PlateauStatistics extends Equatable {
 }
 
 // ============================================================================
-// 🔧 FIX: FACTORY FUNCTIONS PERFEZIONATE
+// 🔧 HELPER FUNCTIONS
 // ============================================================================
 
-/// Crea un plateau simulato per testing con parametri realistici
-PlateauInfo createSimulatedPlateau({
-  required int exerciseId,
-  required String exerciseName,
-  double weight = 20.0,
-  int reps = 10,
-  int sessions = 3,
-  PlateauType? plateauType,
-}) {
-  final type = plateauType ?? _determinePlateauTypeForValues(weight, reps);
-
-  return PlateauInfo(
-    exerciseId: exerciseId,
-    exerciseName: exerciseName,
-    plateauType: type,
-    sessionsInPlateau: sessions,
-    currentWeight: weight,
-    currentReps: reps,
-    detectedAt: DateTime.now(),
-    suggestions: _generateSimulatedSuggestions(weight, reps, type),
-  );
-}
-
-/// 🔧 FIX: Crea suggerimenti simulati realistici
-List<ProgressionSuggestion> _generateSimulatedSuggestions(double weight, int reps, PlateauType type) {
+/// 🔧 FIX: Genera suggerimenti smart per un plateau specifico
+List<ProgressionSuggestion> generateSmartSuggestions(PlateauInfo plateau) {
   final suggestions = <ProgressionSuggestion>[];
+  final weight = plateau.currentWeight;
+  final reps = plateau.currentReps;
+  final type = plateau.plateauType;
 
-  // Suggerimento aumento peso
+  // Suggerimento aumento peso (prioritario per plateau di peso leggero)
   final weightIncrement = weight < 10 ? 0.5 : (weight < 50 ? 1.25 : 2.5);
   suggestions.add(
     ProgressionSuggestion(
@@ -538,20 +478,20 @@ PlateauType _determinePlateauTypeForValues(double weight, int reps) {
   return PlateauType.moderate;
 }
 
-/// Crea una configurazione di default per il rilevamento
+/// Crea una configurazione di default per il rilevamento ESATTO
 PlateauDetectionConfig createDefaultPlateauConfig({bool enableTesting = false}) {
   return enableTesting
       ? const PlateauDetectionConfig(
     minSessionsForPlateau: 2,
-    weightTolerance: 0.5,
-    repsTolerance: 1,
+    weightTolerance: 0.0,     // 🔧 FIX: ESATTO per testing
+    repsTolerance: 0,         // 🔧 FIX: ESATTO per testing
     enableSimulatedPlateau: true,
     autoDetectionEnabled: true,
   )
       : const PlateauDetectionConfig(
     minSessionsForPlateau: 3,
-    weightTolerance: 1.0,
-    repsTolerance: 1,
+    weightTolerance: 0.0,     // 🔧 FIX: ESATTO per produzione
+    repsTolerance: 0,         // 🔧 FIX: ESATTO per produzione
     enableSimulatedPlateau: false,
     autoDetectionEnabled: true,
   );

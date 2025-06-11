@@ -74,8 +74,8 @@ PlateauDetectionConfig _$PlateauDetectionConfigFromJson(
     PlateauDetectionConfig(
       minSessionsForPlateau:
           (json['minSessionsForPlateau'] as num?)?.toInt() ?? 3,
-      weightTolerance: (json['weightTolerance'] as num?)?.toDouble() ?? 1.0,
-      repsTolerance: (json['repsTolerance'] as num?)?.toInt() ?? 1,
+      weightTolerance: (json['weightTolerance'] as num?)?.toDouble() ?? 0.0,
+      repsTolerance: (json['repsTolerance'] as num?)?.toInt() ?? 0,
       enableSimulatedPlateau: json['enableSimulatedPlateau'] as bool? ?? false,
       autoDetectionEnabled: json['autoDetectionEnabled'] as bool? ?? true,
     );
