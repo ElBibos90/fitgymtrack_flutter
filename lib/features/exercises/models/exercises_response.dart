@@ -3,7 +3,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'exercises_response.g.dart';
 
-/// Rappresenta un esercizio disponibile nel database
 @JsonSerializable()
 class ExerciseItem {
   final int id;
@@ -24,8 +23,6 @@ class ExerciseItem {
   final String? categoria;
   final String? difficolta;
   final String? istruzioni;
-
-  // 🏋️ Valori default per gli allenamenti
   @JsonKey(name: 'serie_default')
   final int serieDefault;
   @JsonKey(name: 'ripetizioni_default')
@@ -55,52 +52,63 @@ class ExerciseItem {
     this.isIsometric = false,
   });
 
-  factory ExerciseItem.fromJson(Map<String, dynamic> json) =>
-      _$ExerciseItemFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ExerciseItemToJson(this);
-
-  /// Copia con modifiche
-  ExerciseItem copyWith({
-    int? id,
-    String? nome,
-    String? gruppoMuscolare,
-    String? attrezzatura,
-    String? descrizione,
-    String? immagine,
-    bool? isCustom,
-    int? createdBy,
-    String? dataCreazione,
-    bool? isApproved,
-    String? categoria,
-    String? difficolta,
-    String? istruzioni,
-    int? serieDefault,
-    int? ripetizioniDefault,
-    double? pesoDefault,
-    bool? isIsometric,
-  }) {
+  // ✅ FIX: Factory constructor personalizzato che gestisce i tipi misti
+  factory ExerciseItem.fromJson(Map<String, dynamic> json) {
     return ExerciseItem(
-      id: id ?? this.id,
-      nome: nome ?? this.nome,
-      gruppoMuscolare: gruppoMuscolare ?? this.gruppoMuscolare,
-      attrezzatura: attrezzatura ?? this.attrezzatura,
-      descrizione: descrizione ?? this.descrizione,
-      immagine: immagine ?? this.immagine,
-      isCustom: isCustom ?? this.isCustom,
-      createdBy: createdBy ?? this.createdBy,
-      dataCreazione: dataCreazione ?? this.dataCreazione,
-      isApproved: isApproved ?? this.isApproved,
-      categoria: categoria ?? this.categoria,
-      difficolta: difficolta ?? this.difficolta,
-      istruzioni: istruzioni ?? this.istruzioni,
-      serieDefault: serieDefault ?? this.serieDefault,
-      ripetizioniDefault: ripetizioniDefault ?? this.ripetizioniDefault,
-      pesoDefault: pesoDefault ?? this.pesoDefault,
-      isIsometric: isIsometric ?? this.isIsometric,
+      id: _parseInt(json['id']) ?? 0,
+      nome: json['nome'] as String? ?? '',
+      gruppoMuscolare: json['gruppo_muscolare'] as String?,
+      attrezzatura: json['attrezzatura'] as String?,
+      descrizione: json['descrizione'] as String?,
+      immagine: json['immagine'] as String?,
+      isCustom: _parseBool(json['is_custom']) ?? false,
+      createdBy: _parseInt(json['created_by']),
+      dataCreazione: json['data_creazione'] as String?,
+      isApproved: _parseBool(json['is_approved']) ?? true,
+      categoria: json['categoria'] as String?,
+      difficolta: json['difficolta'] as String?,
+      istruzioni: json['istruzioni'] as String?,
+      serieDefault: _parseInt(json['serie_default']) ?? 3,
+      ripetizioniDefault: _parseInt(json['ripetizioni_default']) ?? 10,
+      pesoDefault: _parseDouble(json['peso_default']) ?? 0.0,
+      isIsometric: _parseBool(json['is_isometric']) ?? false,
     );
   }
+
+  // ✅ Helper functions per parsing sicuro
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) return int.tryParse(value);
+    if (value is num) return value.toInt();
+    return null;
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    if (value is num) return value.toDouble();
+    return null;
+  }
+
+  static bool? _parseBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is String) {
+      final lower = value.toLowerCase();
+      if (lower == 'true' || lower == '1') return true;
+      if (lower == 'false' || lower == '0') return false;
+    }
+    if (value is int) return value != 0;
+    return null;
+  }
+
+  Map<String, dynamic> toJson() => _$ExerciseItemToJson(this);
 }
+
 
 /// Risposta API per gli esercizi disponibili
 @JsonSerializable()

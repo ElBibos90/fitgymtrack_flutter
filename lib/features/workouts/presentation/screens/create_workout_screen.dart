@@ -1,6 +1,5 @@
 // lib/features/workouts/presentation/screens/create_workout_screen.dart
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -229,122 +228,174 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
   }
 
+  // ✅ FIX: Gestione del back navigation super-sicura
+  void _handleBackNavigation() {
+    print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation');
+
+    // ✅ APPROCCIO SUPER-SICURO: Preserva sempre lo stato delle schede
+    final currentState = _workoutBloc.state;
+
+    // Se siamo in uno stato di loading temporaneo per gli esercizi disponibili,
+    // torna al precedente stato stabile delle schede
+    if (currentState is AvailableExercisesLoaded && _currentUserId != null) {
+      // Ricarica le schede per tornare allo stato principale
+      _workoutBloc.loadWorkoutPlans(_currentUserId!);
+
+      // Aspetta un breve momento e poi torna indietro
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+    } else if (currentState is! WorkoutPlansLoaded && _currentUserId != null) {
+      // Se non abbiamo le schede, ricaricale
+      _workoutBloc.loadWorkoutPlans(_currentUserId!);
+
+      // Torna indietro dopo il caricamento
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+    } else {
+      // Se tutto è ok, torna indietro immediatamente
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
+  // ✅ FIX: Dispose corretto - NON chiude il bloc
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _workoutBloc.close();
+    // ❌ NON FARE: _workoutBloc.close();
+    // Il BLoC è gestito dal DI e condiviso, non deve essere chiuso qui
     super.dispose();
   }
 
+  // ✅ FIX: Build con PopScope per gestire il back
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _workoutBloc,
-      child: Stack(
-        children: [
-          Scaffold(
-            appBar: CustomAppBar(
-              title: _isEditing ? 'Modifica Scheda' : 'Nuova Scheda',
-              actions: [
-                if (!_isLoadingUserId && _currentUserId != null)
-                  TextButton(
-                    onPressed: _saveWorkout,
-                    child: Text(
-                      'Salva',
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF90CAF9)
-                            : AppColors.indigo600, // ✅ DINAMICO!
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16.sp,
+    return PopScope(
+      canPop: false, // Impedisce il pop automatico
+      onPopInvoked: (didPop) {
+        if (!didPop) {
+          _handleBackNavigation();
+        }
+      },
+      child: BlocProvider.value(
+        value: _workoutBloc,
+        child: Stack(
+          children: [
+            Scaffold(
+              appBar: CustomAppBar(
+                title: _isEditing ? 'Modifica Scheda' : 'Nuova Scheda',
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation, // ✅ Usa il metodo custom
+                ),
+                actions: [
+                  if (!_isLoadingUserId && _currentUserId != null)
+                    TextButton(
+                      onPressed: _saveWorkout,
+                      child: Text(
+                        'Salva',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF90CAF9)
+                              : AppColors.indigo600, // ✅ DINAMICO!
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16.sp,
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            body: _isLoadingUserId
-                ? const Center(child: CircularProgressIndicator())
-                : _currentUserId == null
-                ? const Center(
-              child: Text('Errore: utente non autenticato'),
-            )
-                : BlocConsumer<WorkoutBloc, WorkoutState>(
-              listener: (context, state) {
-                if (state is WorkoutError) {
-                  CustomSnackbar.show(
-                    context,
-                    message: state.message,
-                    isSuccess: false,
-                  );
-                } else if (state is WorkoutPlanCreated) {
-                  CustomSnackbar.show(
-                    context,
-                    message: 'Scheda creata con successo!',
-                    isSuccess: true,
-                  );
-                  context.pop();
-                } else if (state is WorkoutPlanUpdated) {
-                  CustomSnackbar.show(
-                    context,
-                    message: 'Scheda aggiornata con successo!',
-                    isSuccess: true,
-                  );
-                  context.pop();
-                } else if (state is WorkoutPlanDetailsLoaded) {
-                  _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
-                } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
-                  // Quando si caricano le schede durante l'editing
-                  try {
-                    final existingPlan = state.workoutPlans.firstWhere(
-                          (plan) => plan.id == widget.workoutId,
+                ],
+              ),
+              body: _isLoadingUserId
+                  ? const Center(child: CircularProgressIndicator())
+                  : _currentUserId == null
+                  ? const Center(
+                child: Text('Errore: utente non autenticato'),
+              )
+                  : BlocConsumer<WorkoutBloc, WorkoutState>(
+                listener: (context, state) {
+                  if (state is WorkoutError) {
+                    CustomSnackbar.show(
+                      context,
+                      message: state.message,
+                      isSuccess: false,
                     );
-                    print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
-                    _populateFieldsFromWorkoutPlan(existingPlan);
+                  } else if (state is WorkoutPlanCreated) {
+                    CustomSnackbar.show(
+                      context,
+                      message: 'Scheda creata con successo!',
+                      isSuccess: true,
+                    );
+                    context.pop();
+                  } else if (state is WorkoutPlanUpdated) {
+                    CustomSnackbar.show(
+                      context,
+                      message: 'Scheda aggiornata con successo!',
+                      isSuccess: true,
+                    );
+                    context.pop();
+                  } else if (state is WorkoutPlanDetailsLoaded) {
+                    _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
+                  } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
+                    // Quando si caricano le schede durante l'editing
+                    try {
+                      final existingPlan = state.workoutPlans.firstWhere(
+                            (plan) => plan.id == widget.workoutId,
+                      );
+                      print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
+                      _populateFieldsFromWorkoutPlan(existingPlan);
 
-                    // Ora carica anche gli esercizi
-                    _workoutBloc.loadWorkoutPlanWithData(existingPlan);
+                      // Ora carica anche gli esercizi
+                      _workoutBloc.loadWorkoutPlanWithData(existingPlan);
 
-                    // Carica esercizi disponibili se non l'abbiamo già fatto
-                    if (_availableExercises.isEmpty && !_isLoadingAvailableExercises) {
-                      _loadAvailableExercises();
+                      // Carica esercizi disponibili se non l'abbiamo già fatto
+                      if (_availableExercises.isEmpty && !_isLoadingAvailableExercises) {
+                        _loadAvailableExercises();
+                      }
+                    } catch (e) {
+                      print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
                     }
-                  } catch (e) {
-                    print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
+                  } else if (state is AvailableExercisesLoaded) {
+                    // Gestisce il caricamento degli esercizi disponibili
+                    print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
+                    setState(() {
+                      _availableExercises = state.availableExercises;
+                      _isLoadingAvailableExercises = false;
+                    });
                   }
-                } else if (state is AvailableExercisesLoaded) {
-                  // Gestisce il caricamento degli esercizi disponibili
-                  print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
-                  setState(() {
-                    _availableExercises = state.availableExercises;
-                    _isLoadingAvailableExercises = false;
-                  });
-                }
-              },
-              builder: (context, state) {
-                return LoadingOverlay(
-                  isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
-                  message: state is WorkoutLoadingWithMessage ? state.message : null,
-                  child: _buildBody(context, state),
-                );
-              },
+                },
+                builder: (context, state) {
+                  return LoadingOverlay(
+                    isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
+                    message: state is WorkoutLoadingWithMessage ? state.message : null,
+                    child: _buildBody(context, state),
+                  );
+                },
+              ),
             ),
-          ),
 
-          // Dialog per selezione esercizi
-          if (_showExerciseDialog)
-            ExerciseSelectionDialog(
-              exercises: _availableExercises,
-              selectedExerciseIds: _selectedExercises.map((e) => e.id).toList(),
-              isLoading: _isLoadingAvailableExercises,
-              onExerciseSelected: _onExerciseSelected,
-              onDismissRequest: () {
-                setState(() {
-                  _showExerciseDialog = false;
-                });
-              },
-            ),
-        ],
+            // Dialog per selezione esercizi
+            if (_showExerciseDialog)
+              ExerciseSelectionDialog(
+                exercises: _availableExercises,
+                selectedExerciseIds: _selectedExercises.map((e) => e.id).toList(),
+                isLoading: _isLoadingAvailableExercises,
+                onExerciseSelected: _onExerciseSelected,
+                onDismissRequest: () {
+                  setState(() {
+                    _showExerciseDialog = false;
+                  });
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -579,7 +630,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           width: double.infinity,
           height: 50.h,
           child: OutlinedButton(
-            onPressed: () => context.pop(),
+            onPressed: _handleBackNavigation, // ✅ Usa il metodo custom anche qui
             style: OutlinedButton.styleFrom(
               foregroundColor: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
               side: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
