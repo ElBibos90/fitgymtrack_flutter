@@ -581,20 +581,49 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         final currentState = _getCurrentState();
 
         if (currentState != null && group.length > 1) {
-          // Controlla se tutti gli altri esercizi del gruppo hanno completato le loro serie
-          bool allOthersCompleted = true;
-          for (int i = 0; i < group.length; i++) {
-            if (i != exerciseIndex) {
-              final otherExercise = group[i];
-              if (!_isExerciseCompleted(currentState, otherExercise)) {
-                allOthersCompleted = false;
-                break;
-              }
+          // 🔧 FIX: Logica corretta per superset/circuit/giant set
+          // Il timer dovrebbe partire quando:
+          // 1. È l'ultimo esercizio nell'ordine del gruppo (sempre)
+          // 2. OPPURE tutti i prossimi esercizi hanno già fatto la serie corrente o più
+          // 3. OPPURE questo esercizio ha completato tutte le sue serie previste
+
+          final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+          final currentSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+
+          // Caso 1: È l'ultimo nell'ordine fisico → Timer parte sempre
+          if (exerciseIndex == group.length - 1) {
+            print("🔧 [TIMER FIX] ${exercise.nome} - Last in group order → Timer starts");
+            return true;
+          }
+
+          // Caso 3: Ha completato tutte le sue serie → Timer parte sempre
+          if (currentSeriesCount >= exercise.serie) {
+            print("🔧 [TIMER FIX] ${exercise.nome} - Completed all series (${currentSeriesCount}/${exercise.serie}) → Timer starts");
+            return true;
+          }
+
+          // Caso 2: È l'ultimo a dover fare la serie corrente nel giro
+          bool isLastForCurrentRound = true;
+          for (int i = exerciseIndex + 1; i < group.length; i++) {
+            final nextExercise = group[i];
+            final nextExerciseId = nextExercise.schedaEsercizioId ?? nextExercise.id;
+            final nextSeriesCount = _getCompletedSeriesCount(currentState, nextExerciseId);
+
+            // Se un esercizio successivo deve ancora fare la serie corrente
+            if (nextSeriesCount <= currentSeriesCount) {
+              isLastForCurrentRound = false;
+              break;
             }
           }
-          return allOthersCompleted;
+
+          print("🔧 [TIMER FIX] ${exercise.nome} - Exercise index: $exerciseIndex/${group.length-1}");
+          print("🔧 [TIMER FIX] ${exercise.nome} - Current series: $currentSeriesCount/${exercise.serie}");
+          print("🔧 [TIMER FIX] ${exercise.nome} - Is last for current round: $isLastForCurrentRound");
+
+          return isLastForCurrentRound;
         }
 
+        // Fallback: se è l'ultimo nell'ordine
         return exerciseIndex == group.length - 1;
       }
     }
@@ -605,14 +634,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   bool _shouldStartRecoveryTimer(WorkoutExercise exercise) {
     // Se non è parte di un gruppo multi-esercizio, sempre true
     if (!_isPartOfMultiExerciseGroup(exercise)) {
-      print("🔧 [SUPERSET FIX] ${exercise.nome} - Single exercise, starting recovery timer");
+      print("🔧 [TIMER FIX] ${exercise.nome} - Single exercise, starting recovery timer");
       return true;
     }
 
-    // Se è parte di un gruppo, solo se è l'ultimo o tutti gli altri sono completati
-    final isLast = _isLastExerciseInGroup(exercise);
-    print("🔧 [SUPERSET FIX] ${exercise.nome} - Multi-exercise group, is last: $isLast");
-    return isLast;
+    // Se è parte di un gruppo, verifica se è l'ultimo del giro corrente
+    final isLastOfRound = _isLastExerciseInGroup(exercise);
+    print("🔧 [TIMER FIX] ${exercise.nome} - Multi-exercise group, is last of round: $isLastOfRound");
+
+    // 🚀 NUOVO: Il timer parte sempre per l'ultimo del giro
+    return isLastOfRound;
   }
 
   // ============================================================================

@@ -1,0 +1,9 @@
+implementare gestione Giantset e REST-PAUSE SET (Nuovo)
+
+- Rep 1: Stretch 10" + Squeeze 2"
+- Rep 2: Stretch 10" + Squeeze 2"  
+- ...fino al cedimento (esempio: 10 reps)
+- Pausa 15" (respira)
+- 4 reps con stessa tecnica
+- Pausa 15"
+- 2 reps finali
