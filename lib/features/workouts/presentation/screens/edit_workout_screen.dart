@@ -126,24 +126,31 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       return;
     }
 
-    // Prepara la lista esercizi rimanenti
+    // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD per le richieste esercizi
     final exerciseRequests = _exercises.asMap().entries.map((entry) {
       final index = entry.key;
       final exercise = entry.value;
 
-      return WorkoutExerciseRequest(
-        id: exercise.id,
-        schedaEsercizioId: exercise.schedaEsercizioId,
-        serie: exercise.serie,
-        ripetizioni: exercise.ripetizioni,
-        peso: exercise.peso,
-        ordine: index,
-        tempoRecupero: exercise.tempoRecupero,
-        note: exercise.note,
-        setType: exercise.setType,
-        linkedToPrevious: exercise.linkedToPrevious ? 1 : 0,
-      );
+      // 🚀 FASE 3 FIX: Crea una copia con ordine aggiornato, poi usa helper method
+      final exerciseWithOrder = exercise.safeCopy(ordine: index);
+
+      // DEBUG: Log valori REST-PAUSE prima di convertire
+      print('[CONSOLE] [edit_workout_screen]Converting exercise: ${exercise.nome}');
+      print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
+
+      return WorkoutExerciseRequest.fromWorkoutExercise(exerciseWithOrder);
     }).toList();
+
+    // DEBUG: Log della richiesta finale
+    for (int i = 0; i < exerciseRequests.length; i++) {
+      final req = exerciseRequests[i];
+      print('[CONSOLE] [edit_workout_screen]ExerciseRequest $i:');
+      print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
+    }
 
     // ✅ FIX: Usa esercizio_id (exercise.id) non scheda_esercizio_id
     List<WorkoutExerciseToRemove>? exercisesToRemove;

@@ -1,7 +1,7 @@
 // lib/shared/widgets/workout_exercise_editor.dart
+// 🚀 FASE 4: Aggiunta UI per configurazione REST-PAUSE
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
 
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
@@ -43,6 +43,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
   late bool _linkedToPrevious;
   late bool _isIsometric;
 
+  // 🚀 FASE 4: NUOVI CONTROLLI REST-PAUSE
+  late bool _isRestPause;
+  late TextEditingController _restPauseRepsController;
+  late double _restPauseRestSeconds;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +64,11 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     _selectedSetType = widget.exercise.setType;
     _linkedToPrevious = widget.exercise.linkedToPrevious;
     _isIsometric = widget.exercise.isIsometric;
+
+    // 🚀 FASE 4: Inizializzazione controlli REST-PAUSE
+    _isRestPause = widget.exercise.isRestPause;
+    _restPauseRepsController = TextEditingController(text: widget.exercise.restPauseReps ?? '');
+    _restPauseRestSeconds = widget.exercise.restPauseRestSeconds.toDouble();
   }
 
   @override
@@ -68,6 +78,8 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     _weightController.dispose();
     _recoveryController.dispose();
     _notesController.dispose();
+    // 🚀 FASE 4: Dispose nuovo controller
+    _restPauseRepsController.dispose();
     super.dispose();
   }
 
@@ -78,6 +90,10 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     print('[CONSOLE] [workout_exercise_editor]  - linkedToPrevious: $_linkedToPrevious');
     print('[CONSOLE] [workout_exercise_editor]  - isIsometric: $_isIsometric');
     print('[CONSOLE] [workout_exercise_editor]  - notes: "${_notesController.text}"');
+    // 🚀 FASE 4: Log valori REST-PAUSE
+    print('[CONSOLE] [workout_exercise_editor]  - isRestPause: $_isRestPause');
+    print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${_restPauseRepsController.text}"');
+    print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: $_restPauseRestSeconds');
 
     final updatedExercise = widget.exercise.safeCopy(
       serie: int.tryParse(_serieController.text) ?? widget.exercise.serie,
@@ -88,6 +104,12 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       setType: _selectedSetType,
       linkedToPrevious: _linkedToPrevious,
       isIsometric: _isIsometric,
+      // 🚀 FASE 4: Aggiunto supporto parametri REST-PAUSE
+      isRestPause: _isRestPause,
+      restPauseReps: _isRestPause && _restPauseRepsController.text.isNotEmpty
+          ? _restPauseRepsController.text
+          : null,
+      restPauseRestSeconds: _isRestPause ? _restPauseRestSeconds.round() : 15,
     );
 
     // 🔧 DEBUG: Log del risultato dopo safeCopy
@@ -96,6 +118,10 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     print('[CONSOLE] [workout_exercise_editor]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
     print('[CONSOLE] [workout_exercise_editor]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
     print('[CONSOLE] [workout_exercise_editor]  - note: "${updatedExercise.note}"');
+    // 🚀 FASE 4: Log risultato REST-PAUSE
+    print('[CONSOLE] [workout_exercise_editor]  - isRestPauseInt: ${updatedExercise.isRestPauseInt}');
+    print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${updatedExercise.restPauseReps}"');
+    print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: ${updatedExercise.restPauseRestSeconds}');
 
     widget.onUpdate(updatedExercise);
 
@@ -119,12 +145,12 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
-        color: colorScheme.surface, // ✅ DINAMICO!
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
           color: _isEditing
               ? (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600)
-              : colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
+              : colorScheme.outline.withOpacity(0.3),
           width: _isEditing ? 2 : 1,
         ),
       ),
@@ -152,7 +178,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: _isEditing
-            ? (isDark ? const Color(0xFF90CAF9).withOpacity(0.05) : AppColors.indigo600.withOpacity(0.05))
+            ? (isDark ? const Color(0xFF90CAF9).withOpacity(0.1) : AppColors.indigo600.withOpacity(0.1))
             : Colors.transparent,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppConfig.radiusM),
@@ -161,35 +187,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       ),
       child: Row(
         children: [
-          // Move up/down buttons
-          if (!_isEditing) ...[
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  onPressed: widget.isFirst ? null : widget.onMoveUp,
-                  icon: Icon(Icons.keyboard_arrow_up, size: 20.sp),
-                  constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
-                  padding: EdgeInsets.zero,
-                  color: widget.isFirst
-                      ? colorScheme.onSurface.withOpacity(0.3)
-                      : (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
-                ),
-                IconButton(
-                  onPressed: widget.isLast ? null : widget.onMoveDown,
-                  icon: Icon(Icons.keyboard_arrow_down, size: 20.sp),
-                  constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
-                  padding: EdgeInsets.zero,
-                  color: widget.isLast
-                      ? colorScheme.onSurface.withOpacity(0.3)
-                      : (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
-                ),
-              ],
-            ),
-            SizedBox(width: 8.w),
-          ],
-
-          // Exercise info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,74 +195,123 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   widget.exercise.nome,
                   style: TextStyle(
                     fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface, // ✅ DINAMICO!
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
-                if (widget.exercise.gruppoMuscolare?.isNotEmpty == true) ...[
-                  SizedBox(height: 2.h),
+                if (widget.exercise.gruppoMuscolare != null) ...[
+                  SizedBox(height: 4.h),
                   Text(
                     widget.exercise.gruppoMuscolare!,
                     style: TextStyle(
-                      fontSize: 12.sp,
-                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-                      fontStyle: FontStyle.italic,
+                      fontSize: 14.sp,
+                      color: colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
-
-                // Set type badge
-                if (_selectedSetType != 'normal') ...[
+                // 🚀 FASE 4: Indicatore REST-PAUSE nella view mode
+                if (!_isEditing && widget.exercise.isRestPause) ...[
                   SizedBox(height: 4.h),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                     decoration: BoxDecoration(
-                      color: _getSetTypeColor().withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(color: _getSetTypeColor().withOpacity(0.3)),
+                      color: Colors.deepPurple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
                     ),
-                    child: Text(
-                      _getSetTypeLabel(),
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: _getSetTypeColor(),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.flash_on,
+                          size: 14.sp,
+                          color: Colors.deepPurple,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'REST-PAUSE',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.deepPurple,
+                          ),
+                        ),
+                        if (widget.exercise.restPauseReps != null) ...[
+                          SizedBox(width: 4.w),
+                          Text(
+                            '(${widget.exercise.restPauseReps})',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.deepPurple.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
               ],
             ),
           ),
-
-          // Action buttons
-          if (_isEditing) ...[
-            IconButton(
-              onPressed: _cancelChanges,
-              icon: const Icon(Icons.close, color: AppColors.error),
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
-            ),
-            IconButton(
-              onPressed: _saveChanges,
-              icon: const Icon(Icons.check, color: AppColors.success),
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
-            ),
-          ] else ...[
-            IconButton(
-              onPressed: () => setState(() => _isEditing = true),
-              icon: Icon(
-                  Icons.edit,
-                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                  size: 20.sp
-              ),
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
-            ),
-            IconButton(
-              onPressed: widget.onDelete,
-              icon: Icon(Icons.delete, color: AppColors.error, size: 20.sp),
-              constraints: BoxConstraints(minWidth: 40.w, minHeight: 40.w),
-            ),
-          ],
+          // Azioni (move, edit, delete)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!_isEditing) ...[
+                // Move up
+                if (!widget.isFirst)
+                  IconButton(
+                    onPressed: widget.onMoveUp,
+                    icon: Icon(
+                      Icons.keyboard_arrow_up,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                // Move down
+                if (!widget.isLast)
+                  IconButton(
+                    onPressed: widget.onMoveDown,
+                    icon: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                // Edit
+                IconButton(
+                  onPressed: () => setState(() => _isEditing = true),
+                  icon: Icon(
+                    Icons.edit,
+                    color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  ),
+                ),
+                // Delete
+                IconButton(
+                  onPressed: widget.onDelete,
+                  icon: Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                ),
+              ] else ...[
+                // Save
+                IconButton(
+                  onPressed: _saveChanges,
+                  icon: Icon(
+                    Icons.check,
+                    color: Colors.green,
+                  ),
+                ),
+                // Cancel
+                IconButton(
+                  onPressed: _cancelChanges,
+                  icon: Icon(
+                    Icons.close,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -277,122 +323,60 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     return Padding(
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Parametri principali in griglia
           Row(
             children: [
-              _buildViewParameter(context, 'Serie', widget.exercise.serie.toString()),
-              _buildViewParameter(
-                  context,
-                  _isIsometric ? 'Secondi' : 'Ripetizioni',
-                  widget.exercise.ripetizioni.toString()
+              Expanded(
+                child: _buildInfoTile(
+                  'Serie',
+                  widget.exercise.serie.toString(),
+                  Icons.repeat,
+                  colorScheme,
+                ),
               ),
-              _buildViewParameter(context, 'Peso', '${widget.exercise.peso.toStringAsFixed(1)} kg'),
-              _buildViewParameter(context, 'Recupero', '${widget.exercise.tempoRecupero}s'),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildInfoTile(
+                  'Ripetizioni',
+                  widget.exercise.ripetizioni.toString(),
+                  Icons.fitness_center,
+                  colorScheme,
+                ),
+              ),
             ],
           ),
-
-          // Note (se presenti)
-          if (widget.exercise.note?.isNotEmpty == true) ...[
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoTile(
+                  'Peso',
+                  '${widget.exercise.peso.toStringAsFixed(1)} kg',
+                  Icons.line_weight,
+                  colorScheme,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildInfoTile(
+                  'Recupero',
+                  '${widget.exercise.tempoRecupero}s',
+                  Icons.timer,
+                  colorScheme,
+                ),
+              ),
+            ],
+          ),
+          if (widget.exercise.note != null && widget.exercise.note!.isNotEmpty) ...[
             SizedBox(height: 12.h),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: colorScheme.surface.withOpacity(0.5), // ✅ DINAMICO!
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: colorScheme.outline.withOpacity(0.3)), // ✅ DINAMICO!
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Note',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    widget.exercise.note!,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface, // ✅ DINAMICO!
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // Indicators - Linked solo se ha senso per il set type
-          if ((_linkedToPrevious && (_selectedSetType == 'superset' || _selectedSetType == 'circuit')) || _isIsometric) ...[
-            SizedBox(height: 8.h),
-            Wrap(
-              spacing: 8.w,
-              children: [
-                if (_linkedToPrevious && (_selectedSetType == 'superset' || _selectedSetType == 'circuit'))
-                  _buildIndicator(
-                      _selectedSetType == 'superset' ? '🔗 Superset' : '🔗 Circuit',
-                      AppColors.warning
-                  ),
-                if (_isIsometric)
-                  _buildIndicator('⏱️ Isometrico', Theme.of(context).brightness == Brightness.dark ? const Color(0xFF90CAF9) : AppColors.indigo600),
-              ],
+            _buildInfoTile(
+              'Note',
+              widget.exercise.note!,
+              Icons.note,
+              colorScheme,
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildViewParameter(BuildContext context, String label, String value) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: colorScheme.onSurface, // ✅ DINAMICO!
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIndicator(String text, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11.sp,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
       ),
     );
   }
@@ -405,277 +389,401 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Parametri principali
-          Row(
-            children: [
-              Expanded(child: _buildEditField(context, 'Serie', _serieController, false)),
-              SizedBox(width: 12.w),
-              Expanded(child: _buildEditField(
-                  context,
-                  _isIsometric ? 'Secondi' : 'Ripetizioni',
-                  _repsController,
-                  false
-              )),
-            ],
-          ),
-
-          SizedBox(height: 12.h),
-
-          Row(
-            children: [
-              Expanded(child: _buildEditField(context, 'Peso (kg)', _weightController, true)),
-              SizedBox(width: 12.w),
-              Expanded(child: _buildEditField(context, 'Recupero (s)', _recoveryController, false)),
-            ],
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Set Type Dropdown
-          _buildSetTypeDropdown(context),
-
-          SizedBox(height: 16.h),
-
-          // Checkboxes - Linked to Previous solo per Superset e Circuit
-          if (_selectedSetType == 'superset' || _selectedSetType == 'circuit') ...[
-            Row(
-              children: [
-                Expanded(
-                  child: CheckboxListTile(
-                    title: Text(
-                      'Collegato al precedente',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: colorScheme.onSurface, // ✅ DINAMICO!
-                      ),
-                    ),
-                    subtitle: Text(
-                      _selectedSetType == 'superset'
-                          ? 'Esegui subito dopo l\'esercizio precedente'
-                          : 'Parte del circuito precedente',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-                      ),
-                    ),
-                    value: _linkedToPrevious,
-                    onChanged: (value) => setState(() => _linkedToPrevious = value ?? false),
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
-            ),
-          ],
-
+          // Parametri base
           Row(
             children: [
               Expanded(
-                child: CheckboxListTile(
-                  title: Text(
-                    'Esercizio isometrico',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface, // ✅ DINAMICO!
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Mantieni la posizione per i secondi indicati',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-                    ),
-                  ),
-                  value: _isIsometric,
-                  onChanged: (value) => setState(() => _isIsometric = value ?? false),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
+                child: _buildTextField(
+                  controller: _serieController,
+                  label: 'Serie',
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildTextField(
+                  controller: _repsController,
+                  label: 'Ripetizioni',
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
                 ),
               ),
             ],
           ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _weightController,
+                  label: 'Peso (kg)',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  colorScheme: colorScheme,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildTextField(
+                  controller: _recoveryController,
+                  label: 'Recupero (s)',
+                  keyboardType: TextInputType.number,
+                  colorScheme: colorScheme,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
 
+          // Set Type Dropdown
+          _buildSetTypeDropdown(colorScheme),
+          SizedBox(height: 16.h),
+
+          // 🚀 FASE 4: SEZIONE REST-PAUSE
+          _buildRestPauseSection(colorScheme),
+          SizedBox(height: 16.h),
+
+          // Options switches
+          _buildOptionsRow(colorScheme),
           SizedBox(height: 16.h),
 
           // Note field
-          _buildNotesField(context),
+          _buildTextField(
+            controller: _notesController,
+            label: 'Note (opzionali)',
+            maxLines: 2,
+            colorScheme: colorScheme,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildEditField(BuildContext context, String label, TextEditingController controller, bool isDecimal) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        TextFormField(
-          controller: controller,
-          keyboardType: isDecimal
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : TextInputType.number,
-          style: TextStyle(
-            color: colorScheme.onSurface, // ✅ DINAMICO!
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF90CAF9) : AppColors.indigo600),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSetTypeDropdown(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    const setTypes = [
-      ('normal', 'Normale'),
-      ('superset', 'Superset'),
-      ('dropset', 'Dropset'),
-      ('rest_pause', 'Rest Pause'),
-      ('giant_set', 'Giant Set'),
-      ('circuit', 'Circuit'),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Tipo di Serie',
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        DropdownButtonFormField<String>(
-          value: _selectedSetType,
-          style: TextStyle(
-            color: colorScheme.onSurface, // ✅ DINAMICO!
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
-            ),
-          ),
-          items: setTypes.map((type) => DropdownMenuItem(
-            value: type.$1,
-            child: Text(type.$2),
-          )).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedSetType = value ?? 'normal';
-              // Reset linked to previous se non è più appropriato
-              if (_selectedSetType != 'superset' && _selectedSetType != 'circuit') {
-                _linkedToPrevious = false;
-              }
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNotesField(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Note (opzionale)',
-          style: TextStyle(
-            fontSize: 12.sp,
-            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        TextFormField(
-          controller: _notesController,
-          maxLines: 3,
-          style: TextStyle(
-            color: colorScheme.onSurface, // ✅ DINAMICO!
-          ),
-          decoration: InputDecoration(
-            hintText: 'Aggiungi note per questo esercizio...',
-            hintStyle: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
-            ),
-            isDense: true,
-            contentPadding: EdgeInsets.all(12.w),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF90CAF9) : AppColors.indigo600),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getSetTypeColor() {
+  // 🚀 FASE 4: NUOVA SEZIONE REST-PAUSE UI
+  Widget _buildRestPauseSection(ColorScheme colorScheme) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    switch (_selectedSetType) {
-      case 'superset':
-        return AppColors.warning;
-      case 'dropset':
-        return AppColors.error;
-      case 'rest_pause':
-        return Colors.purple;
-      case 'giant_set':
-        return Colors.orange;
-      case 'circuit':
-        return Colors.green;
-      default:
-        return isDark ? const Color(0xFF90CAF9) : AppColors.indigo600;
-    }
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: _isRestPause
+            ? Colors.deepPurple.withOpacity(0.05)
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConfig.radiusM),
+        border: Border.all(
+          color: _isRestPause
+              ? Colors.deepPurple.withOpacity(0.3)
+              : colorScheme.outline.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header REST-PAUSE
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on,
+                size: 20.sp,
+                color: _isRestPause ? Colors.deepPurple : colorScheme.onSurface.withOpacity(0.6),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'REST-PAUSE',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: _isRestPause ? Colors.deepPurple : colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Switch(
+                value: _isRestPause,
+                onChanged: (value) {
+                  setState(() {
+                    _isRestPause = value;
+                    if (!value) {
+                      // Reset valori quando disabilitato
+                      _restPauseRepsController.clear();
+                      _restPauseRestSeconds = 15;
+                    }
+                  });
+                },
+                activeColor: Colors.deepPurple,
+              ),
+            ],
+          ),
+
+          if (_isRestPause) ...[
+            SizedBox(height: 12.h),
+
+            // Descrizione
+            Text(
+              'Il REST-PAUSE permette di continuare la serie dopo un breve recupero quando raggiungi il cedimento muscolare.',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: colorScheme.onSurface.withOpacity(0.7),
+                height: 1.4,
+              ),
+            ),
+            SizedBox(height: 16.h),
+
+            // Sequenza ripetizioni
+            _buildTextField(
+              controller: _restPauseRepsController,
+              label: 'Sequenza ripetizioni',
+              hint: 'es. 8+4+2 o 6+3+2+1',
+              keyboardType: TextInputType.text,
+              colorScheme: colorScheme,
+              helperText: 'Indica le ripetizioni per ogni mini-serie separata da "+"',
+            ),
+            SizedBox(height: 16.h),
+
+            // Slider recupero tra mini-serie
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recupero tra mini-serie',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${_restPauseRestSeconds.round()}s',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8.h),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: Colors.deepPurple,
+                    thumbColor: Colors.deepPurple,
+                    overlayColor: Colors.deepPurple.withOpacity(0.2),
+                  ),
+                  child: Slider(
+                    value: _restPauseRestSeconds,
+                    min: 5,
+                    max: 30,
+                    divisions: 25,
+                    onChanged: (value) {
+                      setState(() {
+                        _restPauseRestSeconds = value;
+                      });
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '5s',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    Text(
+                      '30s',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 8.h),
+
+            // Helper text
+            Text(
+              'Recupero breve ottimale: 10-15 secondi',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
-  String _getSetTypeLabel() {
-    switch (_selectedSetType) {
-      case 'superset':
-        return 'SUPERSET';
-      case 'dropset':
-        return 'DROPSET';
-      case 'rest_pause':
-        return 'REST PAUSE';
-      case 'giant_set':
-        return 'GIANT SET';
-      case 'circuit':
-        return 'CIRCUIT';
-      default:
-        return 'NORMALE';
-    }
+  Widget _buildSetTypeDropdown(ColorScheme colorScheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DropdownButtonFormField<String>(
+      value: _selectedSetType,
+      style: TextStyle(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: 'Tipo di serie',
+        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(value: 'normal', child: Text('Normale')),
+        DropdownMenuItem(value: 'superset', child: Text('Superset')),
+        DropdownMenuItem(value: 'dropset', child: Text('Dropset')),
+        DropdownMenuItem(value: 'giant_set', child: Text('Giant Set')),
+        DropdownMenuItem(value: 'circuit', child: Text('Circuit')),
+      ],
+      onChanged: (value) => setState(() => _selectedSetType = value ?? 'normal'),
+    );
+  }
+
+  Widget _buildOptionsRow(ColorScheme colorScheme) {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Switch(
+                value: _linkedToPrevious,
+                onChanged: (value) => setState(() => _linkedToPrevious = value),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Collegato al precedente',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          child: Row(
+            children: [
+              Switch(
+                value: _isIsometric,
+                onChanged: (value) => setState(() => _isIsometric = value),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Isometrico',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    String? helperText,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    required ColorScheme colorScheme,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: TextStyle(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        helperText: helperText,
+        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+        helperStyle: TextStyle(
+          color: colorScheme.onSurface.withOpacity(0.6),
+          fontSize: 12.sp,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoTile(String label, String value, IconData icon, ColorScheme colorScheme) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConfig.radiusS),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 18.sp,
+            color: colorScheme.onSurface.withOpacity(0.6),
+          ),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

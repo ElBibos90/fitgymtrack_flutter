@@ -721,19 +721,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
       print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
       print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      // 🚀 FASE 3 FIX: Log valori REST-PAUSE
+      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
-      return WorkoutExerciseRequest(
-        id: exercise.id,
-        schedaEsercizioId: null,
-        serie: exercise.serie,
-        ripetizioni: exercise.ripetizioni,
-        peso: exercise.peso,
-        ordine: exercise.ordine,
-        tempoRecupero: exercise.tempoRecupero,
-        note: exercise.note,
-        setType: exercise.setType,
-        linkedToPrevious: exercise.linkedToPreviousInt,
-      );
+      // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
+      return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
     }).toList();
 
     // DEBUG: Log della richiesta finale
@@ -742,6 +736,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       print('[CONSOLE] [create_workout_screen]ExerciseRequest $i:');
       print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
       print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
+      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
     }
 
     final request = CreateWorkoutPlanRequest(
@@ -765,19 +763,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
       print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
       print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      // 🚀 FASE 3 FIX: Log valori REST-PAUSE
+      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
-      return WorkoutExerciseRequest(
-        id: exercise.id,
-        schedaEsercizioId: exercise.schedaEsercizioId,
-        serie: exercise.serie,
-        ripetizioni: exercise.ripetizioni,
-        peso: exercise.peso,
-        ordine: exercise.ordine,
-        tempoRecupero: exercise.tempoRecupero,
-        note: exercise.note,
-        setType: exercise.setType,
-        linkedToPrevious: exercise.linkedToPreviousInt,
-      );
+      // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
+      return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
     }).toList();
 
     // DEBUG: Log della richiesta finale
@@ -786,6 +778,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       print('[CONSOLE] [create_workout_screen]ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
       print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
       print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
+      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
 
       if (req.schedaEsercizioId == null) {
         print('[CONSOLE] [create_workout_screen]ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
