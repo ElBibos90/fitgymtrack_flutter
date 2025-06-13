@@ -1,4 +1,5 @@
 // lib/features/workouts/models/workout_plan_models.dart
+// 🚀 FASE 3: Aggiornamento request classes per comunicazione REST-PAUSE con backend
 import 'package:json_annotation/json_annotation.dart';
 
 part 'workout_plan_models.g.dart';
@@ -129,6 +130,16 @@ class WorkoutExercise {
   @JsonKey(name: 'is_isometric', fromJson: _parseIntSafe)
   final int isIsometricInt;
 
+  // 🚀 FASE 1: NUOVI CAMPI REST-PAUSE con default sicuri
+  @JsonKey(name: 'is_rest_pause', fromJson: _parseIntSafe)
+  final int isRestPauseInt;
+
+  @JsonKey(name: 'rest_pause_reps')
+  final String? restPauseReps;
+
+  @JsonKey(name: 'rest_pause_rest_seconds', fromJson: _parseIntSafe)
+  final int restPauseRestSeconds;
+
   const WorkoutExercise({
     required this.id,
     this.schedaEsercizioId,
@@ -145,13 +156,21 @@ class WorkoutExercise {
     this.setType = 'normal',
     this.linkedToPreviousInt = 0,
     this.isIsometricInt = 0,
+    // 🚀 FASE 1: Default sicuri per REST-PAUSE
+    this.isRestPauseInt = 0,           // ✅ 0 = disabilitato (sicuro)
+    this.restPauseReps,                // ✅ null = nessuna sequenza (sicuro)
+    this.restPauseRestSeconds = 15,    // ✅ 15s default sensato
   });
 
   /// Proprietà calcolate per mantenere la compatibilità con il resto del codice
   bool get linkedToPrevious => linkedToPreviousInt > 0;
   bool get isIsometric => isIsometricInt > 0;
 
+  // 🚀 FASE 1: Nuova proprietà calcolata per REST-PAUSE (backward compatible)
+  bool get isRestPause => isRestPauseInt > 0;
+
   /// Metodo di copia sicuro con conversioni Boolean -> Int
+  /// 🚀 FASE 2: Aggiunto supporto REST-PAUSE con parametri opzionali
   WorkoutExercise safeCopy({
     int? id,
     int? schedaEsercizioId,
@@ -168,6 +187,10 @@ class WorkoutExercise {
     String? setType,
     bool? linkedToPrevious,
     bool? isIsometric,
+    // 🚀 FASE 2: NUOVI PARAMETRI REST-PAUSE (tutti opzionali per backward compatibility)
+    bool? isRestPause,
+    String? restPauseReps,
+    int? restPauseRestSeconds,
   }) {
     return WorkoutExercise(
       id: id ?? this.id,
@@ -185,6 +208,10 @@ class WorkoutExercise {
       setType: (setType ?? this.setType).isEmpty ? 'normal' : (setType ?? this.setType),
       linkedToPreviousInt: linkedToPrevious != null ? (linkedToPrevious ? 1 : 0) : this.linkedToPreviousInt,
       isIsometricInt: isIsometric != null ? (isIsometric ? 1 : 0) : this.isIsometricInt,
+      // 🚀 FASE 2: Gestione intelligente dei parametri REST-PAUSE
+      isRestPauseInt: isRestPause != null ? (isRestPause ? 1 : 0) : this.isRestPauseInt,
+      restPauseReps: restPauseReps ?? this.restPauseReps,
+      restPauseRestSeconds: restPauseRestSeconds ?? this.restPauseRestSeconds,
     );
   }
 
@@ -196,7 +223,7 @@ class WorkoutExercise {
       print('[CONSOLE] [workout_plan_models]❌ ERROR parsing WorkoutExercise: $e');
       print('[CONSOLE] [workout_plan_models]❌ JSON data: $json');
 
-      // Fallback con parsing manuale sicuro
+      // Fallback con parsing manuale sicuro - 🚀 FASE 1: Aggiunti campi REST-PAUSE
       return WorkoutExercise(
         id: _parseIntSafe(json['id']),
         schedaEsercizioId: _parseIntSafe(json['scheda_esercizio_id']),
@@ -213,6 +240,12 @@ class WorkoutExercise {
         setType: json['set_type']?.toString() ?? 'normal',
         linkedToPreviousInt: _parseIntSafe(json['linked_to_previous']),
         isIsometricInt: _parseIntSafe(json['is_isometric']),
+        // 🚀 FASE 1: Parsing sicuro dei nuovi campi REST-PAUSE
+        isRestPauseInt: _parseIntSafe(json['is_rest_pause']),
+        restPauseReps: json['rest_pause_reps']?.toString(),
+        restPauseRestSeconds: _parseIntSafe(json['rest_pause_rest_seconds']) != 0
+            ? _parseIntSafe(json['rest_pause_rest_seconds'])
+            : 15, // Default se zero o null
       );
     }
   }
@@ -221,6 +254,7 @@ class WorkoutExercise {
 }
 
 /// Factory function per creare un WorkoutExercise con parametri booleani
+/// 🚀 FASE 2: Aggiunto supporto REST-PAUSE con parametri opzionali
 WorkoutExercise createWorkoutExercise({
   required int id,
   int? schedaEsercizioId,
@@ -237,6 +271,10 @@ WorkoutExercise createWorkoutExercise({
   String setType = 'normal',
   bool linkedToPrevious = false,
   bool isIsometric = false,
+  // 🚀 FASE 2: NUOVI PARAMETRI REST-PAUSE (con default sicuri)
+  bool isRestPause = false,
+  String? restPauseReps,
+  int restPauseRestSeconds = 15,
 }) {
   return WorkoutExercise(
     id: id,
@@ -254,6 +292,10 @@ WorkoutExercise createWorkoutExercise({
     setType: setType.isEmpty ? 'normal' : setType,
     linkedToPreviousInt: linkedToPrevious ? 1 : 0,
     isIsometricInt: isIsometric ? 1 : 0,
+    // 🚀 FASE 2: Conversione parametri REST-PAUSE
+    isRestPauseInt: isRestPause ? 1 : 0,
+    restPauseReps: restPauseReps,
+    restPauseRestSeconds: restPauseRestSeconds,
   );
 }
 
@@ -286,6 +328,7 @@ class CreateWorkoutPlanRequest {
 }
 
 /// Rappresenta un esercizio nella richiesta di creazione/modifica scheda
+/// 🚀 FASE 3: Aggiunto supporto REST-PAUSE per comunicazione backend
 @JsonSerializable()
 class WorkoutExerciseRequest {
   final int id;
@@ -305,6 +348,14 @@ class WorkoutExerciseRequest {
   @JsonKey(name: 'is_isometric')
   final int isIsometricInt;
 
+  // 🚀 FASE 3: NUOVI CAMPI REST-PAUSE per backend
+  @JsonKey(name: 'is_rest_pause')
+  final int isRestPauseInt;
+  @JsonKey(name: 'rest_pause_reps')
+  final String? restPauseReps;
+  @JsonKey(name: 'rest_pause_rest_seconds')
+  final int restPauseRestSeconds;
+
   const WorkoutExerciseRequest({
     required this.id,
     this.schedaEsercizioId,
@@ -316,11 +367,36 @@ class WorkoutExerciseRequest {
     this.note,
     this.setType = 'normal',
     this.linkedToPrevious = 0,
-    this.isIsometricInt = 0
+    this.isIsometricInt = 0,
+    // 🚀 FASE 3: Default sicuri per campi REST-PAUSE
+    this.isRestPauseInt = 0,
+    this.restPauseReps,
+    this.restPauseRestSeconds = 15,
   });
 
   factory WorkoutExerciseRequest.fromJson(Map<String, dynamic> json) => _$WorkoutExerciseRequestFromJson(json);
   Map<String, dynamic> toJson() => _$WorkoutExerciseRequestToJson(this);
+
+  // 🚀 FASE 3: Helper method per convertire da WorkoutExercise a WorkoutExerciseRequest
+  factory WorkoutExerciseRequest.fromWorkoutExercise(WorkoutExercise exercise) {
+    return WorkoutExerciseRequest(
+      id: exercise.id,
+      schedaEsercizioId: exercise.schedaEsercizioId,
+      serie: exercise.serie,
+      ripetizioni: exercise.ripetizioni,
+      peso: exercise.peso,
+      ordine: exercise.ordine,
+      tempoRecupero: exercise.tempoRecupero,
+      note: exercise.note,
+      setType: exercise.setType,
+      linkedToPrevious: exercise.linkedToPreviousInt,
+      isIsometricInt: exercise.isIsometricInt,
+      // 🚀 FASE 3: Trasferimento campi REST-PAUSE
+      isRestPauseInt: exercise.isRestPauseInt,
+      restPauseReps: exercise.restPauseReps,
+      restPauseRestSeconds: exercise.restPauseRestSeconds,
+    );
+  }
 }
 
 /// Richiesta per modificare una scheda esistente

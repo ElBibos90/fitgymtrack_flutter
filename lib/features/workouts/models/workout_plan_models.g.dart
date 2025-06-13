@@ -50,6 +50,13 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
       isIsometricInt: json['is_isometric'] == null
           ? 0
           : _parseIntSafe(json['is_isometric']),
+      isRestPauseInt: json['is_rest_pause'] == null
+          ? 0
+          : _parseIntSafe(json['is_rest_pause']),
+      restPauseReps: json['rest_pause_reps'] as String?,
+      restPauseRestSeconds: json['rest_pause_rest_seconds'] == null
+          ? 15
+          : _parseIntSafe(json['rest_pause_rest_seconds']),
     );
 
 Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
@@ -69,6 +76,9 @@ Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
       'set_type': instance.setType,
       'linked_to_previous': instance.linkedToPreviousInt,
       'is_isometric': instance.isIsometricInt,
+      'is_rest_pause': instance.isRestPauseInt,
+      'rest_pause_reps': instance.restPauseReps,
+      'rest_pause_rest_seconds': instance.restPauseRestSeconds,
     };
 
 CreateWorkoutPlanRequest _$CreateWorkoutPlanRequestFromJson(
@@ -106,6 +116,10 @@ WorkoutExerciseRequest _$WorkoutExerciseRequestFromJson(
       setType: json['set_type'] as String? ?? 'normal',
       linkedToPrevious: (json['linked_to_previous'] as num?)?.toInt() ?? 0,
       isIsometricInt: (json['is_isometric'] as num?)?.toInt() ?? 0,
+      isRestPauseInt: (json['is_rest_pause'] as num?)?.toInt() ?? 0,
+      restPauseReps: json['rest_pause_reps'] as String?,
+      restPauseRestSeconds:
+          (json['rest_pause_rest_seconds'] as num?)?.toInt() ?? 15,
     );
 
 Map<String, dynamic> _$WorkoutExerciseRequestToJson(
@@ -122,6 +136,9 @@ Map<String, dynamic> _$WorkoutExerciseRequestToJson(
       'set_type': instance.setType,
       'linked_to_previous': instance.linkedToPrevious,
       'is_isometric': instance.isIsometricInt,
+      'is_rest_pause': instance.isRestPauseInt,
+      'rest_pause_reps': instance.restPauseReps,
+      'rest_pause_rest_seconds': instance.restPauseRestSeconds,
     };
 
 UpdateWorkoutPlanRequest _$UpdateWorkoutPlanRequestFromJson(
