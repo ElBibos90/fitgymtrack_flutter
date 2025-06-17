@@ -27,6 +27,8 @@ import '../../../../shared/widgets/plateau_widgets.dart';
 
 import '../../../../shared/widgets/rest_pause_timer_popup.dart';
 
+import '../../../../shared/widgets/rest_pause_data_manager.dart';
+
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
 
@@ -259,10 +261,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _handleRestPauseStart(WorkoutSessionActive state, WorkoutExercise exercise) {
     print('🔥 [REST-PAUSE] Opening REST-PAUSE widget for: ${exercise.nome}');
 
-    // 🚀 STEP 2: Mostra il nuovo widget REST-PAUSE
     showDialog(
       context: context,
-      barrierDismissible: false, // Forza l'utente a completare
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         contentPadding: EdgeInsets.all(8.w),
         content: SizedBox(
@@ -274,18 +275,176 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             currentWeight: _getEffectiveWeight(exercise),
             currentSeries: _getCompletedSeriesCount(state, exercise.schedaEsercizioId ?? exercise.id) + 1,
             totalSeries: exercise.serie,
-            onCompleteAllMicroSeries: () {
+            onCompleteAllMicroSeries: (data) {
               Navigator.of(context).pop();
-              // Usa la logica esistente per completare la serie
-              _handleCompleteSeries(state, exercise);
+
+              // 🚀 SALVATAGGIO COMPLETO con dati REST-PAUSE
+              final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+              final completedCount = _getCompletedSeriesCount(state, exerciseId);
+
+              final seriesData = SeriesData(
+                schedaEsercizioId: exerciseId,
+                peso: data.weight,
+                ripetizioni: data.totalActualReps,
+                completata: 1,
+                tempoRecupero: exercise.tempoRecupero,
+                note: 'REST-PAUSE: ${data.actualSequence} (${data.totalActualReps} reps totali)',
+                serieNumber: completedCount + 1,
+                serieId: 'rest_pause_${DateTime.now().millisecondsSinceEpoch}',
+                // 🚀 CAMPI REST-PAUSE
+                isRestPause: 1,
+                restPauseReps: data.actualSequence,
+                restPauseRestSeconds: data.restSeconds,
+              );
+
+              _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
+              _activeWorkoutBloc.saveSeries(state.activeWorkout.id, [seriesData], 'rest_pause_${DateTime.now().millisecondsSinceEpoch}');
+
+              // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
+              _invalidateCacheForExercise(exerciseId);
+
+              CustomSnackbar.show(
+                context,
+                message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\nSequenza: ${data.actualSequence}\nTotale: ${data.totalActualReps} reps",
+                isSuccess: true,
+                duration: const Duration(seconds: 4),
+              );
+
+              print("🚀 [REST-PAUSE] Series saved with data:");
+              print("🚀 [REST-PAUSE]   - isRestPause: 1");
+              print("🚀 [REST-PAUSE]   - restPauseReps: '${data.actualSequence}'");
+              print("🚀 [REST-PAUSE]   - restPauseRestSeconds: ${data.restSeconds}");
+              print("🚀 [REST-PAUSE]   - ripetizioni: ${data.totalActualReps}");
             },
-            onCompleteMicroSeries: (index, reps) {
+            onCompleteMicroSeries: (data, index, reps) {
               print('🔥 [REST-PAUSE] Micro-serie ${index + 1} completata: $reps reps');
+              print('🔥 [REST-PAUSE] Progresso attuale: ${data.actualSequence}');
             },
           ),
         ),
       ),
     );
+  }
+
+  void _handleCompleteRestPauseSeries(
+      WorkoutSessionActive state,
+      WorkoutExercise exercise,
+      RestPauseExecutionData restPauseData
+      ) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final completedCount = _getCompletedSeriesCount(state, exerciseId);
+
+    if (completedCount >= exercise.serie) {
+      CustomSnackbar.show(
+        context,
+        message: "Esercizio già completato!",
+        isSuccess: false,
+      );
+      return;
+    }
+
+    print("🚀 [REST-PAUSE] Completing REST-PAUSE series ${completedCount + 1} for exercise: ${exercise.nome}");
+    print("🚀 [REST-PAUSE] Data: ${restPauseData.toString()}");
+
+    // Validazione dati REST-PAUSE
+    if (!restPauseData.isValid() || !restPauseData.isCompleted) {
+      print("❌ [REST-PAUSE] Invalid or incomplete data");
+      CustomSnackbar.show(
+        context,
+        message: "Errore nei dati REST-PAUSE",
+        isSuccess: false,
+      );
+      return;
+    }
+
+    // 🚀 STEP 4: Crea SeriesData con campi REST-PAUSE corretti (versione semplificata)
+    final seriesData = SeriesData(
+      schedaEsercizioId: exerciseId,
+      peso: restPauseData.weight,
+      ripetizioni: restPauseData.totalActualReps, // Somma di tutte le micro-serie
+      completata: 1,
+      tempoRecupero: exercise.tempoRecupero,
+      note: restPauseData.toNote(), // Note dettagliate con durata
+      serieNumber: completedCount + 1,
+      serieId: 'rest_pause_${DateTime.now().millisecondsSinceEpoch}',
+      // 🚀 CAMPI REST-PAUSE
+      isRestPause: 1,
+      restPauseReps: restPauseData.actualSequence, // Sequenza effettiva (es. "11+4+4")
+      restPauseRestSeconds: restPauseData.restSeconds,
+    );
+
+    // Salva nel BLoC
+    _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
+
+    final requestId = 'rest_pause_req_${DateTime.now().millisecondsSinceEpoch}';
+    _activeWorkoutBloc.saveSeries(
+      state.activeWorkout.id,
+      [seriesData],
+      requestId,
+    );
+
+    // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
+    _invalidateCacheForExercise(exerciseId);
+
+    // Mostra feedback specifico per REST-PAUSE
+    CustomSnackbar.show(
+      context,
+      message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\n" +
+          "Sequenza: ${restPauseData.actualSequence}\n" +
+          "Totale: ${restPauseData.totalActualReps} reps",
+      isSuccess: true,
+      duration: const Duration(seconds: 4), // Più lungo per mostrare dettagli
+    );
+
+    // Log dettagliato per debug
+    print("🚀 [REST-PAUSE] Series saved:");
+    print("🚀 [REST-PAUSE]   - Weight: ${restPauseData.weight}kg");
+    print("🚀 [REST-PAUSE]   - Total reps: ${restPauseData.totalActualReps}");
+    print("🚀 [REST-PAUSE]   - Sequence: ${restPauseData.actualSequence}");
+    print("🚀 [REST-PAUSE]   - Rest seconds: ${restPauseData.restSeconds}");
+    print("🚀 [REST-PAUSE]   - Duration: ${restPauseData.totalDuration?.inSeconds ?? 0}s");
+
+    // Gestione completamento esercizio e recupero normale
+    final newCompletedCount = completedCount + 1;
+    if (newCompletedCount >= exercise.serie) {
+      print("🎉 [REST-PAUSE] Esercizio ${exercise.nome} completato!");
+    } else {
+      // Avvia timer di recupero normale tra serie (se esiste il metodo)
+      try {
+        // Usa il metodo esistente per recovery timer se disponibile
+        if (exercise.tempoRecupero > 0) {
+          print("🔄 [REST-PAUSE] Starting recovery timer: ${exercise.tempoRecupero}s");
+          // TODO: Implementare timer recovery se necessario
+        }
+      } catch (e) {
+        print("⚠️ [REST-PAUSE] Recovery timer not available: $e");
+      }
+    }
+  }
+
+
+  bool _validateRestPauseData(RestPauseExecutionData data) {
+    if (!data.isValid()) {
+      print("❌ [REST-PAUSE] Data validation failed: invalid data");
+      return false;
+    }
+
+    if (!data.isCompleted) {
+      print("❌ [REST-PAUSE] Data validation failed: not completed");
+      return false;
+    }
+
+    if (data.totalActualReps <= 0) {
+      print("❌ [REST-PAUSE] Data validation failed: no reps completed");
+      return false;
+    }
+
+    if (data.actualSequence.isEmpty) {
+      print("❌ [REST-PAUSE] Data validation failed: empty sequence");
+      return false;
+    }
+
+    return true;
   }
 
   // ============================================================================
@@ -1849,6 +2008,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                           ? '✅ Esercizio Completato'
                           : exercise.isIsometric
                           ? '🔥 Avvia Isometrico ${_getEffectiveReps(exercise)}s'
+                          : _isRestPauseExercise(exercise)  // 🚀 NUOVA CONDIZIONE
+                          ? '⚡ Avvia REST-PAUSE'           // 🚀 NUOVO TESTO
                           : 'Completa Serie ${completedSeries + 1}',
                       style: TextStyle(
                         fontSize: 18.sp,
@@ -2174,9 +2335,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                           ? '✅ Esercizio Completato'
                           : currentExercise.isIsometric
                           ? '🔥 Avvia Isometrico ${_getEffectiveReps(currentExercise)}s'
+                          : _isRestPauseExercise(currentExercise)  // 🚀 NUOVA CONDIZIONE
+                          ? '⚡ Avvia REST-PAUSE'                  // 🚀 NUOVO TESTO
                           : 'Completa Serie ${completedSeries + 1}',
                       style: TextStyle(
-                        fontSize: 18.sp,
+                        fontSize: 16.sp,  // Nota: font size diverso per multi-exercise
                         fontWeight: FontWeight.bold,
                       ),
                     ),

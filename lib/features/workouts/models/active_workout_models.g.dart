@@ -115,6 +115,9 @@ SeriesData _$SeriesDataFromJson(Map<String, dynamic> json) => SeriesData(
       note: json['note'] as String?,
       serieNumber: (json['serie_number'] as num?)?.toInt(),
       serieId: json['serie_id'] as String?,
+      isRestPause: (json['is_rest_pause'] as num?)?.toInt(),
+      restPauseReps: json['rest_pause_reps'] as String?,
+      restPauseRestSeconds: (json['rest_pause_rest_seconds'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SeriesDataToJson(SeriesData instance) =>
@@ -127,6 +130,9 @@ Map<String, dynamic> _$SeriesDataToJson(SeriesData instance) =>
       'note': instance.note,
       'serie_number': instance.serieNumber,
       'serie_id': instance.serieId,
+      'is_rest_pause': instance.isRestPause,
+      'rest_pause_reps': instance.restPauseReps,
+      'rest_pause_rest_seconds': instance.restPauseRestSeconds,
     };
 
 SaveCompletedSeriesResponse _$SaveCompletedSeriesResponseFromJson(

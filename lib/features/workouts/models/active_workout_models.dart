@@ -5,29 +5,11 @@ import 'workout_plan_models.dart';
 
 part 'active_workout_models.g.dart';
 
-/// Converte il peso dal JSON (può essere stringa o numero) a double
-double _parseWeight(dynamic value) {
-  if (value == null) return 0.0;
+// ============================================================================
+// HELPER FUNCTIONS per parsing sicuro dei dati dal server
+// ============================================================================
 
-  if (value is double) return value;
-  if (value is int) return value.toDouble();
-  if (value is String) {
-    try {
-      return double.parse(value);
-    } catch (e) {
-      return 0.0; // Fallback se la stringa non è parsabile
-    }
-  }
-
-  return 0.0; // Fallback per tipi non supportati
-}
-
-/// Converte il peso a stringa per l'invio al server
-String _weightToJson(double value) {
-  return value.toStringAsFixed(2);
-}
-
-/// 🔧 FIX: Converte l'ID dal JSON (può essere int o string) a string
+/// Parsing sicuro per ID che possono essere int o string
 String _parseIdSafe(dynamic value) {
   if (value == null) return '';
   if (value is String) return value;
@@ -36,9 +18,27 @@ String _parseIdSafe(dynamic value) {
   return value.toString();
 }
 
-/// Rappresenta una sessione di allenamento attiva
+/// Parsing sicuro per peso che può arrivare come stringa o numero
+double _parseWeight(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) {
+    return double.tryParse(value) ?? 0.0;
+  }
+  return 0.0;
+}
+
+/// Conversione peso per JSON
+String _weightToJson(double weight) => weight.toStringAsFixed(2);
+
+// ============================================================================
+// MODELLI PRINCIPALI
+// ============================================================================
+
+/// Rappresenta un allenamento attivo
 @JsonSerializable()
-class ActiveWorkout {
+class ActiveWorkout extends Equatable {
   final int id;
   @JsonKey(name: 'scheda_id')
   final int schedaId;
@@ -66,9 +66,16 @@ class ActiveWorkout {
 
   factory ActiveWorkout.fromJson(Map<String, dynamic> json) => _$ActiveWorkoutFromJson(json);
   Map<String, dynamic> toJson() => _$ActiveWorkoutToJson(this);
+
+  @override
+  List<Object?> get props => [id, schedaId, dataAllenamento, durataTotale, note, userId, esercizi, sessionId];
 }
 
-/// Rappresenta una richiesta per iniziare un nuovo allenamento
+// ============================================================================
+// RICHIESTE E RISPOSTE
+// ============================================================================
+
+/// Richiesta per iniziare un allenamento
 @JsonSerializable()
 class StartWorkoutRequest {
   @JsonKey(name: 'user_id')
@@ -88,7 +95,7 @@ class StartWorkoutRequest {
   Map<String, dynamic> toJson() => _$StartWorkoutRequestToJson(this);
 }
 
-/// Rappresenta la risposta quando si inizia un nuovo allenamento
+/// Risposta per iniziare un allenamento
 @JsonSerializable()
 class StartWorkoutResponse {
   final bool success;
@@ -155,12 +162,12 @@ class SaveCompletedSeriesRequest {
 }
 
 /// Dati di una singola serie da salvare
+/// 🚀 STEP 4: Aggiornato con campi REST-PAUSE
 @JsonSerializable()
 class SeriesData {
   @JsonKey(name: 'scheda_esercizio_id')
   final int schedaEsercizioId;
 
-  // ✅ FIX: Gestisce peso come stringa dal server
   @JsonKey(
     name: 'peso',
     fromJson: _parseWeight,
@@ -178,6 +185,14 @@ class SeriesData {
   @JsonKey(name: 'serie_id')
   final String? serieId;
 
+  // 🚀 STEP 4: NUOVI CAMPI REST-PAUSE
+  @JsonKey(name: 'is_rest_pause')
+  final int? isRestPause;
+  @JsonKey(name: 'rest_pause_reps')
+  final String? restPauseReps;
+  @JsonKey(name: 'rest_pause_rest_seconds')
+  final int? restPauseRestSeconds;
+
   const SeriesData({
     required this.schedaEsercizioId,
     required this.peso,
@@ -187,6 +202,10 @@ class SeriesData {
     this.note,
     this.serieNumber,
     this.serieId,
+    // 🚀 STEP 4: Campi REST-PAUSE
+    this.isRestPause,
+    this.restPauseReps,
+    this.restPauseRestSeconds,
   });
 
   factory SeriesData.fromJson(Map<String, dynamic> json) => _$SeriesDataFromJson(json);
@@ -225,7 +244,7 @@ class GetCompletedSeriesResponse {
   Map<String, dynamic> toJson() => _$GetCompletedSeriesResponseToJson(this);
 }
 
-/// 🔧 FIX: Dati di una serie completata ricevuta dal server - ID SICURO
+/// Dati di una serie completata ricevuta dal server
 @JsonSerializable()
 class CompletedSeriesData {
   @JsonKey(fromJson: _parseIdSafe)
@@ -233,7 +252,6 @@ class CompletedSeriesData {
   @JsonKey(name: 'scheda_esercizio_id')
   final int schedaEsercizioId;
 
-  // ✅ FIX: Gestisce peso come stringa dal server
   @JsonKey(
     name: 'peso',
     fromJson: _parseWeight,
@@ -275,6 +293,10 @@ class CompletedSeriesData {
   Map<String, dynamic> toJson() => _$CompletedSeriesDataToJson(this);
 }
 
+// ============================================================================
+// RICHIESTE E RISPOSTE PER COMPLETAMENTO ALLENAMENTO
+// ============================================================================
+
 /// Richiesta per completare un allenamento
 @JsonSerializable()
 class CompleteWorkoutRequest {
@@ -294,7 +316,7 @@ class CompleteWorkoutRequest {
   Map<String, dynamic> toJson() => _$CompleteWorkoutRequestToJson(this);
 }
 
-/// Risposta per il completamento di un allenamento
+/// Risposta per completare un allenamento
 @JsonSerializable()
 class CompleteWorkoutResponse {
   final bool success;
@@ -314,6 +336,10 @@ class CompleteWorkoutResponse {
   factory CompleteWorkoutResponse.fromJson(Map<String, dynamic> json) => _$CompleteWorkoutResponseFromJson(json);
   Map<String, dynamic> toJson() => _$CompleteWorkoutResponseToJson(this);
 }
+
+// ============================================================================
+// RICHIESTE PER ELIMINAZIONE ALLENAMENTO
+// ============================================================================
 
 /// Richiesta per eliminare un allenamento
 @JsonSerializable()

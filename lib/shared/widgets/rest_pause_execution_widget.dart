@@ -1,21 +1,63 @@
-// 🚀 STEP 2: REST-PAUSE Execution Widget
+// 🚀 STEP 4: REST-PAUSE Widget MINIMALISTA - Self-contained
 // File: lib/shared/widgets/rest_pause_execution_widget.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'rest_pause_timer_popup.dart'; // 🚀 STEP 3: Import timer popup
+import 'rest_pause_timer_popup.dart';
 
-/// Widget dedicato per l'esecuzione REST-PAUSE
-/// Gestisce micro-serie con UI dedicata e stato interno
+/// Simple REST-PAUSE data class (inline, no external dependencies)
+class SimpleRestPauseData {
+  final String exerciseName;
+  final double weight;
+  final int serieNumber;
+  final String originalSequence;
+  final int restSeconds;
+  final List<int> targetSequence;
+  final List<int> completedReps;
+
+  SimpleRestPauseData({
+    required this.exerciseName,
+    required this.weight,
+    required this.serieNumber,
+    required this.originalSequence,
+    required this.restSeconds,
+    required this.targetSequence,
+    this.completedReps = const [],
+  });
+
+  int get currentMicroSeriesIndex => completedReps.length;
+  bool get hasMoreMicroSeries => currentMicroSeriesIndex < targetSequence.length;
+  int? get nextTargetReps => hasMoreMicroSeries ? targetSequence[currentMicroSeriesIndex] : null;
+  int get totalActualReps => completedReps.fold(0, (sum, reps) => sum + reps);
+  String get actualSequence => completedReps.join('+');
+  double get completionPercentage => targetSequence.isNotEmpty
+      ? (currentMicroSeriesIndex / targetSequence.length)
+      : 0.0;
+  bool get isCompleted => currentMicroSeriesIndex >= targetSequence.length;
+
+  SimpleRestPauseData addMicroSeries(int reps) {
+    return SimpleRestPauseData(
+      exerciseName: exerciseName,
+      weight: weight,
+      serieNumber: serieNumber,
+      originalSequence: originalSequence,
+      restSeconds: restSeconds,
+      targetSequence: targetSequence,
+      completedReps: [...completedReps, reps],
+    );
+  }
+}
+
+/// Widget dedicato per l'esecuzione REST-PAUSE - Versione MINIMALISTA
 class RestPauseExecutionWidget extends StatefulWidget {
   final String exerciseName;
-  final String restPauseSequence; // "11+4+4"
-  final int restSeconds; // 21
+  final String restPauseSequence;
+  final int restSeconds;
   final double currentWeight;
-  final int currentSeries; // Serie corrente (1, 2, 3...)
-  final int totalSeries; // Totale serie dell'esercizio
-  final VoidCallback? onCompleteAllMicroSeries;
-  final Function(int microSeriesIndex, int reps)? onCompleteMicroSeries;
+  final int currentSeries;
+  final int totalSeries;
+  final Function(SimpleRestPauseData)? onCompleteAllMicroSeries;
+  final Function(SimpleRestPauseData, int, int)? onCompleteMicroSeries;
 
   const RestPauseExecutionWidget({
     Key? key,
@@ -37,10 +79,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
     with TickerProviderStateMixin {
 
   // ====== STATE VARIABLES ======
-  List<int> _microSeriesSequence = []; // [11, 4, 4]
-  int _currentMicroSeriesIndex = 0; // 0, 1, 2
-  List<int> _completedReps = []; // Reps effettivamente completate per ogni micro-serie
-  // 🚀 STEP 3: Rimosso _isInRestPause e _restTimeRemaining (gestiti dal popup)
+  late SimpleRestPauseData _data;
 
   // ====== ANIMATION CONTROLLERS ======
   late AnimationController _pulseController;
@@ -54,10 +93,10 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   @override
   void initState() {
     super.initState();
-    print('🔥 [REST-PAUSE WIDGET] Initializing widget for: ${widget.exerciseName}');
+    print('🔥 [REST-PAUSE WIDGET] Initializing: ${widget.exerciseName}');
 
     _initializeAnimations();
-    _parseSequence();
+    _initializeData();
     _resetToFirstMicroSeries();
   }
 
@@ -69,7 +108,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
     super.dispose();
   }
 
-  // ====== INITIALIZATION METHODS ======
+  // ====== INITIALIZATION ======
 
   void _initializeAnimations() {
     _pulseController = AnimationController(
@@ -93,97 +132,88 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
     _pulseController.repeat(reverse: true);
   }
 
-  /// 🚀 STEP 2: Parsing sicuro della sequenza REST-PAUSE
-  void _parseSequence() {
+  void _initializeData() {
     try {
-      if (widget.restPauseSequence.isNotEmpty) {
-        _microSeriesSequence = widget.restPauseSequence
-            .split('+')
-            .map((s) => int.tryParse(s.trim()) ?? 0)
-            .where((reps) => reps > 0)
-            .toList();
+      final sequence = _parseSequence(widget.restPauseSequence);
+      _data = SimpleRestPauseData(
+        exerciseName: widget.exerciseName,
+        weight: widget.currentWeight,
+        serieNumber: widget.currentSeries,
+        originalSequence: widget.restPauseSequence,
+        restSeconds: widget.restSeconds,
+        targetSequence: sequence,
+      );
 
-        print('🔥 [REST-PAUSE WIDGET] Parsed sequence: $_microSeriesSequence');
-      } else {
-        print('⚠️ [REST-PAUSE WIDGET] Empty sequence, using fallback');
-        _microSeriesSequence = [10]; // Fallback sicuro
-      }
-
-      // Inizializza array per tracciare reps completate
-      _completedReps = List.filled(_microSeriesSequence.length, 0);
-
+      print('🔥 [REST-PAUSE WIDGET] Parsed sequence: $sequence');
     } catch (e) {
-      print('❌ [REST-PAUSE WIDGET] Error parsing sequence: $e');
-      _microSeriesSequence = [10]; // Fallback sicuro
-      _completedReps = [0];
+      print('❌ [REST-PAUSE WIDGET] Error: $e');
+      _data = SimpleRestPauseData(
+        exerciseName: widget.exerciseName,
+        weight: widget.currentWeight,
+        serieNumber: widget.currentSeries,
+        originalSequence: "10",
+        restSeconds: 15,
+        targetSequence: [10],
+      );
     }
+  }
+
+  List<int> _parseSequence(String sequence) {
+    if (sequence.isEmpty) return [10];
+
+    return sequence
+        .split('+')
+        .map((s) => int.tryParse(s.trim()) ?? 0)
+        .where((reps) => reps > 0)
+        .toList();
   }
 
   void _resetToFirstMicroSeries() {
     setState(() {
-      _currentMicroSeriesIndex = 0;
-      _repsController.text = _microSeriesSequence.isNotEmpty
-          ? _microSeriesSequence[0].toString()
-          : '10';
+      _repsController.text = _data.nextTargetReps?.toString() ?? '10';
     });
     _progressController.reset();
   }
 
-  // ====== UI HELPER METHODS ======
+  // ====== UI HELPERS ======
 
-  bool get _isLastMicroSeries => _currentMicroSeriesIndex >= _microSeriesSequence.length - 1;
+  bool get _isLastMicroSeries => !_data.hasMoreMicroSeries;
+  int get _currentTargetReps => _data.nextTargetReps ?? 10;
+  int get _totalMicroSeries => _data.targetSequence.length;
+  double get _overallProgress => _data.completionPercentage;
 
-  int get _currentTargetReps => _microSeriesSequence.isNotEmpty
-      ? _microSeriesSequence[_currentMicroSeriesIndex]
-      : 10;
-
-  int get _totalMicroSeries => _microSeriesSequence.length;
-
-  double get _overallProgress => _totalMicroSeries > 0
-      ? (_currentMicroSeriesIndex + 1) / _totalMicroSeries
-      : 0.0;
-
-  // ====== ACTION METHODS ======
+  // ====== ACTIONS ======
 
   void _handleCompleteMicroSeries() {
     final enteredReps = int.tryParse(_repsController.text) ?? _currentTargetReps;
+    final currentIndex = _data.currentMicroSeriesIndex;
 
-    print('🔥 [REST-PAUSE WIDGET] Micro-series ${_currentMicroSeriesIndex + 1} completed: $enteredReps reps');
+    print('🔥 [REST-PAUSE WIDGET] Micro-series ${currentIndex + 1} completed: $enteredReps reps');
 
-    // Salva reps completate
-    _completedReps[_currentMicroSeriesIndex] = enteredReps;
+    setState(() {
+      _data = _data.addMicroSeries(enteredReps);
+    });
 
-    // Callback per informare il parent
-    widget.onCompleteMicroSeries?.call(_currentMicroSeriesIndex, enteredReps);
+    widget.onCompleteMicroSeries?.call(_data, currentIndex, enteredReps);
 
     if (_isLastMicroSeries) {
-      // Ultima micro-serie: completa tutto
       _handleCompleteAllSeries();
     } else {
-      // Inizia mini-recupero per prossima micro-serie
       _startMiniRecovery();
     }
   }
 
   void _startMiniRecovery() {
-    setState(() {
-      _currentMicroSeriesIndex++;
-    });
-
     print('🔥 [REST-PAUSE WIDGET] Starting mini-recovery: ${widget.restSeconds}s');
-
-    // 🚀 STEP 3: Usa il nuovo timer popup dedicato
     _showRestPauseTimer();
   }
 
-  /// 🚀 STEP 3: Mostra il timer popup dedicato
   void _showRestPauseTimer() {
-    // Import necessario sarà aggiunto al file
     RestPauseTimerHelper.showRestPauseTimer(
       context: context,
       seconds: widget.restSeconds,
       exerciseName: widget.exerciseName,
-      currentMicroSeries: _currentMicroSeriesIndex + 1,
+      currentMicroSeries: _data.currentMicroSeriesIndex + 1,
       totalMicroSeries: _totalMicroSeries,
       nextTargetReps: _currentTargetReps,
       onComplete: _endMiniRecovery,
@@ -196,23 +226,21 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
       _repsController.text = _currentTargetReps.toString();
     });
 
-    print('🔥 [REST-PAUSE WIDGET] Mini-recovery ended, ready for micro-series ${_currentMicroSeriesIndex + 1}');
+    print('🔥 [REST-PAUSE WIDGET] Mini-recovery ended, ready for micro-series ${_data.currentMicroSeriesIndex + 1}');
   }
 
   void _handleCompleteAllSeries() {
-    print('🔥 [REST-PAUSE WIDGET] All micro-series completed! Total reps: ${_completedReps.fold(0, (a, b) => a + b)}');
+    print('🔥 [REST-PAUSE WIDGET] All micro-series completed!');
+    print('🔥 [REST-PAUSE WIDGET] Final: ${_data.actualSequence} (${_data.totalActualReps} reps)');
 
     _progressController.forward();
-    widget.onCompleteAllMicroSeries?.call();
+    widget.onCompleteAllMicroSeries?.call(_data);
   }
 
-  // ====== UI BUILD METHODS ======
+  // ====== UI BUILD ======
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -230,8 +258,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           SizedBox(height: 20.h),
           _buildProgressIndicator(),
           SizedBox(height: 24.h),
-
-          // 🚀 STEP 3: Solo UI micro-serie (timer è popup dedicato)
           _buildMicroSeriesUI(),
         ],
       ),
@@ -239,17 +265,22 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   }
 
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.deepPurple.withOpacity(0.2),
+            color: isDark
+                ? Colors.deepPurple.withOpacity(0.3)
+                : Colors.deepPurple.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Icon(
             Icons.flash_on,
-            color: Colors.deepPurple,
+            color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple,
             size: 20.sp,
           ),
         ),
@@ -263,14 +294,16 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple,
                 ),
               ),
               Text(
                 'Serie ${widget.currentSeries}/${widget.totalSeries}',
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: Colors.deepPurple.withOpacity(0.8),
+                  color: isDark
+                      ? Colors.deepPurple.shade300
+                      : Colors.deepPurple.withOpacity(0.8),
                 ),
               ),
             ],
@@ -281,6 +314,9 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   }
 
   Widget _buildProgressIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -288,18 +324,20 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Micro-serie ${_currentMicroSeriesIndex + 1}/$_totalMicroSeries',
+              'Micro-serie ${_data.currentMicroSeriesIndex + 1}/$_totalMicroSeries',
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.deepPurple,
+                color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple,
               ),
             ),
             Text(
               'Target: $_currentTargetReps reps',
               style: TextStyle(
                 fontSize: 12.sp,
-                color: Colors.deepPurple.withOpacity(0.8),
+                color: isDark
+                    ? Colors.deepPurple.shade300
+                    : Colors.deepPurple.withOpacity(0.8),
               ),
             ),
           ],
@@ -307,24 +345,47 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
         SizedBox(height: 8.h),
         LinearProgressIndicator(
           value: _overallProgress,
-          backgroundColor: Colors.deepPurple.withOpacity(0.2),
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+          backgroundColor: isDark
+              ? Colors.deepPurple.withOpacity(0.3)
+              : Colors.deepPurple.withOpacity(0.2),
+          valueColor: AlwaysStoppedAnimation<Color>(
+              isDark ? Colors.deepPurple.shade300 : Colors.deepPurple
+          ),
           minHeight: 6.h,
         ),
+        if (_data.completedReps.isNotEmpty) ...[
+          SizedBox(height: 8.h),
+          Text(
+            'Completate: ${_data.actualSequence} (${_data.totalActualReps} reps)',
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: isDark
+                  ? Colors.deepPurple.shade400
+                  : Colors.deepPurple.withOpacity(0.6),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildMicroSeriesUI() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: [
-        // Input ripetizioni
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
+            color: isDark
+                ? colorScheme.surface
+                : Colors.white,
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
+            border: Border.all(
+              color: Colors.deepPurple.withOpacity(isDark ? 0.6 : 0.3),
+              width: isDark ? 1.5 : 1,
+            ),
           ),
           child: Row(
             children: [
@@ -335,22 +396,32 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                   style: TextStyle(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
+                    color: isDark ? Colors.white : Colors.deepPurple,
                   ),
                   decoration: InputDecoration(
                     labelText: 'Ripetizioni eseguite',
                     border: InputBorder.none,
                     labelStyle: TextStyle(
-                      color: Colors.deepPurple.withOpacity(0.7),
+                      color: isDark
+                          ? Colors.deepPurple.withOpacity(0.8)
+                          : Colors.deepPurple.withOpacity(0.7),
                     ),
                   ),
                 ),
               ),
-              Text(
-                '${widget.currentWeight.toStringAsFixed(1)} kg',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.deepPurple.withOpacity(0.8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withOpacity(isDark ? 0.2 : 0.1),
+                  borderRadius: BorderRadius.circular(6.r),
+                ),
+                child: Text(
+                  '${widget.currentWeight.toStringAsFixed(1)} kg',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.deepPurple.shade200 : Colors.deepPurple,
+                  ),
                 ),
               ),
             ],
@@ -359,7 +430,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
         SizedBox(height: 20.h),
 
-        // Pulsante completa micro-serie
         SizedBox(
           width: double.infinity,
           height: 50.h,
@@ -396,59 +466,17 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
         if (!_isLastMicroSeries) ...[
           SizedBox(height: 12.h),
           Text(
-            'Prossima: ${_microSeriesSequence[_currentMicroSeriesIndex + 1]} reps',
+            'Prossima: ${_data.nextTargetReps} reps',
             style: TextStyle(
               fontSize: 12.sp,
-              color: Colors.deepPurple.withOpacity(0.7),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.deepPurple.shade400
+                  : Colors.deepPurple.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
         ],
       ],
-    );
-  }
-}
-
-/// 🚀 STEP 2: Helper per test isolato del widget
-class RestPauseTestScreen extends StatelessWidget {
-  const RestPauseTestScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('REST-PAUSE Widget Test'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          children: [
-            Text(
-              'Test del Widget REST-PAUSE isolato',
-              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20.h),
-            RestPauseExecutionWidget(
-              exerciseName: 'Dips assistiti',
-              restPauseSequence: '11+4+4',
-              restSeconds: 21,
-              currentWeight: 66.0,
-              currentSeries: 1,
-              totalSeries: 5,
-              onCompleteAllMicroSeries: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Serie REST-PAUSE completata!')),
-                );
-              },
-              onCompleteMicroSeries: (index, reps) {
-                print('Micro-serie ${index + 1} completata: $reps reps');
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
