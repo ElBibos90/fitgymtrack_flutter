@@ -134,17 +134,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   bool _isRestPauseExercise(WorkoutExercise exercise) {
-    final isRestPause = exercise.isRestPause &&
+    return exercise.isRestPause &&
         exercise.restPauseReps != null &&
         exercise.restPauseReps!.isNotEmpty;
-
-    if (isRestPause) {
-      print('🔥 [REST-PAUSE] Detected REST-PAUSE exercise: ${exercise.nome}');
-      print('🔥 [REST-PAUSE]   - Sequence: "${exercise.restPauseReps}"');
-      print('🔥 [REST-PAUSE]   - Rest seconds: ${exercise.restPauseRestSeconds}');
-    }
-
-    return isRestPause;
   }
 
   /// 🚀 STEP 1: Helper per parsare sequenza ripetizioni
@@ -315,6 +307,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               print("🚀 [REST-PAUSE]   - restPauseReps: '${data.actualSequence}'");
               print("🚀 [REST-PAUSE]   - restPauseRestSeconds: ${data.restSeconds}");
               print("🚀 [REST-PAUSE]   - ripetizioni: ${data.totalActualReps}");
+
+              // 🔧 FIX: Aggiungi logica auto-rotation per REST-PAUSE
+              final updatedState = _getCurrentState();
+              if (updatedState != null) {
+                // Gestione timer di recupero (se appropriato)
+                if (exercise.tempoRecupero > 0 && _shouldStartRecoveryTimer(exercise)) {
+                  _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
+                } else if (_isPartOfMultiExerciseGroup(exercise)) {
+                  print("🔧 [REST-PAUSE SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
+                }
+
+                // 🚀 AUTO-ROTAZIONE: Passa al prossimo esercizio se in un gruppo
+                _handleAutoRotation(updatedState);
+
+                // Controllo completamento allenamento
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (mounted && _isWorkoutCompleted(updatedState)) {
+                    _completeButtonController.repeat(reverse: true);
+                  }
+                });
+              } else {
+                print("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
+              }
             },
             onCompleteMicroSeries: (data, index, reps) {
               print('🔥 [REST-PAUSE] Micro-serie ${index + 1} completata: $reps reps');
@@ -1250,7 +1265,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       print("🔧 [SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
     }
 
-    _handleAutoRotation(state);
+    final updatedState = _getCurrentState();
+    if (updatedState != null) {
+      _handleAutoRotation(updatedState);
+    } else {
+      print("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
+    }
 
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && _isWorkoutCompleted(state)) {
