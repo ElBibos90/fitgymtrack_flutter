@@ -128,6 +128,46 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _initializeWorkout();
   }
 
+  bool _isRestPauseExercise(WorkoutExercise exercise) {
+    final isRestPause = exercise.isRestPause &&
+        exercise.restPauseReps != null &&
+        exercise.restPauseReps!.isNotEmpty;
+
+    if (isRestPause) {
+      print('🔥 [REST-PAUSE] Detected REST-PAUSE exercise: ${exercise.nome}');
+      print('🔥 [REST-PAUSE]   - Sequence: "${exercise.restPauseReps}"');
+      print('🔥 [REST-PAUSE]   - Rest seconds: ${exercise.restPauseRestSeconds}');
+    }
+
+    return isRestPause;
+  }
+
+  /// 🚀 STEP 1: Helper per parsare sequenza ripetizioni
+  List<int> _parseRestPauseSequence(String? sequence) {
+    if (sequence == null || sequence.isEmpty) {
+      print('⚠️ [REST-PAUSE] Empty sequence, returning empty list');
+      return [];
+    }
+
+    try {
+      final parsed = sequence.split('+').map((s) => int.tryParse(s.trim()) ?? 0).toList();
+      print('🔥 [REST-PAUSE] Parsed sequence "$sequence" -> $parsed');
+      return parsed.where((n) => n > 0).toList(); // Rimuovi valori invalidi
+    } catch (e) {
+      print('💥 [REST-PAUSE] Error parsing sequence "$sequence": $e');
+      return [];
+    }
+  }
+
+  bool _isValidRestPauseSequence(List<int> sequence) {
+    final isValid = sequence.isNotEmpty &&
+        sequence.length >= 2 &&
+        sequence.every((n) => n > 0 && n <= 50); // Massimo 50 reps per micro-serie
+
+    print('🔥 [REST-PAUSE] Sequence validation: $sequence -> $isValid');
+    return isValid;
+  }
+
   @override
   void dispose() {
     print("🚀 [SINGLE EXERCISE + ALL FIXES] dispose");
@@ -211,6 +251,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     } catch (e) {
       print("🔧 [ALWAYS ON] Error disabling WakeLock: $e");
     }
+  }
+
+  void _handleRestPauseStart(WorkoutSessionActive state, WorkoutExercise exercise) {
+    print('🔥 [REST-PAUSE] REST-PAUSE exercise detected: ${exercise.nome}');
+    print('🔥 [REST-PAUSE] For now, using normal series logic...');
+
+    // 🔧 STEP 1: Per ora usa la logica normale per non rompere nulla
+    // Nei prossimi step implementeremo la logica dedicata
+    _handleCompleteSeries(state, exercise);
   }
 
   // ============================================================================
@@ -1680,6 +1729,32 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             ),
 
             SizedBox(height: 32.h),
+        if (_isRestPauseExercise(exercise)) ...[
+    Container(
+    margin: EdgeInsets.only(bottom: 16.h),
+    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+    decoration: BoxDecoration(
+    color: Colors.deepPurple.withOpacity(0.1),
+    borderRadius: BorderRadius.circular(8.r),
+    border: Border.all(color: Colors.deepPurple, width: 1),
+    ),
+    child: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    Icon(Icons.flash_on, color: Colors.deepPurple, size: 16.w),
+    SizedBox(width: 4.w),
+    Text(
+    'REST-PAUSE: ${exercise.restPauseReps}',
+    style: TextStyle(
+    color: Colors.deepPurple,
+    fontSize: 12.sp,
+    fontWeight: FontWeight.w600,
+    ),
+    ),
+    ],
+    ),
+    ),
+        ],
 
             Row(
               children: [
@@ -1721,6 +1796,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     ? null
                     : exercise.isIsometric
                     ? () => _startIsometricTimer(exercise)
+                    : _isRestPauseExercise(exercise)
+                    ? () => _handleRestPauseStart(state, exercise)  // 🚀 NUOVO: Handler REST-PAUSE
                     : () => _handleCompleteSeries(state, exercise),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isCompleted
@@ -1978,6 +2055,32 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
+            if (_isRestPauseExercise(currentExercise)) ...[
+              Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.deepPurple, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.flash_on, color: Colors.deepPurple, size: 16.w),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'REST-PAUSE: ${currentExercise.restPauseReps}',
+                      style: TextStyle(
+                        color: Colors.deepPurple,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             Row(
               children: [
                 Expanded(
@@ -2018,6 +2121,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     ? null
                     : currentExercise.isIsometric
                     ? () => _startIsometricTimer(currentExercise)
+                    : _isRestPauseExercise(currentExercise)
+                    ? () => _handleRestPauseStart(state, currentExercise)  // 🚀 NUOVO: Handler REST-PAUSE
                     : () => _handleCompleteSeries(state, currentExercise),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isCompleted
