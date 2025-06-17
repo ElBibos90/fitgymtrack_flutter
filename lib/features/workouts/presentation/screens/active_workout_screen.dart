@@ -25,6 +25,8 @@ import '../../bloc/plateau_bloc.dart';
 import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
+import '../../../../shared/widgets/rest_pause_timer_popup.dart';
+
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
 

@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'rest_pause_timer_popup.dart'; // 🚀 STEP 3: Import timer popup
 
 /// Widget dedicato per l'esecuzione REST-PAUSE
 /// Gestisce micro-serie con UI dedicata e stato interno
@@ -39,8 +40,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   List<int> _microSeriesSequence = []; // [11, 4, 4]
   int _currentMicroSeriesIndex = 0; // 0, 1, 2
   List<int> _completedReps = []; // Reps effettivamente completate per ogni micro-serie
-  bool _isInRestPause = false; // Se sta recuperando tra micro-serie
-  int _restTimeRemaining = 0; // Secondi rimanenti del mini-recupero
+  // 🚀 STEP 3: Rimosso _isInRestPause e _restTimeRemaining (gestiti dal popup)
 
   // ====== ANIMATION CONTROLLERS ======
   late AnimationController _pulseController;
@@ -122,8 +122,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   void _resetToFirstMicroSeries() {
     setState(() {
       _currentMicroSeriesIndex = 0;
-      _isInRestPause = false;
-      _restTimeRemaining = 0;
       _repsController.text = _microSeriesSequence.isNotEmpty
           ? _microSeriesSequence[0].toString()
           : '10';
@@ -169,35 +167,32 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
   void _startMiniRecovery() {
     setState(() {
-      _isInRestPause = true;
-      _restTimeRemaining = widget.restSeconds;
       _currentMicroSeriesIndex++;
     });
 
     print('🔥 [REST-PAUSE WIDGET] Starting mini-recovery: ${widget.restSeconds}s');
 
-    // TODO STEP 3: Qui integreremo il timer popup dedicato
-    _simulateRestTimer();
+    // 🚀 STEP 3: Usa il nuovo timer popup dedicato
+    _showRestPauseTimer();
   }
 
-  /// Simulazione timer per STEP 2 (sarà sostituito in STEP 3)
-  void _simulateRestTimer() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (_isInRestPause && _restTimeRemaining > 0) {
-        setState(() {
-          _restTimeRemaining--;
-        });
-        _simulateRestTimer();
-      } else if (_isInRestPause && _restTimeRemaining <= 0) {
-        _endMiniRecovery();
-      }
-    });
+  /// 🚀 STEP 3: Mostra il timer popup dedicato
+  void _showRestPauseTimer() {
+    // Import necessario sarà aggiunto al file
+    RestPauseTimerHelper.showRestPauseTimer(
+      context: context,
+      seconds: widget.restSeconds,
+      exerciseName: widget.exerciseName,
+      currentMicroSeries: _currentMicroSeriesIndex + 1,
+      totalMicroSeries: _totalMicroSeries,
+      nextTargetReps: _currentTargetReps,
+      onComplete: _endMiniRecovery,
+      onSkip: _endMiniRecovery,
+    );
   }
 
   void _endMiniRecovery() {
     setState(() {
-      _isInRestPause = false;
-      _restTimeRemaining = 0;
       _repsController.text = _currentTargetReps.toString();
     });
 
@@ -209,11 +204,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
     _progressController.forward();
     widget.onCompleteAllMicroSeries?.call();
-  }
-
-  void _handleSkipRest() {
-    print('🔥 [REST-PAUSE WIDGET] Skipping mini-recovery');
-    _endMiniRecovery();
   }
 
   // ====== UI BUILD METHODS ======
@@ -241,10 +231,8 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           _buildProgressIndicator(),
           SizedBox(height: 24.h),
 
-          if (_isInRestPause)
-            _buildRestPauseUI()
-          else
-            _buildMicroSeriesUI(),
+          // 🚀 STEP 3: Solo UI micro-serie (timer è popup dedicato)
+          _buildMicroSeriesUI(),
         ],
       ),
     );
@@ -417,80 +405,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildRestPauseUI() {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.orange, width: 2),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.timer,
-            size: 40.sp,
-            color: Colors.orange,
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            'MINI-RECUPERO',
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.orange,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '00:${_restTimeRemaining.toString().padLeft(2, '0')}',
-            style: TextStyle(
-              fontSize: 32.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.orange,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Prossima micro-serie: $_currentTargetReps reps',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.orange.withOpacity(0.8),
-            ),
-          ),
-          SizedBox(height: 20.h),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _handleSkipRest,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.orange),
-                    foregroundColor: Colors.orange,
-                  ),
-                  child: Text('SALTA'),
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Implementare pausa timer
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text('PAUSA'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
