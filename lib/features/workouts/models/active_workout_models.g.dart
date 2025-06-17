@@ -10,11 +10,14 @@ ActiveWorkout _$ActiveWorkoutFromJson(Map<String, dynamic> json) =>
     ActiveWorkout(
       id: (json['id'] as num).toInt(),
       schedaId: (json['scheda_id'] as num).toInt(),
-      userId: (json['user_id'] as num).toInt(),
-      dataInizio: json['data_inizio'] as String,
+      dataAllenamento: json['data_allenamento'] as String,
       durataTotale: (json['durata_totale'] as num?)?.toInt(),
       note: json['note'] as String?,
-      stato: json['stato'] as String,
+      userId: (json['user_id'] as num).toInt(),
+      esercizi: (json['esercizi'] as List<dynamic>?)
+              ?.map((e) => WorkoutExercise.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       sessionId: json['session_id'] as String?,
     );
 
@@ -22,11 +25,26 @@ Map<String, dynamic> _$ActiveWorkoutToJson(ActiveWorkout instance) =>
     <String, dynamic>{
       'id': instance.id,
       'scheda_id': instance.schedaId,
-      'user_id': instance.userId,
-      'data_inizio': instance.dataInizio,
+      'data_allenamento': instance.dataAllenamento,
       'durata_totale': instance.durataTotale,
       'note': instance.note,
-      'stato': instance.stato,
+      'user_id': instance.userId,
+      'esercizi': instance.esercizi,
+      'session_id': instance.sessionId,
+    };
+
+StartWorkoutRequest _$StartWorkoutRequestFromJson(Map<String, dynamic> json) =>
+    StartWorkoutRequest(
+      userId: (json['user_id'] as num).toInt(),
+      schedaId: (json['scheda_id'] as num).toInt(),
+      sessionId: json['session_id'] as String,
+    );
+
+Map<String, dynamic> _$StartWorkoutRequestToJson(
+        StartWorkoutRequest instance) =>
+    <String, dynamic>{
+      'user_id': instance.userId,
+      'scheda_id': instance.schedaId,
       'session_id': instance.sessionId,
     };
 
@@ -97,9 +115,6 @@ SeriesData _$SeriesDataFromJson(Map<String, dynamic> json) => SeriesData(
       note: json['note'] as String?,
       serieNumber: (json['serie_number'] as num?)?.toInt(),
       serieId: json['serie_id'] as String?,
-      isRestPause: (json['is_rest_pause'] as num?)?.toInt(),
-      restPauseReps: json['rest_pause_reps'] as String?,
-      restPauseRestSeconds: (json['rest_pause_rest_seconds'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$SeriesDataToJson(SeriesData instance) =>
@@ -112,9 +127,6 @@ Map<String, dynamic> _$SeriesDataToJson(SeriesData instance) =>
       'note': instance.note,
       'serie_number': instance.serieNumber,
       'serie_id': instance.serieId,
-      'is_rest_pause': instance.isRestPause,
-      'rest_pause_reps': instance.restPauseReps,
-      'rest_pause_rest_seconds': instance.restPauseRestSeconds,
     };
 
 SaveCompletedSeriesResponse _$SaveCompletedSeriesResponseFromJson(
@@ -163,9 +175,6 @@ CompletedSeriesData _$CompletedSeriesDataFromJson(Map<String, dynamic> json) =>
       esercizioId: (json['esercizio_id'] as num?)?.toInt(),
       esercizioNome: json['esercizio_nome'] as String?,
       realSerieNumber: (json['real_serie_number'] as num?)?.toInt(),
-      isRestPause: (json['is_rest_pause'] as num?)?.toInt(),
-      restPauseReps: json['rest_pause_reps'] as String?,
-      restPauseRestSeconds: (json['rest_pause_rest_seconds'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$CompletedSeriesDataToJson(
@@ -183,7 +192,50 @@ Map<String, dynamic> _$CompletedSeriesDataToJson(
       'esercizio_id': instance.esercizioId,
       'esercizio_nome': instance.esercizioNome,
       'real_serie_number': instance.realSerieNumber,
-      'is_rest_pause': instance.isRestPause,
-      'rest_pause_reps': instance.restPauseReps,
-      'rest_pause_rest_seconds': instance.restPauseRestSeconds,
+    };
+
+CompleteWorkoutRequest _$CompleteWorkoutRequestFromJson(
+        Map<String, dynamic> json) =>
+    CompleteWorkoutRequest(
+      allenamentoId: (json['allenamento_id'] as num).toInt(),
+      durataTotale: (json['durata_totale'] as num).toInt(),
+      note: json['note'] as String?,
+    );
+
+Map<String, dynamic> _$CompleteWorkoutRequestToJson(
+        CompleteWorkoutRequest instance) =>
+    <String, dynamic>{
+      'allenamento_id': instance.allenamentoId,
+      'durata_totale': instance.durataTotale,
+      'note': instance.note,
+    };
+
+CompleteWorkoutResponse _$CompleteWorkoutResponseFromJson(
+        Map<String, dynamic> json) =>
+    CompleteWorkoutResponse(
+      success: json['success'] as bool,
+      message: json['message'] as String,
+      allenamentoId: (json['allenamento_id'] as num).toInt(),
+      durataTotale: (json['durata_totale'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$CompleteWorkoutResponseToJson(
+        CompleteWorkoutResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'message': instance.message,
+      'allenamento_id': instance.allenamentoId,
+      'durata_totale': instance.durataTotale,
+    };
+
+DeleteWorkoutRequest _$DeleteWorkoutRequestFromJson(
+        Map<String, dynamic> json) =>
+    DeleteWorkoutRequest(
+      allenamentoId: (json['allenamento_id'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$DeleteWorkoutRequestToJson(
+        DeleteWorkoutRequest instance) =>
+    <String, dynamic>{
+      'allenamento_id': instance.allenamentoId,
     };
