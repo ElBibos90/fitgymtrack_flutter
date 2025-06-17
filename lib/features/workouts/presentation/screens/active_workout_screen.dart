@@ -1,8 +1,10 @@
 // lib/features/workouts/presentation/screens/active_workout_screen.dart
+// 🚀 FASE 5: VERSIONE CORRETTA CON TUTTI GLI ERRORI SISTEMATI
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:wakelock_plus/wakelock_plus.dart'; // 🔧 FIX 1: ALWAYS ON
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'dart:async';
 
 // Core imports
@@ -14,25 +16,26 @@ import '../../../../shared/widgets/parameter_edit_dialog.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
+// 🚀 FASE 5: NUOVE IMPORTAZIONI REST-PAUSE
+import '../../../../shared/widgets/rest_pause_timer_popup.dart';
+import '../../../../shared/widgets/rest_pause_execution_widget.dart';
+import '../../models/rest_pause_state.dart'; // 🔧 FIX: Import file separato
+
 // BLoC imports
 import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
 
-// 🎯 PLATEAU IMPORTS - STEP 7 (MINIMALE)
+// Plateau imports
 import '../../bloc/plateau_bloc.dart';
 import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
-// 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
+// Exercise group imports
 import '../../models/exercise_group_models.dart';
 
-/// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION MINIMALE
-/// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration MINIMALE + 🔧 PERFORMANCE FIX
-/// 🔧 FIX 1: ALWAYS ON - WakeLock durante allenamento
-/// 🔧 FIX 2: PLATEAU - Solo 1 volta, rispetta dismiss
-/// 🔧 FIX 3: SUPERSET PAUSE - No timer tra esercizi linkati
-/// 🔧 FIX 4: APP LIFECYCLE - Gestione corretta background/foreground
+/// ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + REST-PAUSE SUPPORT
+/// ✅ Completo: Dark Theme + Dialogs + Complete Button + Plateau Integration + Performance Fix + 🚀 REST-PAUSE
 class ActiveWorkoutScreen extends StatefulWidget {
   final int schedaId;
   final String? schedaNome;
@@ -48,7 +51,7 @@ class ActiveWorkoutScreen extends StatefulWidget {
 }
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
-    with TickerProviderStateMixin, WidgetsBindingObserver { // 🔧 FIX 4: APP LIFECYCLE
+    with TickerProviderStateMixin, WidgetsBindingObserver {
 
   // ============================================================================
   // STATE VARIABLES
@@ -56,14 +59,47 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   // BLoC references
   late ActiveWorkoutBloc _activeWorkoutBloc;
-  late PlateauBloc _plateauBloc; // 🎯 PLATEAU BLOC
+  late PlateauBloc _plateauBloc;
 
   // Timer management
   Timer? _workoutTimer;
   Duration _elapsedTime = Duration.zero;
   DateTime? _startTime;
 
-  // Animation controllers
+  // Recovery timer
+  bool _isRecoveryTimerActive = false;
+  int _recoverySeconds = 90;
+  String _currentRecoveryExerciseName = "";
+
+  // Isometric timer
+  bool _isIsometricTimerActive = false;
+  int _isometricSeconds = 30;
+  String? _currentIsometricExerciseName;
+  WorkoutExercise? _pendingIsometricExercise;
+
+  // 🚀 FASE 5: REST-PAUSE STATO
+  RestPauseState? _currentRestPauseState;
+  bool _isRestPauseTimerActive = false;
+  String? _currentRestPauseExerciseName;
+
+  // Initialization
+  bool _isInitialized = false;
+  String _currentStatus = "Inizializzazione...";
+  int? _userId;
+
+  // Exercise grouping
+  List<List<WorkoutExercise>> _exerciseGroups = [];
+  int _currentGroup = 0;
+  int _currentExerciseInGroup = 0;
+
+  // Dialog states
+  bool _showExitDialog = false;
+  bool _showCompleteDialog = false;
+
+  // Plateau tracking
+  Set<int> _dismissedPlateauExercises = {};
+
+  // Animations
   late AnimationController _slideController;
   late AnimationController _pulseController;
   late AnimationController _completeButtonController;
@@ -71,316 +107,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   late Animation<double> _pulseAnimation;
   late Animation<double> _completeButtonAnimation;
 
-  // 🚀 Exercise grouping for superset/circuit
-  List<List<WorkoutExercise>> _exerciseGroups = [];
-  int _currentGroupIndex = 0;
-  int _currentExerciseInGroup = 0;
-  PageController _pageController = PageController();
+  // Performance cache
+  final Map<int, WorkoutExercise> _exerciseCache = {};
+  final Map<int, double> _weightCache = {};
+  final Map<int, int> _repsCache = {};
 
-  // Recovery timer popup state
-  bool _isRecoveryTimerActive = false;
-  int _recoverySeconds = 0;
-  String? _currentRecoveryExerciseName;
-
-  // 🔥 Isometric timer popup state
-  bool _isIsometricTimerActive = false;
-  int _isometricSeconds = 0;
-  String? _currentIsometricExerciseName;
-  WorkoutExercise? _pendingIsometricExercise;
-
-  // ✏️ Modified parameters storage
-  Map<int, double> _modifiedWeights = {};
-  Map<int, int> _modifiedReps = {};
-
-  // 🔧 PERFORMANCE FIX: Cache locale per valori UI
-  final Map<int, double> _cachedWeights = {};
-  final Map<int, int> _cachedReps = {};
-  DateTime _lastCacheUpdate = DateTime.now();
-
-  // UI state
-  bool _isInitialized = false;
-  String _currentStatus = "Inizializzazione...";
-  int? _userId;
-
-  // 🆕 Dialog state
-  bool _showExitDialog = false;
-  bool _showCompleteDialog = false;
-
-  // 🔧 FIX 2: PLATEAU - Gestione corretta con dismiss e single trigger
-  bool _plateauAnalysisTriggered = false;
-  final Set<int> _plateauAnalyzedExercises = {}; // Track analyzed exercises
-  final Set<int> _dismissedPlateauExercises = {}; // Track dismissed plateaus
-
-  // 🔧 FIX 4: APP LIFECYCLE - Stato background
-  bool _isAppInBackground = false;
+  // ============================================================================
+  // LIFECYCLE METHODS
+  // ============================================================================
 
   @override
   void initState() {
     super.initState();
-    print("🚀 [SINGLE EXERCISE + ALL FIXES] initState - Scheda: ${widget.schedaId}");
 
-    // 🔧 FIX 4: APP LIFECYCLE - Observer registration
-    WidgetsBinding.instance.addObserver(this);
-
-    _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
-    _plateauBloc = context.read<PlateauBloc>(); // 🎯 INITIALIZE PLATEAU BLOC
-    _initializeAnimations();
-    _initializeWorkout();
-  }
-
-  @override
-  void dispose() {
-    print("🚀 [SINGLE EXERCISE + ALL FIXES] dispose");
-
-    // 🔧 FIX 1: ALWAYS ON - Disable wakelock on dispose
-    _disableWakeLock();
-
-    // 🔧 FIX 4: APP LIFECYCLE - Observer removal
-    WidgetsBinding.instance.removeObserver(this);
-
-    _workoutTimer?.cancel();
-    _slideController.dispose();
-    _pulseController.dispose();
-    _completeButtonController.dispose();
-    _pageController.dispose();
-    _stopRecoveryTimer();
-    super.dispose();
-  }
-
-  // 🔧 FIX 4: APP LIFECYCLE - Handle app state changes
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    print("🔧 [APP LIFECYCLE] State changed to: $state");
-
-    switch (state) {
-      case AppLifecycleState.resumed:
-        if (_isAppInBackground) {
-          print("🔧 [APP LIFECYCLE] App resumed from background - refreshing workout state");
-          _isAppInBackground = false;
-          _handleAppResume();
-        }
-        break;
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-        _isAppInBackground = true;
-        print("🔧 [APP LIFECYCLE] App going to background");
-        break;
-      case AppLifecycleState.detached:
-        _disableWakeLock();
-        break;
-      case AppLifecycleState.hidden:
-        break;
-    }
-  }
-
-  // 🔧 FIX 4: APP LIFECYCLE - Handle app resume
-  void _handleAppResume() {
-    // Evita schermo azzurro verificando stato corrente
-    final currentState = _activeWorkoutBloc.state;
-    if (currentState is WorkoutSessionActive) {
-      print("🔧 [APP LIFECYCLE] Valid workout state found - continuing");
-      // Riavvia timer se necessario
-      if (_workoutTimer == null && _startTime != null) {
-        _startWorkoutTimer();
-      }
-      // Riabilita wake lock
-      _enableWakeLock();
-    } else {
-      print("🔧 [APP LIFECYCLE] Invalid state detected - refreshing");
-      setState(() {
-        _currentStatus = "Ripristinando allenamento...";
-      });
-    }
-  }
-
-  // 🔧 FIX 1: ALWAYS ON - WakeLock methods
-  Future<void> _enableWakeLock() async {
-    try {
-      await WakelockPlus.enable();
-      print("🔧 [ALWAYS ON] WakeLock enabled successfully");
-    } catch (e) {
-      print("🔧 [ALWAYS ON] Error enabling WakeLock: $e");
-    }
-  }
-
-  Future<void> _disableWakeLock() async {
-    try {
-      await WakelockPlus.disable();
-      print("🔧 [ALWAYS ON] WakeLock disabled successfully");
-    } catch (e) {
-      print("🔧 [ALWAYS ON] Error disabling WakeLock: $e");
-    }
-  }
-
-  // ============================================================================
-  // 🔧 PERFORMANCE FIX: METODI DI CACHING (unchanged)
-  // ============================================================================
-
-  /// Aggiorna la cache locale per un esercizio specifico
-  void _updateCacheForExercise(int exerciseId, WorkoutExercise exercise) {
-    final now = DateTime.now();
-
-    // Solo se sono passati almeno 500ms dall'ultimo update
-    if (now.difference(_lastCacheUpdate).inMilliseconds < 500) {
-      return;
-    }
-
-    // 1. PRIORITÀ: Valori modificati dall'utente
-    if (_modifiedWeights.containsKey(exerciseId)) {
-      _cachedWeights[exerciseId] = _modifiedWeights[exerciseId]!;
-    } else {
-      // 2. SERIE-SPECIFIC: Chiama BLoC solo se non in cache
-      if (!_cachedWeights.containsKey(exerciseId)) {
-        final currentState = _getCurrentState();
-        if (currentState != null) {
-          final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-          final currentSeriesNumber = completedSeriesCount + 1;
-
-          final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
-          _cachedWeights[exerciseId] = seriesSpecificValues.weight;
-          _cachedReps[exerciseId] = seriesSpecificValues.reps;
-        }
-      }
-    }
-
-    if (_modifiedReps.containsKey(exerciseId)) {
-      _cachedReps[exerciseId] = _modifiedReps[exerciseId]!;
-    }
-
-    _lastCacheUpdate = now;
-  }
-
-  /// Ottiene peso efficace con cache
-  double _getEffectiveWeight(WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    // 🔧 PERFORMANCE FIX: Usa cache se disponibile
-    if (_cachedWeights.containsKey(exerciseId)) {
-      return _cachedWeights[exerciseId]!;
-    }
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedWeights.containsKey(exerciseId)) {
-      final weight = _modifiedWeights[exerciseId]!;
-      _cachedWeights[exerciseId] = weight;
-      return weight;
-    }
-
-    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
-    final currentState = _getCurrentState();
-    if (currentState != null) {
-      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
-
-      // 🔧 PERFORMANCE FIX: Log ridotto
-      if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
-      }
-
-      // Usa il metodo serie-specifico del BLoC
-      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
-
-      if (seriesSpecificValues.weight > 0) {
-        _cachedWeights[exerciseId] = seriesSpecificValues.weight;
-        return seriesSpecificValues.weight;
-      }
-    }
-
-    // 3. FALLBACK: Valori BLoC generici
-    final currentState2 = _activeWorkoutBloc.state;
-    if (currentState2 is WorkoutSessionActive) {
-      final exerciseValues = currentState2.exerciseValues[exerciseId];
-      if (exerciseValues != null) {
-        _cachedWeights[exerciseId] = exerciseValues.weight;
-        return exerciseValues.weight;
-      }
-    }
-
-    // 4. ULTIMO FALLBACK: Default esercizio
-    final weight = exercise.peso;
-    _cachedWeights[exerciseId] = weight;
-    return weight;
-  }
-
-  /// Ottiene ripetizioni efficaci con cache
-  int _getEffectiveReps(WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    // 🔧 PERFORMANCE FIX: Usa cache se disponibile
-    if (_cachedReps.containsKey(exerciseId)) {
-      return _cachedReps[exerciseId]!;
-    }
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedReps.containsKey(exerciseId)) {
-      final reps = _modifiedReps[exerciseId]!;
-      _cachedReps[exerciseId] = reps;
-      return reps;
-    }
-
-    // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
-    final currentState = _getCurrentState();
-    if (currentState != null) {
-      final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
-
-      // 🔧 PERFORMANCE FIX: Log ridotto
-      if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
-      }
-
-      // Usa il metodo serie-specifico del BLoC
-      final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
-
-      if (seriesSpecificValues.reps > 0) {
-        _cachedReps[exerciseId] = seriesSpecificValues.reps;
-        return seriesSpecificValues.reps;
-      }
-    }
-
-    // 3. FALLBACK: Valori BLoC generici
-    final currentState2 = _activeWorkoutBloc.state;
-    if (currentState2 is WorkoutSessionActive) {
-      final exerciseValues = currentState2.exerciseValues[exerciseId];
-      if (exerciseValues != null) {
-        _cachedReps[exerciseId] = exerciseValues.reps;
-        return exerciseValues.reps;
-      }
-    }
-
-    // 4. ULTIMO FALLBACK: Default esercizio
-    final reps = exercise.ripetizioni;
-    _cachedReps[exerciseId] = reps;
-    return reps;
-  }
-
-  /// 🔧 PERFORMANCE FIX: Invalida cache per un esercizio
-  void _invalidateCacheForExercise(int exerciseId) {
-    _cachedWeights.remove(exerciseId);
-    _cachedReps.remove(exerciseId);
-    print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
-  }
-
-  /// 🔧 PERFORMANCE FIX: Pulisce tutta la cache
-  void _clearCache() {
-    _cachedWeights.clear();
-    _cachedReps.clear();
-    print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Cache cleared');
-  }
-
-  // ============================================================================
-  // INITIALIZATION
-  // ============================================================================
-
-  void _initializeAnimations() {
+    // Setup animazioni
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
     _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
@@ -390,7 +137,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
+      begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
@@ -398,7 +145,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     ));
 
     _pulseAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 0.95,
       end: 1.05,
     ).animate(CurvedAnimation(
       parent: _pulseController,
@@ -406,15 +153,74 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     ));
 
     _completeButtonAnimation = Tween<double>(
-      begin: 0.7,
-      end: 1.0,
+      begin: 1.0,
+      end: 1.1,
     ).animate(CurvedAnimation(
       parent: _completeButtonController,
       curve: Curves.easeInOut,
     ));
 
-    _pulseController.repeat(reverse: true);
+    // Setup BLoCs
+    _plateauBloc = context.read<PlateauBloc>();
+
+    // Lifecycle observer
+    WidgetsBinding.instance.addObserver(this);
+
+    // Initialize workout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeWorkout();
+    });
   }
+
+  @override
+  void dispose() {
+    // Cleanup timers
+    _stopWorkoutTimer();
+    _stopRecoveryTimer();
+
+    // 🚀 FASE 5: Cleanup REST-PAUSE
+    _resetRestPauseState();
+
+    // Cleanup animations
+    _slideController.dispose();
+    _pulseController.dispose();
+    _completeButtonController.dispose();
+
+    // Disable wakelock
+    _disableWakeLock();
+
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.paused:
+        print("🔧 [APP LIFECYCLE] App paused - keeping wakelock active");
+        break;
+      case AppLifecycleState.resumed:
+        print("🔧 [APP LIFECYCLE] App resumed - wakelock should still be active");
+        if (_isInitialized) {
+          _enableWakeLock();
+        }
+        break;
+      case AppLifecycleState.detached:
+        print("🔧 [APP LIFECYCLE] App detached - disabling wakelock");
+        _disableWakeLock();
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
 
   Future<void> _initializeWorkout() async {
     try {
@@ -432,7 +238,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
       _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
 
-      // 🔧 FIX 1: ALWAYS ON - Enable wakelock when workout starts
       await _enableWakeLock();
 
       setState(() {
@@ -443,7 +248,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _slideController.forward();
 
     } catch (e) {
-      print("🚀 [SINGLE EXERCISE + ALL FIXES] Error initializing: $e");
+      print("🚀 [ACTIVE WORKOUT] Error initializing: $e");
       setState(() {
         _currentStatus = "Errore inizializzazione: $e";
       });
@@ -459,43 +264,510 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // 🆕 DIALOG METHODS (unchanged)
+  // WAKELOCK MANAGEMENT
   // ============================================================================
 
-  void _showExitConfirmDialog() {
+  Future<void> _enableWakeLock() async {
+    try {
+      await WakelockPlus.enable();
+      print("🔧 [WAKELOCK] Enabled successfully");
+    } catch (e) {
+      print("🔧 [WAKELOCK] Error enabling: $e");
+    }
+  }
+
+  Future<void> _disableWakeLock() async {
+    try {
+      await WakelockPlus.disable();
+      print("🔧 [WAKELOCK] Disabled successfully");
+    } catch (e) {
+      print("🔧 [WAKELOCK] Error disabling: $e");
+    }
+  }
+
+  // ============================================================================
+  // 🚀 FASE 5: REST-PAUSE UTILITY METHODS
+  // ============================================================================
+
+  /// Parsa una stringa sequenza REST-PAUSE in una lista di interi
+  List<int> _parseRestPauseSequence(String? sequence) {
+    if (sequence == null || sequence.isEmpty) {
+      print("🚀 [REST-PAUSE] Empty sequence provided");
+      return [];
+    }
+
+    try {
+      final parts = sequence.split('+');
+      final parsed = parts
+          .map((s) => int.tryParse(s.trim()) ?? 0)
+          .where((rep) => rep > 0)
+          .toList();
+
+      print("🚀 [REST-PAUSE] Parsed sequence '$sequence' → $parsed");
+      return parsed;
+    } catch (e) {
+      print("🚀 [REST-PAUSE] Error parsing sequence '$sequence': $e");
+      return [];
+    }
+  }
+
+  /// Verifica se un esercizio è configurato per REST-PAUSE
+  bool _isExerciseRestPause(WorkoutExercise exercise) {
+    final isEnabled = exercise.isRestPause;
+    final hasSequence = exercise.restPauseReps != null && exercise.restPauseReps!.isNotEmpty;
+
+    print("🚀 [REST-PAUSE] Exercise '${exercise.nome}': enabled=$isEnabled, sequence='${exercise.restPauseReps}'");
+    return isEnabled && hasSequence;
+  }
+
+  /// Inizializza lo stato REST-PAUSE per un esercizio
+  RestPauseState? _initializeRestPauseState(WorkoutExercise exercise) {
+    if (!_isExerciseRestPause(exercise)) {
+      return null;
+    }
+
+    final sequence = _parseRestPauseSequence(exercise.restPauseReps);
+    if (sequence.isEmpty) {
+      print("🚀 [REST-PAUSE] Invalid sequence for exercise '${exercise.nome}'");
+      return null;
+    }
+
+    final state = RestPauseState(
+      sequence: sequence,
+      currentMicroSeries: 0,
+      restSeconds: exercise.restPauseRestSeconds,
+      isInRestPause: false,
+      completedReps: [],
+      totalRepsCompleted: 0,
+    );
+
+    print("🚀 [REST-PAUSE] Initialized state for '${exercise.nome}': ${state.sequence}");
+    return state;
+  }
+
+  /// Avanza alla prossima micro-serie REST-PAUSE
+  RestPauseState? _advanceToNextMicroSeries(RestPauseState currentState, int completedReps) {
+    if (!currentState.hasMoreMicroSeries) {
+      print("🚀 [REST-PAUSE] No more micro-series available");
+      return null;
+    }
+
+    final newCompletedReps = [...currentState.completedReps, completedReps];
+    final newTotalReps = currentState.totalRepsCompleted + completedReps;
+
+    final nextState = currentState.copyWith(
+      currentMicroSeries: currentState.currentMicroSeries + 1,
+      completedReps: newCompletedReps,
+      totalRepsCompleted: newTotalReps,
+      isInRestPause: !currentState.isLastMicroSeries,
+    );
+
+    print("🚀 [REST-PAUSE] Advanced to micro-series ${nextState.currentMicroSeries}: completed=${nextState.completedSequenceString}, total=${nextState.totalRepsCompleted}");
+    return nextState;
+  }
+
+  /// Resetta lo stato REST-PAUSE
+  void _resetRestPauseState() {
     setState(() {
-      _showExitDialog = true;
+      _currentRestPauseState = null;
+      _isRestPauseTimerActive = false;
+      _currentRestPauseExerciseName = null;
+    });
+    print("🚀 [REST-PAUSE] State reset");
+  }
+
+  /// Avvia il timer mini-recupero REST-PAUSE
+  void _startRestPauseTimer(RestPauseState state, String exerciseName) {
+    setState(() {
+      _isRestPauseTimerActive = true;
+      _currentRestPauseExerciseName = exerciseName;
+    });
+
+    print("🚀 [REST-PAUSE] Started ${state.restSeconds}s timer for '${exerciseName}'");
+  }
+
+  /// Gestisce il completamento del timer mini-recupero
+  void _onRestPauseTimerComplete() {
+    print("🚀 [REST-PAUSE] Mini-recovery completed");
+
+    setState(() {
+      _isRestPauseTimerActive = false;
+      if (_currentRestPauseState != null) {
+        _currentRestPauseState = _currentRestPauseState!.copyWith(isInRestPause: false);
+      }
+    });
+
+    CustomSnackbar.show(
+      context,
+      message: "⚡ Mini-recupero completato! Inizia la prossima micro-serie",
+      isSuccess: true,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  /// Gestisce l'interruzione del timer mini-recupero
+  void _stopRestPauseTimer() {
+    print("🚀 [REST-PAUSE] Mini-recovery timer stopped");
+
+    setState(() {
+      _isRestPauseTimerActive = false;
+      if (_currentRestPauseState != null) {
+        _currentRestPauseState = _currentRestPauseState!.copyWith(isInRestPause: false);
+      }
     });
   }
 
-  void _showCompleteConfirmDialog() {
-    setState(() {
-      _showCompleteDialog = true;
+  /// Ottiene info sulla prossima micro-serie
+  String? _getNextMicroSeriesInfo(RestPauseState state) {
+    final nextReps = state.nextTargetReps;
+    if (nextReps != null) {
+      return 'Prossima micro-serie: ${nextReps} reps';
+    }
+    return null;
+  }
+
+  // ============================================================================
+  // TIMER MANAGEMENT
+  // ============================================================================
+
+  void _startWorkoutTimer() {
+    _startTime = DateTime.now();
+    _workoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && _startTime != null) {
+        final newElapsed = DateTime.now().difference(_startTime!);
+        setState(() {
+          _elapsedTime = newElapsed;
+        });
+
+        if (_elapsedTime.inSeconds % 10 == 0) {
+          _activeWorkoutBloc.updateTimer(_elapsedTime);
+        }
+      } else {
+        timer.cancel();
+      }
     });
   }
 
-  void _handleExitConfirmed() {
-    print("🚪 [EXIT] User confirmed exit - cancelling workout");
+  void _stopWorkoutTimer() {
+    _workoutTimer?.cancel();
+    _workoutTimer = null;
+  }
 
-    final currentState = context.read<ActiveWorkoutBloc>().state;
-    if (currentState is WorkoutSessionActive) {
-      _activeWorkoutBloc.cancelWorkout(currentState.activeWorkout.id);
+  void _startRecoveryTimer(int seconds, String exerciseName) {
+    setState(() {
+      _isRecoveryTimerActive = true;
+      _recoverySeconds = seconds;
+      _currentRecoveryExerciseName = exerciseName;
+    });
+  }
+
+  void _stopRecoveryTimer() {
+    setState(() {
+      _isRecoveryTimerActive = false;
+    });
+  }
+
+  void _onRecoveryTimerComplete() {
+    setState(() {
+      _isRecoveryTimerActive = false;
+    });
+
+    CustomSnackbar.show(
+      context,
+      message: "⏰ Tempo di recupero completato!",
+      isSuccess: true,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  // ============================================================================
+  // ISOMETRIC TIMER MANAGEMENT
+  // ============================================================================
+
+  void _startIsometricTimer(int seconds, String exerciseName, WorkoutExercise exercise) {
+    setState(() {
+      _isIsometricTimerActive = true;
+      _isometricSeconds = seconds;
+      _currentIsometricExerciseName = exerciseName;
+      _pendingIsometricExercise = exercise;
+    });
+  }
+
+  void _onIsometricTimerComplete() {
+    print("🔥 [ISOMETRIC] Timer completed");
+
+    setState(() {
+      _isIsometricTimerActive = false;
+    });
+
+    if (_pendingIsometricExercise != null) {
+      final currentState = _getCurrentState();
+      if (currentState != null) {
+        _handleCompleteSeries(currentState, _pendingIsometricExercise!);
+      }
+      _pendingIsometricExercise = null;
+    }
+
+    CustomSnackbar.show(
+      context,
+      message: "🔥 Tenuta isometrica completata!",
+      isSuccess: true,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  void _onIsometricTimerCancelled() {
+    print("❌ [ISOMETRIC] Timer cancelled");
+
+    setState(() {
+      _isIsometricTimerActive = false;
+      _pendingIsometricExercise = null;
+    });
+  }
+
+  // ============================================================================
+  // SERIES COMPLETION LOGIC
+  // ============================================================================
+
+  void _handleCompleteSeries(WorkoutSessionActive state, WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final completedCount = _getCompletedSeriesCount(state, exerciseId);
+
+    if (completedCount >= exercise.serie) {
+      CustomSnackbar.show(
+        context,
+        message: "Esercizio già completato!",
+        isSuccess: false,
+      );
+      return;
+    }
+
+    // 🚀 FASE 5: GESTIONE REST-PAUSE
+    if (_isExerciseRestPause(exercise)) {
+      _handleRestPauseSeries(state, exercise, completedCount);
     } else {
-      Navigator.of(context).pop();
+      _handleNormalSeries(state, exercise, completedCount);
     }
   }
 
-  void _handleCompleteConfirmed() {
-    print("✅ [COMPLETE] User confirmed completion");
+  /// Gestisce il completamento di una serie normale (senza REST-PAUSE)
+  void _handleNormalSeries(WorkoutSessionActive state, WorkoutExercise exercise, int completedCount) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
-    final currentState = context.read<ActiveWorkoutBloc>().state;
-    if (currentState is WorkoutSessionActive) {
-      _handleCompleteWorkout(currentState);
+    print("🚀 [NORMAL SERIES] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
+
+    // Gestione isometrica speciale
+    if (exercise.isIsometric) {
+      _startIsometricTimer(exercise.ripetizioni, exercise.nome, exercise);
+      return;
+    }
+
+    final effectiveWeight = _getEffectiveWeight(exercise);
+    final effectiveReps = _getEffectiveReps(exercise);
+
+    final seriesData = SeriesData(
+      schedaEsercizioId: exerciseId,
+      peso: effectiveWeight,
+      ripetizioni: effectiveReps,
+      completata: 1,
+      tempoRecupero: exercise.tempoRecupero,
+      note: 'Completata da Single Exercise Screen',
+      serieNumber: completedCount + 1,
+      serieId: 'series_${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    _saveSeriesAndProvideRecovery(state, exercise, seriesData, completedCount);
+  }
+
+  /// 🚀 FASE 5: Gestisce il completamento di una serie REST-PAUSE
+  void _handleRestPauseSeries(WorkoutSessionActive state, WorkoutExercise exercise, int completedCount) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    print("🚀 [REST-PAUSE] Starting REST-PAUSE series ${completedCount + 1} for exercise: ${exercise.nome}");
+
+    // Se non c'è uno stato REST-PAUSE attivo, inizializza
+    if (_currentRestPauseState == null) {
+      _currentRestPauseState = _initializeRestPauseState(exercise);
+
+      if (_currentRestPauseState == null) {
+        print("🚀 [REST-PAUSE] Failed to initialize state - falling back to normal series");
+        _handleNormalSeries(state, exercise, completedCount);
+        return;
+      }
+
+      print("🚀 [REST-PAUSE] Initialized for micro-series 1/${_currentRestPauseState!.sequence.length}");
+      _showRestPauseStartMessage(exercise, _currentRestPauseState!);
+      return;
+    }
+
+    // Stato REST-PAUSE già attivo - gestisci completamento micro-serie
+    _handleMicroSeriesCompletion(state, exercise, completedCount);
+  }
+
+  /// Mostra messaggio di inizio REST-PAUSE
+  void _showRestPauseStartMessage(WorkoutExercise exercise, RestPauseState state) {
+    CustomSnackbar.show(
+      context,
+      message: "🔥 REST-PAUSE attivo! Micro-serie 1/${state.sequence.length}: ${state.currentTargetReps} reps",
+      isSuccess: true,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  /// Gestisce il completamento di una micro-serie REST-PAUSE
+  void _handleMicroSeriesCompletion(WorkoutSessionActive state, WorkoutExercise exercise, int completedCount) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final currentState = _currentRestPauseState!;
+
+    final effectiveReps = _getEffectiveReps(exercise);
+
+    print("🚀 [REST-PAUSE] Micro-series ${currentState.currentMicroSeries + 1} completed with $effectiveReps reps");
+
+    final nextState = _advanceToNextMicroSeries(currentState, effectiveReps);
+
+    if (nextState == null || !nextState.hasMoreMicroSeries) {
+      _completeRestPauseSeries(state, exercise, currentState, effectiveReps, completedCount);
+    } else {
+      _startMicroSeriesRecovery(nextState, exercise);
+    }
+  }
+
+  /// Avvia il mini-recupero tra micro-serie
+  void _startMicroSeriesRecovery(RestPauseState nextState, WorkoutExercise exercise) {
+    setState(() {
+      _currentRestPauseState = nextState;
+    });
+
+    final currentMicro = nextState.currentMicroSeries;
+    final totalMicro = nextState.sequence.length;
+    final nextReps = nextState.currentTargetReps;
+
+    CustomSnackbar.show(
+      context,
+      message: "⚡ Mini-recupero ${nextState.restSeconds}s | Prossima: micro-serie ${currentMicro + 1}/$totalMicro ($nextReps reps)",
+      isSuccess: true,
+      duration: Duration(seconds: nextState.restSeconds + 1),
+    );
+
+    _startRestPauseTimer(nextState, exercise.nome);
+  }
+
+  /// Completa definitivamente la serie REST-PAUSE
+  void _completeRestPauseSeries(WorkoutSessionActive state, WorkoutExercise exercise, RestPauseState currentState, int lastReps, int completedCount) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    final finalCompletedReps = [...currentState.completedReps, lastReps];
+    final totalReps = finalCompletedReps.fold(0, (sum, reps) => sum + reps);
+    final sequenceString = finalCompletedReps.join('+');
+
+    print("🚀 [REST-PAUSE] Completing full REST-PAUSE series: $sequenceString (total: $totalReps reps)");
+
+    final effectiveWeight = _getEffectiveWeight(exercise);
+
+    final seriesData = SeriesData.restPause(
+      schedaEsercizioId: exerciseId,
+      peso: effectiveWeight,
+      ripetizioni: totalReps,
+      restPauseReps: sequenceString,
+      restPauseRestSeconds: currentState.restSeconds,
+      completata: 1,
+      tempoRecupero: exercise.tempoRecupero,
+      note: 'REST-PAUSE completato: $sequenceString (${totalReps} reps totali)',
+      serieNumber: completedCount + 1,
+      serieId: 'rest_pause_${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    _resetRestPauseState();
+    _saveSeriesAndProvideRecovery(state, exercise, seriesData, completedCount);
+
+    CustomSnackbar.show(
+      context,
+      message: "🔥 REST-PAUSE completato! Serie ${completedCount + 1}: $sequenceString (${totalReps} reps)",
+      isSuccess: true,
+      duration: const Duration(seconds: 4),
+    );
+  }
+
+  /// Metodo comune per salvare serie e gestire recupero
+  void _saveSeriesAndProvideRecovery(WorkoutSessionActive state, WorkoutExercise exercise, SeriesData seriesData, int completedCount) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
+
+    final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+    _activeWorkoutBloc.saveSeries(
+      state.activeWorkout.id,
+      [seriesData],
+      requestId,
+    );
+
+    _invalidateCacheForExercise(exerciseId);
+
+    final isLastSeries = completedCount + 1 >= exercise.serie;
+    if (!isLastSeries && exercise.tempoRecupero > 0) {
+      final isLinkedExercise = exercise.linkedToPreviousInt > 0;
+      if (!isLinkedExercise) {
+        print("🚀 [RECOVERY] Starting ${exercise.tempoRecupero}s recovery timer");
+        _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
+      } else {
+        print("🔧 [SUPERSET PAUSE] Skipping recovery timer for linked exercise");
+      }
+    }
+
+    if (seriesData.isRestPause == null || seriesData.isRestPause == 0) {
+      CustomSnackbar.show(
+        context,
+        message: exercise.isIsometric
+            ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
+            : "Serie ${completedCount + 1} completata!",
+        isSuccess: true,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 
   // ============================================================================
-  // 🚀 EXERCISE GROUPING FOR SUPERSET/CIRCUIT (unchanged)
+  // HELPER METHODS
+  // ============================================================================
+
+  int _getCompletedSeriesCount(WorkoutSessionActive state, int exerciseId) {
+    final series = state.completedSeries[exerciseId] ?? [];
+    return series.length;
+  }
+
+  bool _isExerciseCompleted(WorkoutSessionActive state, WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final completedCount = _getCompletedSeriesCount(state, exerciseId);
+    return completedCount >= exercise.serie;
+  }
+
+  double _getEffectiveWeight(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    return _weightCache[exerciseId] ?? exercise.peso;
+  }
+
+  int _getEffectiveReps(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    return _repsCache[exerciseId] ?? exercise.ripetizioni;
+  }
+
+  void _invalidateCacheForExercise(int exerciseId) {
+    _exerciseCache.remove(exerciseId);
+    _weightCache.remove(exerciseId);
+    _repsCache.remove(exerciseId);
+  }
+
+  void _updateCacheForExercise(int exerciseId, WorkoutExercise exercise) {
+    _exerciseCache[exerciseId] = exercise;
+  }
+
+  WorkoutSessionActive? _getCurrentState() {
+    final currentState = context.read<ActiveWorkoutBloc>().state;
+    return currentState is WorkoutSessionActive ? currentState : null;
+  }
+
+  // ============================================================================
+  // EXERCISE GROUPING FOR SUPERSET/CIRCUIT
   // ============================================================================
 
   List<List<WorkoutExercise>> _groupExercises(List<WorkoutExercise> exercises) {
@@ -546,544 +818,40 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return _exerciseGroups.isNotEmpty;
   }
 
-  WorkoutExercise? _getNextIncompleteExerciseInGroup(WorkoutSessionActive state, List<WorkoutExercise> group) {
-    for (final exercise in group) {
-      if (!_isExerciseCompleted(state, exercise)) {
-        return exercise;
-      }
-    }
-    return null;
-  }
-
   // ============================================================================
-  // 🔧 FIX 3: SUPERSET PAUSE - Methods to detect linked exercises
+  // DIALOG METHODS
   // ============================================================================
 
-  /// Verifica se l'esercizio è parte di un superset/circuit
-  bool _isPartOfMultiExerciseGroup(WorkoutExercise exercise) {
-    if (_exerciseGroups.isEmpty) return false;
-
-    for (final group in _exerciseGroups) {
-      if (group.contains(exercise) && group.length > 1) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Verifica se è l'ultimo esercizio del gruppo superset/circuit
-  bool _isLastExerciseInGroup(WorkoutExercise exercise) {
-    if (_exerciseGroups.isEmpty) return true;
-
-    for (final group in _exerciseGroups) {
-      if (group.contains(exercise)) {
-        final exerciseIndex = group.indexOf(exercise);
-        final currentState = _getCurrentState();
-
-        if (currentState != null && group.length > 1) {
-          // 🔧 FIX: Logica corretta per superset/circuit/giant set
-          // Il timer dovrebbe partire quando:
-          // 1. È l'ultimo esercizio nell'ordine del gruppo (sempre)
-          // 2. OPPURE tutti i prossimi esercizi hanno già fatto la serie corrente o più
-          // 3. OPPURE questo esercizio ha completato tutte le sue serie previste
-
-          final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-          final currentSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-
-          // Caso 1: È l'ultimo nell'ordine fisico → Timer parte sempre
-          if (exerciseIndex == group.length - 1) {
-            print("🔧 [TIMER FIX] ${exercise.nome} - Last in group order → Timer starts");
-            return true;
-          }
-
-          // Caso 3: Ha completato tutte le sue serie → Timer parte sempre
-          if (currentSeriesCount >= exercise.serie) {
-            print("🔧 [TIMER FIX] ${exercise.nome} - Completed all series (${currentSeriesCount}/${exercise.serie}) → Timer starts");
-            return true;
-          }
-
-          // Caso 2: È l'ultimo a dover fare la serie corrente nel giro
-          bool isLastForCurrentRound = true;
-          for (int i = exerciseIndex + 1; i < group.length; i++) {
-            final nextExercise = group[i];
-            final nextExerciseId = nextExercise.schedaEsercizioId ?? nextExercise.id;
-            final nextSeriesCount = _getCompletedSeriesCount(currentState, nextExerciseId);
-
-            // Se un esercizio successivo deve ancora fare la serie corrente
-            if (nextSeriesCount <= currentSeriesCount) {
-              isLastForCurrentRound = false;
-              break;
-            }
-          }
-
-          print("🔧 [TIMER FIX] ${exercise.nome} - Exercise index: $exerciseIndex/${group.length-1}");
-          print("🔧 [TIMER FIX] ${exercise.nome} - Current series: $currentSeriesCount/${exercise.serie}");
-          print("🔧 [TIMER FIX] ${exercise.nome} - Is last for current round: $isLastForCurrentRound");
-
-          return isLastForCurrentRound;
-        }
-
-        // Fallback: se è l'ultimo nell'ordine
-        return exerciseIndex == group.length - 1;
-      }
-    }
-    return true;
-  }
-
-  /// 🔧 FIX 3: Verifica se dovrebbe partire il timer di recupero
-  bool _shouldStartRecoveryTimer(WorkoutExercise exercise) {
-    // Se non è parte di un gruppo multi-esercizio, sempre true
-    if (!_isPartOfMultiExerciseGroup(exercise)) {
-      print("🔧 [TIMER FIX] ${exercise.nome} - Single exercise, starting recovery timer");
-      return true;
-    }
-
-    // Se è parte di un gruppo, verifica se è l'ultimo del giro corrente
-    final isLastOfRound = _isLastExerciseInGroup(exercise);
-    print("🔧 [TIMER FIX] ${exercise.nome} - Multi-exercise group, is last of round: $isLastOfRound");
-
-    // 🚀 NUOVO: Il timer parte sempre per l'ultimo del giro
-    return isLastOfRound;
-  }
-
-  // ============================================================================
-  // NAVIGATION METHODS (unchanged)
-  // ============================================================================
-
-  void _goToPreviousGroup() {
-    if (_currentGroupIndex > 0) {
-      setState(() {
-        _currentGroupIndex--;
-        if (_currentGroupIndex < _exerciseGroups.length) {
-          final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
-              _getCurrentState(),
-              newGroup,
-              isNewGroup: true
-          );
-        }
-      });
-      _pageController.animateToPage(
-        _currentGroupIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      _stopRecoveryTimer();
-
-      // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia gruppo
-      _clearCache();
-    }
-  }
-
-  void _goToNextGroup() {
-    if (_currentGroupIndex < _exerciseGroups.length - 1) {
-      setState(() {
-        _currentGroupIndex++;
-        if (_currentGroupIndex < _exerciseGroups.length) {
-          final newGroup = _exerciseGroups[_currentGroupIndex];
-          _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
-              _getCurrentState(),
-              newGroup,
-              isNewGroup: true
-          );
-        }
-      });
-      _pageController.animateToPage(
-        _currentGroupIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-      _stopRecoveryTimer();
-
-      // 🔧 PERFORMANCE FIX: Pulisce cache quando cambia gruppo
-      _clearCache();
-    }
-  }
-
-  bool _canGoToPrevious() {
-    return _currentGroupIndex > 0;
-  }
-
-  bool _canGoToNext() {
-    return _currentGroupIndex < _exerciseGroups.length - 1;
-  }
-
-  // ============================================================================
-  // RECOVERY TIMER POPUP METHODS (unchanged)
-  // ============================================================================
-
-  void _startRecoveryTimer(int seconds, String exerciseName) {
-    print("🔄 [RECOVERY POPUP] Starting recovery timer: $seconds seconds for $exerciseName");
-
+  void _showExitConfirmDialog() {
     setState(() {
-      _isRecoveryTimerActive = true;
-      _recoverySeconds = seconds;
-      _currentRecoveryExerciseName = exerciseName;
+      _showExitDialog = true;
     });
   }
 
-  void _stopRecoveryTimer() {
-    print("⏹️ [RECOVERY POPUP] Recovery timer stopped");
-
+  void _showCompleteConfirmDialog() {
     setState(() {
-      _isRecoveryTimerActive = false;
-      _recoverySeconds = 0;
-      _currentRecoveryExerciseName = null;
+      _showCompleteDialog = true;
     });
   }
 
-  void _onRecoveryTimerComplete() {
-    print("✅ [RECOVERY POPUP] Recovery completed!");
+  void _handleExitConfirmed() {
+    print("🚪 [EXIT] User confirmed exit - cancelling workout");
 
-    setState(() {
-      _isRecoveryTimerActive = false;
-      _recoverySeconds = 0;
-      _currentRecoveryExerciseName = null;
-    });
-
-    CustomSnackbar.show(
-      context,
-      message: "Recupero completato! Pronto per la prossima serie 💪",
-      isSuccess: true,
-    );
-  }
-
-  // ============================================================================
-  // 🔥 ISOMETRIC TIMER METHODS (unchanged)
-  // ============================================================================
-
-  void _startIsometricTimer(WorkoutExercise exercise) {
-    final seconds = _getEffectiveReps(exercise);
-
-    print("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
-
-    setState(() {
-      _isIsometricTimerActive = true;
-      _isometricSeconds = seconds;
-      _currentIsometricExerciseName = exercise.nome;
-      _pendingIsometricExercise = exercise;
-    });
-  }
-
-  void _onIsometricTimerComplete() {
-    print("✅ [ISOMETRIC] Isometric timer completed!");
-
-    if (_pendingIsometricExercise != null) {
-      final state = _getCurrentState();
-      if (state != null) {
-        _handleCompleteSeries(state, _pendingIsometricExercise!);
-      }
-    }
-
-    setState(() {
-      _isIsometricTimerActive = false;
-      _isometricSeconds = 0;
-      _currentIsometricExerciseName = null;
-      _pendingIsometricExercise = null;
-    });
-
-    CustomSnackbar.show(
-      context,
-      message: "🔥 Tenuta isometrica completata! 💪",
-      isSuccess: true,
-    );
-  }
-
-  void _onIsometricTimerCancelled() {
-    print("❌ [ISOMETRIC] Isometric timer cancelled");
-
-    setState(() {
-      _isIsometricTimerActive = false;
-      _isometricSeconds = 0;
-      _currentIsometricExerciseName = null;
-      _pendingIsometricExercise = null;
-    });
-
-    CustomSnackbar.show(
-      context,
-      message: "Tenuta isometrica annullata",
-      isSuccess: false,
-    );
-  }
-
-  // ============================================================================
-  // ✏️ PARAMETER EDITING METHODS (updated with plateau fix)
-  // ============================================================================
-
-  void _editExerciseParameters(WorkoutExercise exercise) {
-    final currentWeight = _getEffectiveWeight(exercise);
-    final currentReps = _getEffectiveReps(exercise);
-
-    showDialog(
-      context: context,
-      builder: (context) => ParameterEditDialog(
-        initialWeight: currentWeight,
-        initialReps: currentReps,
-        exerciseName: exercise.nome,
-        isIsometric: exercise.isIsometric,
-        onSave: (weight, reps) {
-          _saveModifiedParameters(exercise, weight, reps);
-        },
-      ),
-    );
-  }
-
-  void _saveModifiedParameters(WorkoutExercise exercise, double weight, int reps) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    setState(() {
-      _modifiedWeights[exerciseId] = weight;
-      _modifiedReps[exerciseId] = reps;
-    });
-
-    // 🔧 PERFORMANCE FIX: Invalida cache per questo esercizio
-    _invalidateCacheForExercise(exerciseId);
-
-    context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
-
-    print("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
-
-    CustomSnackbar.show(
-      context,
-      message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
-      isSuccess: true,
-    );
-
-    // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se non già analizzato o dismissed
-    _triggerPlateauAnalysisIfNeeded(exercise);
-  }
-
-  // ============================================================================
-  // 🔧 FIX 2: PLATEAU DETECTION METHODS - CORRECTED
-  // ============================================================================
-
-  /// 🔧 FIX 2: Trigger plateau analysis SOLO se necessario
-  void _triggerPlateauAnalysisIfNeeded(WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-
-    // Non triggare se già analizzato o dismissed
-    if (_plateauAnalyzedExercises.contains(exerciseId) ||
-        _dismissedPlateauExercises.contains(exerciseId)) {
-      print("🔧 [PLATEAU FIX] Skipping analysis for exercise $exerciseId - already analyzed or dismissed");
-      return;
-    }
-
-    final weight = _getEffectiveWeight(exercise);
-    final reps = _getEffectiveReps(exercise);
-
-    print("🔧 [PLATEAU FIX] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
-
-    _plateauAnalyzedExercises.add(exerciseId);
-    _plateauBloc.analyzeExercisePlateau(exerciseId, exercise.nome, weight, reps);
-  }
-
-  /// 🔧 FIX 2: Auto-trigger plateau SOLO UNA VOLTA per tutti gli esercizi
-  void _triggerPlateauAnalysisForAllExercises(WorkoutSessionActive state) {
-    print("🔧 [PLATEAU FIX] Starting SINGLE plateau analysis for all exercises");
-
-    for (final exercise in state.exercises) {
-      _triggerPlateauAnalysisIfNeeded(exercise);
-    }
-  }
-
-  /// Check if exercise has plateau (unchanged)
-  bool _hasPlateauForExercise(int exerciseId) {
-    final plateauState = _plateauBloc.state;
-    if (plateauState is PlateauDetected) {
-      return plateauState.hasPlateauForExercise(exerciseId);
-    }
-    return false;
-  }
-
-  /// Get plateau info for exercise (unchanged)
-  PlateauInfo? _getPlateauForExercise(int exerciseId) {
-    final plateauState = _plateauBloc.state;
-    if (plateauState is PlateauDetected) {
-      return plateauState.getPlateauForExercise(exerciseId);
-    }
-    return null;
-  }
-
-  // ============================================================================
-  // WORKOUT LOGIC (updated with fixes)
-  // ============================================================================
-
-  void _startWorkoutTimer() {
-    if (_startTime == null) {
-      _startTime = DateTime.now();
-    }
-
-    _workoutTimer?.cancel();
-    _workoutTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        final newElapsed = DateTime.now().difference(_startTime!);
-        setState(() {
-          _elapsedTime = newElapsed;
-        });
-
-        if (_elapsedTime.inSeconds % 10 == 0) {
-          _activeWorkoutBloc.updateTimer(_elapsedTime);
-        }
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-
-  void _stopWorkoutTimer() {
-    _workoutTimer?.cancel();
-    _workoutTimer = null;
-  }
-
-  int _getCompletedSeriesCount(WorkoutSessionActive state, int exerciseId) {
-    final series = state.completedSeries[exerciseId] ?? [];
-    return series.length;
-  }
-
-  bool _isExerciseCompleted(WorkoutSessionActive state, WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    final completedCount = _getCompletedSeriesCount(state, exerciseId);
-    return completedCount >= exercise.serie;
-  }
-
-  bool _isWorkoutCompleted(WorkoutSessionActive state) {
-    for (final group in _exerciseGroups) {
-      if (!_isGroupCompleted(state, group)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void _handleCompleteSeries(WorkoutSessionActive state, WorkoutExercise exercise) {
-    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    final completedCount = _getCompletedSeriesCount(state, exerciseId);
-
-    if (completedCount >= exercise.serie) {
-      CustomSnackbar.show(
-        context,
-        message: "Esercizio già completato!",
-        isSuccess: false,
-      );
-      return;
-    }
-
-    print("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
-
-    final effectiveWeight = _getEffectiveWeight(exercise);
-    final effectiveReps = _getEffectiveReps(exercise);
-
-    final seriesData = SeriesData(
-      schedaEsercizioId: exerciseId,
-      peso: effectiveWeight,
-      ripetizioni: effectiveReps,
-      completata: 1,
-      tempoRecupero: exercise.tempoRecupero,
-      note: exercise.isIsometric
-          ? 'Tenuta isometrica completata da Single Exercise Screen'
-          : 'Completata da Single Exercise Screen',
-      serieNumber: completedCount + 1,
-      serieId: 'series_${DateTime.now().millisecondsSinceEpoch}',
-    );
-
-    _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
-
-    final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
-    _activeWorkoutBloc.saveSeries(
-      state.activeWorkout.id,
-      [seriesData],
-      requestId,
-    );
-
-    // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
-    _invalidateCacheForExercise(exerciseId);
-
-    CustomSnackbar.show(
-      context,
-      message: exercise.isIsometric
-          ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
-          : "Serie ${completedCount + 1} completata! 💪",
-      isSuccess: true,
-    );
-
-    // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se necessario
-    _triggerPlateauAnalysisIfNeeded(exercise);
-
-    // 🔧 FIX 3: SUPERSET PAUSE - Start recovery timer SOLO se appropriato
-    if (exercise.tempoRecupero > 0 && _shouldStartRecoveryTimer(exercise)) {
-      _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
-    } else if (_isPartOfMultiExerciseGroup(exercise)) {
-      print("🔧 [SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
-    }
-
-    _handleAutoRotation(state);
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && _isWorkoutCompleted(state)) {
-        _completeButtonController.repeat(reverse: true);
-      }
-    });
-  }
-
-  void _handleAutoRotation(WorkoutSessionActive state) {
-    if (_currentGroupIndex >= _exerciseGroups.length) return;
-
-    final currentGroup = _exerciseGroups[_currentGroupIndex];
-    if (currentGroup.length <= 1) return;
-
-    if (_isGroupCompleted(state, currentGroup)) {
-      return;
-    }
-
-    final nextExerciseIndex = _findNextExerciseInSequentialRotation(state, currentGroup);
-
-    if (nextExerciseIndex != _currentExerciseInGroup) {
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted) {
-          setState(() {
-            _currentExerciseInGroup = nextExerciseIndex;
-          });
-
-          final nextExercise = currentGroup[_currentExerciseInGroup];
-          final groupType = currentGroup.first.setType;
-
-          CustomSnackbar.show(
-            context,
-            message: "🔄 ${groupType.toUpperCase()}: ${nextExercise.nome}",
-            isSuccess: true,
-          );
-        }
-      });
-    }
-  }
-
-  int _findNextExerciseInSequentialRotation(
-      WorkoutSessionActive? state,
-      List<WorkoutExercise> group,
-      {bool isNewGroup = false}
-      ) {
-    if (state == null) return 0;
-
-    int startIndex = isNewGroup ? 0 : (_currentExerciseInGroup + 1) % group.length;
-
-    for (int attempts = 0; attempts < group.length; attempts++) {
-      int checkIndex = (startIndex + attempts) % group.length;
-      final exercise = group[checkIndex];
-      final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-      final completedCount = _getCompletedSeriesCount(state, exerciseId);
-
-      if (completedCount < exercise.serie) {
-        return checkIndex;
-      }
-    }
-
-    print("🎉 [AUTO-ROTATION] All exercises in group are completed!");
-    return isNewGroup ? 0 : _currentExerciseInGroup;
-  }
-
-  WorkoutSessionActive? _getCurrentState() {
     final currentState = context.read<ActiveWorkoutBloc>().state;
-    return currentState is WorkoutSessionActive ? currentState : null;
+    if (currentState is WorkoutSessionActive) {
+      _activeWorkoutBloc.cancelWorkout(currentState.activeWorkout.id);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _handleCompleteConfirmed() {
+    print("✅ [COMPLETE] User confirmed completion");
+
+    final currentState = context.read<ActiveWorkoutBloc>().state;
+    if (currentState is WorkoutSessionActive) {
+      _handleCompleteWorkout(currentState);
+    }
   }
 
   void _handleCompleteWorkout(WorkoutSessionActive state) {
@@ -1091,8 +859,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     _stopWorkoutTimer();
     _completeButtonController.stop();
-
-    // 🔧 FIX 1: ALWAYS ON - Disable wakelock when workout completes
     _disableWakeLock();
 
     final durationMinutes = _elapsedTime.inMinutes;
@@ -1104,7 +870,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // UI HELPERS (unchanged)
+  // UI HELPERS
   // ============================================================================
 
   String _formatDuration(Duration duration) {
@@ -1121,6 +887,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   String _getExerciseTypeLabel(WorkoutExercise exercise) {
+    // 🚀 FASE 5: Supporto REST-PAUSE
+    if (exercise.isRestPause) {
+      return "REST-PAUSE";
+    }
     if (exercise.setType == "superset") {
       return "Superset";
     } else if (exercise.setType == "circuit") {
@@ -1132,6 +902,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   Color _getExerciseTypeColor(WorkoutExercise exercise) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // 🚀 FASE 5: Colore dedicato per REST-PAUSE
+    if (exercise.isRestPause) {
+      return Colors.purple;
+    }
     if (exercise.setType == "superset") {
       return Colors.purple;
     } else if (exercise.setType == "circuit") {
@@ -1141,7 +915,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
-  // BUILD METHODS (unchanged except for build method header)
+  // BUILD METHODS
   // ============================================================================
 
   @override
@@ -1159,154 +933,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       },
       child: MultiBlocListener(
         listeners: [
-          // 🔧 FIX 2: PLATEAU BLOC LISTENER - Updated with dismiss tracking
-          BlocListener<PlateauBloc, PlateauState>(
-            listener: _handlePlateauStateChanges,
-          ),
-          // Original ActiveWorkout BlocListener
+          // Active workout listener
           BlocListener<ActiveWorkoutBloc, ActiveWorkoutState>(
-            bloc: _activeWorkoutBloc,
-            listener: _handleBlocStateChanges,
+            listener: _handleActiveWorkoutStateChange,
+          ),
+          // Plateau listener
+          BlocListener<PlateauBloc, PlateauState>(
+            listener: _handlePlateauStateChange,
           ),
         ],
-        child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
-          bloc: _activeWorkoutBloc,
-          builder: (context, state) {
-            return Stack(
-              children: [
-                Scaffold(
-                  backgroundColor: Theme.of(context).colorScheme.background,
-                  appBar: _buildAppBar(state),
-                  body: _buildBody(state),
-                ),
-
-                if (_showExitDialog)
-                  _buildExitDialog(),
-
-                if (_showCompleteDialog)
-                  _buildCompleteDialog(),
-              ],
-            );
-          },
+        child: Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
+          appBar: _buildAppBar(context.read<ActiveWorkoutBloc>().state),
+          body: _buildBody(context.read<ActiveWorkoutBloc>().state),
         ),
       ),
     );
   }
-
-  // [All other UI building methods remain unchanged - _buildInitializingScreen, _buildAppBar, etc.]
-  // [Continuing with the same content as before...]
-
-  // ============================================================================
-  // BLOC LISTENERS (updated with plateau fix)
-  // ============================================================================
-
-  void _handleBlocStateChanges(BuildContext context, ActiveWorkoutState state) {
-    if (state is WorkoutSessionStarted) {
-      print("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
-      _startWorkoutTimer();
-
-      CustomSnackbar.show(
-        context,
-        message: "Allenamento avviato con successo! 💪",
-        isSuccess: true,
-      );
-    }
-
-    if (state is WorkoutSessionActive) {
-      print("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
-
-      if (_workoutTimer == null) {
-        _startWorkoutTimer();
-      }
-
-      // 🔧 FIX 2: PLATEAU - Auto-trigger SOLO UNA VOLTA
-      if (!_plateauAnalysisTriggered) {
-        _plateauAnalysisTriggered = true;
-        Future.delayed(const Duration(seconds: 2), () {
-          _triggerPlateauAnalysisForAllExercises(state);
-        });
-      }
-    }
-
-    if (state is WorkoutSessionCompleted) {
-      print("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
-      _stopWorkoutTimer();
-      _stopRecoveryTimer();
-      _completeButtonController.stop();
-
-      // 🔧 FIX 1: ALWAYS ON - Disable wakelock on completion
-      _disableWakeLock();
-
-      // 🔧 PERFORMANCE FIX: Pulisce cache a fine allenamento
-      _clearCache();
-    }
-
-    if (state is WorkoutSessionCancelled) {
-      print("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
-      _stopWorkoutTimer();
-      _stopRecoveryTimer();
-      _completeButtonController.stop();
-
-      // 🔧 FIX 1: ALWAYS ON - Disable wakelock on cancellation
-      _disableWakeLock();
-
-      // 🔧 PERFORMANCE FIX: Pulisce cache quando si annulla
-      _clearCache();
-
-      CustomSnackbar.show(
-        context,
-        message: "Allenamento annullato",
-        isSuccess: false,
-      );
-
-      Navigator.of(context).pop();
-    }
-
-    if (state is ActiveWorkoutError) {
-      print("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
-
-      CustomSnackbar.show(
-        context,
-        message: "Errore: ${state.message}",
-        isSuccess: false,
-      );
-    }
-  }
-
-  // 🔧 FIX 2: PLATEAU BLOC LISTENER - Updated with dismiss tracking
-  void _handlePlateauStateChanges(BuildContext context, PlateauState state) {
-    if (state is PlateauDetected) {
-      final activePlateaus = state.activePlateaus;
-      if (activePlateaus.isNotEmpty) {
-        print("🔧 [PLATEAU FIX] Plateau rilevati: ${activePlateaus.length}");
-
-        // 🔧 MINIMALE: Solo notifica discreta, NO banner invasivo
-        CustomSnackbar.show(
-          context,
-          message: "🎯 Plateau rilevato - Tap badge per suggerimenti!",
-          isSuccess: false,
-          duration: const Duration(seconds: 2),
-        );
-      }
-
-      // Track dismissed plateaus from state
-      for (final plateau in state.plateaus) {
-        if (plateau.isDismissed) {
-          _dismissedPlateauExercises.add(plateau.exerciseId);
-          print("🔧 [PLATEAU FIX] Exercise ${plateau.exerciseId} dismissed - won't retrigger");
-        }
-      }
-    }
-
-    if (state is PlateauError) {
-      print("🔧 [PLATEAU FIX] Error: ${state.message}");
-      // Don't show error to user - plateau is optional feature
-    }
-  }
-
-  // ============================================================================
-  // CONTINUE WITH ALL OTHER UI METHODS (unchanged)
-  // ============================================================================
 
   Widget _buildInitializingScreen() {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1440,6 +1083,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       children: [
         _buildMainContent(state),
 
+        // Timer di recupero normale
         if (_isRecoveryTimerActive)
           RecoveryTimerPopup(
             initialSeconds: _recoverySeconds,
@@ -1452,6 +1096,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             },
           ),
 
+        // Timer isometrico
         if (_isIsometricTimerActive && _currentIsometricExerciseName != null)
           IsometricTimerPopup(
             initialSeconds: _isometricSeconds,
@@ -1466,122 +1111,133 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               });
             },
           ),
+
+        // 🚀 FASE 5: Timer mini-recupero REST-PAUSE
+        if (_isRestPauseTimerActive && _currentRestPauseState != null)
+          RestPauseTimerPopup(
+            initialSeconds: _currentRestPauseState!.restSeconds,
+            isActive: _isRestPauseTimerActive,
+            exerciseName: _currentRestPauseExerciseName ?? 'Esercizio',
+            currentMicroSeries: _currentRestPauseState!.currentMicroSeries,
+            totalMicroSeries: _currentRestPauseState!.sequence.length,
+            nextTargetReps: _currentRestPauseState!.currentTargetReps,
+            onTimerComplete: _onRestPauseTimerComplete,
+            onTimerStopped: _stopRestPauseTimer,
+            onTimerDismissed: () {
+              _stopRestPauseTimer();
+            },
+          ),
+
+        // Exit dialog
+        if (_showExitDialog) _buildExitDialog(),
+
+        // Complete dialog
+        if (_showCompleteDialog) _buildCompleteDialog(),
       ],
     );
   }
 
   Widget _buildMainContent(ActiveWorkoutState state) {
+    // 🔧 FIX: Stati corretti del BLoC
     if (state is ActiveWorkoutLoading) {
-      return _buildLoadingContent();
-    }
-
-    if (state is WorkoutSessionActive) {
-      return _buildActiveContent(state);
-    }
-
-    if (state is WorkoutSessionCompleted) {
-      return _buildCompletedContent(state);
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (state is ActiveWorkoutError) {
-      return _buildErrorContent(state);
-    }
-
-    return _buildDefaultContent();
-  }
-
-  Widget _buildLoadingContent() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: colorScheme.primary,
-            strokeWidth: 3,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Caricamento allenamento...',
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: colorScheme.onBackground,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64.sp,
+              color: Colors.red,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveContent(WorkoutSessionActive state) {
-    if (state.exercises.isEmpty) {
-      return _buildNoExercisesContent();
+            SizedBox(height: 16.h),
+            Text(
+              'Errore durante l\'allenamento',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              state.message ?? 'Errore sconosciuto',
+              style: TextStyle(fontSize: 14.sp),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
     }
 
-    if (_exerciseGroups.isEmpty) {
-      _exerciseGroups = _groupExercises(state.exercises);
-      if (_currentGroupIndex >= _exerciseGroups.length) {
-        _currentGroupIndex = 0;
+    if (state is WorkoutSessionActive) {
+      if (_exerciseGroups.isEmpty && state.exercises.isNotEmpty) {
+        _exerciseGroups = _groupExercises(state.exercises);
+        _startWorkoutTimer();
       }
-      if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
-        final currentGroup = _exerciseGroups[_currentGroupIndex];
-        _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
-            _getCurrentState(),
-            currentGroup,
-            isNewGroup: true
+
+      if (_exerciseGroups.isEmpty) {
+        return const Center(
+          child: Text('Nessun esercizio trovato nella scheda'),
         );
       }
+
+      final currentGroup = _exerciseGroups[_currentGroup];
+      final currentExercise = currentGroup[_currentExerciseInGroup];
+
+      return _buildSingleExerciseContent(state, currentExercise);
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentGroupIndex = index;
-                if (index < _exerciseGroups.length) {
-                  final newGroup = _exerciseGroups[index];
-                  _currentExerciseInGroup = _findNextExerciseInSequentialRotation(
-                      _getCurrentState(),
-                      newGroup,
-                      isNewGroup: true
-                  );
-                }
-              });
-            },
-            itemCount: _exerciseGroups.length,
-            itemBuilder: (context, index) {
-              final group = _exerciseGroups[index];
-              return _buildGroupPage(state, group, index);
-            },
-          ),
-        ),
+    return const Center(child: Text('Stato non riconosciuto'));
+  }
 
-        _buildBottomNavigation(state),
-      ],
+  Widget _buildSingleExerciseContent(WorkoutSessionActive state, WorkoutExercise exercise) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // 🚀 FASE 5: Se l'esercizio è REST-PAUSE e ha uno stato attivo, mostra UI speciale
+    if (_currentRestPauseState != null && _isExerciseRestPause(exercise)) {
+      return _buildRestPauseContent(state, exercise);
+    }
+
+    // UI normale per esercizi non-REST-PAUSE
+    return _buildNormalExerciseContent(state, exercise, colorScheme);
+  }
+
+  /// 🚀 FASE 5: Contenuto UI REST-PAUSE
+  Widget _buildRestPauseContent(WorkoutSessionActive state, WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final completedSeries = _getCompletedSeriesCount(state, exerciseId);
+    final restPauseState = _currentRestPauseState!;
+
+    return RestPauseExecutionWidget(
+      exerciseName: exercise.nome,
+      currentSeries: completedSeries + 1,
+      totalSeries: exercise.serie,
+      currentMicroSeries: restPauseState.currentMicroSeries,
+      totalMicroSeries: restPauseState.sequence.length,
+      targetReps: restPauseState.currentTargetReps,
+      completedMicroReps: restPauseState.completedReps,
+      totalCompletedReps: restPauseState.totalRepsCompleted,
+      isInRestPause: restPauseState.isInRestPause,
+      nextMicroRepsInfo: _getNextMicroSeriesInfo(restPauseState),
+      onCompleteMicroSeries: () => _handleCompleteSeries(state, exercise),
+      onEditWeight: () => _showWeightEditDialog(exercise),
+      onEditReps: () => _showRepsEditDialog(exercise),
+      currentWeight: _getEffectiveWeight(exercise),
+      currentReps: _getEffectiveReps(exercise),
     );
   }
 
-  Widget _buildGroupPage(WorkoutSessionActive state, List<WorkoutExercise> group, int groupIndex) {
-    if (group.length == 1) {
-      return _buildSingleExercisePage(state, group.first);
-    } else {
-      return _buildMultiExercisePage(state, group);
-    }
-  }
-
-  Widget _buildSingleExercisePage(WorkoutSessionActive state, WorkoutExercise exercise) {
-    final colorScheme = Theme.of(context).colorScheme;
+  /// UI normale per esercizi non-REST-PAUSE
+  Widget _buildNormalExerciseContent(WorkoutSessionActive state, WorkoutExercise exercise, ColorScheme colorScheme) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedSeries = _getCompletedSeriesCount(state, exerciseId);
     final isCompleted = _isExerciseCompleted(state, exercise);
     final exerciseType = _getExerciseTypeLabel(exercise);
     final exerciseColor = _getExerciseTypeColor(exercise);
 
-    // 🔧 PERFORMANCE FIX: Pre-carica cache per questo esercizio
     _updateCacheForExercise(exerciseId, exercise);
 
     return SingleChildScrollView(
@@ -1591,6 +1247,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Header tipo esercizio
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
@@ -1610,6 +1267,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
+            // Nome esercizio
             Text(
               exercise.nome,
               style: TextStyle(
@@ -1622,7 +1280,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 40.h),
 
-            // 📱 CARD SERIE ULTRA-COMPATTA - Layout Orizzontale
+            // Card serie
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
               decoration: BoxDecoration(
@@ -1639,7 +1297,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Label "Serie"
                   Text(
                     'Serie ',
                     style: TextStyle(
@@ -1648,404 +1305,165 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
-                  // Numero delle serie
                   Text(
                     '$completedSeries/${exercise.serie}',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
-                      color: isCompleted ? Colors.green : exerciseColor,
+                      color: isCompleted ? Colors.green : colorScheme.onSurface,
                     ),
                   ),
-
-                  SizedBox(width: 16.w), // Spazio tra numero e puntini
-
-                  // Puntini indicatori in fila
-                  ...List.generate(exercise.serie, (i) {
-                    return Container(
-                      margin: EdgeInsets.only(left: i > 0 ? 6.w : 0), // Spazio tra puntini
-                      width: 8.w, // Puntini ancora più piccoli
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: i < completedSeries
-                            ? exerciseColor
-                            : colorScheme.surfaceVariant,
-                        shape: BoxShape.circle, // Perfettamente rotondi
-                      ),
-                    );
-                  }),
                 ],
               ),
             ),
 
             SizedBox(height: 32.h),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildParameterCard(
-                    'Peso',
-                    '${_getEffectiveWeight(exercise).toStringAsFixed(1)} kg',
-                    Icons.fitness_center,
-                    exerciseColor,
-                    onTap: () => _editExerciseParameters(exercise),
-                    isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
+            // Card parametri
+            Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildParameterCard(
-                    exercise.isIsometric ? 'Secondi' : 'Ripetizioni',
-                    '${_getEffectiveReps(exercise)}',
-                    exercise.isIsometric ? Icons.timer : Icons.repeat,
-                    exercise.isIsometric ? Colors.deepPurple : Colors.green,
-                    onTap: () => _editExerciseParameters(exercise),
-                    isModified: _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: isCompleted
-                    ? null
-                    : exercise.isIsometric
-                    ? () => _startIsometricTimer(exercise)
-                    : () => _handleCompleteSeries(state, exercise),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted
-                      ? Colors.green
-                      : exercise.isIsometric
-                      ? Colors.deepPurple
-                      : exerciseColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  elevation: isCompleted ? 0 : 2,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (exercise.isIsometric && !isCompleted) ...[
-                      Icon(Icons.timer, size: 20.sp),
-                      SizedBox(width: 8.w),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showWeightEditDialog(exercise),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceVariant.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'PESO',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  '${_getEffectiveWeight(exercise).toStringAsFixed(1)} kg',
+                                  style: TextStyle(
+                                    fontSize: 24.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showRepsEditDialog(exercise),
+                          child: Container(
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceVariant.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  exercise.isIsometric ? 'SECONDI' : 'RIPETIZIONI',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: colorScheme.onSurface.withOpacity(0.6),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                Text(
+                                  '${_getEffectiveReps(exercise)}',
+                                  style: TextStyle(
+                                    fontSize: 24.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
-                    Text(
-                      isCompleted
-                          ? '✅ Esercizio Completato'
-                          : exercise.isIsometric
-                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(exercise)}s'
-                          : 'Completa Serie ${completedSeries + 1}',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
+                  ),
+
+                  if (exercise.note != null && exercise.note!.isNotEmpty) ...[
+                    SizedBox(height: 16.h),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        exercise.note!,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Colors.blue,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ),
-
-            SizedBox(height: 100.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMultiExercisePage(WorkoutSessionActive state, List<WorkoutExercise> group) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final groupType = group.first.setType;
-    final groupColor = _getExerciseTypeColor(group.first);
-    final isGroupComplete = _isGroupCompleted(state, group);
-
-    if (_currentExerciseInGroup >= group.length) {
-      _currentExerciseInGroup = 0;
-    }
-
-    final currentExercise = group[_currentExerciseInGroup];
-    final exerciseId = currentExercise.schedaEsercizioId ?? currentExercise.id;
-    final completedSeries = _getCompletedSeriesCount(state, exerciseId);
-    final isCompleted = _isExerciseCompleted(state, currentExercise);
-
-    // 🔧 PERFORMANCE FIX: Pre-carica cache per l'esercizio corrente
-    _updateCacheForExercise(exerciseId, currentExercise);
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(20.w),
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: groupColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: groupColor.withOpacity(0.3)),
-              ),
-              child: Text(
-                '${groupType.toUpperCase()}: ${group.length} esercizi',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: groupColor,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 24.h),
-
-            Container(
-              height: 50.h,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(25.r),
-              ),
-              child: Row(
-                children: group.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final exercise = entry.value;
-                  final isSelected = index == _currentExerciseInGroup;
-                  final exId = exercise.schedaEsercizioId ?? exercise.id;
-                  final exCompleted = _getCompletedSeriesCount(state, exId);
-                  final exIsCompleted = _isExerciseCompleted(state, exercise);
-
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentExerciseInGroup = index;
-                        });
-
-                        // 🔧 PERFORMANCE FIX: Invalida cache quando cambia esercizio
-                        _clearCache();
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: EdgeInsets.all(4.w),
-                        decoration: BoxDecoration(
-                          color: isSelected ? groupColor : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20.r),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: groupColor.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ] : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  exIsCompleted
-                                      ? Icons.check_circle
-                                      : exercise.isIsometric
-                                      ? Icons.timer
-                                      : Icons.fitness_center,
-                                  color: isSelected ? Colors.white : groupColor,
-                                  size: 16.sp,
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  '${exCompleted}/${exercise.serie}',
-                                  style: TextStyle(
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : groupColor,
-                                  ),
-                                ),
-                                // 🎯 PLATEAU BADGE FOR TABS - Solo punto rosso discreto
-                                if (_hasPlateauForExercise(exId)) ...[
-                                  SizedBox(width: 2.w),
-                                  Container(
-                                    width: 6.w,
-                                    height: 6.w,
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(3.r),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              exercise.nome.length > 10
-                                  ? '${exercise.nome.substring(0, 10)}...'
-                                  : exercise.nome,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected ? Colors.white : colorScheme.onSurface,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            SizedBox(height: 32.h),
-
-            Text(
-              currentExercise.nome,
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onBackground,
-              ),
-              textAlign: TextAlign.center,
             ),
 
             SizedBox(height: 40.h),
 
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Label "Serie"
-                  Text(
-                    'Serie ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '$completedSeries/${currentExercise.serie}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isCompleted ? Colors.green : groupColor,
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(currentExercise.serie, (i) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.w),
-                        width: 12.w,
-                        height: 12.w,
-                        decoration: BoxDecoration(
-                          color: i < completedSeries
-                              ? groupColor
-                              : colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 32.h),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildParameterCard(
-                    'Peso',
-                    '${_getEffectiveWeight(currentExercise).toStringAsFixed(1)} kg',
-                    Icons.fitness_center,
-                    groupColor,
-                    onTap: () => _editExerciseParameters(currentExercise),
-                    isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildParameterCard(
-                    currentExercise.isIsometric ? 'Secondi' : 'Ripetizioni',
-                    '${_getEffectiveReps(currentExercise)}',
-                    currentExercise.isIsometric ? Icons.timer : Icons.repeat,
-                    currentExercise.isIsometric ? Colors.deepPurple : groupColor,
-                    onTap: () => _editExerciseParameters(currentExercise),
-                    isModified: _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-
+            // Pulsante completamento
             SizedBox(
               width: double.infinity,
               height: 56.h,
               child: ElevatedButton(
-                onPressed: isCompleted
-                    ? null
-                    : currentExercise.isIsometric
-                    ? () => _startIsometricTimer(currentExercise)
-                    : () => _handleCompleteSeries(state, currentExercise),
+                onPressed: isCompleted ? null : () => _handleCompleteSeries(state, exercise),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted
-                      ? Colors.green
-                      : currentExercise.isIsometric
-                      ? Colors.deepPurple
-                      : groupColor,
+                  backgroundColor: isCompleted ? Colors.grey : Colors.green,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.withOpacity(0.3),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  elevation: isCompleted ? 0 : 2,
+                  elevation: isCompleted ? 0 : 3,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (currentExercise.isIsometric && !isCompleted) ...[
-                      Icon(Icons.timer, size: 20.sp),
-                      SizedBox(width: 8.w),
-                    ],
+                    Icon(
+                      isCompleted ? Icons.check_circle : Icons.fitness_center,
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 8.w),
                     Text(
                       isCompleted
-                          ? '✅ Esercizio Completato'
-                          : currentExercise.isIsometric
-                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(currentExercise)}s'
-                          : 'Completa Serie ${completedSeries + 1}',
+                          ? 'ESERCIZIO COMPLETATO'
+                          : exercise.isIsometric
+                          ? 'INIZIA TENUTA ISOMETRICA'
+                          : 'COMPLETA SERIE ${completedSeries + 1}',
                       style: TextStyle(
-                        fontSize: 18.sp,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -2054,414 +1472,220 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               ),
             ),
 
-            SizedBox(height: 16.h),
+            SizedBox(height: 24.h),
 
-            if (isGroupComplete)
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.green),
-                ),
-                child: Text(
-                  '✅ ${groupType.toUpperCase()} COMPLETATO!',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-            SizedBox(height: 100.h),
+            // Navigazione esercizi
+            if (_exerciseGroups.isNotEmpty) _buildExerciseNavigation(state),
           ],
         ),
       ),
     );
   }
 
-  /// Parameter card with plateau badge
-  Widget _buildParameterCard(
-      String label,
-      String value,
-      IconData icon,
-      Color color, {
-        VoidCallback? onTap,
-        bool isModified = false,
-        bool hasPlateauBadge = false,
-        int? exerciseId,
-      }) {
+  Widget _buildExerciseNavigation(WorkoutSessionActive state) {
     final colorScheme = Theme.of(context).colorScheme;
+    final currentGroup = _exerciseGroups[_currentGroup];
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Esercizi Gruppo ${_currentGroup + 1}',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.8),
             ),
-          ],
-          border: isModified ? Border.all(
-            color: Colors.orange,
-            width: 2,
-          ) : null,
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: color,
-                  size: 32.sp,
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                onPressed: _currentGroup > 0 ? _previousGroup : null,
+                icon: Icon(Icons.skip_previous, size: 24.sp),
+                style: IconButton.styleFrom(
+                  backgroundColor: _currentGroup > 0 ? colorScheme.primary : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.all(12.w),
                 ),
-                if (isModified) ...[
-                  SizedBox(width: 8.w),
-                  Icon(
-                    Icons.edit,
-                    color: Colors.orange,
-                    size: 16.sp,
-                  ),
-                ],
-                if (onTap != null && !isModified) ...[
-                  SizedBox(width: 8.w),
-                  Icon(
-                    Icons.edit,
-                    color: colorScheme.onSurface.withOpacity(0.3),
-                    size: 16.sp,
-                  ),
-                ],
-                // 🎯 PLATEAU BADGE
-                if (hasPlateauBadge && exerciseId != null) ...[
-                  SizedBox(width: 4.w),
-                  BlocBuilder<PlateauBloc, PlateauState>(
-                    builder: (context, plateauState) {
-                      if (plateauState is PlateauDetected) {
-                        final plateauInfo = plateauState.getPlateauForExercise(exerciseId);
-                        return PlateauBadge(plateauInfo: plateauInfo);
-                      }
-                      return PlateauBadge();
-                    },
-                  ),
-                ],
-              ],
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.7),
               ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: isModified ? Colors.orange : colorScheme.onSurface,
+              IconButton(
+                onPressed: currentGroup.length > 1 ? _previousExercise : null,
+                icon: Icon(Icons.arrow_back_ios, size: 20.sp),
+                style: IconButton.styleFrom(
+                  backgroundColor: currentGroup.length > 1 ? colorScheme.primary : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.all(12.w),
+                ),
               ),
-            ),
-            if (isModified) ...[
-              SizedBox(height: 4.h),
-              Text(
-                'Modificato',
-                style: TextStyle(
-                  fontSize: 10.sp,
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  '${_currentExerciseInGroup + 1}/${currentGroup.length}',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: currentGroup.length > 1 ? _nextExercise : null,
+                icon: Icon(Icons.arrow_forward_ios, size: 20.sp),
+                style: IconButton.styleFrom(
+                  backgroundColor: currentGroup.length > 1 ? colorScheme.primary : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.all(12.w),
+                ),
+              ),
+              IconButton(
+                onPressed: _currentGroup < _exerciseGroups.length - 1 ? _nextGroup : null,
+                icon: Icon(Icons.skip_next, size: 24.sp),
+                style: IconButton.styleFrom(
+                  backgroundColor: _currentGroup < _exerciseGroups.length - 1 ? colorScheme.primary : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.all(12.w),
                 ),
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigation(WorkoutSessionActive state) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final canPrev = _canGoToPrevious();
-    final canNext = _canGoToNext();
-
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: [
-            SizedBox(
-              width: 80.w,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: canPrev ? _goToPreviousGroup : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceVariant,
-                  foregroundColor: canPrev ? colorScheme.onSecondary : colorScheme.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  elevation: canPrev ? 1 : 0,
-                ),
-                child: Text(
-                  'Prec',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            Row(
-              children: List.generate(_exerciseGroups.length, (index) {
-                return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  width: index == _currentGroupIndex ? 24.w : 8.w,
-                  height: 8.w,
-                  decoration: BoxDecoration(
-                    color: index == _currentGroupIndex
-                        ? colorScheme.primary
-                        : colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                );
-              }),
-            ),
-
-            const Spacer(),
-
-            SizedBox(
-              width: 80.w,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: canNext ? _goToNextGroup : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceVariant,
-                  foregroundColor: canNext ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  elevation: canNext ? 1 : 0,
-                ),
-                child: Text(
-                  'Succ',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoExercisesContent() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.warning,
-            size: 64.sp,
-            color: Colors.orange,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            'Nessun esercizio trovato',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onBackground,
-            ),
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Torna Indietro'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCompletedContent(WorkoutSessionCompleted state) {
-    final colorScheme = Theme.of(context).colorScheme;
+  // Navigation methods
+  void _previousGroup() {
+    if (_currentGroup > 0) {
+      setState(() {
+        _currentGroup--;
+        _currentExerciseInGroup = 0;
+      });
+      _resetRestPauseState(); // 🚀 FASE 5: Reset quando si cambia gruppo
+    }
+  }
 
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.celebration,
-              size: 80.sp,
-              color: Colors.green,
-            ),
-            SizedBox(height: 24.h),
-            Text(
-              '🎉 Allenamento Completato!',
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              'Tempo Totale: ${_formatDuration(state.totalDuration)}',
-              style: TextStyle(
-                fontSize: 18.sp,
-                color: colorScheme.onBackground,
-              ),
-            ),
-            SizedBox(height: 32.h),
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                ),
-                child: Text(
-                  'Termina Allenamento',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+  void _nextGroup() {
+    if (_currentGroup < _exerciseGroups.length - 1) {
+      setState(() {
+        _currentGroup++;
+        _currentExerciseInGroup = 0;
+      });
+      _resetRestPauseState(); // 🚀 FASE 5: Reset quando si cambia gruppo
+    }
+  }
+
+  void _previousExercise() {
+    final currentGroup = _exerciseGroups[_currentGroup];
+    if (_currentExerciseInGroup > 0) {
+      setState(() {
+        _currentExerciseInGroup--;
+      });
+      _resetRestPauseState(); // 🚀 FASE 5: Reset quando si cambia esercizio
+    }
+  }
+
+  void _nextExercise() {
+    final currentGroup = _exerciseGroups[_currentGroup];
+    if (_currentExerciseInGroup < currentGroup.length - 1) {
+      setState(() {
+        _currentExerciseInGroup++;
+      });
+      _resetRestPauseState(); // 🚀 FASE 5: Reset quando si cambia esercizio
+    }
+  }
+
+  // Parameter edit dialogs - 🔧 FIX: Parametri corretti!
+  void _showWeightEditDialog(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final currentWeight = _getEffectiveWeight(exercise);
+    final currentReps = _getEffectiveReps(exercise);
+
+    showDialog(
+      context: context,
+      builder: (context) => ParameterEditDialog(
+        initialWeight: currentWeight,
+        initialReps: currentReps,
+        exerciseName: exercise.nome,
+        isIsometric: exercise.isIsometric,
+        onSave: (weight, reps) {
+          setState(() {
+            _weightCache[exerciseId] = weight;
+            _repsCache[exerciseId] = reps;
+          });
+        },
       ),
     );
   }
 
-  Widget _buildErrorContent(ActiveWorkoutError state) {
-    final colorScheme = Theme.of(context).colorScheme;
+  void _showRepsEditDialog(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    final currentWeight = _getEffectiveWeight(exercise);
+    final currentReps = _getEffectiveReps(exercise);
 
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error,
-              size: 64.sp,
-              color: Colors.red,
-            ),
-            SizedBox(height: 16.h),
-            Text(
-              'Errore',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.red,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              state.message,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: colorScheme.onBackground,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 24.h),
-            ElevatedButton(
-              onPressed: () {
-                _activeWorkoutBloc.resetState();
-                _initializeWorkout();
-              },
-              child: const Text('Riprova'),
-            ),
-          ],
-        ),
+    showDialog(
+      context: context,
+      builder: (context) => ParameterEditDialog(
+        initialWeight: currentWeight,
+        initialReps: currentReps,
+        exerciseName: exercise.nome,
+        isIsometric: exercise.isIsometric,
+        onSave: (weight, reps) {
+          setState(() {
+            _weightCache[exerciseId] = weight;
+            _repsCache[exerciseId] = reps;
+          });
+        },
       ),
     );
   }
 
-  Widget _buildDefaultContent() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: CircularProgressIndicator(color: colorScheme.primary),
-    );
-  }
-
-  // ============================================================================
-  // 🆕 DIALOG WIDGETS (unchanged)
-  // ============================================================================
-
+  // Exit and complete dialogs
   Widget _buildExitDialog() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      color: Colors.black.withOpacity(0.5),
-      child: Center(
-        child: Card(
-          margin: EdgeInsets.all(32.w),
-          color: colorScheme.surface,
-          child: Padding(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            margin: EdgeInsets.all(20.w),
             padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.warning,
+                  Icons.warning_amber_rounded,
                   size: 48.sp,
                   color: Colors.orange,
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Uscire dall\'allenamento?',
+                  'Conferma Uscita',
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
                     color: colorScheme.onSurface,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8.h),
                 Text(
-                  'L\'allenamento verrà cancellato e tutti i progressi andranno persi.',
+                  'Sei sicuro di voler uscire dall\'allenamento? Tutti i progressi andranno persi.',
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: colorScheme.onSurface.withOpacity(0.7),
@@ -2513,14 +1737,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   Widget _buildCompleteDialog() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      color: Colors.black.withOpacity(0.5),
-      child: Center(
-        child: Card(
-          margin: EdgeInsets.all(32.w),
-          color: colorScheme.surface,
-          child: Padding(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: Container(
+            margin: EdgeInsets.all(20.w),
             padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -2531,7 +1759,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Completare l\'allenamento?',
+                  'Completa Allenamento',
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
@@ -2588,5 +1816,63 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         ),
       ),
     );
+  }
+
+  // BLoC listeners
+  void _handleActiveWorkoutStateChange(BuildContext context, ActiveWorkoutState state) {
+    if (state is WorkoutSessionCompleted) {
+      Navigator.of(context).pop();
+      CustomSnackbar.show(
+        context,
+        message: "🎉 Allenamento completato con successo!",
+        isSuccess: true,
+        duration: const Duration(seconds: 3),
+      );
+    }
+
+    if (state is WorkoutSessionCancelled) {
+      Navigator.of(context).pop();
+      CustomSnackbar.show(
+        context,
+        message: "🚪 Allenamento annullato",
+        isSuccess: false,
+        duration: const Duration(seconds: 2),
+      );
+    }
+
+    if (state is ActiveWorkoutError) {
+      CustomSnackbar.show(
+        context,
+        message: "❌ Errore: ${state.message ?? 'Errore sconosciuto'}",
+        isSuccess: false,
+        duration: const Duration(seconds: 3),
+      );
+    }
+  }
+
+  void _handlePlateauStateChange(BuildContext context, PlateauState state) {
+    if (state is PlateauDetected) {
+      for (final plateau in state.plateaus) {
+        if (!_dismissedPlateauExercises.contains(plateau.exerciseId)) {
+          CustomSnackbar.show(
+            context,
+            message: "📊 Plateau rilevato per ${plateau.exerciseName}",
+            isSuccess: false,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      }
+
+      for (final plateau in state.plateaus) {
+        if (plateau.isDismissed) {
+          _dismissedPlateauExercises.add(plateau.exerciseId);
+          print("🔧 [PLATEAU FIX] Exercise ${plateau.exerciseId} dismissed - won't retrigger");
+        }
+      }
+    }
+
+    if (state is PlateauError) {
+      print("🔧 [PLATEAU FIX] Error: ${state.message}");
+    }
   }
 }

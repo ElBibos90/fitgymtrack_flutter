@@ -6,3 +6,4 @@ export 'active_workout_models.dart';
 export 'series_request_models.dart';
 export 'workout_response_types.dart';
 export 'exercise_group_models.dart';
+export 'rest_pause_state.dart';
