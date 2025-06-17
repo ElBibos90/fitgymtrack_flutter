@@ -56,7 +56,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   @override
   void initState() {
     super.initState();
-    print('⚡ [REST-PAUSE TIMER] Starting timer: ${widget.initialSeconds}s');
+    //print('⚡ [REST-PAUSE TIMER] Starting timer: ${widget.initialSeconds}s');
 
     _remainingSeconds = widget.initialSeconds;
     _initializeAnimations();
@@ -153,7 +153,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   }
 
   void _completeTimer() {
-    print('⚡ [REST-PAUSE TIMER] Timer completed');
+    //print('⚡ [REST-PAUSE TIMER] Timer completed');
 
     setState(() {
       _isFinished = true;
@@ -187,12 +187,12 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       _breathController.repeat(reverse: true);
     }
 
-    print('⚡ [REST-PAUSE TIMER] Timer ${_isPaused ? "paused" : "resumed"}');
+    //print('⚡ [REST-PAUSE TIMER] Timer ${_isPaused ? "paused" : "resumed"}');
     widget.onPause?.call();
   }
 
   void _skipTimer() {
-    print('⚡ [REST-PAUSE TIMER] Timer skipped');
+    //print('⚡ [REST-PAUSE TIMER] Timer skipped');
 
     _timer?.cancel();
     widget.onSkip?.call();

@@ -96,12 +96,12 @@ class Result<T> {
   /// Helper per eseguire operazioni async con gestione errori automatica
   static Future<Result<T>> tryCallAsync<T>(Future<T> Function() operation) async {
     try {
-      print('[CONSOLE] [result]Executing async operation...');
+      //print('[CONSOLE] [result]Executing async operation...');
       final result = await operation();
-      print('[CONSOLE] [result]Async operation completed successfully');
+      //print('[CONSOLE] [result]Async operation completed successfully');
       return Result.success(result);
     } catch (e, stackTrace) {
-      print('[CONSOLE] [result]Async operation failed: $e');
+      //print('[CONSOLE] [result]Async operation failed: $e');
 
       // Gestione di diversi tipi di eccezioni
       if (e is Exception) {
@@ -121,7 +121,7 @@ class Result<T> {
       final result = operation();
       return Result.success(result);
     } catch (e) {
-      print('[CONSOLE] [result]Sync operation failed: $e');
+      //print('[CONSOLE] [result]Sync operation failed: $e');
 
       if (e is Exception) {
         return Result.error(e.toString(), e);

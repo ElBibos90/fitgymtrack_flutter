@@ -11,7 +11,7 @@ class StripeDebugUtility {
   static Future<StripeDebugReport> runFullDiagnostic({
     required Dio dio,
   }) async {
-    print('[CONSOLE] [stripe_debug_utility]🔍 [STRIPE DEBUG] Starting full diagnostic...');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [STRIPE DEBUG] Starting full diagnostic...');
 
     final report = StripeDebugReport();
 
@@ -39,12 +39,12 @@ class StripeDebugUtility {
         report.tokenPreview = '${token.substring(0, 20)}...';
       }
 
-      print('[CONSOLE] [stripe_debug_utility]🔍 [AUTH] User authenticated: ${report.userAuthenticated}');
-      print('[CONSOLE] [stripe_debug_utility]🔍 [AUTH] Token available: ${report.tokenAvailable}');
+      //print('[CONSOLE] [stripe_debug_utility]🔍 [AUTH] User authenticated: ${report.userAuthenticated}');
+      //print('[CONSOLE] [stripe_debug_utility]🔍 [AUTH] Token available: ${report.tokenAvailable}');
 
     } catch (e) {
       report.authError = e.toString();
-      print('[CONSOLE] [stripe_debug_utility]❌ [AUTH] Authentication check failed: $e');
+      //print('[CONSOLE] [stripe_debug_utility]❌ [AUTH] Authentication check failed: $e');
     }
 
     // ============================================================================
@@ -52,7 +52,7 @@ class StripeDebugUtility {
     // ============================================================================
 
     try {
-      print('[CONSOLE] [stripe_debug_utility]🔍 [CONNECTIVITY] Testing base API connectivity...');
+      //print('[CONSOLE] [stripe_debug_utility]🔍 [CONNECTIVITY] Testing base API connectivity...');
 
       final response = await dio.get('/auth.php', queryParameters: {
         'action': 'verify_token',
@@ -61,12 +61,12 @@ class StripeDebugUtility {
       report.baseApiWorking = response.statusCode == 200;
       report.baseApiResponse = response.data.toString();
 
-      print('[CONSOLE] [stripe_debug_utility]✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}');
+      //print('[CONSOLE] [stripe_debug_utility]✅ [CONNECTIVITY] Base API working: ${report.baseApiWorking}');
 
     } catch (e) {
       report.baseApiWorking = false;
       report.baseApiError = e.toString();
-      print('[CONSOLE] [stripe_debug_utility]❌ [CONNECTIVITY] Base API test failed: $e');
+      //print('[CONSOLE] [stripe_debug_utility]❌ [CONNECTIVITY] Base API test failed: $e');
     }
 
     // ============================================================================
@@ -117,7 +117,7 @@ class StripeDebugUtility {
 
     report.overallHealth = _calculateOverallHealth(report);
 
-    print('[CONSOLE] [stripe_debug_utility]🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [STRIPE DEBUG] Diagnostic completed. Overall health: ${report.overallHealth}');
 
     return report;
   }
@@ -127,7 +127,7 @@ class StripeDebugUtility {
       Dio dio,
       EndpointConfig config,
       ) async {
-    print('[CONSOLE] [stripe_debug_utility]🔍 [ENDPOINT] Testing: ${config.method} ${config.path}');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [ENDPOINT] Testing: ${config.method} ${config.path}');
 
     final result = EndpointTestResult(endpoint: config.path);
 
@@ -204,11 +204,11 @@ class StripeDebugUtility {
         result.error = 'Unexpected response format';
       }
 
-      print(
+      /*print(
           result.isWorking
               ? '✅ [ENDPOINT] ${config.method} ${config.path} working'
               : '⚠️ [ENDPOINT] ${config.method} ${config.path} reachable but not working: ${result.error}'
-      );
+      );*/
 
     } catch (e) {
       result.isReachable = false;
@@ -227,7 +227,7 @@ class StripeDebugUtility {
         }
       }
 
-      print('[CONSOLE] [stripe_debug_utility]❌ [ENDPOINT] ${config.method} ${config.path} failed: $e');
+      //print('[CONSOLE] [stripe_debug_utility]❌ [ENDPOINT] ${config.method} ${config.path} failed: $e');
     }
 
     return result;
@@ -235,7 +235,7 @@ class StripeDebugUtility {
 
   /// Test struttura del server
   static Future<void> _testServerStructure(Dio dio, StripeDebugReport report) async {
-    print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] Testing server structure...');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] Testing server structure...');
 
     // Test se la directory /stripe/ esiste
     try {
@@ -272,8 +272,8 @@ class StripeDebugUtility {
       }
     }
 
-    print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}');
-    print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] PHP files: ${report.phpFilesExist}');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] Stripe directory exists: ${report.stripeDirectoryExists}');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 [SERVER] PHP files: ${report.phpFilesExist}');
   }
 
   /// Calcola la salute generale del sistema
@@ -321,79 +321,79 @@ class StripeDebugUtility {
 
   /// Stampa un report dettagliato
   static void printDetailedReport(StripeDebugReport report) {
-    print('[CONSOLE] [stripe_debug_utility]');
-    print('[CONSOLE] [stripe_debug_utility]🔍 STRIPE DIAGNOSTIC REPORT');
-    print('[CONSOLE] [stripe_debug_utility]============================');
-    print('[CONSOLE] [stripe_debug_utility]Overall Health: ${report.overallHealth}');
-    print('[CONSOLE] [stripe_debug_utility]');
-    print('[CONSOLE] [stripe_debug_utility]🔗 CONNECTIVITY:');
-    print('[CONSOLE] [stripe_debug_utility]  Base URL: ${report.baseUrl}');
-    print('[CONSOLE] [stripe_debug_utility]  Base API Working: ${report.baseApiWorking}');
-    print('[CONSOLE] [stripe_debug_utility]  Stripe Directory Exists: ${report.stripeDirectoryExists}');
-    print('[CONSOLE] [stripe_debug_utility]');
-    print('[CONSOLE] [stripe_debug_utility]🔐 AUTHENTICATION:');
-    print('[CONSOLE] [stripe_debug_utility]  User Authenticated: ${report.userAuthenticated}');
-    print('[CONSOLE] [stripe_debug_utility]  Token Available: ${report.tokenAvailable}');
-    print('[CONSOLE] [stripe_debug_utility]  User ID: ${report.userId}');
-    print('[CONSOLE] [stripe_debug_utility]  Token Preview: ${report.tokenPreview}');
-    print('[CONSOLE] [stripe_debug_utility]');
-    print('[CONSOLE] [stripe_debug_utility]📁 SERVER STRUCTURE:');
-    print('[CONSOLE] [stripe_debug_utility]  PHP Files:');
+    //print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]🔍 STRIPE DIAGNOSTIC REPORT');
+    //print('[CONSOLE] [stripe_debug_utility]============================');
+    //print('[CONSOLE] [stripe_debug_utility]Overall Health: ${report.overallHealth}');
+    //print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]🔗 CONNECTIVITY:');
+    //print('[CONSOLE] [stripe_debug_utility]  Base URL: ${report.baseUrl}');
+    //print('[CONSOLE] [stripe_debug_utility]  Base API Working: ${report.baseApiWorking}');
+    //print('[CONSOLE] [stripe_debug_utility]  Stripe Directory Exists: ${report.stripeDirectoryExists}');
+    //print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]🔐 AUTHENTICATION:');
+    //print('[CONSOLE] [stripe_debug_utility]  User Authenticated: ${report.userAuthenticated}');
+    //print('[CONSOLE] [stripe_debug_utility]  Token Available: ${report.tokenAvailable}');
+    //print('[CONSOLE] [stripe_debug_utility]  User ID: ${report.userId}');
+    //print('[CONSOLE] [stripe_debug_utility]  Token Preview: ${report.tokenPreview}');
+    //print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]📁 SERVER STRUCTURE:');
+    //print('[CONSOLE] [stripe_debug_utility]  PHP Files:');
     report.phpFilesExist.forEach((file, exists) {
-      print('[CONSOLE] [stripe_debug_utility]    $file: $exists');
+      //print('[CONSOLE] [stripe_debug_utility]    $file: $exists');
     });
-    print('[CONSOLE] [stripe_debug_utility]');
-    print('[CONSOLE] [stripe_debug_utility]🎯 ENDPOINT TESTS:');
+    //print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]🎯 ENDPOINT TESTS:');
     report.endpointTests.forEach((endpoint, result) {
       final status = result.isWorking ? '✅' : result.isReachable ? '⚠️' : '❌';
-      print('[CONSOLE] [stripe_debug_utility]  $status ${result.httpMethod} $endpoint');
-      print('[CONSOLE] [stripe_debug_utility]    Status: ${result.statusCode}');
-      print('[CONSOLE] [stripe_debug_utility]    Working: ${result.isWorking}');
-      print('[CONSOLE] [stripe_debug_utility]    Reachable: ${result.isReachable}');
-      print('[CONSOLE] [stripe_debug_utility]    Error: ${result.error ?? 'None'}');
-      print('[CONSOLE] [stripe_debug_utility]');
+      //print('[CONSOLE] [stripe_debug_utility]  $status ${result.httpMethod} $endpoint');
+      //print('[CONSOLE] [stripe_debug_utility]    Status: ${result.statusCode}');
+      //print('[CONSOLE] [stripe_debug_utility]    Working: ${result.isWorking}');
+      //print('[CONSOLE] [stripe_debug_utility]    Reachable: ${result.isReachable}');
+      //print('[CONSOLE] [stripe_debug_utility]    Error: ${result.error ?? 'None'}');
+      //print('[CONSOLE] [stripe_debug_utility]');
     });
 
     if (report.overallHealth != 'HEALTHY' && report.overallHealth != 'MOSTLY_HEALTHY') {
-      print('[CONSOLE] [stripe_debug_utility]🔧 SUGGESTED FIXES:');
+      //print('[CONSOLE] [stripe_debug_utility]🔧 SUGGESTED FIXES:');
       _printSuggestedFixes(report);
     } else {
-      print('[CONSOLE] [stripe_debug_utility]🎉 SYSTEM STATUS: All major components are working!');
+      //print('[CONSOLE] [stripe_debug_utility]🎉 SYSTEM STATUS: All major components are working!');
       if (report.overallHealth == 'MOSTLY_HEALTHY') {
-        print('[CONSOLE] [stripe_debug_utility]   Minor issues detected but system is functional.');
+        //print('[CONSOLE] [stripe_debug_utility]   Minor issues detected but system is functional.');
       }
     }
 
-    print('[CONSOLE] [stripe_debug_utility]============================');
-    print('[CONSOLE] [stripe_debug_utility]');
+    //print('[CONSOLE] [stripe_debug_utility]============================');
+    //print('[CONSOLE] [stripe_debug_utility]');
   }
 
   static void _printSuggestedFixes(StripeDebugReport report) {
     if (!report.baseApiWorking) {
-      print('[CONSOLE] [stripe_debug_utility]  - Check base API configuration and server status');
+      //print('[CONSOLE] [stripe_debug_utility]  - Check base API configuration and server status');
     }
     if (!report.userAuthenticated || !report.tokenAvailable) {
-      print('[CONSOLE] [stripe_debug_utility]  - Login again to refresh authentication token');
+      //print('[CONSOLE] [stripe_debug_utility]  - Login again to refresh authentication token');
     }
     if (!report.stripeDirectoryExists) {
-      print('[CONSOLE] [stripe_debug_utility]  - Verify /stripe/ directory exists on server');
-      print('[CONSOLE] [stripe_debug_utility]  - Check file upload to https://fitgymtrack.com/api/stripe/');
+      //print('[CONSOLE] [stripe_debug_utility]  - Verify /stripe/ directory exists on server');
+      //print('[CONSOLE] [stripe_debug_utility]  - Check file upload to https://fitgymtrack.com/api/stripe/');
     }
 
     final notWorkingEndpoints = report.endpointTests.values.where((test) => !test.isWorking);
     if (notWorkingEndpoints.isNotEmpty) {
-      print('[CONSOLE] [stripe_debug_utility]  - Some endpoints not responding correctly:');
+      //print('[CONSOLE] [stripe_debug_utility]  - Some endpoints not responding correctly:');
       for (final endpoint in notWorkingEndpoints) {
         if (endpoint.statusCode == 405) {
-          print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: Check HTTP method compatibility');
+          //print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: Check HTTP method compatibility');
         } else if (endpoint.statusCode == 500) {
-          print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: Check PHP error logs');
+          //print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: Check PHP error logs');
         } else {
-          print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: ${endpoint.error}');
+          //print('[CONSOLE] [stripe_debug_utility]    ${endpoint.endpoint}: ${endpoint.error}');
         }
       }
-      print('[CONSOLE] [stripe_debug_utility]  - Verify backend Stripe configuration and keys');
-      print('[CONSOLE] [stripe_debug_utility]  - Check PHP error logs on server');
+      //print('[CONSOLE] [stripe_debug_utility]  - Verify backend Stripe configuration and keys');
+      //print('[CONSOLE] [stripe_debug_utility]  - Check PHP error logs on server');
     }
   }
 }

@@ -13,7 +13,7 @@ class PlateauDependencyInjection {
 
   /// 🎯 Registra tutti i servizi plateau nel container DI
   static void registerPlateauServices() {
-    print('[CONSOLE] [dependency_injection_plateau]🎯 [PLATEAU DI] Registering plateau services...');
+    //print('[CONSOLE] [dependency_injection_plateau]🎯 [PLATEAU DI] Registering plateau services...');
 
     final getIt = GetIt.instance;
 
@@ -22,16 +22,16 @@ class PlateauDependencyInjection {
       _registerPlateauDetector(getIt);
       _registerPlateauBloc(getIt);
 
-      print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] Plateau services registered successfully!');
+      //print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] Plateau services registered successfully!');
     } catch (e) {
-      print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU DI] Error registering plateau services: $e');
+      //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU DI] Error registering plateau services: $e');
       rethrow;
     }
   }
 
   /// 🔧 FIX CRITICO: Registra PlateauDetector con configurazione ESATTA
   static void _registerPlateauDetector(GetIt getIt) {
-    print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU DI] Registering PlateauDetector...');
+    //print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU DI] Registering PlateauDetector...');
 
     // 🔧 FIX CRITICO: Usa configurazione con tolleranze ZERO per confronto ESATTO
     final config = PlateauDetectionConfig(
@@ -42,22 +42,22 @@ class PlateauDependencyInjection {
       autoDetectionEnabled: true,   // Auto-detection attiva
     );
 
-    print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU CONFIG] Using EXACT matching:');
-    print('[CONSOLE] [dependency_injection_plateau]    Min sessions: ${config.minSessionsForPlateau}');
-    print('[CONSOLE] [dependency_injection_plateau]    Weight tolerance: ${config.weightTolerance} (EXACT)');
-    print('[CONSOLE] [dependency_injection_plateau]    Reps tolerance: ${config.repsTolerance} (EXACT)');
-    print('[CONSOLE] [dependency_injection_plateau]    Simulated plateau: ${config.enableSimulatedPlateau}');
+    //print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU CONFIG] Using EXACT matching:');
+    //print('[CONSOLE] [dependency_injection_plateau]    Min sessions: ${config.minSessionsForPlateau}');
+    //print('[CONSOLE] [dependency_injection_plateau]    Weight tolerance: ${config.weightTolerance} (EXACT)');
+    //print('[CONSOLE] [dependency_injection_plateau]    Reps tolerance: ${config.repsTolerance} (EXACT)');
+    //print('[CONSOLE] [dependency_injection_plateau]    Simulated plateau: ${config.enableSimulatedPlateau}');
 
     getIt.registerLazySingleton<PlateauDetector>(
           () => PlateauDetector(config: config),
     );
 
-    print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] PlateauDetector registered with EXACT config');
+    //print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] PlateauDetector registered with EXACT config');
   }
 
   /// Registra PlateauBloc come singleton
   static void _registerPlateauBloc(GetIt getIt) {
-    print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU DI] Registering PlateauBloc as singleton...');
+    //print('[CONSOLE] [dependency_injection_plateau]🔧 [PLATEAU DI] Registering PlateauBloc as singleton...');
 
     // Verifica che le dipendenze siano disponibili
     if (!getIt.isRegistered<WorkoutRepository>()) {
@@ -66,14 +66,14 @@ class PlateauDependencyInjection {
 
     getIt.registerLazySingleton<PlateauBloc>(
           () {
-        print('[CONSOLE] [dependency_injection_plateau]🏗️ [PLATEAU DI] Creating PlateauBloc instance...');
+        //print('[CONSOLE] [dependency_injection_plateau]🏗️ [PLATEAU DI] Creating PlateauBloc instance...');
         return PlateauBloc(
           workoutRepository: getIt<WorkoutRepository>(),
         );
       },
     );
 
-    print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] PlateauBloc registered as singleton');
+    //print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU DI] PlateauBloc registered as singleton');
   }
 
   /// Verifica che tutti i servizi plateau siano registrati
@@ -105,18 +105,18 @@ class PlateauSystemChecker {
 
       // Verifica registrazione servizi
       if (!getIt.isRegistered<PlateauDetector>()) {
-        print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] PlateauDetector not registered');
+        //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] PlateauDetector not registered');
         return false;
       }
 
       if (!getIt.isRegistered<PlateauBloc>()) {
-        print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] PlateauBloc not registered');
+        //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] PlateauBloc not registered');
         return false;
       }
 
       // Verifica dipendenze
       if (!getIt.isRegistered<WorkoutRepository>()) {
-        print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] WorkoutRepository not registered (required dependency)');
+        //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] WorkoutRepository not registered (required dependency)');
         return false;
       }
 
@@ -125,18 +125,18 @@ class PlateauSystemChecker {
         final detector = getIt<PlateauDetector>();
         final bloc = getIt<PlateauBloc>();
 
-        print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU CHECK] All services healthy');
-        print('[CONSOLE] [dependency_injection_plateau]    PlateauDetector config: ${detector.config.description}');
-        print('[CONSOLE] [dependency_injection_plateau]    PlateauBloc state: ${bloc.state.runtimeType}');
+        //print('[CONSOLE] [dependency_injection_plateau]✅ [PLATEAU CHECK] All services healthy');
+        //print('[CONSOLE] [dependency_injection_plateau]    PlateauDetector config: ${detector.config.description}');
+        //print('[CONSOLE] [dependency_injection_plateau]    PlateauBloc state: ${bloc.state.runtimeType}');
 
         return true;
       } catch (e) {
-        print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] Error instantiating services: $e');
+        //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] Error instantiating services: $e');
         return false;
       }
 
     } catch (e) {
-      print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] Health check failed: $e');
+      //print('[CONSOLE] [dependency_injection_plateau]❌ [PLATEAU CHECK] Health check failed: $e');
       return false;
     }
   }
@@ -240,15 +240,15 @@ class PlateauConfigurationHelper {
       final detector = getIt<PlateauDetector>();
       final config = detector.config;
 
-      print('[CONSOLE] [dependency_injection_plateau]📋 [ACTIVE CONFIG] Plateau Detection Configuration:');
-      print('[CONSOLE] [dependency_injection_plateau]    Min sessions: ${config.minSessionsForPlateau}');
-      print('[CONSOLE] [dependency_injection_plateau]    Weight tolerance: ${config.weightTolerance} (${config.weightTolerance == 0.0 ? 'EXACT' : 'TOLERANT'})');
-      print('[CONSOLE] [dependency_injection_plateau]    Reps tolerance: ${config.repsTolerance} (${config.repsTolerance == 0 ? 'EXACT' : 'TOLERANT'})');
-      print('[CONSOLE] [dependency_injection_plateau]    Simulated plateau: ${config.enableSimulatedPlateau}');
-      print('[CONSOLE] [dependency_injection_plateau]    Auto detection: ${config.autoDetectionEnabled}');
-      print('[CONSOLE] [dependency_injection_plateau]    Description: ${config.description}');
+      //print('[CONSOLE] [dependency_injection_plateau]📋 [ACTIVE CONFIG] Plateau Detection Configuration:');
+      //print('[CONSOLE] [dependency_injection_plateau]    Min sessions: ${config.minSessionsForPlateau}');
+      //print('[CONSOLE] [dependency_injection_plateau]    Weight tolerance: ${config.weightTolerance} (${config.weightTolerance == 0.0 ? 'EXACT' : 'TOLERANT'})');
+      //print('[CONSOLE] [dependency_injection_plateau]    Reps tolerance: ${config.repsTolerance} (${config.repsTolerance == 0 ? 'EXACT' : 'TOLERANT'})');
+      //print('[CONSOLE] [dependency_injection_plateau]    Simulated plateau: ${config.enableSimulatedPlateau}');
+      //print('[CONSOLE] [dependency_injection_plateau]    Auto detection: ${config.autoDetectionEnabled}');
+      //print('[CONSOLE] [dependency_injection_plateau]    Description: ${config.description}');
     } else {
-      print('[CONSOLE] [dependency_injection_plateau]⚠️ [CONFIG] PlateauDetector not registered - cannot show configuration');
+      //print('[CONSOLE] [dependency_injection_plateau]⚠️ [CONFIG] PlateauDetector not registered - cannot show configuration');
     }
   }
 }
@@ -272,7 +272,7 @@ class PlateauServiceFactory {
       autoDetectionEnabled: autoDetection,
     );
 
-    print('[CONSOLE] [dependency_injection_plateau]🏭 [FACTORY] Creating PlateauDetector with config: ${config.description}');
+    //print('[CONSOLE] [dependency_injection_plateau]🏭 [FACTORY] Creating PlateauDetector with config: ${config.description}');
     return PlateauDetector(config: config);
   }
 
@@ -280,7 +280,7 @@ class PlateauServiceFactory {
   static PlateauBloc createBloc({
     required WorkoutRepository workoutRepository,
   }) {
-    print('[CONSOLE] [dependency_injection_plateau]🏭 [FACTORY] Creating PlateauBloc...');
+    //print('[CONSOLE] [dependency_injection_plateau]🏭 [FACTORY] Creating PlateauBloc...');
     return PlateauBloc(
       workoutRepository: workoutRepository,
     );
@@ -342,27 +342,27 @@ class PlateauSystemDiagnostics {
   static void printDiagnosticsReport() {
     final diagnostics = runFullDiagnostics();
 
-    print('[CONSOLE] [dependency_injection_plateau]🔍 [DIAGNOSTICS] === PLATEAU SYSTEM DIAGNOSTICS REPORT ===');
-    print('[CONSOLE] [dependency_injection_plateau]Status: ${diagnostics['status']}');
-    print('[CONSOLE] [dependency_injection_plateau]Timestamp: ${diagnostics['timestamp']}');
+    //print('[CONSOLE] [dependency_injection_plateau]🔍 [DIAGNOSTICS] === PLATEAU SYSTEM DIAGNOSTICS REPORT ===');
+    //print('[CONSOLE] [dependency_injection_plateau]Status: ${diagnostics['status']}');
+    //print('[CONSOLE] [dependency_injection_plateau]Timestamp: ${diagnostics['timestamp']}');
 
     if (diagnostics['services_registered'] != null) {
       final services = diagnostics['services_registered'] as Map<String, dynamic>;
-      print('[CONSOLE] [dependency_injection_plateau]Services:');
+      //print('[CONSOLE] [dependency_injection_plateau]Services:');
       services.forEach((service, registered) {
-        print('[CONSOLE] [dependency_injection_plateau]  $service: ${registered ? '✅' : '❌'}');
+        //print('[CONSOLE] [dependency_injection_plateau]  $service: ${registered ? '✅' : '❌'}');
       });
     }
 
     if (diagnostics['configuration'] != null) {
       final config = diagnostics['configuration'] as Map<String, dynamic>;
-      print('[CONSOLE] [dependency_injection_plateau]Configuration:');
+      //print('[CONSOLE] [dependency_injection_plateau]Configuration:');
       config.forEach((key, value) {
-        print('[CONSOLE] [dependency_injection_plateau]  $key: $value');
+        //print('[CONSOLE] [dependency_injection_plateau]  $key: $value');
       });
     }
 
-    print('[CONSOLE] [dependency_injection_plateau]Health Check: ${diagnostics['health_check'] ? '✅ HEALTHY' : '❌ UNHEALTHY'}');
-    print('[CONSOLE] [dependency_injection_plateau]=== END DIAGNOSTICS REPORT ===');
+    //print('[CONSOLE] [dependency_injection_plateau]Health Check: ${diagnostics['health_check'] ? '✅ HEALTHY' : '❌ UNHEALTHY'}');
+    //print('[CONSOLE] [dependency_injection_plateau]=== END DIAGNOSTICS REPORT ===');
   }
 }

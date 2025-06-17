@@ -24,7 +24,7 @@ class StripeTestingUtils {
     final startTime = DateTime.now();
 
     if (verbose) {
-      print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Starting comprehensive system test...');
+      //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Starting comprehensive system test...');
     }
 
     try {
@@ -32,23 +32,23 @@ class StripeTestingUtils {
       // PHASE 1: CONFIGURATION TEST
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 1: Configuration');
+      if (verbose) //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 1: Configuration');
 
       result.configurationValid = StripeConfig.isConfigurationValid;
       result.readyForSandbox = StripeConfig.isReadyForSandboxTesting;
       result.testMode = StripeConfig.isTestMode;
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Configuration valid: ${result.configurationValid}');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Ready for sandbox: ${result.readyForSandbox}');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Test mode: ${result.testMode}');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Configuration valid: ${result.configurationValid}');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Ready for sandbox: ${result.readyForSandbox}');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Test mode: ${result.testMode}');
       }
 
       // ============================================================================
       // PHASE 2: SERVICE INITIALIZATION TEST
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 2: Service Initialization');
+      if (verbose) /*print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 2: Service Initialization')*/;
 
       final serviceTestStart = DateTime.now();
       final initResult = await StripeService.initialize();
@@ -59,10 +59,10 @@ class StripeTestingUtils {
       result.serviceError = initResult.isFailure ? initResult.message : null;
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Service initialized: ${result.serviceInitialized}');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Init time: ${serviceTestDuration.inMilliseconds}ms');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Service initialized: ${result.serviceInitialized}');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Init time: ${serviceTestDuration.inMilliseconds}ms');
         if (result.serviceError != null) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Service error: ${result.serviceError}');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Service error: ${result.serviceError}');
         }
       }
 
@@ -70,7 +70,7 @@ class StripeTestingUtils {
       // PHASE 3: REPOSITORY CONNECTIVITY TEST
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 3: Repository Connectivity');
+      if (verbose) //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 3: Repository Connectivity');
 
       if (_getIt.isRegistered<StripeRepository>()) {
         final repository = _getIt<StripeRepository>();
@@ -80,9 +80,9 @@ class StripeTestingUtils {
         result.repositoryError = connectivityResult.isFailure ? connectivityResult.message : null;
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository connected: ${result.repositoryConnected}');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository connected: ${result.repositoryConnected}');
           if (result.repositoryError != null) {
-            print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository error: ${result.repositoryError}');
+            //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository error: ${result.repositoryError}');
           }
         }
 
@@ -91,9 +91,9 @@ class StripeTestingUtils {
         result.endpointResults = endpointTests;
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Endpoint tests:');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Endpoint tests:');
           endpointTests.forEach((endpoint, success) {
-            print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST]   - $endpoint: ${success ? "✅" : "❌"}');
+            //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST]   - $endpoint: ${success ? "✅" : "❌"}');
           });
         }
       } else {
@@ -101,7 +101,7 @@ class StripeTestingUtils {
         result.repositoryError = 'StripeRepository not registered in DI';
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository not registered');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Repository not registered');
         }
       }
 
@@ -109,7 +109,7 @@ class StripeTestingUtils {
       // PHASE 4: BLOC STATE TEST
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 4: BLoC State');
+      if (verbose) //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 4: BLoC State');
 
       if (_getIt.isRegistered<StripeBloc>()) {
         final bloc = _getIt<StripeBloc>();
@@ -117,15 +117,15 @@ class StripeTestingUtils {
         result.blocCurrentState = bloc.state.runtimeType.toString();
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC registered: true');
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC state: ${result.blocCurrentState}');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC registered: true');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC state: ${result.blocCurrentState}');
         }
       } else {
         result.blocRegistered = false;
         result.blocCurrentState = 'Not Registered';
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC registered: false');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - BLoC registered: false');
         }
       }
 
@@ -133,19 +133,19 @@ class StripeTestingUtils {
       // PHASE 5: GOOGLE PAY SUPPORT TEST
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 5: Google Pay Support');
+      if (verbose) //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Phase 5: Google Pay Support');
 
       if (result.serviceInitialized) {
         final gPayResult = await StripeService.isGooglePaySupported();
         result.googlePaySupported = gPayResult.isSuccess ? gPayResult.data! : false;
 
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Google Pay supported: ${result.googlePaySupported}');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Google Pay supported: ${result.googlePaySupported}');
         }
       } else {
         result.googlePaySupported = false;
         if (verbose) {
-          print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Google Pay test skipped (service not initialized)');
+          //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] - Google Pay test skipped (service not initialized)');
         }
       }
 
@@ -158,10 +158,10 @@ class StripeTestingUtils {
       result.success = result.overallScore >= 75; // 75% threshold
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] ===== TEST COMPLETED =====');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Overall Score: ${result.overallScore}/100');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Result: ${result.success ? "✅ PASS" : "❌ FAIL"}');
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Duration: ${result.testDuration.inMilliseconds}ms');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] ===== TEST COMPLETED =====');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Overall Score: ${result.overallScore}/100');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Result: ${result.success ? "✅ PASS" : "❌ FAIL"}');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Duration: ${result.testDuration.inMilliseconds}ms');
       }
 
     } catch (e) {
@@ -171,7 +171,7 @@ class StripeTestingUtils {
       result.generalError = e.toString();
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Test failed with exception: $e');
+        //print('[CONSOLE] [stripe_testing_utils]🧪 [STRIPE TEST] Test failed with exception: $e');
       }
     }
 
@@ -190,7 +190,7 @@ class StripeTestingUtils {
     final startTime = DateTime.now();
 
     if (verbose) {
-      print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Starting post-payment flow simulation...');
+      //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Starting post-payment flow simulation...');
     }
 
     try {
@@ -204,7 +204,7 @@ class StripeTestingUtils {
       // TEST 1: SUBSCRIPTION LOADING WITH RETRY
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 1: Subscription loading with retry');
+      if (verbose) /*print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 1: Subscription loading with retry')*/;
 
       final subscriptionResult = await repository.getCurrentSubscriptionAfterPayment();
       result.subscriptionLoadingWorked = subscriptionResult.isSuccess;
@@ -213,12 +213,12 @@ class StripeTestingUtils {
         if (subscriptionResult.isSuccess) {
           final subscription = subscriptionResult.data;
           if (subscription != null) {
-            print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Found subscription: ${subscription.id} (${subscription.status})');
+            //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Found subscription: ${subscription.id} (${subscription.status})');
           } else {
-            print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - No subscription found (this is OK for new users)');
+            //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - No subscription found (this is OK for new users)');
           }
         } else {
-          print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Subscription loading failed: ${subscriptionResult.message}');
+          //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Subscription loading failed: ${subscriptionResult.message}');
         }
       }
 
@@ -226,7 +226,7 @@ class StripeTestingUtils {
       // TEST 2: CUSTOMER CREATION WITH RACE CONDITION PROTECTION
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 2: Customer creation with race protection');
+      if (verbose) /*print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 2: Customer creation with race protection')*/;
 
       // Esegui multiple richieste customer simultanee per testare race condition protection
       final customerFutures = List.generate(3, (index) => repository.getOrCreateCustomer());
@@ -238,10 +238,10 @@ class StripeTestingUtils {
       result.customerRaceProtectionWorked = allCustomersSuccess && allSameCustomerId;
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Multiple customer requests: ${allCustomersSuccess ? "✅" : "❌"}');
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Same customer ID: ${allSameCustomerId ? "✅" : "❌"}');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Multiple customer requests: ${allCustomersSuccess ? "✅" : "❌"}');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Same customer ID: ${allSameCustomerId ? "✅" : "❌"}');
         if (customerResults.isNotEmpty && customerResults.first.isSuccess) {
-          print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Customer ID: ${customerResults.first.data!.id}');
+          //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Customer ID: ${customerResults.first.data!.id}');
         }
       }
 
@@ -249,14 +249,14 @@ class StripeTestingUtils {
       // TEST 3: ERROR HANDLING ROBUSTNESS
       // ============================================================================
 
-      if (verbose) print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 3: Error handling robustness');
+      if (verbose) //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test 3: Error handling robustness');
 
       // Test con parametri non validi per verificare gestione errori
       final invalidSubscriptionResult = await repository.getCurrentSubscription();
       result.errorHandlingWorked = true; // Se arriviamo qui senza crash, è buon segno
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Error handling: ✅ (no crashes)');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] - Error handling: ✅ (no crashes)');
       }
 
       // ============================================================================
@@ -268,10 +268,10 @@ class StripeTestingUtils {
       result.success = result.score >= 80; // 80% threshold for post-payment tests
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] ===== POST-PAYMENT TEST COMPLETED =====');
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Score: ${result.score}/100');
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Result: ${result.success ? "✅ PASS" : "❌ FAIL"}');
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Duration: ${result.testDuration.inMilliseconds}ms');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] ===== POST-PAYMENT TEST COMPLETED =====');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Score: ${result.score}/100');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Result: ${result.success ? "✅ PASS" : "❌ FAIL"}');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Duration: ${result.testDuration.inMilliseconds}ms');
       }
 
     } catch (e) {
@@ -281,7 +281,7 @@ class StripeTestingUtils {
       result.generalError = e.toString();
 
       if (verbose) {
-        print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test failed with exception: $e');
+        //print('[CONSOLE] [stripe_testing_utils]🎯 [POST-PAY TEST] Test failed with exception: $e');
       }
     }
 
@@ -294,7 +294,7 @@ class StripeTestingUtils {
 
   /// Esegue una diagnosi completa del sistema Stripe
   static Future<StripeDiagnosticReport> generateDiagnosticReport() async {
-    print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Generating comprehensive diagnostic report...');
+    //print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Generating comprehensive diagnostic report...');
 
     final report = StripeDiagnosticReport();
     final startTime = DateTime.now();
@@ -350,92 +350,92 @@ class StripeTestingUtils {
     // Calculate overall health score
     report.calculateOverallHealth();
 
-    print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Report generated in ${report.generationDuration.inMilliseconds}ms');
-    print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Overall health: ${report.overallHealthScore}/100');
+    //print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Report generated in ${report.generationDuration.inMilliseconds}ms');
+    //print('[CONSOLE] [stripe_testing_utils]🔍 [STRIPE DIAGNOSTIC] Overall health: ${report.overallHealthScore}/100');
 
     return report;
   }
 
   /// Stampa un report di debug leggibile
   static void printDiagnosticReport(StripeDiagnosticReport report) {
-    print('[CONSOLE] [stripe_testing_utils]');
-    print('[CONSOLE] [stripe_testing_utils]📊 STRIPE SYSTEM DIAGNOSTIC REPORT');
-    print('[CONSOLE] [stripe_testing_utils]=====================================');
-    print('[CONSOLE] [stripe_testing_utils]Generated: ${report.generatedAt}');
-    print('[CONSOLE] [stripe_testing_utils]Duration: ${report.generationDuration.inMilliseconds}ms');
-    print('[CONSOLE] [stripe_testing_utils]Overall Health: ${report.overallHealthScore}/100');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]📊 STRIPE SYSTEM DIAGNOSTIC REPORT');
+    //print('[CONSOLE] [stripe_testing_utils]=====================================');
+    //print('[CONSOLE] [stripe_testing_utils]Generated: ${report.generatedAt}');
+    //print('[CONSOLE] [stripe_testing_utils]Duration: ${report.generationDuration.inMilliseconds}ms');
+    //print('[CONSOLE] [stripe_testing_utils]Overall Health: ${report.overallHealthScore}/100');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
     // Configuration
-    print('[CONSOLE] [stripe_testing_utils]🔧 CONFIGURATION:');
+    //print('[CONSOLE] [stripe_testing_utils]🔧 CONFIGURATION:');
     report.configInfo.forEach((key, value) {
       final status = value == true ? '✅' : value == false ? '❌' : '🔧';
-      print('[CONSOLE] [stripe_testing_utils]  $status $key: $value');
+      //print('[CONSOLE] [stripe_testing_utils]  $status $key: $value');
     });
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
     // Service
-    print('[CONSOLE] [stripe_testing_utils]⚙️ SERVICE STATUS:');
+    //print('[CONSOLE] [stripe_testing_utils]⚙️ SERVICE STATUS:');
     final serviceInitialized = report.serviceInfo['is_initialized'] ?? false;
-    print('[CONSOLE] [stripe_testing_utils]  ${serviceInitialized ? '✅' : '❌'} Service Initialized: $serviceInitialized');
+    //print('[CONSOLE] [stripe_testing_utils]  ${serviceInitialized ? '✅' : '❌'} Service Initialized: $serviceInitialized');
 
     final lastError = report.serviceInfo['last_error'];
     if (lastError != null && lastError.toString().isNotEmpty) {
-      print('[CONSOLE] [stripe_testing_utils]  ⚠️ Last Error: $lastError');
+      //print('[CONSOLE] [stripe_testing_utils]  ⚠️ Last Error: $lastError');
     }
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
     // Repository
-    print('[CONSOLE] [stripe_testing_utils]🗄️ REPOSITORY STATUS:');
+    //print('[CONSOLE] [stripe_testing_utils]🗄️ REPOSITORY STATUS:');
     final baseUrl = report.repositoryInfo['base_url'];
-    print('[CONSOLE] [stripe_testing_utils]  🔗 Base URL: $baseUrl');
+    //print('[CONSOLE] [stripe_testing_utils]  🔗 Base URL: $baseUrl');
 
     final cachedCustomer = report.repositoryInfo['cached_customer'];
-    print('[CONSOLE] [stripe_testing_utils]  👤 Cached Customer: ${cachedCustomer ?? 'None'}');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]  👤 Cached Customer: ${cachedCustomer ?? 'None'}');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
     // Tests
-    print('[CONSOLE] [stripe_testing_utils]🧪 SYSTEM TESTS:');
+    //print('[CONSOLE] [stripe_testing_utils]🧪 SYSTEM TESTS:');
     final systemTest = report.systemTestResult;
-    print('[CONSOLE] [stripe_testing_utils]  ${systemTest.success ? '✅' : '❌'} Overall: ${systemTest.overallScore}/100');
-    print('[CONSOLE] [stripe_testing_utils]  ${systemTest.configurationValid ? '✅' : '❌'} Configuration Valid');
-    print('[CONSOLE] [stripe_testing_utils]  ${systemTest.serviceInitialized ? '✅' : '❌'} Service Initialized');
-    print('[CONSOLE] [stripe_testing_utils]  ${systemTest.repositoryConnected ? '✅' : '❌'} Repository Connected');
-    print('[CONSOLE] [stripe_testing_utils]  ${systemTest.googlePaySupported ? '✅' : '❌'} Google Pay Supported');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]  ${systemTest.success ? '✅' : '❌'} Overall: ${systemTest.overallScore}/100');
+    //print('[CONSOLE] [stripe_testing_utils]  ${systemTest.configurationValid ? '✅' : '❌'} Configuration Valid');
+    //print('[CONSOLE] [stripe_testing_utils]  ${systemTest.serviceInitialized ? '✅' : '❌'} Service Initialized');
+    //print('[CONSOLE] [stripe_testing_utils]  ${systemTest.repositoryConnected ? '✅' : '❌'} Repository Connected');
+    //print('[CONSOLE] [stripe_testing_utils]  ${systemTest.googlePaySupported ? '✅' : '❌'} Google Pay Supported');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
-    print('[CONSOLE] [stripe_testing_utils]🎯 POST-PAYMENT TESTS:');
+    //print('[CONSOLE] [stripe_testing_utils]🎯 POST-PAYMENT TESTS:');
     final postPaymentTest = report.postPaymentTestResult;
-    print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.success ? '✅' : '❌'} Overall: ${postPaymentTest.score}/100');
-    print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.subscriptionLoadingWorked ? '✅' : '❌'} Subscription Loading');
-    print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.customerRaceProtectionWorked ? '✅' : '❌'} Race Protection');
-    print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.errorHandlingWorked ? '✅' : '❌'} Error Handling');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.success ? '✅' : '❌'} Overall: ${postPaymentTest.score}/100');
+    //print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.subscriptionLoadingWorked ? '✅' : '❌'} Subscription Loading');
+    //print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.customerRaceProtectionWorked ? '✅' : '❌'} Race Protection');
+    //print('[CONSOLE] [stripe_testing_utils]  ${postPaymentTest.errorHandlingWorked ? '✅' : '❌'} Error Handling');
+    //print('[CONSOLE] [stripe_testing_utils]');
 
     // Recommendations
-    print('[CONSOLE] [stripe_testing_utils]💡 RECOMMENDATIONS:');
+    //print('[CONSOLE] [stripe_testing_utils]💡 RECOMMENDATIONS:');
     if (!systemTest.configurationValid) {
-      print('[CONSOLE] [stripe_testing_utils]  🔧 Fix Stripe configuration in StripeConfig');
+      //print('[CONSOLE] [stripe_testing_utils]  🔧 Fix Stripe configuration in StripeConfig');
     }
     if (!systemTest.serviceInitialized) {
-      print('[CONSOLE] [stripe_testing_utils]  🔧 Check Stripe SDK initialization');
+      //print('[CONSOLE] [stripe_testing_utils]  🔧 Check Stripe SDK initialization');
     }
     if (!systemTest.repositoryConnected) {
-      print('[CONSOLE] [stripe_testing_utils]  🔧 Verify backend connectivity and endpoints');
+      //print('[CONSOLE] [stripe_testing_utils]  🔧 Verify backend connectivity and endpoints');
     }
     if (!postPaymentTest.success) {
-      print('[CONSOLE] [stripe_testing_utils]  🔧 Review post-payment flow handling');
+      //print('[CONSOLE] [stripe_testing_utils]  🔧 Review post-payment flow handling');
     }
     if (report.overallHealthScore >= 90) {
-      print('[CONSOLE] [stripe_testing_utils]  🎉 System is in excellent health!');
+      //print('[CONSOLE] [stripe_testing_utils]  🎉 System is in excellent health!');
     } else if (report.overallHealthScore >= 75) {
-      print('[CONSOLE] [stripe_testing_utils]  👍 System is working well with minor issues');
+      //print('[CONSOLE] [stripe_testing_utils]  👍 System is working well with minor issues');
     } else {
-      print('[CONSOLE] [stripe_testing_utils]  ⚠️ System needs attention - multiple issues detected');
+      //print('[CONSOLE] [stripe_testing_utils]  ⚠️ System needs attention - multiple issues detected');
     }
 
-    print('[CONSOLE] [stripe_testing_utils]=====================================');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]=====================================');
+    //print('[CONSOLE] [stripe_testing_utils]');
   }
 
   // ============================================================================
@@ -482,17 +482,17 @@ class StripeTestingUtils {
 
   /// Print only test cards for easy reference
   static void printTestCards() {
-    print('[CONSOLE] [stripe_testing_utils]');
-    print('[CONSOLE] [stripe_testing_utils]💳 STRIPE TEST CARDS FOR SANDBOX');
-    print('[CONSOLE] [stripe_testing_utils]==============================');
+    //print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]💳 STRIPE TEST CARDS FOR SANDBOX');
+    //print('[CONSOLE] [stripe_testing_utils]==============================');
     StripeConfig.testCards.forEach((type, number) {
-      print('[CONSOLE] [stripe_testing_utils]$type: $number');
+      //print('[CONSOLE] [stripe_testing_utils]$type: $number');
     });
-    print('[CONSOLE] [stripe_testing_utils]CVV: ${StripeConfig.testCardDetails['cvv']}');
-    print('[CONSOLE] [stripe_testing_utils]Expiry: ${StripeConfig.testCardDetails['expiry_month']}/${StripeConfig.testCardDetails['expiry_year']}');
-    print('[CONSOLE] [stripe_testing_utils]ZIP: ${StripeConfig.testCardDetails['zip']}');
-    print('[CONSOLE] [stripe_testing_utils]==============================');
-    print('[CONSOLE] [stripe_testing_utils]');
+    //print('[CONSOLE] [stripe_testing_utils]CVV: ${StripeConfig.testCardDetails['cvv']}');
+    //print('[CONSOLE] [stripe_testing_utils]Expiry: ${StripeConfig.testCardDetails['expiry_month']}/${StripeConfig.testCardDetails['expiry_year']}');
+    //print('[CONSOLE] [stripe_testing_utils]ZIP: ${StripeConfig.testCardDetails['zip']}');
+    //print('[CONSOLE] [stripe_testing_utils]==============================');
+    //print('[CONSOLE] [stripe_testing_utils]');
   }
 }
 

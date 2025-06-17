@@ -220,8 +220,8 @@ class WorkoutExercise {
       return _$WorkoutExerciseFromJson(json);
     } catch (e) {
       // 🔧 DEBUG: Log dell'errore di parsing
-      print('[CONSOLE] [workout_plan_models]❌ ERROR parsing WorkoutExercise: $e');
-      print('[CONSOLE] [workout_plan_models]❌ JSON data: $json');
+      //print('[CONSOLE] [workout_plan_models]❌ ERROR parsing WorkoutExercise: $e');
+      //print('[CONSOLE] [workout_plan_models]❌ JSON data: $json');
 
       // Fallback con parsing manuale sicuro - 🚀 FASE 1: Aggiunti campi REST-PAUSE
       return WorkoutExercise(

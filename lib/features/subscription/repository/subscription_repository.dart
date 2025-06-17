@@ -18,7 +18,7 @@ class SubscriptionRepository {
 
   /// Recupera l'abbonamento corrente dell'utente
   Future<Result<Subscription>> getCurrentSubscription() async {
-    print('[CONSOLE] [subscription_repository]Recupero abbonamento corrente');
+    //print('[CONSOLE] [subscription_repository]Recupero abbonamento corrente');
 
     return Result.tryCallAsync(() async {
       // Chiamata API diretta usando Dio per flessibilità
@@ -52,9 +52,9 @@ class SubscriptionRepository {
           computedStatus: subscriptionData['computed_status'],
         );
 
-        print(
+        /*print(
           'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}'
-        );
+        );*/
 
         return subscription;
       } else {
@@ -65,7 +65,7 @@ class SubscriptionRepository {
 
   /// Controlla le subscription scadute
   Future<Result<ExpiredCheckResponse>> checkExpiredSubscriptions() async {
-    print('[CONSOLE] [subscription_repository]Controllo subscription scadute');
+    //print('[CONSOLE] [subscription_repository]Controllo subscription scadute');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -79,9 +79,9 @@ class SubscriptionRepository {
           updatedCount: _parseInt(data['data']?['updated_count']), // 🔧 FIX: Parsing robusto
         );
 
-        print(
+        /*print(
           'Controllo scadenze completato: ${expiredCheck.updatedCount} aggiornamenti'
-        );
+        );*/
 
         return expiredCheck;
       } else {
@@ -92,7 +92,7 @@ class SubscriptionRepository {
 
   /// Verifica i limiti di utilizzo per un tipo di risorsa
   Future<Result<ResourceLimits>> checkResourceLimits(String resourceType) async {
-    print('[CONSOLE] [subscription_repository]Verifica limiti per: $resourceType');
+    //print('[CONSOLE] [subscription_repository]Verifica limiti per: $resourceType');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_resource_limits_api.php', queryParameters: {
@@ -113,9 +113,9 @@ class SubscriptionRepository {
           daysRemaining: limitData['days_remaining'],
         );
 
-        print(
+        /*print(
           'Limiti verificati: ${resourceLimits.currentCount}/${resourceLimits.maxAllowed}'
-        );
+        );*/
 
         return resourceLimits;
       } else {
@@ -126,7 +126,7 @@ class SubscriptionRepository {
 
   /// Aggiorna il piano di abbonamento
   Future<Result<UpdatePlanResponse>> updatePlan(int planId) async {
-    print('[CONSOLE] [subscription_repository]Aggiornamento al piano ID: $planId');
+    //print('[CONSOLE] [subscription_repository]Aggiornamento al piano ID: $planId');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.post(
@@ -145,9 +145,9 @@ class SubscriptionRepository {
           planName: updateData['plan_name'] ?? 'Unknown',
         );
 
-        print(
+        /*print(
           'Piano aggiornato: ${updateResponse.planName}'
-        );
+        );*/
 
         return updateResponse;
       } else {
@@ -158,7 +158,7 @@ class SubscriptionRepository {
 
   /// Ottiene i piani di abbonamento disponibili
   Future<Result<List<SubscriptionPlan>>> getAvailablePlans() async {
-    print('[CONSOLE] [subscription_repository]Recupero piani disponibili');
+    //print('[CONSOLE] [subscription_repository]Recupero piani disponibili');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -222,7 +222,7 @@ class SubscriptionRepository {
       try {
         return double.parse(value);
       } catch (e) {
-        print('[CONSOLE] [subscription_repository]Errore parsing double: $value');
+        //print('[CONSOLE] [subscription_repository]Errore parsing double: $value');
         return 0.0;
       }
     }
@@ -241,7 +241,7 @@ class SubscriptionRepository {
         try {
           return double.parse(value).toInt();
         } catch (e2) {
-          print('[CONSOLE] [subscription_repository]Errore parsing int: $value');
+          //print('[CONSOLE] [subscription_repository]Errore parsing int: $value');
           return 0;
         }
       }

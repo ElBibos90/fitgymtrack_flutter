@@ -254,45 +254,45 @@ class StripeConfig {
 
   /// Stampa informazioni di configurazione per testing
   static void printSandboxTestingInfo() {
-    print('[CONSOLE] [stripe_config]');
-    print('[CONSOLE] [stripe_config]🧪 STRIPE SANDBOX TESTING CONFIGURATION');
-    print('[CONSOLE] [stripe_config]=========================================');
-    print('[CONSOLE] [stripe_config]🔑 Test Mode: ${isTestMode ? "✅ ACTIVE" : "❌ INACTIVE"}');
-    print('[CONSOLE] [stripe_config]🎯 Ready for Testing: ${isReadyForSandboxTesting ? "✅ YES" : "❌ NO"}');
-    print('[CONSOLE] [stripe_config]');
+    //print('[CONSOLE] [stripe_config]');
+    //print('[CONSOLE] [stripe_config]🧪 STRIPE SANDBOX TESTING CONFIGURATION');
+    //print('[CONSOLE] [stripe_config]=========================================');
+    //print('[CONSOLE] [stripe_config]🔑 Test Mode: ${isTestMode ? "✅ ACTIVE" : "❌ INACTIVE"}');
+    //print('[CONSOLE] [stripe_config]🎯 Ready for Testing: ${isReadyForSandboxTesting ? "✅ YES" : "❌ NO"}');
+    //print('[CONSOLE] [stripe_config]');
 
     if (isReadyForSandboxTesting) {
-      print('[CONSOLE] [stripe_config]✅ TESTING READY - You can now test payments!');
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]🧪 TEST CARDS FOR SANDBOX:');
-      print('[CONSOLE] [stripe_config]   Success: ${testCards['success']} (CVV: 123, Exp: 12/25)');
-      print('[CONSOLE] [stripe_config]   Declined: ${testCards['declined']} (CVV: 123, Exp: 12/25)');
-      print('[CONSOLE] [stripe_config]   3D Secure: ${testCards['require_3d_secure']} (CVV: 123, Exp: 12/25)');
-      print('[CONSOLE] [stripe_config]   Insufficient: ${testCards['insufficient_funds']} (CVV: 123, Exp: 12/25)');
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]💳 AVAILABLE PLANS:');
+      //print('[CONSOLE] [stripe_config]✅ TESTING READY - You can now test payments!');
+      //print('[CONSOLE] [stripe_config]');
+      //print('[CONSOLE] [stripe_config]🧪 TEST CARDS FOR SANDBOX:');
+      //print('[CONSOLE] [stripe_config]   Success: ${testCards['success']} (CVV: 123, Exp: 12/25)');
+      //print('[CONSOLE] [stripe_config]   Declined: ${testCards['declined']} (CVV: 123, Exp: 12/25)');
+      //print('[CONSOLE] [stripe_config]   3D Secure: ${testCards['require_3d_secure']} (CVV: 123, Exp: 12/25)');
+      //print('[CONSOLE] [stripe_config]   Insufficient: ${testCards['insufficient_funds']} (CVV: 123, Exp: 12/25)');
+      //print('[CONSOLE] [stripe_config]');
+      //print('[CONSOLE] [stripe_config]💳 AVAILABLE PLANS:');
       for (final plan in subscriptionPlans.values) {
-        print('[CONSOLE] [stripe_config]   ${plan.name}: ${plan.formattedPrice}/${plan.interval}');
+        //print('[CONSOLE] [stripe_config]   ${plan.name}: ${plan.formattedPrice}/${plan.interval}');
       }
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]🎯 TEST FLOW:');
-      print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
-      print('[CONSOLE] [stripe_config]   2. Subscription Screen → "Sottoscrivi Premium"');
-      print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
-      print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
+      //print('[CONSOLE] [stripe_config]');
+      //print('[CONSOLE] [stripe_config]🎯 TEST FLOW:');
+      //print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
+      //print('[CONSOLE] [stripe_config]   2. Subscription Screen → "Sottoscrivi Premium"');
+      //print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
+      //print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
     } else {
-      print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
+      //print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
+      //print('[CONSOLE] [stripe_config]');
+      //print('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
       for (final check in configurationChecks) {
         if (check.startsWith('❌') || check.startsWith('⚠️')) {
-          print('[CONSOLE] [stripe_config]   $check');
+          //print('[CONSOLE] [stripe_config]   $check');
         }
       }
     }
 
-    print('[CONSOLE] [stripe_config]=========================================');
-    print('[CONSOLE] [stripe_config]');
+    //print('[CONSOLE] [stripe_config]=========================================');
+    //print('[CONSOLE] [stripe_config]');
   }
 
   // ============================================================================

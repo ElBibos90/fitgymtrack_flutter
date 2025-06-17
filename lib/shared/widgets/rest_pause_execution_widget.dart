@@ -93,7 +93,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   @override
   void initState() {
     super.initState();
-    print('🔥 [REST-PAUSE WIDGET] Initializing: ${widget.exerciseName}');
+    //print('🔥 [REST-PAUSE WIDGET] Initializing: ${widget.exerciseName}');
 
     _initializeAnimations();
     _initializeData();
@@ -144,9 +144,9 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
         targetSequence: sequence,
       );
 
-      print('🔥 [REST-PAUSE WIDGET] Parsed sequence: $sequence');
+      //print('🔥 [REST-PAUSE WIDGET] Parsed sequence: $sequence');
     } catch (e) {
-      print('❌ [REST-PAUSE WIDGET] Error: $e');
+      //print('❌ [REST-PAUSE WIDGET] Error: $e');
       _data = SimpleRestPauseData(
         exerciseName: widget.exerciseName,
         weight: widget.currentWeight,
@@ -188,7 +188,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
     final enteredReps = int.tryParse(_repsController.text) ?? _currentTargetReps;
     final currentIndex = _data.currentMicroSeriesIndex;
 
-    print('🔥 [REST-PAUSE WIDGET] Micro-series ${currentIndex + 1} completed: $enteredReps reps');
+    //print('🔥 [REST-PAUSE WIDGET] Micro-series ${currentIndex + 1} completed: $enteredReps reps');
 
     setState(() {
       _data = _data.addMicroSeries(enteredReps);
@@ -204,7 +204,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   }
 
   void _startMiniRecovery() {
-    print('🔥 [REST-PAUSE WIDGET] Starting mini-recovery: ${widget.restSeconds}s');
+    //print('🔥 [REST-PAUSE WIDGET] Starting mini-recovery: ${widget.restSeconds}s');
     _showRestPauseTimer();
   }
 
@@ -226,12 +226,12 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
       _repsController.text = _currentTargetReps.toString();
     });
 
-    print('🔥 [REST-PAUSE WIDGET] Mini-recovery ended, ready for micro-series ${_data.currentMicroSeriesIndex + 1}');
+    //print('🔥 [REST-PAUSE WIDGET] Mini-recovery ended, ready for micro-series ${_data.currentMicroSeriesIndex + 1}');
   }
 
   void _handleCompleteAllSeries() {
-    print('🔥 [REST-PAUSE WIDGET] All micro-series completed!');
-    print('🔥 [REST-PAUSE WIDGET] Final: ${_data.actualSequence} (${_data.totalActualReps} reps)');
+    //print('🔥 [REST-PAUSE WIDGET] All micro-series completed!');
+    //print('🔥 [REST-PAUSE WIDGET] Final: ${_data.actualSequence} (${_data.totalActualReps} reps)');
 
     _progressController.forward();
     widget.onCompleteAllMicroSeries?.call(_data);

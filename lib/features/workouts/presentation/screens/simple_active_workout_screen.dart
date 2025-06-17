@@ -48,7 +48,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    print("🔥 [V4 HTTP] initState called");
+    //print("🔥 [V4 HTTP] initState called");
     _workoutKey = 'workout_${widget.schedaId}';
     _initializeHttp();
     _initializeWorkout();
@@ -56,7 +56,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
 
   @override
   void dispose() {
-    print("🔥 [V4 HTTP] dispose called");
+    //print("🔥 [V4 HTTP] dispose called");
     _saveWorkoutState();
     _workoutTimer?.cancel();
     super.dispose();
@@ -73,15 +73,15 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
       // Add request/response interceptors for debugging
       _dio.interceptors.add(InterceptorsWrapper(
         onRequest: (options, handler) {
-          print("🔥 [V4 HTTP] Request: ${options.method} ${options.uri}");
+          //print("🔥 [V4 HTTP] Request: ${options.method} ${options.uri}");
           handler.next(options);
         },
         onResponse: (response, handler) {
-          print("🔥 [V4 HTTP] Response: ${response.statusCode}");
+          //print("🔥 [V4 HTTP] Response: ${response.statusCode}");
           handler.next(response);
         },
         onError: (error, handler) {
-          print("🔥 [V4 HTTP] Error: ${error.message}");
+          //print("🔥 [V4 HTTP] Error: ${error.message}");
           handler.next(error);
         },
       ));
@@ -91,9 +91,9 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
         _httpStatus = "HTTP Client Ready ✅";
       });
 
-      print("🔥 [V4 HTTP] HTTP client initialized successfully");
+      //print("🔥 [V4 HTTP] HTTP client initialized successfully");
     } catch (e) {
-      print("🔥 [V4 HTTP] Error initializing HTTP: $e");
+      //print("🔥 [V4 HTTP] Error initializing HTTP: $e");
       setState(() {
         _httpStatus = "HTTP Error ❌";
       });
@@ -113,7 +113,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
       await _loadExercisesFromApi();
 
     } catch (e) {
-      print("🔥 [V4 HTTP] Error initializing: $e");
+      //print("🔥 [V4 HTTP] Error initializing: $e");
     } finally {
       setState(() {
         _isRestoringState = false;
@@ -125,7 +125,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
   // ✅ NUOVO: Load exercises from mock API
   Future<void> _loadExercisesFromApi() async {
     try {
-      print("🔥 [V4 HTTP] Loading exercises from API...");
+      //print("🔥 [V4 HTTP] Loading exercises from API...");
       setState(() {
         _httpStatus = "Loading exercises...";
       });
@@ -155,12 +155,12 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
           _lastApiResponse = "SUCCESS ${response.statusCode}";
         });
 
-        print("🔥 [V4 HTTP] Successfully loaded ${_exercises.length} exercises");
+        //print("🔥 [V4 HTTP] Successfully loaded ${_exercises.length} exercises");
       } else {
         throw Exception('HTTP ${response.statusCode}');
       }
     } catch (e) {
-      print("🔥 [V4 HTTP] Error loading exercises: $e");
+      //print("🔥 [V4 HTTP] Error loading exercises: $e");
 
       // Fallback to local exercises
       _exercises = [
@@ -179,7 +179,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
   // ✅ NUOVO: Save series to mock API
   Future<void> _saveSeriesViaApi(int seriesNumber) async {
     try {
-      print("🔥 [V4 HTTP] Saving series to API...");
+      //print("🔥 [V4 HTTP] Saving series to API...");
 
       final currentExercise = _exercises[_currentExerciseIndex];
       final seriesData = {
@@ -202,13 +202,13 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
         setState(() {
           _lastApiResponse = "SAVE SUCCESS ${response.statusCode}";
         });
-        print("🔥 [V4 HTTP] Series saved successfully via API");
+        //print("🔥 [V4 HTTP] Series saved successfully via API");
       } else {
         throw Exception('Save failed: HTTP ${response.statusCode}');
       }
 
     } catch (e) {
-      print("🔥 [V4 HTTP] Error saving series via API: $e");
+      //print("🔥 [V4 HTTP] Error saving series via API: $e");
       setState(() {
         _lastApiResponse = "SAVE ERROR: $e";
       });
@@ -219,7 +219,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
   Future<void> _restoreWorkoutState() async {
     try {
       final stateJson = _prefs?.getString(_workoutKey);
-      print("🔥 [V4 HTTP] Restoring state: ${stateJson ?? 'null'}");
+      //print("🔥 [V4 HTTP] Restoring state: ${stateJson ?? 'null'}");
 
       if (stateJson != null) {
         final state = jsonDecode(stateJson) as Map<String, dynamic>;
@@ -234,12 +234,12 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
           }
         });
 
-        print("🔥 [V4 HTTP] State restored: $_completedSeries series, exercise $_currentExerciseIndex");
+        //print("🔥 [V4 HTTP] State restored: $_completedSeries series, exercise $_currentExerciseIndex");
       } else {
         _startTime = DateTime.now();
       }
     } catch (e) {
-      print("🔥 [V4 HTTP] Error restoring state: $e");
+      //print("🔥 [V4 HTTP] Error restoring state: $e");
       _startTime = DateTime.now();
     }
   }
@@ -257,18 +257,18 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
       };
 
       await _prefs!.setString(_workoutKey, jsonEncode(state));
-      print("🔥 [V4 HTTP] State saved with $_apiCalls API calls");
+      //print("🔥 [V4 HTTP] State saved with $_apiCalls API calls");
     } catch (e) {
-      print("🔥 [V4 HTTP] Error saving state: $e");
+      //print("🔥 [V4 HTTP] Error saving state: $e");
     }
   }
 
   Future<void> _clearWorkoutState() async {
     try {
       await _prefs?.remove(_workoutKey);
-      print("🔥 [V4 HTTP] State cleared");
+      //print("🔥 [V4 HTTP] State cleared");
     } catch (e) {
-      print("🔥 [V4 HTTP] Error clearing state: $e");
+      //print("🔥 [V4 HTTP] Error clearing state: $e");
     }
   }
 
@@ -534,7 +534,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
   }
 
   Future<void> _handleCompleteSeries() async {
-    print("🔥 [V4 HTTP] handleCompleteSeries called");
+    //print("🔥 [V4 HTTP] handleCompleteSeries called");
 
     setState(() {
       _isLoading = true;
@@ -569,7 +569,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
       }
 
     } catch (e) {
-      print("🔥 [V4 HTTP] Error: $e");
+      //print("🔥 [V4 HTTP] Error: $e");
 
       setState(() {
         _isLoading = false;

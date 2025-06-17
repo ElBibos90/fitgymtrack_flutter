@@ -85,15 +85,15 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   void _saveChanges() {
     // 🔧 DEBUG: Log dei valori prima dell'update
-    print('[CONSOLE] [workout_exercise_editor]Saving changes for exercise: ${widget.exercise.nome}');
-    print('[CONSOLE] [workout_exercise_editor]  - selectedSetType: "$_selectedSetType"');
-    print('[CONSOLE] [workout_exercise_editor]  - linkedToPrevious: $_linkedToPrevious');
-    print('[CONSOLE] [workout_exercise_editor]  - isIsometric: $_isIsometric');
-    print('[CONSOLE] [workout_exercise_editor]  - notes: "${_notesController.text}"');
+    //print('[CONSOLE] [workout_exercise_editor]Saving changes for exercise: ${widget.exercise.nome}');
+    //print('[CONSOLE] [workout_exercise_editor]  - selectedSetType: "$_selectedSetType"');
+    //print('[CONSOLE] [workout_exercise_editor]  - linkedToPrevious: $_linkedToPrevious');
+    //print('[CONSOLE] [workout_exercise_editor]  - isIsometric: $_isIsometric');
+    //print('[CONSOLE] [workout_exercise_editor]  - notes: "${_notesController.text}"');
     // 🚀 FASE 4: Log valori REST-PAUSE
-    print('[CONSOLE] [workout_exercise_editor]  - isRestPause: $_isRestPause');
-    print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${_restPauseRepsController.text}"');
-    print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: $_restPauseRestSeconds');
+    //print('[CONSOLE] [workout_exercise_editor]  - isRestPause: $_isRestPause');
+    //print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${_restPauseRepsController.text}"');
+    //print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: $_restPauseRestSeconds');
 
     final updatedExercise = widget.exercise.safeCopy(
       serie: int.tryParse(_serieController.text) ?? widget.exercise.serie,
@@ -113,15 +113,15 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
     );
 
     // 🔧 DEBUG: Log del risultato dopo safeCopy
-    print('[CONSOLE] [workout_exercise_editor]After safeCopy:');
-    print('[CONSOLE] [workout_exercise_editor]  - setType: "${updatedExercise.setType}"');
-    print('[CONSOLE] [workout_exercise_editor]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
-    print('[CONSOLE] [workout_exercise_editor]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
-    print('[CONSOLE] [workout_exercise_editor]  - note: "${updatedExercise.note}"');
+    //print('[CONSOLE] [workout_exercise_editor]After safeCopy:');
+    //print('[CONSOLE] [workout_exercise_editor]  - setType: "${updatedExercise.setType}"');
+    //print('[CONSOLE] [workout_exercise_editor]  - linkedToPreviousInt: ${updatedExercise.linkedToPreviousInt}');
+    //print('[CONSOLE] [workout_exercise_editor]  - isIsometricInt: ${updatedExercise.isIsometricInt}');
+    //print('[CONSOLE] [workout_exercise_editor]  - note: "${updatedExercise.note}"');
     // 🚀 FASE 4: Log risultato REST-PAUSE
-    print('[CONSOLE] [workout_exercise_editor]  - isRestPauseInt: ${updatedExercise.isRestPauseInt}');
-    print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${updatedExercise.restPauseReps}"');
-    print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: ${updatedExercise.restPauseRestSeconds}');
+    //print('[CONSOLE] [workout_exercise_editor]  - isRestPauseInt: ${updatedExercise.isRestPauseInt}');
+    //print('[CONSOLE] [workout_exercise_editor]  - restPauseReps: "${updatedExercise.restPauseReps}"');
+    //print('[CONSOLE] [workout_exercise_editor]  - restPauseRestSeconds: ${updatedExercise.restPauseRestSeconds}');
 
     widget.onUpdate(updatedExercise);
 

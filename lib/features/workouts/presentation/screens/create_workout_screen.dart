@@ -135,7 +135,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 (plan) => plan.id == widget.workoutId,
           );
 
-          print('[CONSOLE] [create_workout_screen]✅ Found existing plan in state: ${existingPlan.nome}');
+          ////print('[CONSOLE] [create_workout_screen]✅ Found existing plan in state: ${existingPlan.nome}');
 
           // Usa i dati reali della scheda
           _populateFieldsFromWorkoutPlan(existingPlan);
@@ -149,12 +149,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           _loadAvailableExercises();
           return;
         } catch (e) {
-          print('[CONSOLE] [create_workout_screen]⚠️ Plan not found in current state, loading from scratch');
+          ////print('[CONSOLE] [create_workout_screen]⚠️ Plan not found in current state, loading from scratch');
         }
       }
 
       // Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
-      print('[CONSOLE] [create_workout_screen]🔄 Loading workout plans first to get correct name...');
+      ////print('[CONSOLE] [create_workout_screen]🔄 Loading workout plans first to get correct name...');
       if (_currentUserId != null) {
         _workoutBloc.loadWorkoutPlans(_currentUserId!);
         // Carica anche esercizi disponibili
@@ -165,7 +165,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Popola i campi con i dati reali della scheda
   void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
-    print('[CONSOLE] [create_workout_screen]✅ Populating fields with real workout data: ${workoutPlan.nome}');
+    ////print('[CONSOLE] [create_workout_screen]✅ Populating fields with real workout data: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -178,7 +178,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _populateFieldsFromWorkoutData(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    print('[CONSOLE] [create_workout_screen]✅ Populating fields with workout: ${workoutPlan.nome}');
+    ////print('[CONSOLE] [create_workout_screen]✅ Populating fields with workout: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -191,7 +191,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   /// Carica esercizi disponibili per il dialog di selezione
   void _loadAvailableExercises() {
     if (_currentUserId != null) {
-      print('[CONSOLE] [create_workout_screen]Loading available exercises for user: $_currentUserId');
+      ////print('[CONSOLE] [create_workout_screen]Loading available exercises for user: $_currentUserId');
       setState(() {
         _isLoadingAvailableExercises = true;
       });
@@ -201,7 +201,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
-    print('[CONSOLE] [create_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
+    ////print('[CONSOLE] [create_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
 
     // Converte ExerciseItem a WorkoutExercise
     final workoutExercise = WorkoutExercise(
@@ -230,7 +230,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   // ✅ FIX: Gestione del back navigation super-sicura
   void _handleBackNavigation() {
-    print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation');
+    ////print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation');
 
     // ✅ APPROCCIO SUPER-SICURO: Preserva sempre lo stato delle schede
     final currentState = _workoutBloc.state;
@@ -349,7 +349,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                       final existingPlan = state.workoutPlans.firstWhere(
                             (plan) => plan.id == widget.workoutId,
                       );
-                      print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
+                      //print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
                       _populateFieldsFromWorkoutPlan(existingPlan);
 
                       // Ora carica anche gli esercizi
@@ -360,11 +360,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                         _loadAvailableExercises();
                       }
                     } catch (e) {
-                      print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
+                      //print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
                     }
                   } else if (state is AvailableExercisesLoaded) {
                     // Gestisce il caricamento degli esercizi disponibili
-                    print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
+                    //print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
                     setState(() {
                       _availableExercises = state.availableExercises;
                       _isLoadingAvailableExercises = false;
@@ -716,15 +716,15 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _createWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('[CONSOLE] [create_workout_screen]Creating exercise: ${exercise.nome}');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      //print('[CONSOLE] [create_workout_screen]Creating exercise: ${exercise.nome}');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      //print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
+      //print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
       // 🚀 FASE 3 FIX: Log valori REST-PAUSE
-      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
-      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
-      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
       // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
       return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
@@ -733,13 +733,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      print('[CONSOLE] [create_workout_screen]ExerciseRequest $i:');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      //print('[CONSOLE] [create_workout_screen]ExerciseRequest $i:');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
       // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
-      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
-      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
-      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
     }
 
     final request = CreateWorkoutPlanRequest(
@@ -751,22 +751,22 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('[CONSOLE] [create_workout_screen]Creating workout: ${request.nome}');
+    //print('[CONSOLE] [create_workout_screen]Creating workout: ${request.nome}');
     _workoutBloc.createWorkout(request);
   }
 
   void _updateWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('[CONSOLE] [create_workout_screen]Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      //print('[CONSOLE] [create_workout_screen]Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      //print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
+      //print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
       // 🚀 FASE 3 FIX: Log valori REST-PAUSE
-      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
-      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
-      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
       // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
       return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
@@ -775,16 +775,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     // DEBUG: Log della richiesta finale
     for (int i = 0; i < exerciseRequests.length; i++) {
       final req = exerciseRequests[i];
-      print('[CONSOLE] [create_workout_screen]ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      //print('[CONSOLE] [create_workout_screen]ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
       // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
-      print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
-      print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
-      print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
 
       if (req.schedaEsercizioId == null) {
-        print('[CONSOLE] [create_workout_screen]ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
+        //print('[CONSOLE] [create_workout_screen]ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
       }
     }
 
@@ -798,8 +798,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('[CONSOLE] [create_workout_screen]Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
-    print('[CONSOLE] [create_workout_screen]Updating workout - Esercizi count: ${request.esercizi.length}');
+    //print('[CONSOLE] [create_workout_screen]Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
+    //print('[CONSOLE] [create_workout_screen]Updating workout - Esercizi count: ${request.esercizi.length}');
 
     _workoutBloc.updateWorkout(request);
   }

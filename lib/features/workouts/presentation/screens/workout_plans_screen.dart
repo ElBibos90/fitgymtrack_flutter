@@ -78,7 +78,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
     widget.controller?._attachState(this);
 
     // 🚀 FIX: NON caricare automaticamente i workout qui!
-    print('[CONSOLE] [workout_plans_screen]🔧 WorkoutPlansScreen initialized - NOT loading data yet');
+    //print('[CONSOLE] [workout_plans_screen]🔧 WorkoutPlansScreen initialized - NOT loading data yet');
   }
 
   @override
@@ -90,14 +90,14 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
 
   /// 🚀 METODI PRIVATI chiamati dal controller
   void _onTabVisible() {
-    print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
+    //print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
 
     if (!_isTabVisible) {
       _isTabVisible = true;
 
       // Carica i dati solo la prima volta che la tab diventa visibile
       if (!_hasLoadedData) {
-        print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
+        //print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
         _loadWorkoutPlans();
         _hasLoadedData = true;
       }
@@ -105,12 +105,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   }
 
   void _onTabHidden() {
-    print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
+    //print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
     _isTabVisible = false;
   }
 
   void _forceReload() {
-    print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
+    //print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
 
     if (_isTabVisible) {
       _loadWorkoutPlans();
@@ -122,14 +122,14 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
 
   /// 🚀 NUOVO: Metodo pubblico chiamato dal parent quando la tab diventa visibile
   void onTabVisible() {
-    print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
+    //print('[CONSOLE] [workout_plans_screen]👁️ Tab became visible - isTabVisible: $_isTabVisible, hasLoadedData: $_hasLoadedData');
 
     if (!_isTabVisible) {
       _isTabVisible = true;
 
       // Carica i dati solo la prima volta che la tab diventa visibile
       if (!_hasLoadedData) {
-        print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
+        //print('[CONSOLE] [workout_plans_screen]🚀 First time tab is visible - loading workout plans now!');
         _loadWorkoutPlans();
         _hasLoadedData = true;
       }
@@ -138,13 +138,13 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
 
   /// 🚀 NUOVO: Metodo pubblico chiamato dal parent quando la tab diventa nascosta
   void onTabHidden() {
-    print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
+    //print('[CONSOLE] [workout_plans_screen]👁️ Tab became hidden');
     _isTabVisible = false;
   }
 
   /// 🔧 FIX: Metodo di caricamento ora privato e chiamato solo quando necessario
   Future<void> _loadWorkoutPlans() async {
-    print('[CONSOLE] [workout_plans_screen]📊 Loading workout plans...');
+    //print('[CONSOLE] [workout_plans_screen]📊 Loading workout plans...');
 
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {

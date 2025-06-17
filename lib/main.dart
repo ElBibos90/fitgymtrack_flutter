@@ -24,7 +24,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED');
+  //print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED');
 
   // Initialize dependency injection
   await DependencyInjection.init();
@@ -262,14 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 🔧 CRITICAL FIX: Load subscription immediately when app starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('[CONSOLE] [main]🔧 Loading subscription on app start...');
+      //print('[CONSOLE] [main]🔧 Loading subscription on app start...');
       context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: true));
     });
   }
 
   /// 🚀 NUOVO: Gestisce il cambio di tab con lazy loading
   void _onTabTapped(int index) {
-    print('[CONSOLE] [main]🔄 Tab changed: $_selectedIndex -> $index');
+    //print('[CONSOLE] [main]🔄 Tab changed: $_selectedIndex -> $index');
 
     _previousIndex = _selectedIndex;
 
@@ -287,11 +287,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (currentIndex == 1) {
       // L'utente ha selezionato la tab workout
       _workoutController.onTabVisible();
-      print('[CONSOLE] [main]👁️ Workout tab became visible');
+      //print('[CONSOLE] [main]👁️ Workout tab became visible');
     } else if (previousIndex == 1) {
       // L'utente ha lasciato la tab workout
       _workoutController.onTabHidden();
-      print('[CONSOLE] [main]👁️ Workout tab became hidden');
+      //print('[CONSOLE] [main]👁️ Workout tab became hidden');
     }
 
     // 🚀 FUTURE: Qui possiamo aggiungere lazy loading per altre tab se necessario
@@ -458,7 +458,7 @@ class DashboardPage extends StatelessWidget {
           // 🔧 FIXED: Premium status banner using SubscriptionBloc
           BlocBuilder<SubscriptionBloc, SubscriptionState>(
             builder: (context, state) {
-              print('[CONSOLE] [main]🔧 Dashboard subscription state: ${state.runtimeType}');
+              //print('[CONSOLE] [main]🔧 Dashboard subscription state: ${state.runtimeType}');
 
               if (state is SubscriptionLoading) {
                 return Container(
@@ -484,7 +484,7 @@ class DashboardPage extends StatelessWidget {
 
               if (state is SubscriptionLoaded) {
                 final subscription = state.subscription;
-                print('[CONSOLE] [main]🔧 Dashboard subscription: ${subscription.planName} - Premium: ${subscription.isPremium}');
+                //print('[CONSOLE] [main]🔧 Dashboard subscription: ${subscription.planName} - Premium: ${subscription.isPremium}');
 
                 // 🎉 PREMIUM USER - Show thank you banner
                 if (subscription.isPremium && !subscription.isExpired) {

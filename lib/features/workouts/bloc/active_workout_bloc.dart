@@ -11,7 +11,7 @@ import '../../stats/models/user_stats_models.dart';
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutBloc'}) {
   if (kDebugMode) {
-    print('[CONSOLE] [active_workout_bloc][$name] $message');
+    //print('[CONSOLE] [active_workout_bloc][$name] $message');
   }
 }
 
