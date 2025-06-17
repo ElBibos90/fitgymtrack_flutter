@@ -221,7 +221,7 @@ class _SimpleWorkoutTestScreenState extends State<SimpleWorkoutTestScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 12.sp,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha:0.9),
                     ),
                   ),
                 ],

@@ -1642,7 +1642,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             _formatDuration(_elapsedTime),
             style: TextStyle(
               fontSize: 12.sp,
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha:0.7),
             ),
           ),
         ],
@@ -1664,7 +1664,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               return Container(
                 decoration: BoxDecoration(
                   color: isWorkoutFullyCompleted
-                      ? Colors.green.withOpacity(0.2)
+                      ? Colors.green.withValues(alpha:0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20.r),
                 ),
@@ -1848,9 +1848,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: exerciseColor.withOpacity(0.1),
+                color: exerciseColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: exerciseColor.withOpacity(0.3)),
+                border: Border.all(color: exerciseColor.withValues(alpha:0.3)),
               ),
               child: Text(
                 '$exerciseType: ${exercise.nome}',
@@ -1884,7 +1884,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.08),
+                    color: colorScheme.shadow.withValues(alpha:0.08),
                     blurRadius: 6,
                     offset: const Offset(0, 1),
                   ),
@@ -1898,7 +1898,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     'Serie ',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                      color: colorScheme.onSurface.withValues(alpha:0.7),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -1939,7 +1939,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     margin: EdgeInsets.only(bottom: 16.h),
     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
     decoration: BoxDecoration(
-    color: Colors.deepPurple.withOpacity(0.1),
+    color: Colors.deepPurple.withValues(alpha:0.1),
     borderRadius: BorderRadius.circular(8.r),
     border: Border.all(color: Colors.deepPurple, width: 1),
     ),
@@ -2076,9 +2076,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
               decoration: BoxDecoration(
-                color: groupColor.withOpacity(0.1),
+                color: groupColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: groupColor.withOpacity(0.3)),
+                border: Border.all(color: groupColor.withValues(alpha:0.3)),
               ),
               child: Text(
                 '${groupType.toUpperCase()}: ${group.length} esercizi',
@@ -2125,7 +2125,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                           borderRadius: BorderRadius.circular(20.r),
                           boxShadow: isSelected ? [
                             BoxShadow(
-                              color: groupColor.withOpacity(0.3),
+                              color: groupColor.withValues(alpha:0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -2213,7 +2213,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 borderRadius: BorderRadius.circular(12.r),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.08),
+                    color: colorScheme.shadow.withValues(alpha:0.08),
                     blurRadius: 6,
                     offset: const Offset(0, 1),
                   ),
@@ -2227,7 +2227,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     'Serie ',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                      color: colorScheme.onSurface.withValues(alpha:0.7),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -2267,7 +2267,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 margin: EdgeInsets.only(bottom: 16.h),
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(0.1),
+                  color: Colors.deepPurple.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8.r),
                   border: Border.all(color: Colors.deepPurple, width: 1),
                 ),
@@ -2375,7 +2375,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 width: double.infinity,
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(color: Colors.green),
                 ),
@@ -2419,7 +2419,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
+              color: colorScheme.shadow.withValues(alpha:0.1),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -2451,7 +2451,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   SizedBox(width: 8.w),
                   Icon(
                     Icons.edit,
-                    color: colorScheme.onSurface.withOpacity(0.3),
+                    color: colorScheme.onSurface.withValues(alpha:0.3),
                     size: 16.sp,
                   ),
                 ],
@@ -2475,7 +2475,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               label,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha:0.7),
               ),
             ),
             SizedBox(height: 4.h),
@@ -2515,7 +2515,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: colorScheme.shadow.withValues(alpha:0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -2748,7 +2748,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha:0.5),
       child: Center(
         child: Card(
           margin: EdgeInsets.all(32.w),
@@ -2778,7 +2778,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   'L\'allenamento verrà cancellato e tutti i progressi andranno persi.',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    color: colorScheme.onSurface.withValues(alpha:0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -2828,7 +2828,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha:0.5),
       child: Center(
         child: Card(
           margin: EdgeInsets.all(32.w),
@@ -2858,7 +2858,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   'L\'allenamento verrà salvato con il tempo di ${_formatDuration(_elapsedTime)}.',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    color: colorScheme.onSurface.withValues(alpha:0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),

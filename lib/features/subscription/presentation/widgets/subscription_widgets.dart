@@ -36,8 +36,8 @@ class CurrentSubscriptionCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: isDarkMode
                 ? [
-              AppColors.indigo600.withOpacity(0.3),
-              AppColors.indigo700.withOpacity(0.2),
+              AppColors.indigo600.withValues(alpha:0.3),
+              AppColors.indigo700.withValues(alpha:0.2),
             ]
                 : [
               AppColors.indigo600,
@@ -89,9 +89,9 @@ class CurrentSubscriptionCard extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: subscription.isPremium
-                ? Colors.white.withOpacity(0.2)
+                ? Colors.white.withValues(alpha:0.2)
                 : (isDarkMode
-                ? AppColors.indigo600.withOpacity(0.8)
+                ? AppColors.indigo600.withValues(alpha:0.8)
                 : AppColors.indigo600),
           ),
           child: Icon(
@@ -118,7 +118,7 @@ class CurrentSubscriptionCard extends StatelessWidget {
                 subscription.formattedPrice,
                 style: TextStyle(
                   fontSize: 16.sp,
-                  color: textColor.withOpacity(0.8),
+                  color: textColor.withValues(alpha:0.8),
                 ),
               ),
             ],
@@ -194,7 +194,7 @@ class CurrentSubscriptionCard extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: textColor.withOpacity(0.9),
+                color: textColor.withValues(alpha:0.9),
               ),
             ),
             Text(
@@ -211,9 +211,9 @@ class CurrentSubscriptionCard extends StatelessWidget {
         LinearProgressIndicator(
           value: progress,
           backgroundColor: subscription.isPremium
-              ? Colors.white.withOpacity(0.3)
+              ? Colors.white.withValues(alpha:0.3)
               : (isDarkMode
-              ? Colors.grey.withOpacity(0.3)
+              ? Colors.grey.withValues(alpha:0.3)
               : AppColors.border),
           valueColor: AlwaysStoppedAnimation<Color>(
             subscription.isPremium
@@ -266,7 +266,7 @@ class CurrentSubscriptionCard extends StatelessWidget {
                 ? Colors.white
                 : (isDarkMode ? const Color(0xFF4CAF50) : AppColors.success))
                 : (subscription.isPremium
-                ? Colors.white.withOpacity(0.5)
+                ? Colors.white.withValues(alpha:0.5)
                 : (isDarkMode ? Colors.grey : AppColors.textHint)),
           ),
           SizedBox(width: 8.w),
@@ -276,7 +276,7 @@ class CurrentSubscriptionCard extends StatelessWidget {
               fontSize: 14.sp,
               color: included
                   ? textColor
-                  : textColor.withOpacity(0.6),
+                  : textColor.withValues(alpha:0.6),
             ),
           ),
         ],
@@ -329,12 +329,12 @@ class SubscriptionPlanCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: isDarkMode
                 ? [
-              AppColors.indigo600.withOpacity(0.2),
-              AppColors.indigo700.withOpacity(0.1),
+              AppColors.indigo600.withValues(alpha:0.2),
+              AppColors.indigo700.withValues(alpha:0.1),
             ]
                 : [
-              AppColors.indigo600.withOpacity(0.1),
-              AppColors.indigo700.withOpacity(0.05),
+              AppColors.indigo600.withValues(alpha:0.1),
+              AppColors.indigo700.withValues(alpha:0.05),
             ],
           )
               : null,
@@ -516,11 +516,11 @@ class SubscriptionExpiredBanner extends StatelessWidget {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? AppColors.error.withOpacity(0.2)
-            : AppColors.error.withOpacity(0.1),
+            ? AppColors.error.withValues(alpha:0.2)
+            : AppColors.error.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.error.withOpacity(0.3),
+          color: AppColors.error.withValues(alpha:0.3),
         ),
       ),
       child: Column(
@@ -621,11 +621,11 @@ class SubscriptionLimitBanner extends StatelessWidget {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? AppColors.warning.withOpacity(0.2)
-            : AppColors.warning.withOpacity(0.1),
+            ? AppColors.warning.withValues(alpha:0.2)
+            : AppColors.warning.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.warning.withOpacity(0.3),
+          color: AppColors.warning.withValues(alpha:0.3),
         ),
       ),
       child: Column(

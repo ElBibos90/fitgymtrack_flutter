@@ -104,7 +104,7 @@ class ActiveWorkoutNavigationBar extends StatelessWidget {
               ),
               style: IconButton.styleFrom(
                 backgroundColor: currentGroupIndex > 0
-                    ? AppColors.indigo600.withOpacity(0.1)
+                    ? AppColors.indigo600.withValues(alpha:0.1)
                     : Colors.transparent,
                 minimumSize: Size(40.w, 40.h),
               ),
@@ -138,7 +138,7 @@ class ActiveWorkoutNavigationBar extends StatelessWidget {
               ),
               style: IconButton.styleFrom(
                 backgroundColor: currentGroupIndex < groups.length - 1
-                    ? AppColors.indigo600.withOpacity(0.1)
+                    ? AppColors.indigo600.withValues(alpha:0.1)
                     : Colors.transparent,
                 minimumSize: Size(40.w, 40.h),
               ),

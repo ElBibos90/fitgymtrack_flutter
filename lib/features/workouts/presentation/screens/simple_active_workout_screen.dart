@@ -396,7 +396,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
                     '$_httpStatus | API Calls: $_apiCalls',
                     style: TextStyle(
                       fontSize: 11.sp,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha:0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -415,7 +415,7 @@ class _SimpleActiveWorkoutScreenState extends State<SimpleActiveWorkoutScreen> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

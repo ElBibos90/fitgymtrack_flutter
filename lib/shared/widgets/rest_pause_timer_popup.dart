@@ -233,15 +233,15 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.9),
+        color: Colors.black.withValues(alpha:0.9),
         borderRadius: BorderRadius.circular(20.r),
         border: Border.all(
-          color: _currentColor.withOpacity(0.5),
+          color: _currentColor.withValues(alpha:0.5),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: _currentColor.withOpacity(0.3),
+            color: _currentColor.withValues(alpha:0.3),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -270,9 +270,9 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
         Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
           decoration: BoxDecoration(
-            color: _currentColor.withOpacity(0.2),
+            color: _currentColor.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: _currentColor.withOpacity(0.5)),
+            border: Border.all(color: _currentColor.withValues(alpha:0.5)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -326,14 +326,14 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
                 height: 120.w,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _currentColor.withOpacity(0.1),
+                  color: _currentColor.withValues(alpha:0.1),
                   border: Border.all(
                     color: _currentColor,
                     width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _currentColor.withOpacity(_breathAnimation.value * 0.4),
+                      color: _currentColor.withValues(alpha:_breathAnimation.value * 0.4),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -376,7 +376,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       height: 120.w,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.green.withOpacity(0.2),
+        color: Colors.green.withValues(alpha:0.2),
         border: Border.all(color: Colors.green, width: 3),
       ),
       child: Center(
@@ -429,7 +429,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
         SizedBox(height: 8.h),
         LinearProgressIndicator(
           value: _progressValue,
-          backgroundColor: Colors.grey.withOpacity(0.3),
+          backgroundColor: Colors.grey.withValues(alpha:0.3),
           valueColor: AlwaysStoppedAnimation<Color>(_currentColor),
           minHeight: 6.h,
         ),
@@ -441,10 +441,10 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
+        color: Colors.deepPurple.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: Colors.deepPurple.withOpacity(0.3),
+          color: Colors.deepPurple.withValues(alpha:0.3),
         ),
       ),
       child: Column(
@@ -579,7 +579,7 @@ class RestPauseTimerHelper {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.8),
+      barrierColor: Colors.black.withValues(alpha:0.8),
       builder: (context) => RestPauseTimerPopup(
         initialSeconds: seconds,
         exerciseName: exerciseName,

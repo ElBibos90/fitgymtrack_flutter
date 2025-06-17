@@ -55,7 +55,7 @@ class WorkoutPlanCard extends StatelessWidget {
                         'Creata il ${_formatDate(workoutPlan.dataCreazione!)}',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                          color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
                         ),
                       ),
                     ],
@@ -99,7 +99,7 @@ class WorkoutPlanCard extends StatelessWidget {
                 ],
                 child: Icon(
                   Icons.more_vert,
-                  color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+                  color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
                   size: 24.sp,
                 ),
               ),
@@ -113,7 +113,7 @@ class WorkoutPlanCard extends StatelessWidget {
               workoutPlan.descrizione!,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
+                color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
                 height: 1.3,
               ),
               maxLines: 2,
@@ -192,9 +192,9 @@ class WorkoutPlanCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(AppConfig.radiusS),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -248,9 +248,9 @@ class WorkoutPlanCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(AppConfig.spacingS.w),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(AppConfig.radiusS.r),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                border: Border.all(color: AppColors.error.withValues(alpha:0.3)),
               ),
               child: Row(
                 children: [

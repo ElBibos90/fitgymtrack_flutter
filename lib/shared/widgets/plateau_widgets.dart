@@ -45,7 +45,7 @@ class PlateauBadge extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: plateauColor.withOpacity(0.6),
+                color: plateauColor.withValues(alpha:0.6),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
                 spreadRadius: 1,
@@ -71,7 +71,7 @@ class PlateauBadge extends StatelessWidget {
         color: Colors.white,
       ),
       decoration: BoxDecoration(
-        color: plateauColor.withOpacity(0.9),
+        color: plateauColor.withValues(alpha:0.9),
         borderRadius: BorderRadius.circular(6.r),
       ),
       child: badge,
@@ -129,7 +129,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: plateauColor.withOpacity(0.15),
+              color: plateauColor.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(
@@ -174,7 +174,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.5),
+                color: colorScheme.surfaceVariant.withValues(alpha:0.5),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Column(
@@ -243,7 +243,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
           child: Text(
             'Capito',
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: colorScheme.onSurface.withValues(alpha:0.7),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -267,9 +267,9 @@ class PlateauSuggestionDialog extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -303,7 +303,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: _getConfidenceColor(suggestion.confidence).withOpacity(0.3),
+          color: _getConfidenceColor(suggestion.confidence).withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -311,7 +311,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: _getConfidenceColor(suggestion.confidence).withOpacity(0.15),
+              color: _getConfidenceColor(suggestion.confidence).withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(
@@ -348,7 +348,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             decoration: BoxDecoration(
-              color: _getConfidenceColor(suggestion.confidence).withOpacity(0.1),
+              color: _getConfidenceColor(suggestion.confidence).withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(6.r),
             ),
             child: Text(
@@ -382,7 +382,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha:0.5),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Text(
@@ -482,9 +482,9 @@ class PlateauIndicator extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: showText ? 8.w : 4.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: plateauColor.withOpacity(0.15),
+          color: plateauColor.withValues(alpha:0.15),
           borderRadius: BorderRadius.circular(6.r),
-          border: Border.all(color: plateauColor.withOpacity(0.5)),
+          border: Border.all(color: plateauColor.withValues(alpha:0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -592,7 +592,7 @@ class PlateauSummaryCard extends StatelessWidget {
               '${activePlateaus.length} esercizi in plateau',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha:0.7),
               ),
             ),
             SizedBox(height: 8.h),

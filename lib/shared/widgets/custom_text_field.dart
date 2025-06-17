@@ -62,10 +62,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
         labelText: widget.label,
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+          color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
         ),
         labelStyle: TextStyle(
-          color: colorScheme.onSurface.withOpacity(0.8), // ✅ DINAMICO!
+          color: colorScheme.onSurface.withValues(alpha:0.8), // ✅ DINAMICO!
         ),
         prefixIcon: Icon(
           widget.prefixIcon,
@@ -76,7 +76,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
           icon: Icon(
             _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+            color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
             size: 20.sp,
           ),
           onPressed: () {

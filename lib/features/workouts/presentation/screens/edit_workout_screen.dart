@@ -414,7 +414,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
               color: colorScheme.surface, // ✅ DINAMICO!
               border: Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
+                  color: colorScheme.outline.withValues(alpha:0.3), // ✅ DINAMICO!
                   width: 1,
                 ),
               ),
@@ -430,10 +430,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     labelText: 'Nome scheda *',
                     hintText: 'Es. Scheda Forza, Allenamento Gambe...',
                     labelStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
+                      color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
                     ),
                     hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.5), // ✅ DINAMICO!
+                      color: colorScheme.onSurface.withValues(alpha:0.5), // ✅ DINAMICO!
                     ),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(
@@ -464,10 +464,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     labelText: 'Descrizione',
                     hintText: 'Descrizione opzionale della scheda',
                     labelStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.7), // ✅ DINAMICO!
+                      color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
                     ),
                     hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.5), // ✅ DINAMICO!
+                      color: colorScheme.onSurface.withValues(alpha:0.5), // ✅ DINAMICO!
                     ),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(
@@ -502,13 +502,13 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 color: colorScheme.surface, // ✅ DINAMICO!
                 border: Border(
                   top: BorderSide(
-                    color: colorScheme.outline.withOpacity(0.3), // ✅ DINAMICO!
+                    color: colorScheme.outline.withValues(alpha:0.3), // ✅ DINAMICO!
                     width: 1,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.1), // ✅ DINAMICO!
+                    color: Colors.black.withValues(alpha:isDark ? 0.3 : 0.1), // ✅ DINAMICO!
                     blurRadius: AppConfig.elevationM,
                     offset: const Offset(0, -2),
                   ),
@@ -559,7 +559,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           Icon(
             Icons.fitness_center,
             size: 64.sp,
-            color: colorScheme.onSurface.withOpacity(0.4), // ✅ DINAMICO!
+            color: colorScheme.onSurface.withValues(alpha:0.4), // ✅ DINAMICO!
           ),
           SizedBox(height: AppConfig.spacingL.h),
           Text(
@@ -575,7 +575,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             'Aggiungi esercizi per completare la scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
             ),
           ),
           SizedBox(height: AppConfig.spacingXL.h),
@@ -621,7 +621,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             state.message,
             style: TextStyle(
               fontSize: 16.sp,
-              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
             ),
             textAlign: TextAlign.center,
           ),

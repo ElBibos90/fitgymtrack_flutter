@@ -540,10 +540,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.05),
+        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
-          color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.2),
+          color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.2),
           style: BorderStyle.solid,
         ),
       ),
@@ -552,7 +552,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           Icon(
             Icons.fitness_center,
             size: 48.sp,
-            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.5),
+            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.5),
           ),
           SizedBox(height: 12.h),
           Text(
@@ -570,7 +570,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 : 'Aggiungi degli esercizi per creare la tua scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
             ),
             textAlign: TextAlign.center,
           ),
@@ -632,7 +632,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           child: OutlinedButton(
             onPressed: _handleBackNavigation, // ✅ Usa il metodo custom anche qui
             style: OutlinedButton.styleFrom(
-              foregroundColor: colorScheme.onSurface.withOpacity(0.6), // ✅ DINAMICO!
+              foregroundColor: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
               side: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),

@@ -318,7 +318,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.1),
+          color: Colors.orange.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Text(
@@ -343,7 +343,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: _getTimerColor().withOpacity(0.1),
+          color: _getTimerColor().withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Row(
@@ -375,7 +375,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: Colors.deepPurple.withOpacity(0.1),
+          color: Colors.deepPurple.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Text(
@@ -415,13 +415,13 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
+                    color: Colors.black.withValues(alpha:0.15),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
                 ],
                 border: Border.all(
-                  color: _getTimerColor().withOpacity(0.2),
+                  color: _getTimerColor().withValues(alpha:0.2),
                   width: 2,
                 ),
               ),
@@ -526,10 +526,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                         decoration: BoxDecoration(
-                          color: _getTimerColor().withOpacity(0.1),
+                          color: _getTimerColor().withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(12.r),
                           border: Border.all(
-                            color: _getTimerColor().withOpacity(0.3),
+                            color: _getTimerColor().withValues(alpha:0.3),
                             width: 1,
                           ),
                         ),
@@ -558,7 +558,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
                               size: 20.sp,
                             ),
                             style: IconButton.styleFrom(
-                              backgroundColor: _getTimerColor().withOpacity(0.1),
+                              backgroundColor: _getTimerColor().withValues(alpha:0.1),
                               padding: EdgeInsets.all(6.w),
                               minimumSize: Size(32.w, 32.w),
                             ),

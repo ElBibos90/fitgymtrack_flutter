@@ -49,8 +49,8 @@ class StripePricingCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.indigo600.withOpacity(0.1),
-            AppColors.indigo700.withOpacity(0.05),
+            AppColors.indigo600.withValues(alpha:0.1),
+            AppColors.indigo700.withValues(alpha:0.05),
           ],
         )
             : null,
@@ -203,9 +203,9 @@ class StripePricingCard extends StatelessWidget {
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(vertical: 8.h),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                    border: Border.all(color: AppColors.success.withValues(alpha:0.3)),
                   ),
                   child: Text(
                     'Il tuo piano attuale',
@@ -313,7 +313,7 @@ class StripePaymentStatusWidget extends StatelessWidget {
             width: 60.w,
             height: 60.w,
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
+              color: AppColors.success.withValues(alpha:0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -373,7 +373,7 @@ class StripePaymentStatusWidget extends StatelessWidget {
             width: 60.w,
             height: 60.w,
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
+              color: AppColors.error.withValues(alpha:0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -574,8 +574,8 @@ class StripeSubscriptionInfoCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.indigo600.withOpacity(0.1),
-              AppColors.indigo700.withOpacity(0.05),
+              AppColors.indigo600.withValues(alpha:0.1),
+              AppColors.indigo700.withValues(alpha:0.05),
             ],
           ),
         ),
@@ -592,7 +592,7 @@ class StripeSubscriptionInfoCard extends StatelessWidget {
                     height: 48.w,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _getStatusColor(subscription.status).withOpacity(0.2),
+                      color: _getStatusColor(subscription.status).withValues(alpha:0.2),
                     ),
                     child: Icon(
                       _getStatusIcon(subscription.status),

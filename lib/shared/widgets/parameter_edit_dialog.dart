@@ -139,7 +139,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
             borderRadius: BorderRadius.circular(20.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha:0.15),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -174,7 +174,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                           widget.exerciseName,
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: colorScheme.onSurface.withOpacity(0.7),
+                            color: colorScheme.onSurface.withValues(alpha:0.7),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -231,7 +231,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                         'Annulla',
                         style: TextStyle(
                           fontSize: 16.sp,
-                          color: colorScheme.onSurface.withOpacity(0.7),
+                          color: colorScheme.onSurface.withValues(alpha:0.7),
                         ),
                       ),
                     ),
@@ -281,10 +281,10 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha:0.2),
           width: 1,
         ),
       ),
@@ -321,7 +321,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                 width: 48.w,
                 height: 48.w,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: IconButton(
@@ -345,7 +345,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12.r),
                     border: Border.all(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha:0.3),
                       width: 1,
                     ),
                   ),
@@ -377,7 +377,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                 width: 48.w,
                 height: 48.w,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: IconButton(

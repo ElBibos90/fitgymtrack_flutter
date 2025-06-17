@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Accedi all\'area riservata',
                           style: TextStyle(
                             fontSize: 16.sp,
-                            color: colorScheme.onBackground.withOpacity(0.7),
+                            color: colorScheme.onBackground.withValues(alpha:0.7),
                           ),
                         ),
                       ],
@@ -205,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         // Divider
                         Container(
                           height: 1.h,
-                          color: colorScheme.onBackground.withOpacity(0.1),
+                          color: colorScheme.onBackground.withValues(alpha:0.1),
                         ),
 
                         SizedBox(height: 16.h),
@@ -215,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Opzioni di registrazione',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: colorScheme.onBackground.withOpacity(0.7),
+                            color: colorScheme.onBackground.withValues(alpha:0.7),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.r),
                             side: BorderSide(
-                              color: colorScheme.outline.withOpacity(0.2),
+                              color: colorScheme.outline.withValues(alpha:0.2),
                             ),
                           ),
                           child: InkWell(
@@ -243,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     width: 40.w,
                                     height: 40.w,
                                     decoration: BoxDecoration(
-                                      color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.1),
+                                      color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.1),
                                       borderRadius: BorderRadius.circular(8.r),
                                     ),
                                     child: Icon(
@@ -269,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           'Registrati per gestire i tuoi allenamenti',
                                           style: TextStyle(
                                             fontSize: 12.sp,
-                                            color: colorScheme.onSurface.withOpacity(0.6),
+                                            color: colorScheme.onSurface.withValues(alpha:0.6),
                                           ),
                                         ),
                                       ],

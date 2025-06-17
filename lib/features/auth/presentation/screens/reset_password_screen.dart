@@ -101,7 +101,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       width: 80.w,
                       height: 80.w,
                       decoration: BoxDecoration(
-                        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withOpacity(0.1),
+                        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(40.r),
                       ),
                       child: Icon(
@@ -128,7 +128,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       'Inserisci il codice di verifica ricevuto via email e crea una nuova password sicura',
                       style: TextStyle(
                         fontSize: 16.sp,
-                        color: colorScheme.onBackground.withOpacity(0.7),
+                        color: colorScheme.onBackground.withValues(alpha:0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),

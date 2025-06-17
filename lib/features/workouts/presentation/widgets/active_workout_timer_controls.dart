@@ -104,7 +104,7 @@ class ActiveWorkoutTimerControls extends StatelessWidget {
                   '$completedGroups/$totalGroups gruppi completati',
                   style: TextStyle(
                     fontSize: 16.sp,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha:0.9),
                   ),
                 ),
               ],
@@ -115,7 +115,7 @@ class ActiveWorkoutTimerControls extends StatelessWidget {
               builder: (context, child) {
                 return LinearProgressIndicator(
                   value: progress * progressAnimation.value,
-                  backgroundColor: Colors.white.withOpacity(0.3),
+                  backgroundColor: Colors.white.withValues(alpha:0.3),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     isWorkoutComplete ? AppColors.success : Colors.white,
                   ),

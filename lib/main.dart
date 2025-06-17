@@ -149,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
                   borderRadius: BorderRadius.circular(24.r),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha:0.2),
                       spreadRadius: 2,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
@@ -181,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Il tuo personal trainer digitale',
                 style: TextStyle(
                   fontSize: 16.sp,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha:0.9),
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -203,7 +203,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Caricamento...',
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha:0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -344,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onTabTapped, // 🚀 AGGIORNATO: Usa il nuovo metodo
         items: _navItems,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.6),
       ),
     );
   }
@@ -375,7 +375,7 @@ class DashboardPage extends StatelessWidget {
             'Pronti per un altro allenamento?',
             style: TextStyle(
               fontSize: 16.sp,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.7),
             ),
           ),
 
@@ -525,7 +525,7 @@ class DashboardPage extends StatelessWidget {
                           'Grazie per il supporto! Hai accesso a tutte le funzionalità 🎉',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha:0.9),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -575,7 +575,7 @@ class DashboardPage extends StatelessWidget {
                           'Sblocca tutte le funzionalità per €4.99/mese',
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha:0.9),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -671,7 +671,7 @@ class DashboardPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12.sp,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.7),
               ),
             ),
           ],

@@ -401,7 +401,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
                             '💪 REAL MODE | Events: $_eventCount',
                             style: TextStyle(
                               fontSize: 10.sp,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha:0.8),
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 1,
@@ -535,7 +535,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha:0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

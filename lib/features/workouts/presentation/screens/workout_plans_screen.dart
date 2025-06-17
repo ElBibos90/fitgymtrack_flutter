@@ -150,12 +150,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
     if (userId != null) {
       _workoutBloc.loadWorkoutPlans(userId);
     } else {
-      print('[CONSOLE] [workout_plans_screen]❌ No user ID found - cannot load workout plans');
+      //print('[CONSOLE] [workout_plans_screen]❌ No user ID found - cannot load workout plans');
     }
   }
 
   Future<void> _refreshWorkoutPlans() async {
-    print('[CONSOLE] [workout_plans_screen]🔄 Refreshing workout plans...');
+    //print('[CONSOLE] [workout_plans_screen]🔄 Refreshing workout plans...');
 
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
@@ -165,7 +165,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
 
   /// 🚀 NUOVO: Metodo pubblico per forzare il reload (utile per quando si torna da altre schermate)
   void forceReload() {
-    print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
+    //print('[CONSOLE] [workout_plans_screen]🔄 Force reload requested');
 
     if (_isTabVisible) {
       _loadWorkoutPlans();

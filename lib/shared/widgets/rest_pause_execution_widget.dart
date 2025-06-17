@@ -244,10 +244,10 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.05),
+        color: Colors.deepPurple.withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: Colors.deepPurple.withOpacity(0.3),
+          color: Colors.deepPurple.withValues(alpha:0.3),
           width: 2,
         ),
       ),
@@ -274,8 +274,8 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.deepPurple.withOpacity(0.3)
-                : Colors.deepPurple.withOpacity(0.2),
+                ? Colors.deepPurple.withValues(alpha:0.3)
+                : Colors.deepPurple.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Icon(
@@ -303,7 +303,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                   fontSize: 12.sp,
                   color: isDark
                       ? Colors.deepPurple.shade300
-                      : Colors.deepPurple.withOpacity(0.8),
+                      : Colors.deepPurple.withValues(alpha:0.8),
                 ),
               ),
             ],
@@ -337,7 +337,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                 fontSize: 12.sp,
                 color: isDark
                     ? Colors.deepPurple.shade300
-                    : Colors.deepPurple.withOpacity(0.8),
+                    : Colors.deepPurple.withValues(alpha:0.8),
               ),
             ),
           ],
@@ -346,8 +346,8 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
         LinearProgressIndicator(
           value: _overallProgress,
           backgroundColor: isDark
-              ? Colors.deepPurple.withOpacity(0.3)
-              : Colors.deepPurple.withOpacity(0.2),
+              ? Colors.deepPurple.withValues(alpha:0.3)
+              : Colors.deepPurple.withValues(alpha:0.2),
           valueColor: AlwaysStoppedAnimation<Color>(
               isDark ? Colors.deepPurple.shade300 : Colors.deepPurple
           ),
@@ -361,7 +361,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
               fontSize: 10.sp,
               color: isDark
                   ? Colors.deepPurple.shade400
-                  : Colors.deepPurple.withOpacity(0.6),
+                  : Colors.deepPurple.withValues(alpha:0.6),
             ),
           ),
         ],
@@ -383,7 +383,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                 : Colors.white,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: Colors.deepPurple.withOpacity(isDark ? 0.6 : 0.3),
+              color: Colors.deepPurple.withValues(alpha:isDark ? 0.6 : 0.3),
               width: isDark ? 1.5 : 1,
             ),
           ),
@@ -403,8 +403,8 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
                     border: InputBorder.none,
                     labelStyle: TextStyle(
                       color: isDark
-                          ? Colors.deepPurple.withOpacity(0.8)
-                          : Colors.deepPurple.withOpacity(0.7),
+                          ? Colors.deepPurple.withValues(alpha:0.8)
+                          : Colors.deepPurple.withValues(alpha:0.7),
                     ),
                   ),
                 ),
@@ -412,7 +412,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.deepPurple.withOpacity(isDark ? 0.2 : 0.1),
+                  color: Colors.deepPurple.withValues(alpha:isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(6.r),
                 ),
                 child: Text(
@@ -471,7 +471,7 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
               fontSize: 12.sp,
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.deepPurple.shade400
-                  : Colors.deepPurple.withOpacity(0.7),
+                  : Colors.deepPurple.withValues(alpha:0.7),
             ),
             textAlign: TextAlign.center,
           ),

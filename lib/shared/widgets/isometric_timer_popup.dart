@@ -297,13 +297,13 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha:0.2),
                     blurRadius: 25,
                     offset: const Offset(0, 10),
                   ),
                 ],
                 border: Border.all(
-                  color: _getTimerColor().withOpacity(0.3),
+                  color: _getTimerColor().withValues(alpha:0.3),
                   width: 3,
                 ),
               ),
@@ -435,10 +435,10 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
                         decoration: BoxDecoration(
-                          color: _getTimerColor().withOpacity(0.1),
+                          color: _getTimerColor().withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(16.r),
                           border: Border.all(
-                            color: _getTimerColor().withOpacity(0.3),
+                            color: _getTimerColor().withValues(alpha:0.3),
                             width: 2,
                           ),
                         ),
@@ -477,7 +477,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                       // Pause/Play
                       Container(
                         decoration: BoxDecoration(
-                          color: _getTimerColor().withOpacity(0.1),
+                          color: _getTimerColor().withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(16.r),
                         ),
                         child: IconButton(
@@ -499,7 +499,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                       // Cancel
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(16.r),
                         ),
                         child: IconButton(
@@ -524,7 +524,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Text(
@@ -543,7 +543,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: _getTimerColor().withOpacity(0.1),
+                        color: _getTimerColor().withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Row(

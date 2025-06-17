@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Crea il tuo account personale',
                           style: TextStyle(
                             fontSize: 16.sp,
-                            color: colorScheme.onBackground.withOpacity(0.7),
+                            color: colorScheme.onBackground.withValues(alpha:0.7),
                           ),
                         ),
                       ],

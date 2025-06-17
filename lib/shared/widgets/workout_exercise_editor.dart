@@ -150,7 +150,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
         border: Border.all(
           color: _isEditing
               ? (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600)
-              : colorScheme.outline.withOpacity(0.3),
+              : colorScheme.outline.withValues(alpha:0.3),
           width: _isEditing ? 2 : 1,
         ),
       ),
@@ -178,7 +178,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: _isEditing
-            ? (isDark ? const Color(0xFF90CAF9).withOpacity(0.1) : AppColors.indigo600.withOpacity(0.1))
+            ? (isDark ? const Color(0xFF90CAF9).withValues(alpha:0.1) : AppColors.indigo600.withValues(alpha:0.1))
             : Colors.transparent,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppConfig.radiusM),
@@ -205,7 +205,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     widget.exercise.gruppoMuscolare!,
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
                 ],
@@ -215,9 +215,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple.withOpacity(0.1),
+                      color: Colors.deepPurple.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
+                      border: Border.all(color: Colors.deepPurple.withValues(alpha:0.3)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -242,7 +242,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                             '(${widget.exercise.restPauseReps})',
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: Colors.deepPurple.withOpacity(0.8),
+                              color: Colors.deepPurple.withValues(alpha:0.8),
                             ),
                           ),
                         ],
@@ -264,7 +264,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     onPressed: widget.onMoveUp,
                     icon: Icon(
                       Icons.keyboard_arrow_up,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
                 // Move down
@@ -273,7 +273,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     onPressed: widget.onMoveDown,
                     icon: Icon(
                       Icons.keyboard_arrow_down,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
                 // Edit
@@ -467,13 +467,13 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: _isRestPause
-            ? Colors.deepPurple.withOpacity(0.05)
+            ? Colors.deepPurple.withValues(alpha:0.05)
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
           color: _isRestPause
-              ? Colors.deepPurple.withOpacity(0.3)
-              : colorScheme.outline.withOpacity(0.3),
+              ? Colors.deepPurple.withValues(alpha:0.3)
+              : colorScheme.outline.withValues(alpha:0.3),
         ),
       ),
       child: Column(
@@ -485,7 +485,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               Icon(
                 Icons.flash_on,
                 size: 20.sp,
-                color: _isRestPause ? Colors.deepPurple : colorScheme.onSurface.withOpacity(0.6),
+                color: _isRestPause ? Colors.deepPurple : colorScheme.onSurface.withValues(alpha:0.6),
               ),
               SizedBox(width: 8.w),
               Expanded(
@@ -523,7 +523,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               'Il REST-PAUSE permette di continuare la serie dopo un breve recupero quando raggiungi il cedimento muscolare.',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.7),
+                color: colorScheme.onSurface.withValues(alpha:0.7),
                 height: 1.4,
               ),
             ),
@@ -558,7 +558,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
-                        color: Colors.deepPurple.withOpacity(0.1),
+                        color: Colors.deepPurple.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -577,7 +577,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: Colors.deepPurple,
                     thumbColor: Colors.deepPurple,
-                    overlayColor: Colors.deepPurple.withOpacity(0.2),
+                    overlayColor: Colors.deepPurple.withValues(alpha:0.2),
                   ),
                   child: Slider(
                     value: _restPauseRestSeconds,
@@ -598,14 +598,14 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                       '5s',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha:0.6),
                       ),
                     ),
                     Text(
                       '30s',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: colorScheme.onSurface.withOpacity(0.6),
+                        color: colorScheme.onSurface.withValues(alpha:0.6),
                       ),
                     ),
                   ],
@@ -619,7 +619,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               'Recupero breve ottimale: 10-15 secondi',
               style: TextStyle(
                 fontSize: 12.sp,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha:0.6),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -637,7 +637,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       style: TextStyle(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: 'Tipo di serie',
-        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+        labelStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConfig.radiusS),
           borderSide: BorderSide(color: colorScheme.outline),
@@ -726,10 +726,10 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
         labelText: label,
         hintText: hint,
         helperText: helperText,
-        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
-        hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.4)),
+        labelStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.6)),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha:0.4)),
         helperStyle: TextStyle(
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha:0.6),
           fontSize: 12.sp,
         ),
         border: OutlineInputBorder(
@@ -750,14 +750,14 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConfig.radiusS),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha:0.3)),
       ),
       child: Row(
         children: [
           Icon(
             icon,
             size: 18.sp,
-            color: colorScheme.onSurface.withOpacity(0.6),
+            color: colorScheme.onSurface.withValues(alpha:0.6),
           ),
           SizedBox(width: 8.w),
           Expanded(
@@ -768,7 +768,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   label,
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha:0.6),
                   ),
                 ),
                 Text(

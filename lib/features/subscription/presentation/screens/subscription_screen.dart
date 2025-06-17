@@ -185,11 +185,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? AppColors.success.withOpacity(0.2)
-            : AppColors.success.withOpacity(0.1),
+            ? AppColors.success.withValues(alpha:0.2)
+            : AppColors.success.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.success.withOpacity(0.3),
+          color: AppColors.success.withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -197,7 +197,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.2),
+              color: AppColors.success.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -244,7 +244,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: AppColors.info.withOpacity(0.3),
+          color: AppColors.info.withValues(alpha:0.3),
         ),
       ),
       child: Column(
@@ -331,7 +331,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
+            color: Colors.black.withValues(alpha:isDarkMode ? 0.3 : 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -346,8 +346,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
                   color: hasPremium
-                      ? Colors.white.withOpacity(0.2)
-                      : (isDarkMode ? Colors.blue.shade900.withOpacity(0.3) : Colors.blue.shade50),
+                      ? Colors.white.withValues(alpha:0.2)
+                      : (isDarkMode ? Colors.blue.shade900.withValues(alpha:0.3) : Colors.blue.shade50),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -374,7 +374,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: hasPremium
-                            ? Colors.white.withOpacity(0.9)
+                            ? Colors.white.withValues(alpha:0.9)
                             : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
                       ),
                     ),
@@ -385,7 +385,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
@@ -401,7 +401,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.3),
+                    color: Colors.orange.withValues(alpha:0.3),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(
@@ -447,7 +447,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: hasPremium
-                          ? Colors.white.withOpacity(0.9)
+                          ? Colors.white.withValues(alpha:0.9)
                           : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                     ),
                   ),
@@ -638,7 +638,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
+            color: Colors.black.withValues(alpha:isDarkMode ? 0.3 : 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
