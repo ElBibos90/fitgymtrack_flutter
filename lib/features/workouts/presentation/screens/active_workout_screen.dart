@@ -15,6 +15,7 @@ import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 // BLoC imports
+import '../../../../shared/widgets/rest_pause_execution_widget.dart';
 import '../../bloc/active_workout_bloc.dart';
 import '../../models/active_workout_models.dart';
 import '../../models/workout_plan_models.dart';
@@ -254,12 +255,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleRestPauseStart(WorkoutSessionActive state, WorkoutExercise exercise) {
-    print('🔥 [REST-PAUSE] REST-PAUSE exercise detected: ${exercise.nome}');
-    print('🔥 [REST-PAUSE] For now, using normal series logic...');
+    print('🔥 [REST-PAUSE] Opening REST-PAUSE widget for: ${exercise.nome}');
 
-    // 🔧 STEP 1: Per ora usa la logica normale per non rompere nulla
-    // Nei prossimi step implementeremo la logica dedicata
-    _handleCompleteSeries(state, exercise);
+    // 🚀 STEP 2: Mostra il nuovo widget REST-PAUSE
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Forza l'utente a completare
+      builder: (context) => AlertDialog(
+        contentPadding: EdgeInsets.all(8.w),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          child: RestPauseExecutionWidget(
+            exerciseName: exercise.nome,
+            restPauseSequence: exercise.restPauseReps ?? "10",
+            restSeconds: exercise.restPauseRestSeconds,
+            currentWeight: _getEffectiveWeight(exercise),
+            currentSeries: _getCompletedSeriesCount(state, exercise.schedaEsercizioId ?? exercise.id) + 1,
+            totalSeries: exercise.serie,
+            onCompleteAllMicroSeries: () {
+              Navigator.of(context).pop();
+              // Usa la logica esistente per completare la serie
+              _handleCompleteSeries(state, exercise);
+            },
+            onCompleteMicroSeries: (index, reps) {
+              print('🔥 [REST-PAUSE] Micro-serie ${index + 1} completata: $reps reps');
+            },
+          ),
+        ),
+      ),
+    );
   }
 
   // ============================================================================
