@@ -5,12 +5,25 @@ File: android/app/src/main/AndroidManifest.xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.fitgymtracker">
 
+    <!-- 📎 FEEDBACK: Permessi per allegati e camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <!-- 💳 STRIPE FIX: Permessi necessari per Stripe e pagamenti -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- 💳 STRIPE: Permessi opzionali per migliore UX -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- 📎 FEEDBACK FIX: Hardware features per camera (richiesto quando usi CAMERA permission) -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
 
     <application
         android:label="FitGym Tracker"

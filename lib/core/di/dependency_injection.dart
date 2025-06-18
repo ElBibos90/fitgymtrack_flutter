@@ -19,6 +19,8 @@ import '../di/dependency_injection_plateau.dart';
 import '../../features/subscription/di/subscription_dependency_injection.dart';
 import '../../features/payments/di/stripe_dependency_injection.dart';
 
+import '../../features/feedback/repository/feedback_repository.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -59,6 +61,12 @@ class DependencyInjection {
       apiClient: getIt<ApiClient>(),
       dio: getIt<Dio>(),
     ));
+
+    print('[CONSOLE] [dependency_injection]🔧 [DI] Registering feedback repository...');
+
+    getIt.registerLazySingleton<FeedbackRepository>(() {
+      return FeedbackRepository(apiClient: getIt<ApiClient>());
+    });
 
     // ============================================================================
     // WORKOUT BLOCS (SINGLETONS)
@@ -176,6 +184,7 @@ class DependencyInjection {
     int count = 0;
     if (getIt.isRegistered<AuthRepository>()) count++;
     if (getIt.isRegistered<WorkoutRepository>()) count++;
+    if (getIt.isRegistered<FeedbackRepository>()) count++; // 🔴 NUOVO
     return count;
   }
 

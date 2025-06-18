@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +13,7 @@ import 'features/workouts/bloc/plateau_bloc.dart';
 import 'features/subscription/bloc/subscription_bloc.dart';
 import 'features/payments/bloc/stripe_bloc.dart';
 import 'shared/theme/app_theme.dart';
+import 'shared/theme/app_colors.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 import 'features/subscription/presentation/screens/subscription_screen.dart';
@@ -24,7 +27,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  //print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED');
+  print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED');
 
   // Initialize dependency injection
   await DependencyInjection.init();
@@ -65,6 +68,8 @@ class FitGymTrackApp extends StatelessWidget {
             BlocProvider<WorkoutHistoryBloc>(
               create: (context) => getIt<WorkoutHistoryBloc>(),
             ),
+
+            // PLATEAU BLOC PROVIDER
             BlocProvider<PlateauBloc>(
               create: (context) => getIt<PlateauBloc>(),
             ),
@@ -74,7 +79,7 @@ class FitGymTrackApp extends StatelessWidget {
               create: (context) => getIt<SubscriptionBloc>(),
             ),
 
-            // STRIPE BLOC PROVIDER - Lazy loading
+            // STRIPE BLOC PROVIDER
             BlocProvider<StripeBloc>(
               create: (context) => getIt<StripeBloc>(),
             ),
@@ -93,51 +98,24 @@ class FitGymTrackApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.indigo600,
+              AppColors.indigo700,
+            ],
+          ),
+        ),
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -149,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                   borderRadius: BorderRadius.circular(24.r),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha:0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       spreadRadius: 2,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
@@ -181,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Il tuo personal trainer digitale',
                 style: TextStyle(
                   fontSize: 16.sp,
-                  color: Colors.white.withValues(alpha:0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w300,
                 ),
               ),
@@ -203,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Caricamento...',
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: Colors.white.withValues(alpha:0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -224,15 +202,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  int _previousIndex = 0; // 🚀 NUOVO: Traccia la tab precedente
+  int _previousIndex = 0;
 
-  // 🚀 NUOVO: Controller per accedere ai metodi delle tab che supportano lazy loading
   final WorkoutTabController _workoutController = WorkoutTabController();
 
-  // 🚀 AGGIORNATO: Lista delle pagine con il controller
   late final List<Widget> _pages = [
     const DashboardPage(),
-    WorkoutPlansScreen(controller: _workoutController), // Usa il controller
+    WorkoutPlansScreen(controller: _workoutController),
     const StatsPage(),
     const SubscriptionScreen(),
   ];
@@ -260,80 +236,38 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
 
-    // 🔧 CRITICAL FIX: Load subscription immediately when app starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //print('[CONSOLE] [main]🔧 Loading subscription on app start...');
       context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: true));
     });
   }
 
-  /// 🚀 NUOVO: Gestisce il cambio di tab con lazy loading
   void _onTabTapped(int index) {
-    //print('[CONSOLE] [main]🔄 Tab changed: $_selectedIndex -> $index');
-
     _previousIndex = _selectedIndex;
 
     setState(() {
       _selectedIndex = index;
     });
 
-    // 🚀 NUOVO: Gestisci lazy loading per le tab specifiche
     _handleTabVisibilityChange(_previousIndex, index);
   }
 
-  /// 🚀 NUOVO: Gestisce la visibilità delle tab per il lazy loading
   void _handleTabVisibilityChange(int previousIndex, int currentIndex) {
-    // Tab Workouts (index 1)
     if (currentIndex == 1) {
-      // L'utente ha selezionato la tab workout
       _workoutController.onTabVisible();
-      //print('[CONSOLE] [main]👁️ Workout tab became visible');
     } else if (previousIndex == 1) {
-      // L'utente ha lasciato la tab workout
       _workoutController.onTabHidden();
-      //print('[CONSOLE] [main]👁️ Workout tab became hidden');
     }
-
-    // 🚀 FUTURE: Qui possiamo aggiungere lazy loading per altre tab se necessario
-    // if (currentIndex == 2) {
-    //   // Stats tab
-    // } else if (currentIndex == 3) {
-    //   // Subscription tab
-    // }
   }
 
   void navigateToSubscriptionTab() {
-    _onTabTapped(3); // Usa il nuovo metodo che gestisce lazy loading
-  }
-
-  /// 🚀 NUOVO: Metodo pubblico per forzare il reload della tab workout
-  void forceWorkoutReload() {
-    _workoutController.forceReload();
+    setState(() {
+      _selectedIndex = 3;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'FitGymTrack',
-          style: TextStyle(
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              context.read<AuthBloc>().logout();
-            },
-          ),
-        ],
-      ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -341,10 +275,11 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        onTap: _onTabTapped, // 🚀 AGGIORNATO: Usa il nuovo metodo
+        onTap: _onTabTapped,
+        selectedItemColor: AppColors.indigo600,
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         items: _navItems,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.6),
       ),
     );
   }
@@ -355,281 +290,278 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Benvenuto!',
-            style: TextStyle(
-              fontSize: 28.sp,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Benvenuto in FitGymTrack!',
+              style: TextStyle(
+                fontSize: 28.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
-          ),
 
-          SizedBox(height: 8.h),
+            SizedBox(height: 8.h),
 
-          Text(
-            'Pronti per un altro allenamento?',
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.7),
+            Text(
+              'Il tuo personal trainer digitale per raggiungere i tuoi obiettivi fitness.',
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+              ),
             ),
-          ),
 
-          SizedBox(height: 24.h),
+            SizedBox(height: 32.h),
 
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16.w,
-              mainAxisSpacing: 16.h,
+            // 🔴 PULSANTI AGGIORNATI CON FEEDBACK
+            Row(
               children: [
-                _buildStatCard(
-                  context,
-                  'Allenamenti\nCompleti',
-                  '12',
-                  Icons.fitness_center,
-                  Colors.blue,
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/workouts/create'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Crea Scheda'),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                  ),
                 ),
-                _buildStatCard(
-                  context,
-                  'Questa\nSettimana',
-                  '3',
-                  Icons.calendar_today,
-                  Colors.green,
-                ),
-                _buildStatCard(
-                  context,
-                  'Tempo\nTotale',
-                  '8h 45m',
-                  Icons.schedule,
-                  Colors.orange,
-                ),
-                _buildStatCard(
-                  context,
-                  'Prossimo\nAllenamento',
-                  'Oggi',
-                  Icons.notifications_active,
-                  Colors.purple,
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/feedback'), // 🔴 NUOVO PULSANTE
+                    icon: const Icon(Icons.feedback),
+                    label: const Text('Feedback'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
 
-          // Main action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    // 🚀 NUOVO: Prima di navigare ai workout, assicurati che la tab sia caricata
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    homeState?._onTabTapped(1); // Vai alla tab workout
-                  },
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Inizia Allenamento'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+            SizedBox(height: 16.h),
+
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                      homeState?.navigateToSubscriptionTab();
+                    },
+                    icon: const Icon(Icons.card_membership),
+                    label: const Text('Abbonamento'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 16.w),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    homeState?.navigateToSubscriptionTab();
-                  },
-                  icon: const Icon(Icons.card_membership),
-                  label: const Text('Abbonamento'),
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                SizedBox(width: 16.w),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.go('/stats'),
+                    icon: const Icon(Icons.analytics),
+                    label: const Text('Statistiche'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          SizedBox(height: 16.h),
+            SizedBox(height: 32.h),
 
-          // 🔧 FIXED: Premium status banner using SubscriptionBloc
-          BlocBuilder<SubscriptionBloc, SubscriptionState>(
-            builder: (context, state) {
-              //print('[CONSOLE] [main]🔧 Dashboard subscription state: ${state.runtimeType}');
-
-              if (state is SubscriptionLoading) {
-                return Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16.w),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 20.w,
-                        height: 20.w,
-                        child: const CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: 12.w),
-                      const Text('Caricamento abbonamento...'),
-                    ],
-                  ),
-                );
-              }
-
-              if (state is SubscriptionLoaded) {
-                final subscription = state.subscription;
-                //print('[CONSOLE] [main]🔧 Dashboard subscription: ${subscription.planName} - Premium: ${subscription.isPremium}');
-
-                // 🎉 PREMIUM USER - Show thank you banner
-                if (subscription.isPremium && !subscription.isExpired) {
+            // Subscription status banner
+            BlocBuilder<SubscriptionBloc, SubscriptionState>(
+              builder: (context, state) {
+                if (state is SubscriptionLoading) {
                   return Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(16.w),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.green.shade400, Colors.teal.shade400],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(12.r),
                     ),
-                    child: Column(
+                    child: Row(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: Colors.white,
-                              size: 24.sp,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              'Premium Attivo',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: 20.w,
+                          height: 20.w,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12.w),
+                        const Text('Caricamento abbonamento...'),
+                      ],
+                    ),
+                  );
+                }
+
+                if (state is SubscriptionLoaded) {
+                  final subscription = state.subscription;
+
+                  if (subscription.isPremium && !subscription.isExpired) {
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.green.shade400, Colors.teal.shade400],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.star,
                                 color: Colors.white,
+                                size: 24.sp,
                               ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                'Premium Attivo',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Grazie per il supporto! Premium attivo fino al ${subscription.endDate?.toString().split(' ')[0] ?? 'N/A'}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14.sp,
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          'Grazie per il supporto! Hai accesso a tutte le funzionalità 🎉',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.white.withValues(alpha:0.9),
                           ),
-                          textAlign: TextAlign.center,
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.indigo600.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: AppColors.indigo600.withOpacity(0.3),
                         ),
-                        SizedBox(height: 12.h),
-                        OutlinedButton(
-                          onPressed: () {
-                            final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                            homeState?.navigateToSubscriptionTab();
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white),
-                            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.upgrade,
+                                color: AppColors.indigo600,
+                                size: 24.sp,
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                'Piano Free',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.indigo600,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: const Text('Gestisci Abbonamento'),
-                        ),
-                      ],
-                    ),
-                  );
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Aggiorna al piano Premium per sbloccare tutte le funzionalità avanzate!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.indigo600.withOpacity(0.8),
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
                 }
 
-                // 🚀 FREE USER - Show upgrade banner
-                else {
-                  return Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(16.w),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.purple.shade400, Colors.blue.shade400],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          '🚀 Passa a Premium',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          'Sblocca tutte le funzionalità per €4.99/mese',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: Colors.white.withValues(alpha:0.9),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 12.h),
-                        ElevatedButton(
-                          onPressed: () {
-                            final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                            homeState?.navigateToSubscriptionTab();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.purple.shade600,
-                            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 8.h),
-                          ),
-                          child: const Text('Scopri Premium'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              }
+                return const SizedBox.shrink();
+              },
+            ),
 
-              // Error or other states - show minimal banner
-              return Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Piano Free Attivo',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    ElevatedButton(
-                      onPressed: () {
-                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                        homeState?.navigateToSubscriptionTab();
-                      },
-                      child: const Text('Vai all\'Abbonamento'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+            SizedBox(height: 24.h),
+
+            Text(
+              'Le tue statistiche',
+              style: TextStyle(
+                fontSize: 20.sp,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16.w,
+                mainAxisSpacing: 16.h,
+                childAspectRatio: 1.5,
+                children: [
+                  _buildStatCard(
+                    context,
+                    'Schede create',
+                    '12',
+                    Icons.fitness_center,
+                    Colors.blue,
+                  ),
+                  _buildStatCard(
+                    context,
+                    'Allenamenti',
+                    '45',
+                    Icons.trending_up,
+                    Colors.green,
+                  ),
+                  _buildStatCard(
+                    context,
+                    'Settimane attive',
+                    '8',
+                    Icons.calendar_today,
+                    Colors.orange,
+                  ),
+                  _buildStatCard(
+                    context,
+                    'Record personali',
+                    '23',
+                    Icons.star,
+                    Colors.purple,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -641,41 +573,42 @@ class DashboardPage extends StatelessWidget {
       IconData icon,
       Color color,
       ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+        ),
       ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 32.sp,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 32.sp,
+            color: color,
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24.sp,
+              fontWeight: FontWeight.bold,
               color: color,
             ),
-            SizedBox(height: 8.h),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
             ),
-            SizedBox(height: 4.h),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha:0.7),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -686,22 +619,19 @@ class StatsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.analytics,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Statistiche',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text('Prossima implementazione...'),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Statistiche'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        elevation: 0,
+      ),
+      body: const Center(
+        child: Text(
+          'Pagina Statistiche\n(In arrivo)',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 18),
+        ),
       ),
     );
   }

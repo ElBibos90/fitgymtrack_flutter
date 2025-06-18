@@ -18,6 +18,7 @@ import '../../features/subscription/presentation/screens/subscription_screen.dar
 import '../../features/payments/presentation/screens/stripe_payment_screen.dart';
 import '../../features/payments/bloc/stripe_bloc.dart';
 import '../../core/di/dependency_injection.dart';
+import '../../features/feedback/presentation/screens/feedback_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -90,6 +91,17 @@ class AppRouter {
           builder: (context, state) {
             return AuthWrapper(
               authenticatedChild: const HomeScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/feedback',
+          name: 'feedback',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const FeedbackScreen(),
               unauthenticatedChild: const LoginScreen(),
             );
           },
