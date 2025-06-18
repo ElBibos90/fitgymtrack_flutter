@@ -5,10 +5,10 @@ class Environment {
   // ============================================================================
 
   /// Base URL per API production (ATTIVA)
-  //static const String baseUrl = 'https://fitgymtrack.com/api/';
+  static const String baseUrl = 'https://fitgymtrack.com/api/';
 
   /// Base URL per sviluppo locale (DISATTIVATA - per evitare errori)
-   static const String baseUrl = 'http://192.168.1.113/api/';
+  //static const String baseUrl = 'http://192.168.1.113/api/';
 
   // ============================================================================
   // APP CONFIGURATION
