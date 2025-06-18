@@ -1,3 +1,7 @@
+<!--
+🔧 AUTOFILL UPDATE: AndroidManifest.xml con supporto ottimizzato per autofill
+File: android/app/src/main/AndroidManifest.xml
+-->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.fitgymtracker">
 
@@ -24,7 +28,8 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:importantForAutofill="yes">
 
             <!-- 💳 STRIPE FIX: Normal theme con AppCompat -->
             <meta-data

@@ -1,4 +1,8 @@
+// 🔧 AUTOFILL UPDATE: CustomTextField con supporto completo per autofill Android
+// File: lib/shared/widgets/custom_text_field.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 
@@ -16,6 +20,13 @@ class CustomTextField extends StatefulWidget {
   final VoidCallback? onTap;
   final bool readOnly;
 
+  // 🔧 AUTOFILL: Nuovi parametri per supporto autofill
+  final Iterable<String>? autofillHints;
+  final bool enableSuggestions;
+  final VoidCallback? onEditingComplete;
+  final Function(String)? onChanged;
+  final Function(String)? onSubmitted;
+
   const CustomTextField({
     super.key,
     required this.controller,
@@ -30,6 +41,12 @@ class CustomTextField extends StatefulWidget {
     this.maxLines = 1,
     this.onTap,
     this.readOnly = false,
+    // 🔧 AUTOFILL: Parametri opzionali per backward compatibility
+    this.autofillHints,
+    this.enableSuggestions = true,
+    this.onEditingComplete,
+    this.onChanged,
+    this.onSubmitted,
   });
 
   @override
@@ -54,6 +71,18 @@ class _CustomTextFieldState extends State<CustomTextField> {
       maxLines: widget.maxLines,
       onTap: widget.onTap,
       readOnly: widget.readOnly,
+
+      // 🔧 AUTOFILL: Configurazione completa autofill
+      autofillHints: widget.autofillHints,
+      enableSuggestions: widget.enableSuggestions,
+      onEditingComplete: widget.onEditingComplete,
+      onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onSubmitted,
+
+      // 🔧 AUTOFILL: Configurazione smartdashes e smartquotes per password
+      smartDashesType: widget.isPassword ? SmartDashesType.disabled : SmartDashesType.enabled,
+      smartQuotesType: widget.isPassword ? SmartQuotesType.disabled : SmartQuotesType.enabled,
+
       style: TextStyle(
         fontSize: 16.sp,
         color: colorScheme.onSurface, // ✅ DINAMICO!
@@ -62,10 +91,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
         labelText: widget.label,
         hintText: widget.hint,
         hintStyle: TextStyle(
-          color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+          color: colorScheme.onSurface.withValues(alpha: 0.6), // ✅ DINAMICO!
         ),
         labelStyle: TextStyle(
-          color: colorScheme.onSurface.withValues(alpha:0.8), // ✅ DINAMICO!
+          color: colorScheme.onSurface.withValues(alpha: 0.8), // ✅ DINAMICO!
         ),
         prefixIcon: Icon(
           widget.prefixIcon,
@@ -76,7 +105,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             ? IconButton(
           icon: Icon(
             _obscureText ? Icons.visibility : Icons.visibility_off,
-            color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+            color: colorScheme.onSurface.withValues(alpha: 0.6), // ✅ DINAMICO!
             size: 20.sp,
           ),
           onPressed: () {
