@@ -1,11 +1,13 @@
 // lib/features/feedback/presentation/screens/feedback_screen.dart
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../../../shared/theme/app_colors.dart';
+import '../../../../core/utils/device_info_helper.dart';
 import '../../models/feedback_models.dart';
 import '../bloc/feedback_bloc.dart';
 import '../bloc/feedback_event.dart';
@@ -455,8 +457,8 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
           ),
           SizedBox(width: 12.w),
           Expanded(
-            child:             Text(
-              'Feedback inviato con successo! ID: ${state.response.feedbackId}',
+            child: Text(
+              'Feedback inviato con successo!\nID: ${state.response.feedbackId}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.green.shade700,
               ),
@@ -480,38 +482,9 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
     }
   }
 
-  void _submitFeedback(BuildContext context) {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Mostra avviso se ci sono allegati (per ora non supportati nell'upload)
-    if (_attachments.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nota: Gli allegati sono selezionati ma l\'upload non è ancora implementato. Il feedback sarà inviato senza allegati.'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 4),
-        ),
-      );
-    }
-
-    final request = FeedbackRequest(
-      type: _selectedType,
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      email: _emailController.text.trim().isEmpty
-          ? null
-          : _emailController.text.trim(),
-      severity: _selectedSeverity,
-      // TODO: Aggiungere info dispositivo
-      deviceInfo: 'Flutter App - TODO: Device info',
-    );
-
-    // Per ora inviamo senza allegati
-    context.read<FeedbackBloc>().add(SubmitFeedback(request: request));
-  }
-
+  // ============================================================================
+  // ✅ FIX 1: RIMUOVI DOPPIA NAVIGAZIONE - PROBLEMA SCHERMATA NERA
+  // ============================================================================
   void _showSuccessDialog(BuildContext context, FeedbackResponse response) {
     final attachmentInfo = response.attachmentsCount != null && response.attachmentsCount! > 0
         ? '\n\nAllegati caricati: ${response.attachmentsCount}'
@@ -527,8 +500,8 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Chiudi dialog
-              Navigator.of(context).pop(); // Torna alla schermata precedente
+              Navigator.of(context).pop(); // ✅ Solo chiudi dialog, NON navigare indietro
+              // ❌ RIMOSSO: Navigator.of(context).pop(); // Questa causava la schermata nera
             },
             child: const Text('OK'),
           ),
@@ -552,5 +525,47 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
         ),
       ),
     );
+  }
+
+  // ============================================================================
+  // ✅ FIX 2: ABILITA INVIO ALLEGATI - RIMOSSO MESSAGGIO CHE LI DISABILITAVA
+  // ============================================================================
+  Future<void> _submitFeedback(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // ✅ RIMOSSO il messaggio che disabilitava gli allegati
+    // Era questo codice che impediva l'upload:
+    /*
+    if (_attachments.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nota: Gli allegati sono selezionati ma l\'upload non è ancora implementato...'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+    */
+
+    // ✅ Raccoglie info dispositivo reali
+    final deviceInfo = await DeviceInfoHelper.getDeviceInfoJson();
+
+    final request = FeedbackRequest(
+      type: _selectedType,
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      severity: _selectedSeverity,
+      deviceInfo: deviceInfo, // ✅ Usa le info reali del dispositivo
+    );
+
+    // ✅ NUOVO: Invia con allegati se presenti
+    context.read<FeedbackBloc>().add(SubmitFeedback(
+      request: request,
+      attachments: _attachments.isNotEmpty ? _attachments : null,
+    ));
   }
 }

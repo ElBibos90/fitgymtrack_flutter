@@ -3,16 +3,23 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as path;
 import '../../../core/network/api_client.dart';
 import '../../../core/utils/result.dart';
 import '../models/feedback_models.dart';
 
 class FeedbackRepository {
   final ApiClient _apiClient;
+  final Dio _dio; // ✅ Accesso diretto a Dio per multipart
 
   FeedbackRepository({
     required ApiClient apiClient,
-  }) : _apiClient = apiClient;
+    required Dio dio, // ✅ Inject Dio
+  }) : _apiClient = apiClient, _dio = dio;
+
+  // ============================================================================
+  // ✅ FIX PRINCIPALE: IMPLEMENTAZIONE UPLOAD ALLEGATI
+  // ============================================================================
 
   /// Invia un nuovo feedback con possibili allegati
   Future<Result<FeedbackResponse>> submitFeedback(
@@ -22,52 +29,13 @@ class FeedbackRepository {
     try {
       log('[CONSOLE] [feedback_repository] 📤 Invio feedback: ${request.type.label}');
 
-      // Per ora inviamo solo JSON (senza allegati)
-      // TODO: Implementare upload multipart per allegati in futuro
       if (attachments != null && attachments.isNotEmpty) {
-        log('[CONSOLE] [feedback_repository] ⚠️ Allegati presenti ma upload multipart non implementato ancora');
-        // Per ora procediamo senza allegati
-      }
-
-      final response = await _apiClient.submitFeedback(request.toApiJson());
-
-      log('[CONSOLE] [feedback_repository] ✅ Risposta ricevuta: ${response.toString()}');
-
-      // Converte la risposta in FeedbackResponse
-      final feedbackResponse = FeedbackResponse.fromJson(response);
-
-      if (feedbackResponse.success) {
-        log('[CONSOLE] [feedback_repository] ✅ Feedback inviato con successo - ID: ${feedbackResponse.feedbackId}');
-        return Result.success(feedbackResponse);
+        // ✅ NUOVO: Invio con allegati usando multipart
+        return await _submitFeedbackWithAttachments(request, attachments);
       } else {
-        log('[CONSOLE] [feedback_repository] ❌ Errore nell\'invio: ${feedbackResponse.message}');
-        return Result.error(
-          feedbackResponse.message,
-          Exception('Errore nell\'invio del feedback'),
-        );
+        // ✅ Invio senza allegati (JSON)
+        return await _submitFeedbackWithoutAttachments(request);
       }
-    } on DioException catch (dioError) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore DIO: ${dioError.message}');
-
-      // Gestisce gli errori specifici di rete
-      String errorMessage;
-      switch (dioError.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          errorMessage = 'Timeout della connessione. Riprova più tardi.';
-          break;
-        case DioExceptionType.badResponse:
-          errorMessage = 'Errore del server (${dioError.response?.statusCode}). Riprova più tardi.';
-          break;
-        case DioExceptionType.connectionError:
-          errorMessage = 'Errore di connessione. Controlla la tua connessione internet.';
-          break;
-        default:
-          errorMessage = 'Errore di rete. Riprova più tardi.';
-      }
-
-      return Result.error(errorMessage, dioError);
     } catch (e) {
       log('[CONSOLE] [feedback_repository] ❌ Errore generico: $e');
       return Result.error(
@@ -76,6 +44,125 @@ class FeedbackRepository {
       );
     }
   }
+
+  /// ✅ CORRETTO: Invio senza allegati (JSON) - usa toApiJson() esistente
+  Future<Result<FeedbackResponse>> _submitFeedbackWithoutAttachments(
+      FeedbackRequest request) async {
+    try {
+      final response = await _apiClient.submitFeedback(request.toApiJson());
+      log('[CONSOLE] [feedback_repository] ✅ Risposta JSON ricevuta: ${response.toString()}');
+
+      final feedbackResponse = FeedbackResponse.fromJson(response);
+
+      if (feedbackResponse.success) {
+        log('[CONSOLE] [feedback_repository] ✅ Feedback inviato - ID: ${feedbackResponse.feedbackId}');
+        return Result.success(feedbackResponse);
+      } else {
+        return Result.error(
+          feedbackResponse.message,
+          Exception('Errore nell\'invio del feedback'),
+        );
+      }
+    } on DioException catch (dioError) {
+      return _handleDioError(dioError);
+    }
+  }
+
+  /// ✅ CORRETTO: Invio con allegati (multipart/form-data) - usa .name invece di .apiValue
+  Future<Result<FeedbackResponse>> _submitFeedbackWithAttachments(
+      FeedbackRequest request, List<File> attachments) async {
+    try {
+      log('[CONSOLE] [feedback_repository] 📎 Invio con ${attachments.length} allegati');
+
+      // Crea FormData per multipart
+      final formData = FormData();
+
+      // ✅ CORRETTO: Aggiungi campi del feedback usando i valori JSON corretti
+      formData.fields.addAll([
+        MapEntry('type', _getEnumJsonValue(request.type)), // ✅ USA valori JSON
+        MapEntry('title', request.title),
+        MapEntry('description', request.description),
+        MapEntry('severity', _getEnumJsonValue(request.severity)), // ✅ USA valori JSON
+        MapEntry('device_info', request.deviceInfo ?? '{}'),
+      ]);
+
+      // Aggiungi email se presente
+      if (request.email != null && request.email!.isNotEmpty) {
+        formData.fields.add(MapEntry('email', request.email!));
+      }
+
+      // ✅ AGGIUNGI ALLEGATI
+      for (int i = 0; i < attachments.length; i++) {
+        final file = attachments[i];
+        if (await file.exists()) {
+          final fileName = path.basename(file.path);
+          final multipartFile = await MultipartFile.fromFile(
+            file.path,
+            filename: fileName,
+          );
+
+          // ✅ Il PHP si aspetta 'attachments[]' per array di file
+          formData.files.add(MapEntry('attachments[]', multipartFile));
+
+          log('[CONSOLE] [feedback_repository] 📎 Allegato aggiunto: $fileName (${await file.length()} bytes)');
+        }
+      }
+
+      // Invia richiesta multipart
+      final response = await _dio.post(
+        '/feedback_api.php',
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      log('[CONSOLE] [feedback_repository] ✅ Risposta multipart: ${response.data}');
+
+      final feedbackResponse = FeedbackResponse.fromJson(response.data);
+
+      if (feedbackResponse.success) {
+        log('[CONSOLE] [feedback_repository] ✅ Feedback con allegati inviato - ID: ${feedbackResponse.feedbackId}');
+        return Result.success(feedbackResponse);
+      } else {
+        return Result.error(
+          feedbackResponse.message,
+          Exception('Errore nell\'invio del feedback con allegati'),
+        );
+      }
+    } on DioException catch (dioError) {
+      return _handleDioError(dioError);
+    }
+  }
+
+  Result<FeedbackResponse> _handleDioError(DioException dioError) {
+    log('[CONSOLE] [feedback_repository] ❌ Errore DIO: ${dioError.message}');
+
+    String errorMessage;
+    switch (dioError.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        errorMessage = 'Timeout della connessione. Riprova più tardi.';
+        break;
+      case DioExceptionType.badResponse:
+        errorMessage = 'Errore del server (${dioError.response?.statusCode}). Riprova più tardi.';
+        break;
+      case DioExceptionType.connectionError:
+        errorMessage = 'Errore di connessione. Controlla la tua connessione internet.';
+        break;
+      default:
+        errorMessage = 'Errore di rete. Riprova più tardi.';
+    }
+
+    return Result.error(errorMessage, dioError);
+  }
+
+  // ============================================================================
+  // ✅ CORRETTO: METODI ESISTENTI CON RETURN TYPES CORRETTI
+  // ============================================================================
 
   /// Recupera tutti i feedback (solo admin)
   Future<Result<List<Feedback>>> getFeedbacks() async {
@@ -129,39 +216,30 @@ class FeedbackRepository {
           log('[CONSOLE] [feedback_repository] ✅ ${feedbacks.length} feedback recuperati');
           return Result.success(feedbacks);
         } else {
-          final message = response['message'] as String? ?? 'Errore sconosciuto';
-          log('[CONSOLE] [feedback_repository] ❌ Errore API: $message');
-          return Result.error(message, Exception('Errore API'));
+          final message = response['message'] as String? ?? 'Errore nel recupero dei feedback';
+          return Result.error(message, Exception(message));
         }
       } else {
-        log('[CONSOLE] [feedback_repository] ❌ Formato risposta non valido');
         return Result.error(
-          'Formato di risposta inaspettato dal server',
+          'Formato risposta non valido',
           Exception('Formato risposta non valido'),
         );
       }
     } on DioException catch (dioError) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore DIO nel recupero: ${dioError.message}');
-
-      String errorMessage = 'Errore di rete nel recupero dei feedback';
-      if (dioError.response?.statusCode == 403) {
-        errorMessage = 'Non hai i permessi per visualizzare i feedback';
-      }
-
-      return Result.error(errorMessage, dioError);
+      return _handleDioErrorGeneric<List<Feedback>>(dioError);
     } catch (e) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore generico nel recupero: $e');
+      log('[CONSOLE] [feedback_repository] ❌ Errore imprevisto: $e');
       return Result.error(
-        'Errore nel recupero dei feedback',
+        'Errore imprevisto nel recupero dei feedback',
         e is Exception ? e : Exception(e.toString()),
       );
     }
   }
 
-  /// Aggiorna lo stato di un feedback (solo admin)
+  /// ✅ CORRETTO: Aggiorna lo stato di un feedback (usa oggetto request)
   Future<Result<bool>> updateFeedbackStatus(FeedbackStatusUpdateRequest request) async {
     try {
-      log('[CONSOLE] [feedback_repository] 📝 Aggiornamento stato feedback ${request.feedbackId} -> ${request.status.label}');
+      log('[CONSOLE] [feedback_repository] 🔄 Aggiornamento stato feedback ${request.feedbackId} -> ${request.status}');
 
       final response = await _apiClient.updateFeedbackStatus(
         request.toApiJson(),
@@ -170,26 +248,24 @@ class FeedbackRepository {
 
       if (response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
-        final message = response['message'] as String? ?? 'Operazione completata';
 
         if (success) {
-          log('[CONSOLE] [feedback_repository] ✅ Stato aggiornato con successo');
+          log('[CONSOLE] [feedback_repository] ✅ Stato feedback aggiornato');
           return Result.success(true);
         } else {
-          log('[CONSOLE] [feedback_repository] ❌ Errore aggiornamento stato: $message');
-          return Result.error(message, Exception('Errore aggiornamento stato'));
+          final message = response['message'] as String? ?? 'Errore nell\'aggiornamento dello stato';
+          return Result.error(message, Exception(message));
         }
-      } else {
-        return Result.error(
-          'Risposta del server non valida',
-          Exception('Formato risposta non valido'),
-        );
       }
+
+      return Result.error(
+        'Formato risposta non valido',
+        Exception('Formato risposta non valido'),
+      );
     } on DioException catch (dioError) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore DIO aggiornamento stato: ${dioError.message}');
-      return Result.error('Errore di rete nell\'aggiornamento dello stato', dioError);
+      return _handleDioErrorGeneric<bool>(dioError);
     } catch (e) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore generico aggiornamento stato: $e');
+      log('[CONSOLE] [feedback_repository] ❌ Errore aggiornamento stato: $e');
       return Result.error(
         'Errore nell\'aggiornamento dello stato del feedback',
         e is Exception ? e : Exception(e.toString()),
@@ -197,7 +273,7 @@ class FeedbackRepository {
     }
   }
 
-  /// Aggiorna le note admin di un feedback (solo admin)
+  /// ✅ CORRETTO: Aggiorna le note admin di un feedback (usa oggetto request)
   Future<Result<bool>> updateFeedbackNotes(FeedbackNotesUpdateRequest request) async {
     try {
       log('[CONSOLE] [feedback_repository] 📝 Aggiornamento note feedback ${request.feedbackId}');
@@ -209,26 +285,24 @@ class FeedbackRepository {
 
       if (response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
-        final message = response['message'] as String? ?? 'Operazione completata';
 
         if (success) {
-          log('[CONSOLE] [feedback_repository] ✅ Note aggiornate con successo');
+          log('[CONSOLE] [feedback_repository] ✅ Note feedback aggiornate');
           return Result.success(true);
         } else {
-          log('[CONSOLE] [feedback_repository] ❌ Errore aggiornamento note: $message');
-          return Result.error(message, Exception('Errore aggiornamento note'));
+          final message = response['message'] as String? ?? 'Errore nell\'aggiornamento delle note';
+          return Result.error(message, Exception(message));
         }
-      } else {
-        return Result.error(
-          'Risposta del server non valida',
-          Exception('Formato risposta non valido'),
-        );
       }
+
+      return Result.error(
+        'Formato risposta non valido',
+        Exception('Formato risposta non valido'),
+      );
     } on DioException catch (dioError) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore DIO aggiornamento note: ${dioError.message}');
-      return Result.error('Errore di rete nell\'aggiornamento delle note', dioError);
+      return _handleDioErrorGeneric<bool>(dioError);
     } catch (e) {
-      log('[CONSOLE] [feedback_repository] ❌ Errore generico aggiornamento note: $e');
+      log('[CONSOLE] [feedback_repository] ❌ Errore aggiornamento note: $e');
       return Result.error(
         'Errore nell\'aggiornamento delle note del feedback',
         e is Exception ? e : Exception(e.toString()),
@@ -236,7 +310,7 @@ class FeedbackRepository {
     }
   }
 
-  /// Verifica se l'utente corrente è admin (utilizzando SessionService)
+  /// ✅ NUOVO: Verifica se l'utente corrente è admin (usando SessionService)
   Future<Result<bool>> isCurrentUserAdmin() async {
     try {
       // Per ora ritorniamo false, poi integreremo con SessionService
@@ -251,16 +325,18 @@ class FeedbackRepository {
     }
   }
 
-  /// Ottiene informazioni sul dispositivo per il feedback
-  String getDeviceInfo() {
-    try {
-      // TODO: Implementare il recupero delle info dispositivo
-      // Per ora ritorniamo dati di base
-      return 'Flutter App - Device info TODO';
-    } catch (e) {
-      log('[CONSOLE] [feedback_repository] ⚠️ Errore recupero info dispositivo: $e');
-      return 'Device info non disponibile';
-    }
+  // ============================================================================
+  // ✅ METODI HELPER STATICI (per attachment widget)
+  // ============================================================================
+
+  /// Ottiene la dimensione massima supportata (5MB)
+  static int get maxFileSize => 5 * 1024 * 1024;
+
+  /// Formatta la dimensione del file in formato leggibile
+  static String formatFileSize(int bytes) {
+    if (bytes < 1024) return '${bytes} B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   /// Valida se un file immagine è supportato per l'upload
@@ -273,13 +349,55 @@ class FeedbackRepository {
     return supportedExtensions.contains(extension);
   }
 
-  /// Ottiene la dimensione massima supportata (5MB)
-  static int get maxFileSize => 5 * 1024 * 1024;
+  // ============================================================================
+  // ✅ HELPER GENERICO PER ERRORI DIO
+  // ============================================================================
 
-  /// Formatta la dimensione del file in formato leggibile
-  static String formatFileSize(int bytes) {
-    if (bytes < 1024) return '${bytes} B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  /// Helper per ottenere il valore JSON corretto degli enum
+  String _getEnumJsonValue(dynamic enumValue) {
+    if (enumValue is FeedbackType) {
+      const map = {
+        FeedbackType.bug: 'bug',
+        FeedbackType.feature: 'feature',
+        FeedbackType.suggestion: 'suggestion',
+        FeedbackType.complaint: 'complaint',
+        FeedbackType.compliment: 'compliment',
+        FeedbackType.other: 'other',
+      };
+      return map[enumValue]!;
+    } else if (enumValue is FeedbackSeverity) {
+      const map = {
+        FeedbackSeverity.low: 'low',
+        FeedbackSeverity.medium: 'medium',
+        FeedbackSeverity.high: 'high',
+        FeedbackSeverity.critical: 'critical',
+      };
+      return map[enumValue]!;
+    }
+    return enumValue.toString();
+  }
+
+  /// Helper generico per gestire errori Dio con return type corretto
+  Result<T> _handleDioErrorGeneric<T>(DioException dioError) {
+    log('[CONSOLE] [feedback_repository] ❌ Errore DIO: ${dioError.message}');
+
+    String errorMessage;
+    switch (dioError.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        errorMessage = 'Timeout della connessione. Riprova più tardi.';
+        break;
+      case DioExceptionType.badResponse:
+        errorMessage = 'Errore del server (${dioError.response?.statusCode}). Riprova più tardi.';
+        break;
+      case DioExceptionType.connectionError:
+        errorMessage = 'Errore di connessione. Controlla la tua connessione internet.';
+        break;
+      default:
+        errorMessage = 'Errore di rete. Riprova più tardi.';
+    }
+
+    return Result.error(errorMessage, dioError);
   }
 }

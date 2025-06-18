@@ -20,6 +20,7 @@ dependencies:
   image_picker: ^1.0.4
   path: ^1.8.3
 
+
   # 🔧 FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
   wakelock_plus: ^1.2.5
 

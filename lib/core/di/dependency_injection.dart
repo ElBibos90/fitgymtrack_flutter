@@ -65,7 +65,10 @@ class DependencyInjection {
     print('[CONSOLE] [dependency_injection]🔧 [DI] Registering feedback repository...');
 
     getIt.registerLazySingleton<FeedbackRepository>(() {
-      return FeedbackRepository(apiClient: getIt<ApiClient>());
+      return FeedbackRepository(
+        apiClient: getIt<ApiClient>(),
+        dio: getIt<Dio>(), // ✅ AGGIUNGI QUESTA RIGA
+      );
     });
 
     // ============================================================================

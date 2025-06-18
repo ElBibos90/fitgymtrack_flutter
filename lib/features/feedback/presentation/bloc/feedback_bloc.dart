@@ -72,76 +72,68 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
       Emitter<FeedbackState> emit,
       ) async {
     try {
-      log('[CONSOLE] [feedback_bloc] 📥 Avvio caricamento feedback');
-
-      // Emette stato di caricamento
-      emit(const FeedbacksLoading());
+      log('[CONSOLE] [feedback_bloc] 📥 Caricamento feedback (admin)');
 
       // Prima verifica se l'utente è admin
       final adminResult = await _feedbackRepository.isCurrentUserAdmin();
-      bool isAdmin = false;
 
       adminResult.fold(
-        onSuccess: (adminStatus) {
-          isAdmin = adminStatus;
-          log('[CONSOLE] [feedback_bloc] 🔍 Permessi admin: $isAdmin');
+        onSuccess: (isAdmin) async {
+          if (!isAdmin) {
+            emit(FeedbackError.loading('Non hai i permessi per visualizzare i feedback'));
+            return;
+          }
+
+          // Emette stato di caricamento
+          emit(const FeedbackLoading());
+
+          // Carica i feedback
+          final result = await _feedbackRepository.getFeedbacks();
+
+          result.fold(
+            onSuccess: (feedbacks) {
+              log('[CONSOLE] [feedback_bloc] ✅ ${feedbacks.length} feedback caricati');
+              emit(FeedbacksLoaded(
+                feedbacks: feedbacks,
+                isAdmin: true,
+                loadedAt: DateTime.now(),
+              ));
+            },
+            onFailure: (exception, message) {
+              log('[CONSOLE] [feedback_bloc] ❌ Errore caricamento feedback: $message');
+              emit(FeedbackError.loading(
+                message ?? 'Errore nel caricamento dei feedback',
+                exception,
+              ));
+            },
+          );
         },
         onFailure: (exception, message) {
-          log('[CONSOLE] [feedback_bloc] ⚠️ Errore verifica admin: $message');
-          // Continua comunque con il caricamento
-        },
-      );
-
-      // Carica i feedback
-      final result = await _feedbackRepository.getFeedbacks();
-
-      result.fold(
-        onSuccess: (feedbacks) {
-          log('[CONSOLE] [feedback_bloc] ✅ ${feedbacks.length} feedback caricati');
-          emit(FeedbacksLoaded(
-            feedbacks: feedbacks,
-            loadedAt: DateTime.now(),
-            isAdmin: isAdmin,
-          ));
-        },
-        onFailure: (exception, message) {
-          log('[CONSOLE] [feedback_bloc] ❌ Errore caricamento feedback: $message');
-          emit(FeedbackError.loading(
-            message ?? 'Errore nel caricamento dei feedback',
-            exception,
-          ));
+          emit(FeedbackError.loading('Errore nella verifica dei permessi'));
         },
       );
     } catch (e) {
       log('[CONSOLE] [feedback_bloc] ❌ Errore imprevisto in _onLoadFeedbacks: $e');
       emit(FeedbackError.loading(
-        'Si è verificato un errore imprevisto durante il caricamento',
+        'Si è verificato un errore imprevisto',
         e is Exception ? e : Exception(e.toString()),
       ));
     }
   }
 
-  /// Handler per l'aggiornamento dello stato di un feedback
+  /// Handler per l'aggiornamento dello stato di un feedback (admin)
   Future<void> _onUpdateFeedbackStatus(
       UpdateFeedbackStatus event,
       Emitter<FeedbackState> emit,
       ) async {
     try {
-      log('[CONSOLE] [feedback_bloc] 📝 Aggiornamento stato feedback ${event.feedbackId} -> ${event.newStatus.label}');
+      log('[CONSOLE] [feedback_bloc] 🔄 Aggiornamento stato feedback ${event.feedbackId} -> ${event.newStatus}');
 
-      // Emette stato di aggiornamento
-      emit(FeedbackStatusUpdating(
-        feedbackId: event.feedbackId,
-        newStatus: event.newStatus,
-      ));
-
-      // Crea la request
+      // ✅ CORRETTO: Usa oggetto request
       final request = FeedbackStatusUpdateRequest(
         feedbackId: event.feedbackId,
         status: event.newStatus,
       );
-
-      // Chiama il repository
       final result = await _feedbackRepository.updateFeedbackStatus(request);
 
       result.fold(
@@ -153,18 +145,14 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
               newStatus: event.newStatus,
               updatedAt: DateTime.now(),
             ));
-
-            // Ricarica automaticamente i feedback per aggiornare la lista
-            add(const LoadFeedbacks());
           } else {
-            log('[CONSOLE] [feedback_bloc] ❌ Aggiornamento stato fallito');
-            emit(FeedbackError.update('Aggiornamento dello stato fallito'));
+            emit(FeedbackError.update('Errore nell\'aggiornamento dello stato'));
           }
         },
         onFailure: (exception, message) {
           log('[CONSOLE] [feedback_bloc] ❌ Errore aggiornamento stato: $message');
           emit(FeedbackError.update(
-            message ?? 'Errore nell\'aggiornamento dello stato',
+            message ?? 'Errore nell\'aggiornamento dello stato del feedback',
             exception,
           ));
         },
@@ -172,13 +160,13 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     } catch (e) {
       log('[CONSOLE] [feedback_bloc] ❌ Errore imprevisto in _onUpdateFeedbackStatus: $e');
       emit(FeedbackError.update(
-        'Si è verificato un errore imprevisto durante l\'aggiornamento',
+        'Si è verificato un errore imprevisto',
         e is Exception ? e : Exception(e.toString()),
       ));
     }
   }
 
-  /// Handler per l'aggiornamento delle note admin
+  /// Handler per l'aggiornamento delle note admin di un feedback
   Future<void> _onUpdateFeedbackNotes(
       UpdateFeedbackNotes event,
       Emitter<FeedbackState> emit,
@@ -186,16 +174,11 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     try {
       log('[CONSOLE] [feedback_bloc] 📝 Aggiornamento note feedback ${event.feedbackId}');
 
-      // Emette stato di aggiornamento
-      emit(FeedbackNotesUpdating(feedbackId: event.feedbackId));
-
-      // Crea la request
+      // ✅ CORRETTO: Usa oggetto request
       final request = FeedbackNotesUpdateRequest(
         feedbackId: event.feedbackId,
         adminNotes: event.adminNotes,
       );
-
-      // Chiama il repository
       final result = await _feedbackRepository.updateFeedbackNotes(request);
 
       result.fold(
@@ -207,18 +190,14 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
               adminNotes: event.adminNotes,
               updatedAt: DateTime.now(),
             ));
-
-            // Ricarica automaticamente i feedback per aggiornare la lista
-            add(const LoadFeedbacks());
           } else {
-            log('[CONSOLE] [feedback_bloc] ❌ Aggiornamento note fallito');
-            emit(FeedbackError.update('Aggiornamento delle note fallito'));
+            emit(FeedbackError.update('Errore nell\'aggiornamento delle note'));
           }
         },
         onFailure: (exception, message) {
           log('[CONSOLE] [feedback_bloc] ❌ Errore aggiornamento note: $message');
           emit(FeedbackError.update(
-            message ?? 'Errore nell\'aggiornamento delle note',
+            message ?? 'Errore nell\'aggiornamento delle note del feedback',
             exception,
           ));
         },
@@ -226,10 +205,19 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     } catch (e) {
       log('[CONSOLE] [feedback_bloc] ❌ Errore imprevisto in _onUpdateFeedbackNotes: $e');
       emit(FeedbackError.update(
-        'Si è verificato un errore imprevisto durante l\'aggiornamento',
+        'Si è verificato un errore imprevisto',
         e is Exception ? e : Exception(e.toString()),
       ));
     }
+  }
+
+  /// Handler per il reset dello stato del BLoC
+  void _onResetFeedbackState(
+      ResetFeedbackState event,
+      Emitter<FeedbackState> emit,
+      ) {
+    log('[CONSOLE] [feedback_bloc] 🔄 Reset stato del BLoC');
+    emit(const FeedbackInitial());
   }
 
   /// Handler per la verifica dei permessi admin
@@ -240,10 +228,6 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
     try {
       log('[CONSOLE] [feedback_bloc] 🔍 Verifica permessi admin');
 
-      // Emette stato di caricamento
-      emit(const FeedbackLoading(message: 'Verifica permessi...'));
-
-      // Verifica i permessi
       final result = await _feedbackRepository.isCurrentUserAdmin();
 
       result.fold(
@@ -256,76 +240,18 @@ class FeedbackBloc extends Bloc<FeedbackEvent, FeedbackState> {
         },
         onFailure: (exception, message) {
           log('[CONSOLE] [feedback_bloc] ❌ Errore verifica permessi: $message');
-          emit(FeedbackError(
-            message: message ?? 'Errore nella verifica dei permessi',
-            exception: exception,
-            occurredAt: DateTime.now(),
-            operation: 'permissions',
+          emit(FeedbackError.loading(
+            message ?? 'Errore nella verifica dei permessi',
+            exception,
           ));
         },
       );
     } catch (e) {
       log('[CONSOLE] [feedback_bloc] ❌ Errore imprevisto in _onCheckAdminPermissions: $e');
-      emit(FeedbackError(
-        message: 'Si è verificato un errore imprevisto nella verifica dei permessi',
-        exception: e is Exception ? e : Exception(e.toString()),
-        occurredAt: DateTime.now(),
-        operation: 'permissions',
+      emit(FeedbackError.loading(
+        'Si è verificato un errore imprevisto nella verifica dei permessi',
+        e is Exception ? e : Exception(e.toString()),
       ));
     }
-  }
-
-  /// Handler per il reset dello stato
-  Future<void> _onResetFeedbackState(
-      ResetFeedbackState event,
-      Emitter<FeedbackState> emit,
-      ) async {
-    log('[CONSOLE] [feedback_bloc] 🔄 Reset stato feedback');
-    emit(const FeedbackInitial());
-  }
-
-  /// Getter di convenienza per verificare se lo stato corrente è di loading
-  bool get isLoading {
-    return state is FeedbackLoading ||
-        state is FeedbackSubmitting ||
-        state is FeedbacksLoading ||
-        state is FeedbackStatusUpdating ||
-        state is FeedbackNotesUpdating;
-  }
-
-  /// Getter di convenienza per verificare se l'ultimo invio è stato successful
-  bool get lastSubmissionSuccessful {
-    return state is FeedbackSubmitted;
-  }
-
-  /// Getter di convenienza per ottenere i feedback caricati
-  List<Feedback> get currentFeedbacks {
-    if (state is FeedbacksLoaded) {
-      return (state as FeedbacksLoaded).feedbacks;
-    }
-    return [];
-  }
-
-  /// Getter di convenienza per verificare se l'utente corrente è admin
-  bool get isCurrentUserAdmin {
-    if (state is FeedbacksLoaded) {
-      return (state as FeedbacksLoaded).isAdmin;
-    }
-    if (state is AdminPermissionsChecked) {
-      return (state as AdminPermissionsChecked).isAdmin;
-    }
-    return false;
-  }
-
-  @override
-  void onChange(Change<FeedbackState> change) {
-    super.onChange(change);
-    log('[CONSOLE] [feedback_bloc] 🔄 State change: ${change.currentState.runtimeType} -> ${change.nextState.runtimeType}');
-  }
-
-  @override
-  void onError(Object error, StackTrace stackTrace) {
-    log('[CONSOLE] [feedback_bloc] ❌ BLoC Error: $error');
-    super.onError(error, stackTrace);
   }
 }
