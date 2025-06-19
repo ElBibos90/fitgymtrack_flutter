@@ -1,6 +1,5 @@
 // lib/features/workouts/presentation/screens/edit_workout_screen.dart
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,12 +10,14 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
+import '../../../../shared/widgets/exercise_selection_dialog.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
+import '../../../exercises/models/exercises_response.dart';
 import '../../../../shared/widgets/workout_exercise_editor.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
@@ -31,8 +32,6 @@ class EditWorkoutScreen extends StatefulWidget {
   State<EditWorkoutScreen> createState() => _EditWorkoutScreenState();
 }
 
-// lib/features/workouts/presentation/screens/edit_workout_screen.dart
-
 class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   late WorkoutBloc _workoutBloc;
   late SessionService _sessionService;
@@ -45,7 +44,15 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   List<WorkoutExercise> _exercises = [];
   List<WorkoutExercise> _removedExercises = [];
   bool _hasChanges = false;
-  bool _isLoading = false; // ✅ NUOVO: Traccia loading locale
+  bool _isLoading = false;
+
+  // ✅ NUOVO: Stati per la selezione esercizi (copiati da create_workout_screen)
+  List<ExerciseItem> _availableExercises = [];
+  bool _showExerciseDialog = false;
+  bool _isLoadingAvailableExercises = false;
+
+  // ✅ NUOVO: Loading state locale per distinguere dal BLoC
+  bool _isLocalLoading = false;
 
   @override
   void initState() {
@@ -59,11 +66,24 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+
+    // ✅ CLEANUP: Reset loading states quando si esce dalla schermata
+    print('[CONSOLE] [edit_workout_screen]🧹 Disposing - cleaning up loading states');
+
+    // ✅ RESET tutti i loading states
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _isLoadingAvailableExercises = false;
+        _isLocalLoading = false; // ✅ RESET anche local loading
+      });
+    }
+
     super.dispose();
   }
 
   void _loadWorkoutDetails() {
-    //print('[CONSOLE] [edit_workout_screen]🔄 Loading workout details for ID: ${widget.workoutId}');
+    print('[CONSOLE] [edit_workout_screen]🔄 Loading workout details for ID: ${widget.workoutId}');
 
     // Controlla se i dati sono già disponibili nel BLoC
     final currentState = _workoutBloc.state;
@@ -71,7 +91,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     if (currentState is WorkoutPlanDetailsLoaded &&
         currentState.workoutPlan.id == widget.workoutId) {
       // ✅ Dati già disponibili, usali direttamente
-      //print('[CONSOLE] [edit_workout_screen]✅ Using existing loaded data');
+      print('[CONSOLE] [edit_workout_screen]✅ Using existing loaded data');
       _resetState(currentState.workoutPlan, currentState.exercises);
       return;
     }
@@ -82,7 +102,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         final existingPlan = currentState.workoutPlans.firstWhere(
               (plan) => plan.id == widget.workoutId,
         );
-        //print('[CONSOLE] [edit_workout_screen]✅ Found plan in loaded plans: ${existingPlan.nome}');
+        print('[CONSOLE] [edit_workout_screen]✅ Found plan in loaded plans: ${existingPlan.nome}');
 
         // Se ha già gli esercizi, usa quelli
         if (existingPlan.esercizi.isNotEmpty) {
@@ -94,7 +114,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           return;
         }
       } catch (e) {
-        //print('[CONSOLE] [edit_workout_screen]⚠️ Plan not found in current plans, loading details...');
+        print('[CONSOLE] [edit_workout_screen]⚠️ Plan not found in current plans, loading details...');
       }
     }
 
@@ -103,6 +123,48 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _isLoading = true;
     });
     _workoutBloc.loadWorkoutPlanDetails(widget.workoutId);
+  }
+
+  // ✅ NUOVO: Carica esercizi disponibili per il dialog di selezione
+  void _loadAvailableExercises() async {
+    final userId = await _sessionService.getCurrentUserId();
+    if (userId != null) {
+      print('[CONSOLE] [edit_workout_screen]Loading available exercises for user: $userId');
+      setState(() {
+        _isLoadingAvailableExercises = true;
+      });
+      _workoutBloc.loadAvailableExercises(userId);
+    }
+  }
+
+  // ✅ NUOVO: Gestisce la selezione di un esercizio dal dialog
+  void _onExerciseSelected(ExerciseItem exerciseItem) {
+    print('[CONSOLE] [edit_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
+
+    // Converte ExerciseItem a WorkoutExercise
+    final workoutExercise = WorkoutExercise(
+      id: exerciseItem.id,
+      schedaEsercizioId: null, // Nuovo esercizio
+      nome: exerciseItem.nome,
+      gruppoMuscolare: exerciseItem.gruppoMuscolare,
+      attrezzatura: exerciseItem.attrezzatura,
+      descrizione: exerciseItem.descrizione,
+      serie: exerciseItem.serieDefault ?? 3,
+      ripetizioni: exerciseItem.ripetizioniDefault ?? 10,
+      peso: exerciseItem.pesoDefault ?? 20.0,
+      ordine: _exercises.length + 1,
+      tempoRecupero: 90,
+      note: null,
+      setType: 'normal',
+      linkedToPreviousInt: 0,
+      isIsometricInt: exerciseItem.isIsometric ? 1 : 0,
+    );
+
+    setState(() {
+      _exercises.add(workoutExercise);
+      _showExerciseDialog = false;
+      _markAsChanged();
+    });
   }
 
   void _markAsChanged() {
@@ -126,33 +188,13 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       return;
     }
 
-    // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD per le richieste esercizi
     final exerciseRequests = _exercises.asMap().entries.map((entry) {
       final index = entry.key;
       final exercise = entry.value;
-
-      // 🚀 FASE 3 FIX: Crea una copia con ordine aggiornato, poi usa helper method
-      final exerciseWithOrder = exercise.safeCopy(ordine: index);
-
-      // DEBUG: Log valori REST-PAUSE prima di convertire
-      //print('[CONSOLE] [edit_workout_screen]Converting exercise: ${exercise.nome}');
-      //print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
-      //print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
-      //print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
-
+      final exerciseWithOrder = exercise.safeCopy(ordine: index + 1);
       return WorkoutExerciseRequest.fromWorkoutExercise(exerciseWithOrder);
     }).toList();
 
-    // DEBUG: Log della richiesta finale
-    for (int i = 0; i < exerciseRequests.length; i++) {
-      final req = exerciseRequests[i];
-      //print('[CONSOLE] [edit_workout_screen]ExerciseRequest $i:');
-      //print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
-      //print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
-      //print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
-    }
-
-    // ✅ FIX: Usa esercizio_id (exercise.id) non scheda_esercizio_id
     List<WorkoutExerciseToRemove>? exercisesToRemove;
     if (_removedExercises.isNotEmpty) {
       exercisesToRemove = _removedExercises.map((exercise) {
@@ -161,9 +203,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         );
       }).toList();
 
-      //print('[CONSOLE] [edit_workout_screen]Esercizi da rimuovere: ${exercisesToRemove.length}');
+      print('[CONSOLE] [edit_workout_screen]Esercizi da rimuovere: ${exercisesToRemove.length}');
       for (final toRemove in exercisesToRemove) {
-        //print('[CONSOLE] [edit_workout_screen]🗑️ Rimuovi esercizio_id: ${toRemove.id}');
+        print('[CONSOLE] [edit_workout_screen]🗑️ Rimuovi esercizio_id: ${toRemove.id}');
       }
     }
 
@@ -195,11 +237,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _exercises.removeAt(index);
       _removedExercises.add(exerciseToRemove);
 
-      //print('[CONSOLE] [edit_workout_screen]🔍 ESERCIZIO RIMOSSO:');
-      //print('[CONSOLE] [edit_workout_screen]- Nome: ${exerciseToRemove.nome}');
-      //print('[CONSOLE] [edit_workout_screen]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
-      //print('[CONSOLE] [edit_workout_screen]- Totale esercizi rimossi: ${_removedExercises.length}');
-      //print('[CONSOLE] [edit_workout_screen]- Esercizi rimanenti: ${_exercises.length}');
+      print('[CONSOLE] [edit_workout_screen]🔍 ESERCIZIO RIMOSSO:');
+      print('[CONSOLE] [edit_workout_screen]- Nome: ${exerciseToRemove.nome}');
+      print('[CONSOLE] [edit_workout_screen]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
+      print('[CONSOLE] [edit_workout_screen]- Totale esercizi rimossi: ${_removedExercises.length}');
+      print('[CONSOLE] [edit_workout_screen]- Esercizi rimanenti: ${_exercises.length}');
 
       _markAsChanged();
     });
@@ -244,7 +286,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _resetState(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    //print('[CONSOLE] [edit_workout_screen]🔄 Resetting state with: ${workoutPlan.nome}');
+    print('[CONSOLE] [edit_workout_screen]🔄 Resetting state with: ${workoutPlan.nome}');
 
     _originalWorkoutPlan = workoutPlan;
     _exercises = List.from(exercises);
@@ -254,16 +296,17 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
     setState(() {
       _hasChanges = false;
-      _isLoading = false; // ✅ SEMPRE reset loading
+      _isLoading = false;
     });
 
-    //print('[CONSOLE] [edit_workout_screen]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
+    // ✅ NUOVO: Carica gli esercizi disponibili quando il workout è caricato
+    _loadAvailableExercises();
+
+    print('[CONSOLE] [edit_workout_screen]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
   }
 
-  // ✅ AGGIORNATO: Gestione back migliorata
   Future<bool> _onWillPop() async {
     if (_isLoading) {
-      // ✅ Se stiamo caricando, blocca la navigazione
       return false;
     }
 
@@ -309,183 +352,193 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         }
       },
       child: Scaffold(
-        appBar: CustomAppBar(
-          title: 'Modifica Scheda',
-          actions: [
-            if (_hasChanges && !_isLoading) // ✅ Nasconde se loading
-              TextButton(
-                onPressed: _saveWorkout,
-                child: Text(
-                  'Salva',
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFF90CAF9)
-                        : AppColors.indigo600, // ✅ DINAMICO!
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+        body: Stack(
+          children: [
+            BlocConsumer<WorkoutBloc, WorkoutState>(
+              listener: (context, state) {
+                if (state is WorkoutPlanUpdated) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Scheda aggiornata con successo!',
+                    isSuccess: true,
+                  );
+                  context.pop();
+                } else if (state is WorkoutPlanDetailsLoaded) {
+                  _resetState(state.workoutPlan, state.exercises);
+                } else if (state is WorkoutPlansLoaded) {
+                  // Gestione aggiornamento stato dopo caricamento workout plans
+                  try {
+                    final existingPlan = state.workoutPlans.firstWhere(
+                          (plan) => plan.id == widget.workoutId,
+                    );
+                    if (existingPlan.esercizi.isNotEmpty) {
+                      _resetState(existingPlan, existingPlan.esercizi);
+                    }
+                  } catch (e) {
+                    // Piano non trovato, continua con il caricamento dettagli
+                  }
+                } else if (state is AvailableExercisesLoaded) {
+                  // ✅ NUOVO: Gestisce il caricamento degli esercizi disponibili
+                  print('[CONSOLE] [edit_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
+                  setState(() {
+                    _availableExercises = state.availableExercises;
+                    _isLoadingAvailableExercises = false;
+                  });
+                } else if (state is AvailableExercisesLoaded) {
+                  // ✅ NUOVO: Gestisce il caricamento degli esercizi disponibili
+                  print('[CONSOLE] [edit_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
+                  setState(() {
+                    _availableExercises = state.availableExercises;
+                    _isLoadingAvailableExercises = false;
+                  });
+                } else if (state is WorkoutError) {
+                  CustomSnackbar.show(
+                    context,
+                    message: state.message,
+                    isSuccess: false,
+                  );
+                  setState(() {
+                    _isLoading = false;
+                    _isLoadingAvailableExercises = false; // ✅ Reset anche questo loading
+                  });
+                }
+              },
+              builder: (context, state) {
+                return LoadingOverlay(
+                  isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage || _isLoading,
+                  message: state is WorkoutLoadingWithMessage ? state.message : null,
+                  child: _buildScaffold(context, state),
+                );
+              },
+            ),
+
+            // ✅ NUOVO: Dialog per selezione esercizi
+            if (_showExerciseDialog)
+              ExerciseSelectionDialog(
+                exercises: _availableExercises,
+                selectedExerciseIds: _exercises.map((e) => e.id).toList(),
+                isLoading: _isLoadingAvailableExercises,
+                onExerciseSelected: _onExerciseSelected,
+                onDismissRequest: () {
+                  setState(() {
+                    _showExerciseDialog = false;
+                  });
+                },
+                // ✅ NUOVO: Callback per la creazione di esercizi personalizzati
+                onCreateExercise: () {
+                  // Questo verrà gestito direttamente dal dialog aggiornato
+                },
+                // ✅ NUOVO: Callback per aggiornare la lista dopo la creazione di un esercizio
+                onExercisesRefresh: () {
+                  // Ricarica gli esercizi disponibili
+                  _loadAvailableExercises();
+                },
               ),
           ],
-        ),
-        body: BlocConsumer<WorkoutBloc, WorkoutState>(
-          listener: (context, state) {
-            // ✅ AGGIORNATO: Gestione stati migliorata con reset loading
-            if (state is WorkoutPlanDetailsLoaded) {
-              setState(() {
-                _isLoading = false; // ✅ RESET loading su success
-              });
-              _resetState(state.workoutPlan, state.exercises);
-            } else if (state is WorkoutPlanUpdated) {
-              setState(() {
-                _isLoading = false; // ✅ RESET loading su success
-              });
-              CustomSnackbar.show(
-                context,
-                message: 'Scheda aggiornata con successo',
-                isSuccess: true,
-              );
-              // Torna alla schermata precedente dopo un breve ritardo
-              Future.delayed(const Duration(seconds: 1), () {
-                if (context.mounted) {
-                  context.pop();
-                }
-              });
-            } else if (state is WorkoutError) {
-              setState(() {
-                _isLoading = false; // ✅ RESET loading su errore
-              });
-              CustomSnackbar.show(
-                context,
-                message: state.message,
-                isSuccess: false,
-              );
-            } else if (state is WorkoutLoading || state is WorkoutLoadingWithMessage) {
-              setState(() {
-                _isLoading = true; // ✅ SET loading
-              });
-            } else {
-              // ✅ AGGIUNTO: Reset loading per tutti gli altri stati
-              setState(() {
-                _isLoading = false;
-              });
-            }
-          },
-          builder: (context, state) {
-            return LoadingOverlay(
-              isLoading: _isLoading, // ✅ USA loading locale
-              message: state is WorkoutLoadingWithMessage ? state.message : null,
-              child: _buildContent(state),
-            );
-          },
         ),
       ),
     );
   }
 
-  // ✅ AGGIORNATO: Content builder migliorato
-  Widget _buildContent(WorkoutState state) {
-    if (_originalWorkoutPlan != null) {
-      // ✅ Se abbiamo i dati, mostra sempre il form
-      return _buildEditForm();
-    } else if (state is WorkoutPlanDetailsLoaded) {
-      return _buildEditForm();
-    } else if (state is WorkoutError) {
-      return _buildErrorState(state);
-    }
-
-    // Loading state
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
-  }
-
-  Widget _buildEditForm() {
+  Widget _buildScaffold(BuildContext context, WorkoutState state) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Form(
-      key: _formKey,
-      child: Column(
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: 'Modifica Scheda',
+        actions: [
+          if (_hasChanges && !_isLoading)
+            TextButton(
+              onPressed: _saveWorkout,
+              child: Text(
+                'Salva',
+                style: TextStyle(
+                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: Column(
         children: [
-          // Header con informazioni base ✅ SISTEMATO!
+          // Form con nome e descrizione
           Container(
             padding: EdgeInsets.all(AppConfig.spacingM.w),
             decoration: BoxDecoration(
-              color: colorScheme.surface, // ✅ DINAMICO!
+              color: colorScheme.surface,
               border: Border(
                 bottom: BorderSide(
-                  color: colorScheme.outline.withValues(alpha:0.3), // ✅ DINAMICO!
+                  color: colorScheme.outline.withOpacity(0.3),
                   width: 1,
                 ),
               ),
             ),
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  style: TextStyle(
-                    color: colorScheme.onSurface, // ✅ DINAMICO!
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Nome scheda *',
-                    hintText: 'Es. Scheda Forza, Allenamento Gambe...',
-                    labelStyle: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
-                    ),
-                    hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha:0.5), // ✅ DINAMICO!
-                    ),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: colorScheme.outline, // ✅ DINAMICO!
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nome Scheda',
+                      hintText: 'es. Push Day, Gambe, Full Body...',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                        ),
                       ),
                     ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Inserisci il nome della scheda';
+                      }
+                      if (value.trim().length < 3) {
+                        return 'Il nome deve essere almeno 3 caratteri';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => _markAsChanged(),
+                  ),
+                  SizedBox(height: AppConfig.spacingM.h),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Descrizione (opzionale)',
+                      hintText: 'Aggiungi una descrizione per la tua scheda...',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                        ),
                       ),
                     ),
+                    maxLines: 2,
+                    onChanged: (_) => _markAsChanged(),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Il nome della scheda è obbligatorio';
-                    }
-                    return null;
-                  },
-                  onChanged: (_) => _markAsChanged(),
-                ),
-                SizedBox(height: AppConfig.spacingM.h),
-                TextFormField(
-                  controller: _descriptionController,
-                  style: TextStyle(
-                    color: colorScheme.onSurface, // ✅ DINAMICO!
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Descrizione',
-                    hintText: 'Descrizione opzionale della scheda',
-                    labelStyle: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
-                    ),
-                    hintStyle: TextStyle(
-                      color: colorScheme.onSurface.withValues(alpha:0.5), // ✅ DINAMICO!
-                    ),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: colorScheme.outline, // ✅ DINAMICO!
-                      ),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                      ),
-                    ),
-                  ),
-                  maxLines: 2,
-                  onChanged: (_) => _markAsChanged(),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+
+          // ✅ NUOVO: Sezione esercizi con pulsante aggiungi
+          _buildExercisesSection(),
 
           // Lista esercizi
           Expanded(
@@ -495,20 +548,20 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           ),
 
           // Pulsante salva fisso in basso
-          if (_hasChanges && !_isLoading) // ✅ Nasconde se loading
+          if (_hasChanges && !_isLoading)
             Container(
               padding: EdgeInsets.all(AppConfig.spacingM.w),
               decoration: BoxDecoration(
-                color: colorScheme.surface, // ✅ DINAMICO!
+                color: colorScheme.surface,
                 border: Border(
                   top: BorderSide(
-                    color: colorScheme.outline.withValues(alpha:0.3), // ✅ DINAMICO!
+                    color: colorScheme.outline.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha:isDark ? 0.3 : 0.1), // ✅ DINAMICO!
+                    color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1),
                     blurRadius: AppConfig.elevationM,
                     offset: const Offset(0, -2),
                   ),
@@ -526,25 +579,69 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     );
   }
 
-  Widget _buildExercisesList() {
-    return ListView.builder(
-      padding: EdgeInsets.all(AppConfig.spacingM.w),
-      itemCount: _exercises.length,
-      itemBuilder: (context, index) {
-        final exercise = _exercises[index];
+  // ✅ NUOVO: Sezione esercizi con pulsante aggiungi (copiata da create_workout_screen)
+  Widget _buildExercisesSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-        // ✅ NUOVO: Usa WorkoutExerciseEditor invece di ExerciseEditorCard
-        return WorkoutExerciseEditor(
-          key: ValueKey('exercise_${exercise.id}_$index'),
-          exercise: exercise,
-          onUpdate: (updatedExercise) => _updateExercise(index, updatedExercise),
-          onDelete: () => _removeExercise(index),
-          onMoveUp: index > 0 ? () => _moveExerciseUp(index) : null,
-          onMoveDown: index < _exercises.length - 1 ? () => _moveExerciseDown(index) : null,
-          isFirst: index == 0,
-          isLast: index == _exercises.length - 1,
-        );
-      },
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outline.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Esercizi',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Apre dialog selezione esercizi
+              if (_availableExercises.isNotEmpty) {
+                setState(() {
+                  _showExerciseDialog = true;
+                });
+              } else if (!_isLoadingAvailableExercises) {
+                // Se non abbiamo esercizi e non stiamo caricando, riprova a caricare
+                _loadAvailableExercises();
+              }
+            },
+            icon: _isLoadingAvailableExercises
+                ? SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: isDark ? AppColors.backgroundDark : Colors.white,
+              ),
+            )
+                : const Icon(Icons.add, size: 20),
+            label: Text(_isLoadingAvailableExercises ? 'Caricamento...' : 'Aggiungi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+              elevation: 0,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -557,82 +654,84 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.fitness_center,
+            Icons.fitness_center_outlined,
             size: 64.sp,
-            color: colorScheme.onSurface.withValues(alpha:0.4), // ✅ DINAMICO!
+            color: colorScheme.onSurface.withOpacity(0.4),
           ),
-          SizedBox(height: AppConfig.spacingL.h),
+          SizedBox(height: 16.h),
           Text(
-            'Nessun esercizio nella scheda',
+            'Nessun esercizio',
             style: TextStyle(
-              fontSize: 18.sp,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface, // ✅ DINAMICO!
+              color: colorScheme.onSurface,
             ),
           ),
-          SizedBox(height: AppConfig.spacingS.h),
+          SizedBox(height: 4.h),
           Text(
-            'Aggiungi esercizi per completare la scheda',
+            'Aggiungi degli esercizi per completare la tua scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+              color: colorScheme.onSurface.withOpacity(0.6),
             ),
+            textAlign: TextAlign.center,
           ),
-          SizedBox(height: AppConfig.spacingXL.h),
-          CustomButton(
-            text: 'Aggiungi Esercizi',
+          SizedBox(height: 24.h),
+          // ✅ NUOVO: Pulsante aggiungi esercizi anche nello stato vuoto
+          ElevatedButton.icon(
             onPressed: () {
-              CustomSnackbar.show(
-                context,
-                message: 'Funzionalità di aggiunta esercizi in arrivo',
-                isSuccess: false,
-              );
+              if (_availableExercises.isNotEmpty) {
+                setState(() {
+                  _showExerciseDialog = true;
+                });
+              } else if (!_isLoadingAvailableExercises) {
+                _loadAvailableExercises();
+              }
             },
-            type: ButtonType.secondary,
+            icon: _isLoadingAvailableExercises
+                ? SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: isDark ? AppColors.backgroundDark : Colors.white,
+              ),
+            )
+                : const Icon(Icons.add, size: 20),
+            label: Text(_isLoadingAvailableExercises ? 'Caricamento...' : 'Aggiungi Esercizi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+              elevation: 0,
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(WorkoutError state) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildExercisesList() {
+    return ListView.builder(
+      padding: EdgeInsets.all(AppConfig.spacingM.w),
+      itemCount: _exercises.length,
+      itemBuilder: (context, index) {
+        final exercise = _exercises[index];
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.sp,
-            color: AppColors.error,
-          ),
-          SizedBox(height: AppConfig.spacingL.h),
-          Text(
-            'Errore nel caricamento',
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.error,
-            ),
-          ),
-          SizedBox(height: AppConfig.spacingS.h),
-          Text(
-            state.message,
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppConfig.spacingXL.h),
-          CustomButton(
-            text: 'Riprova',
-            onPressed: _loadWorkoutDetails,
-            type: ButtonType.primary,
-          ),
-        ],
-      ),
+        return WorkoutExerciseEditor(
+          key: ValueKey('exercise_${exercise.id}_$index'),
+          exercise: exercise,
+          onUpdate: (updatedExercise) => _updateExercise(index, updatedExercise),
+          onDelete: () => _removeExercise(index),
+          onMoveUp: index > 0 ? () => _moveExerciseUp(index) : null,
+          onMoveDown: index < _exercises.length - 1 ? () => _moveExerciseDown(index) : null,
+          isFirst: index == 0,
+          isLast: index == _exercises.length - 1,
+        );
+      },
     );
   }
 }
