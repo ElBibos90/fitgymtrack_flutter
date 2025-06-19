@@ -19,6 +19,8 @@ import '../../features/payments/presentation/screens/stripe_payment_screen.dart'
 import '../../features/payments/bloc/stripe_bloc.dart';
 import '../../core/di/dependency_injection.dart';
 import '../../features/feedback/presentation/screens/feedback_screen.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
