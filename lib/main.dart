@@ -837,7 +837,7 @@ class DashboardPage extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           Text(
-            'Controlla la nostra guida o manda un feedback per qualsiasi domanda.',
+            'Manda un feedback per qualsiasi informazione, problema o miglioramenti.',
             style: TextStyle(
               fontSize: 14.sp,
               color: isDarkMode ? Colors.grey.shade400 : AppColors.textSecondary,
