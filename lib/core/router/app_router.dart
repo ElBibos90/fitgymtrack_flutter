@@ -8,7 +8,6 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
 import '../../shared/widgets/auth_wrapper.dart';
-import '../../main.dart'; // Per la Dashboard esistente
 import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
 import '../../features/workouts/presentation/screens/edit_workout_screen.dart';
