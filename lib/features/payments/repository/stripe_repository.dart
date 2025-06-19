@@ -227,12 +227,12 @@ class StripeRepository {
   }
 
   /// Crea un Payment Intent per donazione
+
   Future<Result<StripePaymentIntentResponse>> createDonationPaymentIntent({
     required int amount, // in centesimi
     Map<String, dynamic>? metadata,
   }) async {
-    /*print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}',
-    );*/
+    print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -264,7 +264,7 @@ class StripeRepository {
         },
       };
 
-      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation data: $donationData');
+      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation data: $donationData');
 
       // 🔧 FIX: Richiesta con retry automatico
       final response = await _makeAuthenticatedRequest(
@@ -274,15 +274,44 @@ class StripeRepository {
         retryOnFailure: true,
       );
 
-      if (response['success'] == true && response['payment_intent'] != null) {
-        final paymentIntent = StripePaymentIntentResponse.fromJson(response['payment_intent']);
+      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Full donation response: $response');
 
-        /*print('[CONSOLE] [stripe_repository] ✅ [STRIPE REPO] Donation payment intent created: ${paymentIntent.paymentIntentId}',
-        );*/
+      // 🔧 FIX CRITICO: Parsing corretto come per le subscription - SUPPORTA ENTRAMBI I FORMATI
+      if (response['success'] == true) {
+        Map<String, dynamic>? paymentIntentData;
 
-        return paymentIntent;
+        // Controlla nuovo formato: data.payment_intent (come backend moderno)
+        if (response['data'] != null && response['data']['payment_intent'] != null) {
+          paymentIntentData = response['data']['payment_intent'];
+          print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using new format: data.payment_intent');
+        }
+        // Controlla vecchio formato: payment_intent diretto (legacy)
+        else if (response['payment_intent'] != null) {
+          paymentIntentData = response['payment_intent'];
+          print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using old format: payment_intent');
+        }
+
+        if (paymentIntentData != null) {
+          try {
+            final paymentIntent = StripePaymentIntentResponse.fromJson(paymentIntentData);
+
+            print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Donation payment intent created successfully: ${paymentIntent.paymentIntentId}');
+
+            return paymentIntent;
+          } catch (e) {
+            print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Donation JSON parsing error: $e');
+            print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Payment intent data: $paymentIntentData');
+            throw Exception('Error parsing donation payment intent response: $e');
+          }
+        } else {
+          print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Donation payment intent data not found in response');
+          print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Response structure: ${response.keys.toList()}');
+          throw Exception('Donation payment intent data not found in response. Available keys: ${response.keys.toList()}');
+        }
       } else {
-        throw Exception(response['message'] ?? 'Errore nella creazione del payment intent per donazione');
+        final errorMessage = response['message'] ?? 'Errore nella creazione del payment intent per donazione';
+        print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Server returned success=false for donation: $errorMessage');
+        throw Exception(errorMessage);
       }
     });
   }
