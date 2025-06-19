@@ -589,7 +589,7 @@ class DashboardPage extends StatelessWidget {
                   SizedBox(height: 12.h),
                   ElevatedButton(
                     onPressed: () {
-                      context.push('/stripe-payment?mode=donation');
+                      context.push('/payment/donation');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -669,7 +669,7 @@ class DashboardPage extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        context.push('/stripe-payment?mode=donation');
+                        context.push('/payment/donation');
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
