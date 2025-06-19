@@ -46,10 +46,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   List<WorkoutExercise> _exercises = [];
   List<WorkoutExercise> _removedExercises = [];
 
-  // Stati per la selezione esercizi (NUOVO)
+  // ✨ NUOVI STATI per la selezione esercizi
   List<ExerciseItem> _availableExercises = [];
   bool _showExerciseDialog = false;
   bool _isLoadingAvailableExercises = false;
+  int? _currentUserId;
 
   @override
   void initState() {
@@ -57,7 +58,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     _workoutBloc = getIt<WorkoutBloc>();
     _sessionService = getIt<SessionService>();
     _loadWorkoutDetails();
-    _loadAvailableExercises(); // NUOVO: Carica esercizi disponibili
+    _loadAvailableExercises(); // ✨ NUOVO: Carica esercizi disponibili
   }
 
   @override
@@ -97,10 +98,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     _workoutBloc.loadWorkoutPlanDetails(widget.workoutId);
   }
 
-  // NUOVO: Carica esercizi disponibili per il dialog di selezione
+  // ✨ NUOVO: Carica esercizi disponibili per il dialog di selezione
   void _loadAvailableExercises() async {
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
+      _currentUserId = userId; // ✨ SALVA L'USER ID
       print('[CONSOLE] [edit_workout_screen]Loading available exercises for user: $userId');
       setState(() {
         _isLoadingAvailableExercises = true;
@@ -109,7 +111,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     }
   }
 
-  // NUOVO: Gestisce la selezione di un esercizio dal dialog
+  // ✨ NUOVO: Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
     print('[CONSOLE] [edit_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
 
@@ -121,9 +123,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       gruppoMuscolare: exerciseItem.gruppoMuscolare,
       attrezzatura: exerciseItem.attrezzatura,
       descrizione: exerciseItem.descrizione,
-      serie: exerciseItem.serieDefault ?? 3,
-      ripetizioni: exerciseItem.ripetizioniDefault ?? 10,
-      peso: exerciseItem.pesoDefault ?? 20.0,
+      serie: exerciseItem.serieDefault,
+      ripetizioni: exerciseItem.ripetizioniDefault,
+      peso: exerciseItem.pesoDefault,
       ordine: _exercises.length + 1,
       tempoRecupero: 90,
       note: null,
@@ -164,7 +166,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       final index = entry.key;
       final exercise = entry.value;
 
-      final exerciseWithOrder = exercise.safeCopy(ordine: index);
+      final exerciseWithOrder = exercise.safeCopy(ordine: index + 1);
 
       print('[CONSOLE] [edit_workout_screen]Converting exercise: ${exercise.nome}');
       print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
@@ -173,14 +175,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
       return WorkoutExerciseRequest.fromWorkoutExercise(exerciseWithOrder);
     }).toList();
-
-    for (int i = 0; i < exerciseRequests.length; i++) {
-      final req = exerciseRequests[i];
-      print('[CONSOLE] [edit_workout_screen]ExerciseRequest $i:');
-      print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
-      print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
-      print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
-    }
 
     List<WorkoutExerciseToRemove>? exercisesToRemove;
     if (_removedExercises.isNotEmpty) {
@@ -246,6 +240,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         final exercise = _exercises.removeAt(index);
         _exercises.insert(index - 1, exercise);
 
+        // Aggiorna gli ordini
         for (int i = 0; i < _exercises.length; i++) {
           _exercises[i] = _exercises[i].safeCopy(ordine: i + 1);
         }
@@ -261,6 +256,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         final exercise = _exercises.removeAt(index);
         _exercises.insert(index + 1, exercise);
 
+        // Aggiorna gli ordini
         for (int i = 0; i < _exercises.length; i++) {
           _exercises[i] = _exercises[i].safeCopy(ordine: i + 1);
         }
@@ -287,45 +283,52 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     print('[CONSOLE] [edit_workout_screen]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
   }
 
-  // ✅ FIX: Gestione del back navigation come nel create_workout_screen
+  Future<bool> _onWillPop() async {
+    if (_isLoading) {
+      return false;
+    }
+
+    if (!_hasChanges) {
+      // ✅ Se non ci sono modifiche, gestisci il back navigation come nel create
+      _handleBackNavigation();
+      return false; // Impedisce il pop automatico
+    }
+
+    final shouldDiscard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifiche non salvate'),
+        content: const Text(
+          'Hai delle modifiche non salvate. Vuoi uscire senza salvare?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Esci senza salvare'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDiscard == true) {
+      // ✅ Se l'utente conferma, gestisci il back navigation
+      _handleBackNavigation();
+    }
+
+    return false; // Impedisce sempre il pop automatico
+  }
+
+  // ✅ AGGIUNTO: Gestione del back navigation come nel create_workout_screen
   void _handleBackNavigation() async {
     print('[CONSOLE] [edit_workout_screen]🔄 Handling back navigation');
-
-    // Se c'è un loading in corso, non permettere la navigazione
-    if (_isLoading) {
-      return;
-    }
-
-    // Se ci sono modifiche non salvate, chiedi conferma
-    if (_hasChanges) {
-      final shouldDiscard = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Modifiche non salvate'),
-          content: const Text(
-            'Hai delle modifiche non salvate. Vuoi uscire senza salvare?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Annulla'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Esci senza salvare'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldDiscard != true) {
-        return; // Non uscire se l'utente ha annullato
-      }
-    }
 
     // ✅ STESSO APPROCCIO DEL CREATE: Gestione stati del bloc
     final currentState = _workoutBloc.state;
@@ -358,65 +361,65 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Impedisce il pop automatico
-      onPopInvoked: (didPop) {
+      canPop: false, // ✅ Impedisce il pop automatico
+      onPopInvoked: (didPop) async {
         if (!didPop) {
-          _handleBackNavigation(); // ✅ Usa la stessa logica del create
+          await _onWillPop();
         }
       },
-      child: BlocProvider.value(
-        value: _workoutBloc,
-        child: Stack(
-          children: [
-            Scaffold(
-              appBar: CustomAppBar(
-                title: 'Modifica Scheda',
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _handleBackNavigation, // ✅ Usa il metodo custom
+      child: Scaffold(
+        appBar: CustomAppBar(
+          title: 'Modifica Scheda',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () async => await _onWillPop(), // ✅ Usa il metodo custom anche per l'icona
+          ),
+          actions: [
+            if (_hasChanges && !_isLoading)
+              TextButton(
+                onPressed: _saveWorkout,
+                child: Text(
+                  'Salva',
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF90CAF9)
+                        : AppColors.indigo600,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                actions: [
-                  if (_hasChanges && !_isLoading)
-                    TextButton(
-                      onPressed: _saveWorkout,
-                      child: Text(
-                        'Salva',
-                        style: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF90CAF9)
-                              : AppColors.indigo600,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                ],
               ),
-              body: BlocConsumer<WorkoutBloc, WorkoutState>(
-                listener: (context, state) {
-                  if (state is WorkoutPlanDetailsLoaded) {
-                    _resetState(state.workoutPlan, state.exercises);
-                  } else if (state is WorkoutPlanUpdated) {
-                    CustomSnackbar.show(
-                      context,
-                      message: 'Scheda aggiornata con successo!',
-                      isSuccess: true,
-                    );
-                    if (mounted) {
-                      context.pop();
-                    }
-                  } else if (state is WorkoutError) {
-                    CustomSnackbar.show(
-                      context,
-                      message: state.message,
-                      isSuccess: false,
-                    );
-                  } else if (state is AvailableExercisesLoaded) { // NUOVO: Gestione esercizi disponibili
-                    setState(() {
-                      _availableExercises = state.availableExercises;
-                      _isLoadingAvailableExercises = false;
-                    });
+          ],
+        ),
+        body: Stack(
+          children: [
+            BlocListener<WorkoutBloc, WorkoutState>(
+              listener: (context, state) {
+                if (state is WorkoutPlanDetailsLoaded &&
+                    state.workoutPlan.id == widget.workoutId) {
+                  _resetState(state.workoutPlan, state.exercises);
+                } else if (state is WorkoutPlanUpdated) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Scheda aggiornata con successo!',
+                    isSuccess: true,
+                  );
+                  if (mounted) {
+                    context.pop();
                   }
-                },
+                } else if (state is WorkoutError) {
+                  CustomSnackbar.show(
+                    context,
+                    message: state.message,
+                    isSuccess: false,
+                  );
+                } else if (state is AvailableExercisesLoaded) { // ✨ NUOVO: Gestione esercizi disponibili
+                  setState(() {
+                    _availableExercises = state.availableExercises;
+                    _isLoadingAvailableExercises = false;
+                  });
+                }
+              },
+              child: BlocBuilder<WorkoutBloc, WorkoutState>(
                 builder: (context, state) {
                   return LoadingOverlay(
                     isLoading: state is WorkoutLoading,
@@ -426,7 +429,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
               ),
             ),
 
-            // NUOVO: Dialog per selezione esercizi
+            // ✨ NUOVO: Dialog per selezione esercizi
             if (_showExerciseDialog)
               ExerciseSelectionDialog(
                 exercises: _availableExercises,
@@ -437,6 +440,13 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                   setState(() {
                     _showExerciseDialog = false;
                   });
+                },
+                // ✨ NUOVI PARAMETRI per la creazione di esercizi
+                currentUserId: _currentUserId,
+                onExercisesRefresh: () {
+                  // Ricarica gli esercizi disponibili dopo la creazione di un nuovo esercizio
+                  print('[CONSOLE] [edit_workout_screen]🔄 Refreshing exercises after creation...');
+                  _loadAvailableExercises();
                 },
               ),
           ],
@@ -465,7 +475,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           children: [
             _buildBasicInfoSection(),
             SizedBox(height: 24.h),
-            _buildExercisesSection(), // MODIFICATO: Ora include il pulsante Aggiungi
+            _buildExercisesSection(), // ✨ MODIFICATO: Ora include il pulsante Aggiungi
             SizedBox(height: 32.h),
             _buildActionButtons(),
             SizedBox(height: 32.h),
@@ -494,14 +504,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         CustomTextField(
           controller: _nameController,
           label: 'Nome Scheda',
-          hint: 'es. Push Day, Gambe, Full Body...',
+          hint: 'es. Upper Body A',
           prefixIcon: Icons.fitness_center,
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Inserisci il nome della scheda';
-            }
-            if (value.trim().length < 3) {
-              return 'Il nome deve essere almeno 3 caratteri';
+              return 'Il nome della scheda è obbligatorio';
             }
             return null;
           },
@@ -513,9 +520,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         CustomTextField(
           controller: _descriptionController,
           label: 'Descrizione (opzionale)',
-          hint: 'Aggiungi una descrizione per la tua scheda...',
+          hint: 'Breve descrizione della scheda',
           prefixIcon: Icons.description,
           maxLines: 3,
+          keyboardType: TextInputType.multiline,
           onChanged: (value) => _markAsChanged(),
         ),
       ],
@@ -529,48 +537,38 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // NUOVO: Header con pulsante Aggiungi Esercizio
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Text(
-                'Esercizi',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+            Text(
+              'Esercizi',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
               ),
             ),
+            // ✨ NUOVO: Pulsante per aggiungere esercizi
             ElevatedButton.icon(
               onPressed: () {
-                // NUOVO: Apre dialog selezione esercizi
-                if (_availableExercises.isNotEmpty) {
-                  setState(() {
-                    _showExerciseDialog = true;
-                  });
-                } else if (!_isLoadingAvailableExercises) {
-                  // Se non abbiamo esercizi e non stiamo caricando, riprova a caricare
-                  _loadAvailableExercises();
-                }
+                setState(() {
+                  _showExerciseDialog = true;
+                });
               },
-              icon: _isLoadingAvailableExercises
-                  ? SizedBox(
-                width: 20.w,
-                height: 20.w,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: isDark ? AppColors.backgroundDark : Colors.white,
-                ),
-              )
-                  : const Icon(Icons.add, size: 20),
-              label: Text(_isLoadingAvailableExercises ? 'Caricamento...' : 'Aggiungi'),
+              icon: Icon(
+                Icons.add,
+                size: 18.sp,
+              ),
+              label: Text(
+                'Aggiungi',
+                style: TextStyle(fontSize: 14.sp),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
-                elevation: 0,
+                foregroundColor: isDark ? Colors.black : Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                  borderRadius: BorderRadius.circular(AppConfig.radiusS),
                 ),
               ),
             ),
@@ -580,104 +578,74 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         SizedBox(height: 16.h),
 
         if (_exercises.isEmpty)
-          _buildEmptyExercisesState()
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(32.w),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              border: Border.all(
+                color: colorScheme.outline.withOpacity(0.3),
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.fitness_center,
+                  size: 48.sp,
+                  color: colorScheme.onSurface.withOpacity(0.4),
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  'Nessun esercizio aggiunto',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Tocca "Aggiungi" per selezionare degli esercizi',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
         else
-          _buildExercisesList(),
+          ...List.generate(_exercises.length, (index) {
+            final exercise = _exercises[index];
+            return Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              child: WorkoutExerciseEditor(
+                exercise: exercise,
+                onUpdate: (updatedExercise) => _updateExercise(index, updatedExercise),
+                onDelete: () => _removeExercise(index), // ✅ FIX: onDelete invece di onRemove
+                onMoveUp: index > 0 ? () => _moveExerciseUp(index) : null,
+                onMoveDown: index < _exercises.length - 1 ? () => _moveExerciseDown(index) : null,
+              ),
+            );
+          }),
       ],
     );
   }
 
-  Widget _buildExercisesList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _exercises.length,
-      itemBuilder: (context, index) {
-        return WorkoutExerciseEditor(
-          key: ValueKey('exercise_${_exercises[index].id}_$index'),
-          exercise: _exercises[index],
-          onUpdate: (updatedExercise) => _updateExercise(index, updatedExercise),
-          onDelete: () => _removeExercise(index),
-          onMoveUp: index > 0 ? () => _moveExerciseUp(index) : null,
-          onMoveDown: index < _exercises.length - 1 ? () => _moveExerciseDown(index) : null,
-          isFirst: index == 0,
-          isLast: index == _exercises.length - 1,
-        );
-      },
-    );
-  }
-
-  Widget _buildEmptyExercisesState() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.fitness_center,
-            size: 64.sp,
-            color: colorScheme.onSurface.withValues(alpha: 0.4),
-          ),
-          SizedBox(height: AppConfig.spacingL.h),
-          Text(
-            'Nessun esercizio nella scheda',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: AppConfig.spacingS.h),
-          Text(
-            'Usa il pulsante "Aggiungi" sopra per aggiungere esercizi',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionButtons() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
+    return Row(
       children: [
-        SizedBox(
-          width: double.infinity,
-          height: 50.h,
-          child: ElevatedButton(
-            onPressed: _saveWorkout,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-              foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppConfig.radiusM),
-              ),
-            ),
-            child: Text(
-              'Aggiorna Scheda',
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 12.h),
-        SizedBox(
-          width: double.infinity,
-          height: 50.h,
+        Expanded(
           child: OutlinedButton(
-            onPressed: _handleBackNavigation, // ✅ Usa il metodo custom
+            onPressed: () => context.pop(),
             style: OutlinedButton.styleFrom(
-              foregroundColor: colorScheme.onSurface.withValues(alpha: 0.6),
+              padding: EdgeInsets.symmetric(vertical: 12.h),
               side: BorderSide(color: colorScheme.outline),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -685,6 +653,27 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             ),
             child: Text(
               'Annulla',
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _hasChanges ? _saveWorkout : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+              foregroundColor: isDark ? Colors.black : Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 12.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              ),
+            ),
+            child: Text(
+              'Salva Modifiche',
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
@@ -700,39 +689,41 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64.sp,
-            color: AppColors.error,
-          ),
-          SizedBox(height: AppConfig.spacingL.h),
-          Text(
-            'Errore nel caricamento',
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.error,
+      child: Padding(
+        padding: EdgeInsets.all(32.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64.sp,
+              color: colorScheme.error,
             ),
-          ),
-          SizedBox(height: AppConfig.spacingS.h),
-          Text(
-            state.message,
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            SizedBox(height: 16.h),
+            Text(
+              'Errore nel caricamento',
+              style: TextStyle(
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: AppConfig.spacingXL.h),
-          CustomButton(
-            text: 'Riprova',
-            onPressed: _loadWorkoutDetails,
-            type: ButtonType.primary,
-          ),
-        ],
+            SizedBox(height: 8.h),
+            Text(
+              state.message,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24.h),
+            ElevatedButton(
+              onPressed: _loadWorkoutDetails,
+              child: const Text('Riprova'),
+            ),
+          ],
+        ),
       ),
     );
   }
