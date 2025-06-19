@@ -1,0 +1,111 @@
+# Table	Create Table
+user_subscriptions	CREATE TABLE `user_subscriptions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `plan_id` int NOT NULL,
+  `status` enum('active','cancelled','expired') NOT NULL DEFAULT 'active',
+  `start_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `end_date` timestamp NULL DEFAULT NULL,
+  `auto_renew` tinyint(1) DEFAULT '1',
+  `payment_provider` varchar(50) DEFAULT NULL,
+  `payment_reference` varchar(255) DEFAULT NULL,
+  `last_payment_date` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `stripe_subscription_id` varchar(255) DEFAULT NULL,
+  `stripe_customer_id` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `plan_id` (`plan_id`),
+  KEY `idx_user_subscriptions_user_id` (`user_id`),
+  KEY `idx_user_subscriptions_status` (`status`),
+  KEY `idx_stripe_subscription` (`stripe_subscription_id`),
+  KEY `idx_stripe_customer` (`stripe_customer_id`),
+  CONSTRAINT `user_subscriptions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_subscriptions_ibfk_2` FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+# Table	Create Table
+users	CREATE TABLE `users` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `role_id` int NOT NULL,
+  `active` tinyint(1) DEFAULT '1',
+  `last_login` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `trainer_id` int DEFAULT NULL,
+  `is_standalone` tinyint(1) NOT NULL DEFAULT '0',
+  `current_plan_id` int DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `email` (`email`),
+  KEY `role_id` (`role_id`),
+  KEY `idx_users_trainer_id` (`trainer_id`),
+  KEY `current_plan_id` (`current_plan_id`),
+  CONSTRAINT `fk_user_trainer` FOREIGN KEY (`trainer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `user_role` (`id`),
+  CONSTRAINT `users_ibfk_2` FOREIGN KEY (`current_plan_id`) REFERENCES `subscription_plans` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+# Table	Create Table
+stripe_subscriptions	CREATE TABLE `stripe_subscriptions` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `stripe_subscription_id` varchar(255) NOT NULL,
+  `stripe_customer_id` varchar(255) NOT NULL,
+  `status` varchar(50) NOT NULL,
+  `current_period_start` int NOT NULL,
+  `current_period_end` int NOT NULL,
+  `cancel_at_period_end` tinyint(1) DEFAULT '0',
+  `plan_id` int DEFAULT NULL,
+  `price_id` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `stripe_subscription_id` (`stripe_subscription_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_stripe_subscription_id` (`stripe_subscription_id`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `stripe_subscriptions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+# Table	Create Table
+stripe_payment_intents	CREATE TABLE `stripe_payment_intents` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `stripe_payment_intent_id` varchar(255) NOT NULL,
+  `amount` int NOT NULL,
+  `currency` varchar(3) NOT NULL DEFAULT 'eur',
+  `status` varchar(50) NOT NULL,
+  `payment_type` enum('subscription','donation') NOT NULL,
+  `metadata` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `stripe_payment_intent_id` (`stripe_payment_intent_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_stripe_payment_intent_id` (`stripe_payment_intent_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_payment_type` (`payment_type`),
+  CONSTRAINT `stripe_payment_intents_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+# Table	Create Table
+stripe_customers	CREATE TABLE `stripe_customers` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `stripe_customer_id` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `stripe_customer_id` (`stripe_customer_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_stripe_customer_id` (`stripe_customer_id`),
+  CONSTRAINT `stripe_customers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci

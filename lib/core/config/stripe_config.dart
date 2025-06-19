@@ -1,7 +1,7 @@
 // lib/core/config/stripe_config.dart
 import 'package:flutter/foundation.dart';
 
-/// Configurazione Stripe per FitGymTrack - READY FOR SANDBOX TESTING
+/// Configurazione Stripe per FitGymTrack - AGGIORNATA con supporto Recurring/OneTime
 class StripeConfig {
   // ============================================================================
   // 🔑 STRIPE KEYS - TEST MODE READY FOR REAL TESTING
@@ -33,266 +33,204 @@ class StripeConfig {
   ];
 
   // ============================================================================
-  // 📋 PIANI DI ABBONAMENTO - READY FOR TESTING
+  // 📋 PIANI DI ABBONAMENTO - AGGIORNATI CON RECURRING/ONETIME
   // ============================================================================
 
   static const Map<String, SubscriptionPlan> subscriptionPlans = {
-    'premium_monthly': SubscriptionPlan(
-      id: 'premium_monthly',
-      name: 'Premium Mensile',
-      description: 'Tutte le funzionalità Premium per un mese',
-      stripePriceId: 'price_1RXVOfHHtQGHyul9qMGFmpmO', // ✅ Real test price ID
+    'premium_monthly_recurring': SubscriptionPlan(
+      id: 'premium_monthly_recurring',
+      name: 'Premium Mensile Ricorrente',
+      description: 'Si rinnova automaticamente ogni mese. Cancella quando vuoi.',
+      stripePriceId: 'price_1RXVOfHHtQGHyul9qMGFmpmO', // ✅ Existing recurring price
       amount: 499, // €4.99 in centesimi
       interval: 'month',
+      isRecurring: true, // 🆕 NUOVO CAMPO
       features: [
         '🏋️ Schede di allenamento illimitate',
         '💪 Esercizi personalizzati illimitati',
-        '📊 Statistiche avanzate e grafici',
+        '📊 Statistiche avanzate dettagliate',
         '☁️ Backup automatico su cloud',
         '🚫 Nessuna pubblicità',
-        '🎯 Supporto prioritario',
-        '🆕 Accesso alle nuove funzionalità',
+        '🔄 Rinnovo automatico',
+        '❌ Cancella in qualsiasi momento',
       ],
     ),
-    'premium_yearly': SubscriptionPlan(
-      id: 'premium_yearly',
-      name: 'Premium Annuale',
-      description: 'Piano annuale con sconto del 17%',
-      stripePriceId: 'price_1RXjCDHHtQGHyul9GnnKSoL9', // ✅ Real test price ID
-      amount: 4999, // €49.99 in centesimi
-      interval: 'year',
+    'premium_monthly_onetime': SubscriptionPlan(
+      id: 'premium_monthly_onetime',
+      name: 'Premium Mensile Una Tantum',
+      description: '30 giorni di accesso Premium senza rinnovo automatico.',
+      stripePriceId: 'price_1RbmRkHHtQGHyul92oUMSkUY', // ✅ New one-time price
+      amount: 499, // €4.99 in centesimi - STESSO PREZZO
+      interval: 'month',
+      isRecurring: false, // 🆕 NUOVO CAMPO
       features: [
-        '✨ Tutte le funzionalità Premium',
-        '💰 Sconto del 17% rispetto al piano mensile',
-        '⭐ Priorità massima nel supporto',
-        '🚀 Accesso anticipato alle nuove funzionalità',
-        '🎁 Contenuti esclusivi premium',
+        '🏋️ Schede di allenamento illimitate',
+        '💪 Esercizi personalizzati illimitati',
+        '📊 Statistiche avanzate dettagliate',
+        '☁️ Backup automatico su cloud',
+        '🚫 Nessuna pubblicità',
+        '⏰ 30 giorni di accesso',
+        '🔒 Nessun rinnovo automatico',
       ],
     ),
   };
 
   // ============================================================================
-  // 🎁 IMPORTI DONAZIONE PREDEFINITI
+  // 🎯 HELPER METHODS PER I PIANI
   // ============================================================================
 
-  static const List<int> donationAmounts = [
-    299,  // €2.99
-    499,  // €4.99
-    999,  // €9.99
-    1999, // €19.99
-    4999, // €49.99
-  ];
+  /// Ottieni il piano ricorrente
+  static SubscriptionPlan get recurringPlan => subscriptionPlans['premium_monthly_recurring']!;
+
+  /// Ottieni il piano una tantum
+  static SubscriptionPlan get onetimePlan => subscriptionPlans['premium_monthly_onetime']!;
+
+  /// Ottieni lista piani per UI
+  static List<SubscriptionPlan> get availablePlans => [recurringPlan, onetimePlan];
+
+  /// Ottieni piano per payment type
+  static SubscriptionPlan getPlanByPaymentType(String paymentType) {
+    switch (paymentType) {
+      case 'recurring':
+        return recurringPlan;
+      case 'onetime':
+        return onetimePlan;
+      default:
+        return recurringPlan; // Default fallback
+    }
+  }
 
   // ============================================================================
-  // 🧪 TEST CARD NUMBERS FOR SANDBOX TESTING
+  // 🔍 VALIDAZIONE E UTILITY (compatibilità con StripeService esistente)
   // ============================================================================
 
-  /// Test card numbers for sandbox testing
+  /// Verifica se una chiave Stripe è valida
+  static bool isValidKey(String key) {
+    if (key.isEmpty) return false;
+    return key.startsWith('pk_test_') || key.startsWith('pk_live_');
+  }
+
+  /// Verifica se siamo in modalità test
+  static bool get isTestMode {
+    return publishableKey.startsWith('pk_test_');
+  }
+
+  /// Verifica se siamo in modalità demo (per debug)
+  static bool get isDemoMode {
+    // Demo mode se la chiave contiene pattern tipici di demo
+    return publishableKey.contains('REPLACE') ||
+        publishableKey.length < 50 ||
+        publishableKey == 'pk_test_51234567890abcdefghijklmnopqrstuvwxyz123456789012345678901234567890123456789012345678901234567890';
+  }
+
+  /// Verifica se è pronto per sandbox testing
+  static bool get isReadyForSandboxTesting {
+    return isTestMode && !isDemoMode && isValidKey(publishableKey);
+  }
+
+  // ============================================================================
+  // 💰 PREZZI E FORMATTAZIONE
+  // ============================================================================
+
+  /// Formatta un importo in centesimi come stringa
+  static String formatAmount(int amountInCents) {
+    final euros = amountInCents / 100;
+    return '€${euros.toStringAsFixed(2)}';
+  }
+
+  /// Converte centesimi in euro
+  static double centsToEuro(int cents) => cents / 100.0;
+
+  /// Converte euro in centesimi
+  static int euroToCents(double euros) => (euros * 100).round();
+
+  // ============================================================================
+  // 🧪 TEST CONFIGURATION & VERIFICATION
+  // ============================================================================
+
+  /// Test cards da usare durante lo sviluppo
   static const Map<String, String> testCards = {
     'success': '4242424242424242',
     'declined': '4000000000000002',
     'insufficient_funds': '4000000000009995',
-    'require_3d_secure': '4000000000003220',
-    'expired': '4000000000000069',
-    'incorrect_cvc': '4000000000000127',
+    'authentication_required': '4000002500003155',
   };
 
-  /// Default test card details
-  static const Map<String, String> testCardDetails = {
-    'cvv': '123',
-    'expiry_month': '12',
-    'expiry_year': '25',
-    'zip': '12345',
-  };
-
-  // ============================================================================
-  // 🔧 HELPER METHODS
-  // ============================================================================
-
-  /// Converte euro in centesimi per Stripe
-  static int euroToCents(double euros) {
-    return (euros * 100).round();
-  }
-
-  /// Converte centesimi in euro
-  static double centsToEuro(int cents) {
-    return cents / 100.0;
-  }
-
-  /// Verifica formato chiavi Stripe
-  static bool isValidKey(String key) {
-    if (key.isEmpty) return false;
-
-    // Verifica formato chiave test
-    if (key.startsWith('pk_test_')) {
-      return key.length >= 107; // Lunghezza minima chiave test Stripe
-    }
-
-    // Verifica formato chiave live
-    if (key.startsWith('pk_live_')) {
-      return key.length >= 107; // Lunghezza minima chiave live Stripe
-    }
-
-    return false;
-  }
-
-  /// Indica se siamo in modalità test
-  static bool get isTestMode => publishableKey.startsWith('pk_test_');
-
-  /// Indica se siamo in modalità demo (chiavi placeholder)
-  static bool get isDemoMode => publishableKey.contains('REPLACE') ||
-      publishableKey.contains('1234567890');
-
-  /// Formatta un importo in euro
-  static String formatAmount(int centesimi, {String symbol = '€'}) {
-    final euros = centsToEuro(centesimi);
-    return '$symbol${euros.toStringAsFixed(2)}';
-  }
-
-  /// Ottiene il piano per ID
-  static SubscriptionPlan? getPlan(String planId) {
-    return subscriptionPlans[planId];
-  }
-
-  /// Lista di tutti i piani disponibili
-  static List<SubscriptionPlan> get availablePlans => subscriptionPlans.values.toList();
-
-  // ============================================================================
-  // 🔍 VALIDAZIONE CONFIGURAZIONE
-  // ============================================================================
-
-  /// Verifica se la configurazione è valida per testing
-  static bool get isConfigurationValid {
-    if (!isValidKey(publishableKey)) return false;
-    if (currency.isEmpty) return false;
-    if (countryCode.isEmpty) return false;
-    if (merchantIdentifier.isEmpty) return false;
-
-    // Verifica che tutti i piani abbiano price ID validi
-    for (final plan in subscriptionPlans.values) {
-      if (plan.stripePriceId.isEmpty || !plan.stripePriceId.startsWith('price_')) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Verifica se siamo pronti per il test sandbox
-  static bool get isReadyForSandboxTesting {
-    return isTestMode &&
-        !isDemoMode &&
-        isConfigurationValid;
-  }
-
-  /// Verifica se siamo pronti per la produzione
-  static bool get isReadyForProduction {
-    return !isTestMode &&
-        !isDemoMode &&
-        isConfigurationValid;
-  }
-
-  /// Lista di controlli di configurazione
+  /// Verifica se la configurazione è pronta per il testing
   static List<String> get configurationChecks {
     final checks = <String>[];
 
-    if (publishableKey.isEmpty) {
-      checks.add('❌ Publishable key mancante');
-    } else if (!isValidKey(publishableKey)) {
-      checks.add('❌ Publishable key formato non valido');
-    } else if (isDemoMode) {
-      checks.add('⚠️ Usando chiavi demo - sostituire con chiavi reali');
+    // Check keys
+    if (publishableKey.isEmpty || publishableKey.contains('REPLACE')) {
+      checks.add('❌ Publishable key non configurata');
     } else {
-      checks.add('✅ Publishable key configurata correttamente');
+      checks.add('✅ Publishable key configurata');
     }
 
-    if (isTestMode) {
-      checks.add('🧪 Modalità TEST attiva - Pronto per sandbox testing');
-    } else {
-      checks.add('🚨 Modalità LIVE attiva - PRODUZIONE');
-    }
-
-    if (currency != 'eur') {
-      checks.add('⚠️ Valuta non euro: $currency');
-    }
-
+    // Check piani
     if (subscriptionPlans.isEmpty) {
-      checks.add('❌ Nessun piano di abbonamento configurato');
+      checks.add('❌ Nessun piano configurato');
     } else {
       checks.add('✅ ${subscriptionPlans.length} piani configurati');
+
+      // Check price IDs
+      for (final plan in subscriptionPlans.values) {
+        if (plan.stripePriceId.isEmpty || plan.stripePriceId.contains('REPLACE')) {
+          checks.add('❌ Price ID non configurato per ${plan.name}');
+        } else {
+          checks.add('✅ Price ID configurato per ${plan.name}');
+        }
+      }
     }
 
-    // Check specific per sandbox testing
-    if (isReadyForSandboxTesting) {
-      checks.add('🎯 READY FOR SANDBOX TESTING');
+    // Check merchant identifier per Apple Pay
+    if (merchantIdentifier.isEmpty) {
+      checks.add('⚠️ Merchant identifier per Apple Pay non configurato');
+    } else {
+      checks.add('✅ Merchant identifier configurato');
     }
 
     return checks;
   }
 
-  /// Informazioni di debug per sandbox testing
-  static Map<String, dynamic> get debugInfo => {
-    'publishable_key_set': publishableKey.isNotEmpty,
-    'publishable_key_valid': isValidKey(publishableKey),
-    'publishable_key_length': publishableKey.length,
-    'publishable_key_prefix': publishableKey.isNotEmpty
-        ? publishableKey.substring(0, 8)
-        : 'EMPTY',
-    'test_mode': isTestMode,
-    'demo_mode': isDemoMode,
-    'ready_for_sandbox': isReadyForSandboxTesting,
-    'ready_for_production': isReadyForProduction,
-    'currency': currency,
-    'country_code': countryCode,
-    'merchant_identifier': merchantIdentifier,
-    'plans_count': subscriptionPlans.length,
-    'donation_amounts_count': donationAmounts.length,
-    'supported_payment_methods': supportedPaymentMethods,
-    'configuration_valid': isConfigurationValid,
-    'test_cards_available': testCards.keys.toList(),
-  };
+  /// Verifica se la configurazione è pronta per il testing
+  static bool get isReadyForTesting {
+    return isValidKey(publishableKey) && !isDemoMode;
+  }
 
-  /// Stampa informazioni di configurazione per testing
-  static void printSandboxTestingInfo() {
-    //print('[CONSOLE] [stripe_config]');
-    //print('[CONSOLE] [stripe_config]🧪 STRIPE SANDBOX TESTING CONFIGURATION');
-    //print('[CONSOLE] [stripe_config]=========================================');
-    //print('[CONSOLE] [stripe_config]🔑 Test Mode: ${isTestMode ? "✅ ACTIVE" : "❌ INACTIVE"}');
-    //print('[CONSOLE] [stripe_config]🎯 Ready for Testing: ${isReadyForSandboxTesting ? "✅ YES" : "❌ NO"}');
-    //print('[CONSOLE] [stripe_config]');
+  /// Stampa informazioni di configurazione per debug
+  static void printTestingInfo() {
+    print('[CONSOLE] [stripe_config]');
+    print('[CONSOLE] [stripe_config]🔍 STRIPE CONFIGURATION STATUS');
+    print('[CONSOLE] [stripe_config]=====================================');
 
-    if (isReadyForSandboxTesting) {
-      //print('[CONSOLE] [stripe_config]✅ TESTING READY - You can now test payments!');
-      //print('[CONSOLE] [stripe_config]');
-      //print('[CONSOLE] [stripe_config]🧪 TEST CARDS FOR SANDBOX:');
-      //print('[CONSOLE] [stripe_config]   Success: ${testCards['success']} (CVV: 123, Exp: 12/25)');
-      //print('[CONSOLE] [stripe_config]   Declined: ${testCards['declined']} (CVV: 123, Exp: 12/25)');
-      //print('[CONSOLE] [stripe_config]   3D Secure: ${testCards['require_3d_secure']} (CVV: 123, Exp: 12/25)');
-      //print('[CONSOLE] [stripe_config]   Insufficient: ${testCards['insufficient_funds']} (CVV: 123, Exp: 12/25)');
-      //print('[CONSOLE] [stripe_config]');
-      //print('[CONSOLE] [stripe_config]💳 AVAILABLE PLANS:');
-      for (final plan in subscriptionPlans.values) {
-        //print('[CONSOLE] [stripe_config]   ${plan.name}: ${plan.formattedPrice}/${plan.interval}');
-      }
-      //print('[CONSOLE] [stripe_config]');
-      //print('[CONSOLE] [stripe_config]🎯 TEST FLOW:');
-      //print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
-      //print('[CONSOLE] [stripe_config]   2. Subscription Screen → "Sottoscrivi Premium"');
-      //print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
-      //print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
+    for (final check in configurationChecks) {
+      print('[CONSOLE] [stripe_config]$check');
+    }
+
+    print('[CONSOLE] [stripe_config]');
+
+    if (isReadyForTesting) {
+      print('[CONSOLE] [stripe_config]✅ READY FOR TESTING');
+      print('[CONSOLE] [stripe_config]');
+      print('[CONSOLE] [stripe_config]🚀 TEST FLOW:');
+      print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
+      print('[CONSOLE] [stripe_config]   2. Subscription Screen → Scegli tipo pagamento');
+      print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
+      print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
     } else {
-      //print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
-      //print('[CONSOLE] [stripe_config]');
-      //print('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
+      print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
+      print('[CONSOLE] [stripe_config]');
+      print('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
       for (final check in configurationChecks) {
         if (check.startsWith('❌') || check.startsWith('⚠️')) {
-          //print('[CONSOLE] [stripe_config]   $check');
+          print('[CONSOLE] [stripe_config]   $check');
         }
       }
     }
 
-    //print('[CONSOLE] [stripe_config]=========================================');
-    //print('[CONSOLE] [stripe_config]');
+    print('[CONSOLE] [stripe_config]=========================================');
+    print('[CONSOLE] [stripe_config]');
   }
 
   // ============================================================================
@@ -324,7 +262,7 @@ class StripeConfig {
   }
 }
 
-/// Modello per un piano di abbonamento
+/// Modello per un piano di abbonamento - AGGIORNATO
 class SubscriptionPlan {
   final String id;
   final String name;
@@ -332,6 +270,7 @@ class SubscriptionPlan {
   final String stripePriceId;
   final int amount; // in centesimi
   final String interval; // month, year
+  final bool isRecurring; // 🆕 NUOVO CAMPO
   final List<String> features;
 
   const SubscriptionPlan({
@@ -341,6 +280,7 @@ class SubscriptionPlan {
     required this.stripePriceId,
     required this.amount,
     required this.interval,
+    required this.isRecurring, // 🆕 NUOVO CAMPO
     required this.features,
   });
 
@@ -354,13 +294,13 @@ class SubscriptionPlan {
   String get intervalDescription {
     switch (interval) {
       case 'month':
-        return 'mensile';
+        return isRecurring ? 'mensile ricorrente' : 'mensile una tantum';
       case 'year':
-        return 'annuale';
+        return isRecurring ? 'annuale ricorrente' : 'annuale una tantum';
       case 'week':
-        return 'settimanale';
+        return isRecurring ? 'settimanale ricorrente' : 'settimanale una tantum';
       case 'day':
-        return 'giornaliero';
+        return isRecurring ? 'giornaliero ricorrente' : 'giornaliero una tantum';
       default:
         return interval;
     }
@@ -372,38 +312,33 @@ class SubscriptionPlan {
   /// È un piano mensile?
   bool get isMonthly => interval == 'month';
 
-  /// Calcola il risparmio rispetto al piano mensile (se applicabile)
-  double? get yearlySavingsPercentage {
-    if (!isYearly) return null;
+  /// Payment type per il backend
+  String get paymentType => isRecurring ? 'recurring' : 'onetime';
 
-    final monthlyPlan = StripeConfig.subscriptionPlans['premium_monthly'];
-    if (monthlyPlan == null) return null;
-
-    final yearlyPricePerMonth = priceInEuro / 12;
-    final monthlyCost = monthlyPlan.priceInEuro;
-
-    final savingsPercentage = ((monthlyCost - yearlyPricePerMonth) / monthlyCost) * 100;
-    return savingsPercentage;
+  /// Badge description per UI
+  String get badgeText {
+    if (isRecurring) {
+      return 'RINNOVO AUTOMATICO';
+    } else {
+      return 'UNA TANTUM';
+    }
   }
 
-  /// Stringa del risparmio formattata
-  String? get formattedYearlySavings {
-    final savings = yearlySavingsPercentage;
-    if (savings == null) return null;
-    return 'Risparmi ${savings.toStringAsFixed(0)}%';
+  /// Badge color per UI
+  String get badgeColor {
+    if (isRecurring) {
+      return 'blue'; // Blu per ricorrente
+    } else {
+      return 'green'; // Verde per una tantum
+    }
   }
 
-  @override
-  String toString() {
-    return 'SubscriptionPlan(id: $id, name: $name, price: $formattedPrice, interval: $interval)';
+  /// Subtitle per UI
+  String get subtitle {
+    if (isRecurring) {
+      return 'Si rinnova automaticamente. Cancella quando vuoi.';
+    } else {
+      return '30 giorni di accesso. Nessun rinnovo automatico.';
+    }
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is SubscriptionPlan && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
 }
