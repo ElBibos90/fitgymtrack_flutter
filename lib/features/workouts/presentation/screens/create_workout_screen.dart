@@ -51,9 +51,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   bool _showExerciseDialog = false;
   bool _isLoadingAvailableExercises = false;
 
-  // ✅ NUOVO: Loading state locale per distinguere dal BLoC
-  bool _isLocalLoading = false;
-
   @override
   void initState() {
     super.initState();
@@ -80,6 +77,17 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       } else {
         final authState = context.read<AuthBloc>().state;
         if (authState is AuthAuthenticated) {
+          setState(() {
+            _currentUserId = authState.user.id;
+            _isLoadingUserId = false;
+          });
+
+          if (_isEditing) {
+            _loadWorkoutForEditing();
+          } else {
+            _loadAvailableExercises();
+          }
+        } else if (authState is AuthLoginSuccess) {
           setState(() {
             _currentUserId = authState.user.id;
             _isLoadingUserId = false;
@@ -127,7 +135,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 (plan) => plan.id == widget.workoutId,
           );
 
-          print('[CONSOLE] [create_workout_screen]✅ Found existing plan in state: ${existingPlan.nome}');
+          ////print('[CONSOLE] [create_workout_screen]✅ Found existing plan in state: ${existingPlan.nome}');
 
           // Usa i dati reali della scheda
           _populateFieldsFromWorkoutPlan(existingPlan);
@@ -141,12 +149,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           _loadAvailableExercises();
           return;
         } catch (e) {
-          print('[CONSOLE] [create_workout_screen]⚠️ Plan not found in current state, loading from scratch');
+          ////print('[CONSOLE] [create_workout_screen]⚠️ Plan not found in current state, loading from scratch');
         }
       }
 
       // Fallback: se non abbiamo i dati nel stato, dobbiamo ricaricare tutto
-      print('[CONSOLE] [create_workout_screen]🔄 Loading workout plans first to get correct name...');
+      ////print('[CONSOLE] [create_workout_screen]🔄 Loading workout plans first to get correct name...');
       if (_currentUserId != null) {
         _workoutBloc.loadWorkoutPlans(_currentUserId!);
         // Carica anche esercizi disponibili
@@ -157,7 +165,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Popola i campi con i dati reali della scheda
   void _populateFieldsFromWorkoutPlan(WorkoutPlan workoutPlan) {
-    print('[CONSOLE] [create_workout_screen]✅ Populating fields with real workout data: ${workoutPlan.nome}');
+    ////print('[CONSOLE] [create_workout_screen]✅ Populating fields with real workout data: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -170,7 +178,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _populateFieldsFromWorkoutData(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    print('[CONSOLE] [create_workout_screen]✅ Populating fields with workout: ${workoutPlan.nome}');
+    ////print('[CONSOLE] [create_workout_screen]✅ Populating fields with workout: ${workoutPlan.nome}');
 
     _nameController.text = workoutPlan.nome;
     _descriptionController.text = workoutPlan.descrizione ?? '';
@@ -183,7 +191,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   /// Carica esercizi disponibili per il dialog di selezione
   void _loadAvailableExercises() {
     if (_currentUserId != null) {
-      print('[CONSOLE] [create_workout_screen]Loading available exercises for user: $_currentUserId');
+      ////print('[CONSOLE] [create_workout_screen]Loading available exercises for user: $_currentUserId');
       setState(() {
         _isLoadingAvailableExercises = true;
       });
@@ -193,7 +201,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   /// Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
-    print('[CONSOLE] [create_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
+    ////print('[CONSOLE] [create_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
 
     // Converte ExerciseItem a WorkoutExercise
     final workoutExercise = WorkoutExercise(
@@ -220,70 +228,60 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
   }
 
-  // ✅ FIX: Gestione del back navigation SEMPLIFICATA e SICURA
+  // ✅ FIX: Gestione del back navigation super-sicura
   void _handleBackNavigation() {
-    print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation - SIMPLIFIED');
+    ////print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation');
 
-    // ✅ CLEANUP FORZATO di tutti i loading states
-    if (mounted) {
-      setState(() {
-        _isLoadingAvailableExercises = false;
-        _showExerciseDialog = false;
-        _isLocalLoading = false; // ✅ RESET anche local loading
-      });
-    }
+    // ✅ APPROCCIO SUPER-SICURO: Preserva sempre lo stato delle schede
+    final currentState = _workoutBloc.state;
 
-    // ✅ STRATEGIA SEMPLICE: Se abbiamo l'utente, ricarica sempre le schede per lo stato pulito
-    if (_currentUserId != null) {
-      // Emetti l'evento di ricarica schede ma NON aspettare
+    // Se siamo in uno stato di loading temporaneo per gli esercizi disponibili,
+    // torna al precedente stato stabile delle schede
+    if (currentState is AvailableExercisesLoaded && _currentUserId != null) {
+      // Ricarica le schede per tornare allo stato principale
       _workoutBloc.loadWorkoutPlans(_currentUserId!);
-    }
 
-    // ✅ TORNA INDIETRO IMMEDIATAMENTE senza aspettare il BLoC
-    if (mounted) {
-      Navigator.of(context).pop();
+      // Aspetta un breve momento e poi torna indietro
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+    } else if (currentState is! WorkoutPlansLoaded && _currentUserId != null) {
+      // Se non abbiamo le schede, ricaricale
+      _workoutBloc.loadWorkoutPlans(_currentUserId!);
+
+      // Torna indietro dopo il caricamento
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+    } else {
+      // Se tutto è ok, torna indietro immediatamente
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
-  // ✅ FIX: Dispose corretto con cleanup
+  // ✅ FIX: Dispose corretto - NON chiude il bloc
   @override
   void dispose() {
-    print('[CONSOLE] [create_workout_screen]🧹 Disposing - cleaning up');
-
     _nameController.dispose();
     _descriptionController.dispose();
-
-    // ✅ CLEANUP: Reset loading states
-    if (mounted) {
-      setState(() {
-        _isLoadingAvailableExercises = false;
-        _showExerciseDialog = false;
-        _isLocalLoading = false; // ✅ RESET anche local loading
-      });
-    }
-
+    // ❌ NON FARE: _workoutBloc.close();
+    // Il BLoC è gestito dal DI e condiviso, non deve essere chiuso qui
     super.dispose();
   }
 
-  // ✅ FIX: Build con PopScope migliorato
+  // ✅ FIX: Build con PopScope per gestire il back
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // Impedisce il pop automatico
       onPopInvoked: (didPop) {
         if (!didPop) {
-          // ✅ CLEANUP + BACK NAVIGATION SICURA
-          print('[CONSOLE] [create_workout_screen]📱 PopScope triggered - cleaning up');
-
-          // Cleanup forzato prima del back
-          if (mounted) {
-            setState(() {
-              _isLoadingAvailableExercises = false;
-              _showExerciseDialog = false;
-              _isLocalLoading = false; // ✅ RESET anche local loading
-            });
-          }
-
           _handleBackNavigation();
         }
       },
@@ -294,16 +292,42 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             Scaffold(
               appBar: CustomAppBar(
                 title: _isEditing ? 'Modifica Scheda' : 'Nuova Scheda',
-                actions: _isEditing ? [
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: _handleBackNavigation,
-                  ),
-                ] : null,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: _handleBackNavigation, // ✅ Usa il metodo custom
+                ),
+                actions: [
+                  if (!_isLoadingUserId && _currentUserId != null)
+                    TextButton(
+                      onPressed: _saveWorkout,
+                      child: Text(
+                        'Salva',
+                        style: TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF90CAF9)
+                              : AppColors.indigo600, // ✅ DINAMICO!
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              body: BlocConsumer<WorkoutBloc, WorkoutState>(
+              body: _isLoadingUserId
+                  ? const Center(child: CircularProgressIndicator())
+                  : _currentUserId == null
+                  ? const Center(
+                child: Text('Errore: utente non autenticato'),
+              )
+                  : BlocConsumer<WorkoutBloc, WorkoutState>(
                 listener: (context, state) {
-                  if (state is WorkoutPlanCreated) {
+                  if (state is WorkoutError) {
+                    CustomSnackbar.show(
+                      context,
+                      message: state.message,
+                      isSuccess: false,
+                    );
+                  } else if (state is WorkoutPlanCreated) {
                     CustomSnackbar.show(
                       context,
                       message: 'Scheda creata con successo!',
@@ -318,23 +342,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                     );
                     context.pop();
                   } else if (state is WorkoutPlanDetailsLoaded) {
-                    // ✅ RESET local loading quando i dettagli sono caricati
-                    setState(() {
-                      _isLocalLoading = false;
-                    });
                     _populateFieldsFromWorkoutData(state.workoutPlan, state.exercises);
                   } else if (state is WorkoutPlansLoaded && _isEditing && widget.workoutId != null) {
-                    // ✅ RESET local loading quando le schede sono caricate
-                    setState(() {
-                      _isLocalLoading = false;
-                    });
-
                     // Quando si caricano le schede durante l'editing
                     try {
                       final existingPlan = state.workoutPlans.firstWhere(
                             (plan) => plan.id == widget.workoutId,
                       );
-                      print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
+                      //print('[CONSOLE] [create_workout_screen]✅ Found plan after loading: ${existingPlan.nome}');
                       _populateFieldsFromWorkoutPlan(existingPlan);
 
                       // Ora carica anche gli esercizi
@@ -345,54 +360,21 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                         _loadAvailableExercises();
                       }
                     } catch (e) {
-                      print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
+                      //print('[CONSOLE] [create_workout_screen]❌ Plan not found even after loading: ${e}');
                     }
                   } else if (state is AvailableExercisesLoaded) {
-                    // ✅ GESTISCE il caricamento degli esercizi disponibili - NON influenza loading principale
-                    print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
+                    // Gestisce il caricamento degli esercizi disponibili
+                    //print('[CONSOLE] [create_workout_screen]✅ Available exercises loaded: ${state.availableExercises.length}');
                     setState(() {
                       _availableExercises = state.availableExercises;
-                      _isLoadingAvailableExercises = false; // ✅ RESET LOADING esercizi
+                      _isLoadingAvailableExercises = false;
                     });
-                    // ✅ NON toccare _isLocalLoading qui - gli esercizi disponibili sono separati
-                  } else if (state is WorkoutError) {
-                    // ✅ GESTISCE errori e reset loading states
-                    print('[CONSOLE] [create_workout_screen]❌ Workout error: ${state.message}');
-                    setState(() {
-                      _isLoadingAvailableExercises = false; // ✅ RESET LOADING su errore
-                      _isLocalLoading = false; // ✅ RESET anche local loading
-                    });
-                    CustomSnackbar.show(
-                      context,
-                      message: state.message,
-                      isSuccess: false,
-                    );
-                  } else if (state is WorkoutLoading) {
-                    // ✅ SOLO per operazioni principali, non per esercizi disponibili
-                    final isMainOperation = !(state.toString().contains('Available') || state.toString().contains('exercises'));
-                    if (isMainOperation) {
-                      setState(() {
-                        _isLocalLoading = true;
-                      });
-                    }
-                  } else if (state is WorkoutLoadingWithMessage) {
-                    // ✅ SOLO per operazioni principali che hanno messaggi importanti
-                    final isMainOperation = !state.message.toLowerCase().contains('esercizi disponibili');
-                    if (isMainOperation) {
-                      setState(() {
-                        _isLocalLoading = true;
-                      });
-                    }
                   }
                 },
                 builder: (context, state) {
-                  // ✅ LOADING OVERLAY solo per operazioni principali (create, update, delete)
-                  final showMainLoading = _isLocalLoading ||
-                      (state is WorkoutLoadingWithMessage && !state.message.toLowerCase().contains('esercizi disponibili'));
-
                   return LoadingOverlay(
-                    isLoading: showMainLoading,
-                    message: state is WorkoutLoadingWithMessage && showMainLoading ? state.message : null,
+                    isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
+                    message: state is WorkoutLoadingWithMessage ? state.message : null,
                     child: _buildBody(context, state),
                   );
                 },
@@ -410,15 +392,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                   setState(() {
                     _showExerciseDialog = false;
                   });
-                },
-                // ✅ NUOVO: Callback per la creazione di esercizi personalizzati
-                onCreateExercise: () {
-                  // Questo verrà gestito direttamente dal dialog aggiornato
-                },
-                // ✅ NUOVO: Callback per aggiornare la lista dopo la creazione di un esercizio
-                onExercisesRefresh: () {
-                  // Ricarica gli esercizi disponibili
-                  _loadAvailableExercises();
                 },
               ),
           ],
@@ -458,7 +431,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
+            color: colorScheme.onSurface, // ✅ DINAMICO!
           ),
         ),
         SizedBox(height: 16.h),
@@ -510,7 +483,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
+                  color: colorScheme.onSurface, // ✅ DINAMICO!
                 ),
               ),
             ),
@@ -541,7 +514,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                 foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                 elevation: 0,
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppConfig.radiusM),
                 ),
@@ -549,6 +521,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             ),
           ],
         ),
+
         SizedBox(height: 16.h),
 
         if (_selectedExercises.isEmpty)
@@ -561,29 +534,33 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   Widget _buildEmptyExercisesState() {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(32.w),
+      padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+          color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.2),
+          style: BorderStyle.solid,
+        ),
       ),
       child: Column(
         children: [
           Icon(
-            Icons.fitness_center_outlined,
+            Icons.fitness_center,
             size: 48.sp,
-            color: colorScheme.onSurface.withOpacity(0.4),
+            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha:0.5),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
           Text(
-            'Nessun esercizio',
+            'Nessun Esercizio',
             style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface, // ✅ DINAMICO!
             ),
           ),
           SizedBox(height: 4.h),
@@ -593,7 +570,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 : 'Aggiungi degli esercizi per creare la tua scheda',
             style: TextStyle(
               fontSize: 14.sp,
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
             ),
             textAlign: TextAlign.center,
           ),
@@ -655,8 +632,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           child: OutlinedButton(
             onPressed: _handleBackNavigation, // ✅ Usa il metodo custom anche qui
             style: OutlinedButton.styleFrom(
-              foregroundColor: colorScheme.onSurface.withOpacity(0.6),
-              side: BorderSide(color: colorScheme.outline),
+              foregroundColor: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+              side: BorderSide(color: colorScheme.outline), // ✅ DINAMICO!
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
               ),
@@ -739,15 +716,31 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _createWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('[CONSOLE] [create_workout_screen]Creating exercise: ${exercise.nome}');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      //print('[CONSOLE] [create_workout_screen]Creating exercise: ${exercise.nome}');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      //print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
+      //print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      // 🚀 FASE 3 FIX: Log valori REST-PAUSE
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
       // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
       return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
     }).toList();
+
+    // DEBUG: Log della richiesta finale
+    for (int i = 0; i < exerciseRequests.length; i++) {
+      final req = exerciseRequests[i];
+      //print('[CONSOLE] [create_workout_screen]ExerciseRequest $i:');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
+    }
 
     final request = CreateWorkoutPlanRequest(
       userId: _currentUserId!,
@@ -758,22 +751,42 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('[CONSOLE] [create_workout_screen]Creating workout: ${request.nome}');
+    //print('[CONSOLE] [create_workout_screen]Creating workout: ${request.nome}');
     _workoutBloc.createWorkout(request);
   }
 
   void _updateWorkout() {
     final exerciseRequests = _selectedExercises.map((exercise) {
       // DEBUG: Log tutti i valori prima del salvataggio
-      print('[CONSOLE] [create_workout_screen]Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
-      print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
-      print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
-      print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
-      print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      //print('[CONSOLE] [create_workout_screen]Updating exercise: ${exercise.nome} (ID: ${exercise.id}, SchedaEsercizioID: ${exercise.schedaEsercizioId})');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${exercise.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPreviousInt: ${exercise.linkedToPreviousInt}');
+      //print('[CONSOLE] [create_workout_screen]  - isIsometricInt: ${exercise.isIsometricInt}');
+      //print('[CONSOLE] [create_workout_screen]  - note: "${exercise.note}"');
+      // 🚀 FASE 3 FIX: Log valori REST-PAUSE
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
       // 🚀 FASE 3 FIX: USA IL NUOVO HELPER METHOD
       return WorkoutExerciseRequest.fromWorkoutExercise(exercise);
     }).toList();
+
+    // DEBUG: Log della richiesta finale
+    for (int i = 0; i < exerciseRequests.length; i++) {
+      final req = exerciseRequests[i];
+      //print('[CONSOLE] [create_workout_screen]ExerciseRequest $i: ID=${req.id}, SchedaEsercizioID=${req.schedaEsercizioId}');
+      //print('[CONSOLE] [create_workout_screen]  - setType: "${req.setType}"');
+      //print('[CONSOLE] [create_workout_screen]  - linkedToPrevious: ${req.linkedToPrevious}');
+      // 🚀 FASE 3 FIX: Log REST-PAUSE nella richiesta
+      //print('[CONSOLE] [create_workout_screen]  - isRestPauseInt: ${req.isRestPauseInt}');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseReps: "${req.restPauseReps}"');
+      //print('[CONSOLE] [create_workout_screen]  - restPauseRestSeconds: ${req.restPauseRestSeconds}');
+
+      if (req.schedaEsercizioId == null) {
+        //print('[CONSOLE] [create_workout_screen]ATTENZIONE: Esercizio ${req.id} non ha schedaEsercizioId!');
+      }
+    }
 
     final request = UpdateWorkoutPlanRequest(
       schedaId: widget.workoutId!,
@@ -785,8 +798,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       esercizi: exerciseRequests,
     );
 
-    print('[CONSOLE] [create_workout_screen]Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
-    print('[CONSOLE] [create_workout_screen]Updating workout - Esercizi count: ${request.esercizi.length}');
+    //print('[CONSOLE] [create_workout_screen]Updating workout - SchedaID: ${request.schedaId}, UserID: ${request.userId}, Nome: ${request.nome}');
+    //print('[CONSOLE] [create_workout_screen]Updating workout - Esercizi count: ${request.esercizi.length}');
 
     _workoutBloc.updateWorkout(request);
   }
