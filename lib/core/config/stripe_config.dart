@@ -59,7 +59,7 @@ class StripeConfig {
       id: 'premium_monthly_onetime',
       name: 'Premium Mensile Una Tantum',
       description: '30 giorni di accesso Premium senza rinnovo automatico.',
-      stripePriceId: 'price_1RbmRkHHtQGHyul92oUMSkUY', // ✅ New one-time price
+      stripePriceId: 'price_1RXVOfHHtQGHyul9qMGFmpmO', // ✅ New one-time price
       amount: 499, // €4.99 in centesimi - STESSO PREZZO
       interval: 'month',
       isRecurring: false, // 🆕 NUOVO CAMPO
