@@ -155,6 +155,13 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
                 duration: Duration(seconds: 4),
               ),
             );
+
+            // 🔧 FIX: Chiudi la finestra dialog dopo aver mostrato il successo
+            Future.delayed(const Duration(seconds: 2), () {
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            });
           } else {
             // Per tutti gli altri stati, usa il metodo esistente
             _handleStateChanges(context, state);
