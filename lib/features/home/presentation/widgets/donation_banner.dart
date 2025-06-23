@@ -1,9 +1,10 @@
-// lib/features/home/presentation/widgets/donation_banner.dart
+// lib/features/home/presentation/widgets/donation_banner.dart (FIX)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
-/// Banner per donazioni e supporto
+/// Banner per donazioni e supporto - 🔧 COLLEGATO A STRIPE
 class DonationBanner extends StatelessWidget {
   const DonationBanner({super.key});
 
@@ -56,7 +57,8 @@ class DonationBanner extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => _showDonationDialog(context),
+            // 🔧 FIX: Naviga direttamente alla schermata donazione Stripe
+            onPressed: () => context.push('/payment/donation'),
             style: TextButton.styleFrom(
               backgroundColor: Colors.white.withOpacity(0.2),
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
@@ -69,68 +71,6 @@ class DonationBanner extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDonationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.favorite, color: Colors.red, size: 24.sp),
-            SizedBox(width: 8.w),
-            const Text('Supporta FitGymTrack'),
-          ],
-        ),
-        content: const Text(
-            'Grazie per voler supportare lo sviluppo di FitGymTrack!\n\n'
-                'Il sistema di donazioni sarà disponibile presto. '
-                'Nel frattempo, puoi supportarci:\n\n'
-                '• Lasciando una recensione positiva\n'
-                '• Condividendo l\'app con gli amici\n'
-                '• Inviando feedback per miglioramenti'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Chiudi'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showThankYouDialog(context);
-            },
-            child: const Text('Grazie!'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showThankYouDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.emoji_emotions, color: Colors.orange, size: 24.sp),
-            SizedBox(width: 8.w),
-            const Text('Grazie!'),
-          ],
-        ),
-        content: const Text(
-            'Il tuo supporto significa molto per noi! 🙏\n\n'
-                'Continueremo a lavorare per migliorare FitGymTrack '
-                'e renderlo ancora più utile per i tuoi allenamenti.'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Prego!'),
           ),
         ],
       ),

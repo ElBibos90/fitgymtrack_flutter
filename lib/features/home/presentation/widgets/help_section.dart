@@ -1,10 +1,11 @@
-// lib/features/home/presentation/widgets/help_section.dart
+// lib/features/home/presentation/widgets/help_section.dart (FIX)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 
-/// Sezione aiuto e feedback
+/// Sezione aiuto e supporto - 🔧 COLLEGATA A FUNZIONALITÀ REALI
 class HelpSection extends StatelessWidget {
   const HelpSection({super.key});
 
@@ -16,26 +17,22 @@ class HelpSection extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: 20.w),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : Colors.white,
+        color: isDarkMode
+            ? AppColors.surfaceDark.withOpacity(0.5)
+            : AppColors.surfaceLight.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12.r),
-        border: isDarkMode
-            ? Border.all(color: Colors.grey.shade700, width: 0.5)
-            : Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        border: Border.all(
+          color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(
                 Icons.help_outline,
-                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                color: isDarkMode ? Colors.white70 : AppColors.indigo600,
                 size: 20.sp,
               ),
               SizedBox(width: 8.w),
@@ -43,34 +40,60 @@ class HelpSection extends StatelessWidget {
                 'Hai bisogno di aiuto?',
                 style: TextStyle(
                   fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   color: isDarkMode ? Colors.white : AppColors.textPrimary,
                 ),
               ),
             ],
           ),
+          SizedBox(height: 8.h),
+          Text(
+            'Manda un feedback per qualsiasi informazione, problema o miglioramenti.',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: isDarkMode ? Colors.grey.shade400 : AppColors.textSecondary,
+            ),
+          ),
           SizedBox(height: 12.h),
 
-          // Riga di bottoni aiuto
+          // Row con pulsanti
           Row(
             children: [
+              // 🔧 FIX: Pulsante Feedback che naviga direttamente alla schermata
               Expanded(
-                child: _buildHelpButton(
-                  context: context,
-                  icon: Icons.feedback_outlined,
-                  label: 'Feedback',
-                  onTap: () => _showFeedbackDialog(context),
-                  isDarkMode: isDarkMode,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/feedback'),
+                  icon: Icon(
+                    Icons.feedback_outlined,
+                    size: 16.sp,
+                  ),
+                  label: const Text('Feedback'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : AppColors.indigo600,
+                    side: BorderSide(
+                      color: isDarkMode ? Colors.grey.shade600 : AppColors.indigo600,
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
+              // Pulsante FAQ funzionale
               Expanded(
-                child: _buildHelpButton(
-                  context: context,
-                  icon: Icons.help_center_outlined,
-                  label: 'FAQ',
-                  onTap: () => _showFAQDialog(context),
-                  isDarkMode: isDarkMode,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showFAQDialog(context),
+                  icon: Icon(
+                    Icons.help_center_outlined,
+                    size: 16.sp,
+                  ),
+                  label: const Text('FAQ'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isDarkMode ? Colors.white70 : AppColors.indigo600,
+                    side: BorderSide(
+                      color: isDarkMode ? Colors.grey.shade600 : AppColors.indigo600,
+                    ),
+                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                  ),
                 ),
               ),
             ],
@@ -80,117 +103,51 @@ class HelpSection extends StatelessWidget {
     );
   }
 
-  Widget _buildHelpButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isDarkMode,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(8.r),
-          border: isDarkMode
-              ? Border.all(color: Colors.grey.shade700, width: 0.5)
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16.sp,
-              color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
-            ),
-            SizedBox(width: 6.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFeedbackDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.feedback, color: Colors.blue, size: 24.sp),
-            SizedBox(width: 8.w),
-            const Text('Feedback'),
-          ],
-        ),
-        content: const Text(
-            'Il tuo feedback è importante per noi!\n\n'
-                'Il sistema di feedback integrato sarà disponibile presto. '
-                'Nel frattempo puoi:\n\n'
-                '• Contattarci via email\n'
-                '• Lasciare una recensione sull\'app store\n'
-                '• Suggerire miglioramenti\n\n'
-                'Grazie per aiutarci a migliorare FitGymTrack!'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showContactDialog(context);
-            },
-            child: const Text('Contattaci'),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // 🔧 FIX: FAQ Dialog migliorato e funzionale
   void _showFAQDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.help_center, color: Colors.green, size: 24.sp),
+            Icon(Icons.help_center, color: AppColors.indigo600, size: 24.sp),
             SizedBox(width: 8.w),
-            const Text('FAQ'),
+            const Text('Domande Frequenti'),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildFAQItem(
-                question: 'Come creo un allenamento?',
-                answer: 'Vai alla tab "Allenamenti" e tocca il pulsante "+" per creare una nuova scheda.',
-              ),
-              _buildFAQItem(
-                question: 'Posso personalizzare gli esercizi?',
-                answer: 'Sì! Puoi aggiungere esercizi personalizzati dal catalogo o crearne di nuovi.',
-              ),
-              _buildFAQItem(
-                question: 'Come funziona il piano Premium?',
-                answer: 'Il piano Premium sblocca schede illimitate, esercizi personalizzati e statistiche avanzate.',
-              ),
-              _buildFAQItem(
-                question: 'I miei dati sono sicuri?',
-                answer: 'Sì, tutti i dati sono criptati e memorizzati in modo sicuro sui nostri server.',
-              ),
-            ],
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildFAQItem(
+                  question: '🏋️ Come creo un allenamento?',
+                  answer: 'Vai alla tab "Allenamenti" e tocca il pulsante "+" per creare una nuova scheda personalizzata.',
+                ),
+                _buildFAQItem(
+                  question: '📊 Come funziona il tracking?',
+                  answer: 'Durante l\'allenamento, inserisci peso e ripetizioni per ogni serie. I dati vengono salvati automaticamente.',
+                ),
+                _buildFAQItem(
+                  question: '💎 Cosa include Premium?',
+                  answer: 'Premium include allenamenti illimitati, statistiche avanzate e funzionalità esclusive.',
+                ),
+                _buildFAQItem(
+                  question: '📱 Posso usare l\'app offline?',
+                  answer: 'Sì! Gli allenamenti creati sono disponibili offline. I dati si sincronizzano quando torni online.',
+                ),
+                _buildFAQItem(
+                  question: '🔄 Come esporto i miei dati?',
+                  answer: 'Vai su Profilo > Impostazioni > Esporta Dati per scaricare la cronologia dei tuoi allenamenti.',
+                ),
+                _buildFAQItem(
+                  question: '❓ Altri problemi?',
+                  answer: 'Usa il sistema Feedback integrato per contattarci direttamente dall\'app.',
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -198,14 +155,30 @@ class HelpSection extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Chiudi'),
           ),
+          // 🔧 NEW: Pulsante per aprire feedback direttamente
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push('/feedback');
+            },
+            child: const Text('Invia Feedback'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFAQItem({required String question, required String answer}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+  Widget _buildFAQItem({
+    required String question,
+    required String answer,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,47 +186,18 @@ class HelpSection extends StatelessWidget {
             question,
             style: TextStyle(
               fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
+              color: AppColors.indigo600,
             ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 6.h),
           Text(
             answer,
             style: TextStyle(
-              fontSize: 12.sp,
-              color: Colors.grey.shade600,
+              fontSize: 13.sp,
+              color: Colors.grey.shade700,
               height: 1.3,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showContactDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.email, color: Colors.orange, size: 24.sp),
-            SizedBox(width: 8.w),
-            const Text('Contattaci'),
-          ],
-        ),
-        content: const Text(
-            'Puoi contattarci per:\n\n'
-                '• Segnalazioni di bug\n'
-                '• Richieste di funzionalità\n'
-                '• Supporto tecnico\n'
-                '• Suggerimenti generali\n\n'
-                'Email: support@fitgymtrack.com\n'
-                'Risponderemo entro 24 ore!'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
           ),
         ],
       ),
