@@ -20,6 +20,7 @@ import '../../core/di/dependency_injection.dart';
 import '../../features/feedback/presentation/screens/feedback_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -273,9 +274,7 @@ class AppRouter {
           name: 'profile',
           builder: (context, state) {
             return AuthWrapper(
-              authenticatedChild: const Scaffold(
-                body: Center(child: Text('Profile Screen - Coming Soon')),
-              ),
+              authenticatedChild: const ProfileScreen(),  // ✅ USA LA SCHERMATA REALE
               unauthenticatedChild: const LoginScreen(),
             );
           },
