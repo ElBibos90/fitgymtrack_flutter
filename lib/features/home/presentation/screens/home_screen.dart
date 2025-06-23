@@ -1,4 +1,4 @@
-// lib/features/home/presentation/screens/home_screen.dart (REFACTORED)
+// lib/features/home/presentation/screens/home_screen.dart (VERSIONE COMPLETA)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,7 +12,7 @@ import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
 
-/// Home Screen refactorizzato - Solo logica di navigazione
+/// Home Screen refactorizzato - FIX COMPLETO per problema Attività Recente
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,6 +23,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   int _previousIndex = 0;
+
+  // 🔧 FIX: Flag per evitare inizializzazioni multiple
+  bool _isDataInitialized = false;
 
   // Controller per lazy loading delle tab
   final WorkoutTabController _workoutController = WorkoutTabController();
@@ -57,8 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // 🔧 FIX: Inizializza solo dopo che il widget è costruito
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeData();
+      _checkAndInitializeData();
     });
   }
 
@@ -67,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return BlocListener<AuthBloc, AuthState>(
-      listener: _handleAuthStateChange,
+      listener: _handleAuthStateChange, // 🔧 FIX: Listener migliorato
       child: Scaffold(
         appBar: _buildAppBar(context),
         body: IndexedStack(
@@ -80,107 +84,100 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================================
-  // UI BUILDERS - Puliti e focalizzati
+  // 🔧 FIX: AUTH STATE CHANGE HANDLER MIGLIORATO
   // ============================================================================
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text(
-        'FitGymTrack',
-        style: TextStyle(
-          fontSize: 24.sp,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      centerTitle: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      elevation: 0,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.logout_rounded),
-          onPressed: _handleLogout,
-          tooltip: 'Logout',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavigation(bool isDarkMode) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        onTap: _onTabTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-        backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        selectedLabelStyle: TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 12.sp,
-        ),
-        unselectedLabelStyle: TextStyle(
-          fontSize: 12.sp,
-        ),
-        items: _navItems,
-      ),
-    );
-  }
-
-  // ============================================================================
-  // EVENT HANDLERS - Business logic separata
-  // ============================================================================
-
-  void _onTabTapped(int index) {
-    print('[CONSOLE] [home_screen]🔄 Tab changed: $_selectedIndex -> $index');
-    _previousIndex = _selectedIndex;
-    setState(() {
-      _selectedIndex = index;
-    });
-    _handleTabVisibilityChange(_previousIndex, index);
-  }
-
-  void _handleTabVisibilityChange(int previousIndex, int currentIndex) {
-    if (currentIndex == 1) {
-      _workoutController.onTabVisible();
-      print('[CONSOLE] [home_screen]👁️ Workout tab became visible');
-    } else if (previousIndex == 1) {
-      _workoutController.onTabHidden();
-      print('[CONSOLE] [home_screen]👁️ Workout tab became hidden');
-    }
-  }
 
   void _handleAuthStateChange(BuildContext context, AuthState state) {
-    print('[CONSOLE] [home_screen]🔄 Auth state changed to: ${state.runtimeType}');
+    print('[CONSOLE] [home_screen]🔍 Auth state changed: ${state.runtimeType}');
 
-    if (state is AuthAuthenticated) {
-      print('[CONSOLE] [home_screen]✅ User authenticated, reloading data...');
-      _reloadUserData(state.user.id);
-    } else if (state is AuthLoginSuccess) {
-      print('[CONSOLE] [home_screen]✅ User login success, reloading data...');
-      _reloadUserData(state.user.id);
-    } else if (state is AuthUnauthenticated) {
-      print('[CONSOLE] [home_screen]❌ User unauthenticated');
+    if (state is AuthLoginSuccess || state is AuthAuthenticated) {
+      // 🔧 FIX: Inizializza dati immediatamente quando auth è confermato
+      if (!_isDataInitialized) {
+        print('[CONSOLE] [home_screen]✅ Auth confirmed, initializing data...');
+        _initializeDataImmediately(state);
+      }
+      // Mantieni anche la logica originale di _reloadUserData
+      int userId;
+      if (state is AuthAuthenticated) {
+        userId = state.user.id;
+      } else {
+        userId = (state as AuthLoginSuccess).user.id;
+      }
+      print('[CONSOLE] [home_screen]✅ User authenticated, reloading data for userId: $userId...');
+      _reloadUserData(userId);
+    } else if (state is AuthUnauthenticated || state is AuthError) {
+      // Reset flag se l'utente si disconnette
+      _isDataInitialized = false;
+      print('[CONSOLE] [home_screen]❌ User unauthenticated, resetting data flag');
     }
   }
 
-  void _handleLogout() {
-    context.read<AuthBloc>().add(const AuthLogoutRequested());
+  // ============================================================================
+  // 🔧 FIX: METODI DI INIZIALIZZAZIONE MIGLIORATI
+  // ============================================================================
+
+  /// Controlla lo stato auth e inizializza se necessario
+  void _checkAndInitializeData() {
+    final authState = context.read<AuthBloc>().state;
+    print('[CONSOLE] [home_screen]🔍 Checking auth state: ${authState.runtimeType}');
+
+    if ((authState is AuthAuthenticated || authState is AuthLoginSuccess) && !_isDataInitialized) {
+      _initializeDataImmediately(authState);
+    } else if (authState is AuthInitial) {
+      // Solo se è davvero iniziale, controlla lo stato
+      print('[CONSOLE] [home_screen]🔄 Auth state is initial, checking status...');
+      context.read<AuthBloc>().add(const AuthStatusChecked());
+    }
   }
 
-  // ============================================================================
-  // DATA MANAGEMENT - Logica di business separata
-  // ============================================================================
+  /// 🔧 FIX: Inizializzazione immediata e sicura dei dati
+  void _initializeDataImmediately(AuthState authState) {
+    if (_isDataInitialized) {
+      print('[CONSOLE] [home_screen]⚠️ Data already initialized, skipping...');
+      return;
+    }
 
-  /// Inizializza tutti i dati necessari
+    print('[CONSOLE] [home_screen]🚀 Starting immediate data initialization...');
+    _isDataInitialized = true;
+
+    // Estrai userId dallo stato auth
+    int userId;
+    if (authState is AuthAuthenticated) {
+      userId = authState.user.id;
+    } else if (authState is AuthLoginSuccess) {
+      userId = authState.user.id;
+    } else {
+      print('[CONSOLE] [home_screen]❌ Invalid auth state for data initialization');
+      _isDataInitialized = false;
+      return;
+    }
+
+    print('[CONSOLE] [home_screen]📚 Initializing data for userId: $userId');
+
+    // 1. Carica subscription immediatamente
+    context.read<SubscriptionBloc>().add(
+      const LoadSubscriptionEvent(checkExpired: true),
+    );
+
+    // 2. 🔧 FIX: Carica workout history immediatamente con delay minimo per stabilità
+    Future.microtask(() {
+      if (mounted) {
+        print('[CONSOLE] [home_screen]📊 Loading workout history for userId: $userId');
+        context.read<WorkoutHistoryBloc>().add(
+          GetWorkoutHistory(userId: userId),
+        );
+
+        // 🔧 RIMOSSO: GetUserStats che causa errore 404
+        // context.read<WorkoutHistoryBloc>().add(
+        //   GetUserStats(userId: userId),
+        // );
+      }
+    });
+
+    print('[CONSOLE] [home_screen]✅ Data initialization completed for userId: $userId');
+  }
+
+  /// Inizializza tutti i dati necessari (METODO ORIGINALE MANTENUTO)
   void _initializeData() {
     print('[CONSOLE] [home_screen]🔧 Initializing dashboard data...');
 
@@ -224,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Ricarica dati specifici dell'utente
+  /// Ricarica dati specifici dell'utente (METODO ORIGINALE MANTENUTO)
   void _reloadUserData(int userId) {
     print('[CONSOLE] [home_screen]📚 Loading data for userId: $userId');
 
@@ -233,12 +230,125 @@ class _HomeScreenState extends State<HomeScreen> {
       GetWorkoutHistory(userId: userId),
     );
 
-    // Carica statistiche utente
-    context.read<WorkoutHistoryBloc>().add(
-      GetUserStats(userId: userId),
-    );
+    // 🔧 RIMOSSO: GetUserStats che causa errore 404
+    // context.read<WorkoutHistoryBloc>().add(
+    //   GetUserStats(userId: userId),
+    // );
 
     print('[CONSOLE] [home_screen]✅ Data loading initiated for userId: $userId');
+  }
+
+  // ============================================================================
+  // UI BUILDING METHODS
+  // ============================================================================
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return AppBar(
+      elevation: 0,
+      backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          Container(
+            width: 32.w,
+            height: 32.h,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.indigo600, AppColors.green600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(
+              Icons.fitness_center,
+              color: Colors.white,
+              size: 18.sp,
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Text(
+            'FitGymTrack',
+            style: TextStyle(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.logout,
+            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+          ),
+          onPressed: _handleLogout,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigation(bool isDarkMode) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onTabTapped,
+        items: _navItems,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: AppColors.indigo600,
+        unselectedItemColor: isDarkMode ? Colors.white54 : AppColors.textSecondary,
+        selectedLabelStyle: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12.sp,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================================
+  // EVENT HANDLERS - Business logic separata
+  // ============================================================================
+
+  void _onTabTapped(int index) {
+    print('[CONSOLE] [home_screen]🔄 Tab changed: $_selectedIndex -> $index');
+    _previousIndex = _selectedIndex;
+    setState(() {
+      _selectedIndex = index;
+    });
+    _handleTabVisibilityChange(_previousIndex, index);
+  }
+
+  void _handleTabVisibilityChange(int previousIndex, int currentIndex) {
+    if (currentIndex == 1) {
+      _workoutController.onTabVisible();
+      print('[CONSOLE] [home_screen]👁️ Workout tab became visible');
+    } else if (previousIndex == 1) {
+      _workoutController.onTabHidden();
+      print('[CONSOLE] [home_screen]👁️ Workout tab became hidden');
+    }
+  }
+
+  void _handleLogout() {
+    context.read<AuthBloc>().add(const AuthLogoutRequested());
   }
 
   // ============================================================================
@@ -272,65 +382,10 @@ class StatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.analytics_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Statistiche',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Pagina in sviluppo',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-        ],
+      child: Text(
+        'Statistiche - Coming Soon',
+        style: TextStyle(fontSize: 18),
       ),
     );
   }
 }
-
-// ============================================================================
-// RISULTATO REFACTORING FASE 1
-// ============================================================================
-
-/*
-✅ COMPLETATO:
-- Home screen ridotto da 800+ a ~250 righe
-- DashboardPage estratta in widget separato
-- Quick actions estratte in QuickActionsGrid
-- Business logic spostata in DashboardService
-- Sezioni dashboard separate in widget individuali
-- Mantenuta funzionalità esistente
-- Migliorata leggibilità e manutenibilità
-
-🆕 STRUTTURA CREATA:
-lib/features/home/
-├── models/quick_action.dart
-├── services/dashboard_service.dart
-└── presentation/
-    ├── screens/home_screen.dart (refactored)
-    └── widgets/
-        ├── dashboard_page.dart
-        ├── quick_actions_grid.dart
-        ├── greeting_section.dart
-        ├── subscription_section.dart
-        ├── recent_activity_section.dart
-        ├── donation_banner.dart
-        └── help_section.dart
-
-🚀 PRONTO PER FASE 2: Quick Actions Implementation!
-*/

@@ -1,4 +1,4 @@
-// lib/features/home/presentation/widgets/recent_activity_section.dart
+// lib/features/home/presentation/widgets/recent_activity_section.dart (FIX)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,9 +10,26 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../../stats/models/user_stats_models.dart';
 
-/// Sezione attività recente con dati reali
-class RecentActivitySection extends StatelessWidget {
+/// 🔧 FIX: Sezione attività recente con gestione migliorata degli errori
+class RecentActivitySection extends StatefulWidget {
   const RecentActivitySection({super.key});
+
+  @override
+  State<RecentActivitySection> createState() => _RecentActivitySectionState();
+}
+
+class _RecentActivitySectionState extends State<RecentActivitySection> {
+  // 🔧 FIX: Flag per evitare retry multipli
+  bool _isRetrying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🔧 FIX: Verifica e carica dati se necessario dopo il build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndLoadData();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,83 +51,282 @@ class RecentActivitySection extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
 
+        // 🔧 FIX: BlocBuilder migliorato con gestione stati
         BlocBuilder<WorkoutHistoryBloc, WorkoutHistoryState>(
           builder: (context, state) {
-            return BlocStateHandler<WorkoutHistoryState>(
-              state: state,
-              isLoading: (state) => state is WorkoutHistoryLoading,
-              isSuccess: (state) => state is WorkoutHistoryLoaded,
-              isError: (state) => state is WorkoutHistoryError,
-              getErrorMessage: (state) => state is WorkoutHistoryError
-                  ? NetworkErrorHandler.getReadableMessage(state.exception ?? Exception(state.message))
-                  : 'Errore nel caricamento degli allenamenti',
-              loadingBuilder: () => const ShimmerRecentActivity(),
-              successBuilder: () {
-                final loadedState = state as WorkoutHistoryLoaded;
-                final recentWorkouts = loadedState.workoutHistory.take(3).toList();
-
-                if (recentWorkouts.isEmpty) {
-                  return _buildEmptyState(isDarkMode);
-                }
-
-                return Column(
-                  children: recentWorkouts.map((workout) {
-                    return _buildActivityItem(
-                      context: context,
-                      title: workout.schedaNome,
-                      subtitle: _formatWorkoutTime(workout.dataAllenamento),
-                      icon: Icons.fitness_center,
-                      iconColor: Colors.green,
-                      isDarkMode: isDarkMode,
-                    );
-                  }).toList(),
-                );
-              },
-              errorBuilder: (errorMessage) => InlineErrorWidget(
-                message: errorMessage,
-                onRetry: () => _retryLoadWorkouts(context),
-                icon: Icons.refresh,
-              ),
-            );
+            return _buildStateHandler(state, context);
           },
         ),
       ],
     );
   }
 
-  Widget _buildActivityItem({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required bool isDarkMode,
-  }) {
+  // ============================================================================
+  // 🔧 FIX: GESTIONE STATI MIGLIORATA
+  // ============================================================================
+
+  Widget _buildStateHandler(WorkoutHistoryState state, BuildContext context) {
+    print('[CONSOLE] [recent_activity]🔍 Current state: ${state.runtimeType}');
+
+    // 🔧 FIX: Gestione stato Loading
+    if (state is WorkoutHistoryLoading) {
+      return _buildLoadingState();
+    }
+
+    // 🔧 FIX: Gestione stato Success
+    if (state is WorkoutHistoryLoaded) {
+      return _buildSuccessState(state);
+    }
+
+    // 🔧 FIX: Gestione stato Error migliorata
+    if (state is WorkoutHistoryError) {
+      return _buildErrorState(state, context);
+    }
+
+    // 🔧 FIX: Gestione stato Initial - Tenta caricamento se auth è ok
+    if (state is WorkoutHistoryInitial) {
+      return _buildInitialState(context);
+    }
+
+    // Fallback per stati non gestiti
+    return _buildUnknownState();
+  }
+
+  // ============================================================================
+  // 🔧 FIX: METODI DI BUILD PER OGNI STATO
+  // ============================================================================
+
+  Widget _buildLoadingState() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 4.h),
-      padding: EdgeInsets.all(12.w),
+      height: 120.h,
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      child: const ShimmerRecentActivity(),
+    );
+  }
+
+  Widget _buildSuccessState(WorkoutHistoryLoaded state) {
+    if (state.workoutHistory.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    // Mostra gli ultimi 3 allenamenti
+    final recentWorkouts = state.workoutHistory.take(3).toList();
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        children: recentWorkouts.map((workout) =>
+            _buildWorkoutCard(workout)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(WorkoutHistoryError state, BuildContext context) {
+    print('[CONSOLE] [recent_activity]❌ Error state: ${state.message}');
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: isDarkMode ? Border.all(color: Colors.grey.shade800, width: 0.5) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 32.sp,
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            NetworkErrorHandler.getReadableMessage(state.exception ?? state.message),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.red[700],
+            ),
+          ),
+          SizedBox(height: 12.h),
+          // 🔧 FIX: Pulsante riprova migliorato
+          ElevatedButton(
+            onPressed: _isRetrying ? null : () => _retryLoadWorkouts(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: _isRetrying
+                ? SizedBox(
+              width: 16.w,
+              height: 16.h,
+              child: const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+                : const Text('Riprova'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInitialState(BuildContext context) {
+    // 🔧 FIX: Controlla se l'utente è autenticato prima di mostrare errore
+    final authState = context.read<AuthBloc>().state;
+
+    if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
+      // L'utente è autenticato ma i dati non sono ancora caricati
+      // Mostra loading invece di errore
+      return _buildLoadingState();
+    }
+
+    // Se non è autenticato, mostra un messaggio appropriato
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(16.w),
+      child: Text(
+        'Accedi per visualizzare la tua attività recente',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14.sp,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.fitness_center_outlined,
+            size: 48.sp,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'Nessun allenamento ancora',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            'Inizia il tuo primo workout!',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnknownState() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(16.w),
+      child: Text(
+        'Stato sconosciuto. Riapri la schermata.',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14.sp,
+          color: Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================================
+  // 🔧 FIX: METODI DI SUPPORTO MIGLIORATI
+  // ============================================================================
+
+  /// Controlla e carica dati se necessario
+  void _checkAndLoadData() {
+    final authState = context.read<AuthBloc>().state;
+    final workoutState = context.read<WorkoutHistoryBloc>().state;
+
+    print('[CONSOLE] [recent_activity]🔍 Auth: ${authState.runtimeType}, Workout: ${workoutState.runtimeType}');
+
+    // 🔧 FIX: Carica dati solo se autenticato e dati non già caricati/in caricamento
+    if ((authState is AuthAuthenticated || authState is AuthLoginSuccess) &&
+        workoutState is WorkoutHistoryInitial) {
+
+      print('[CONSOLE] [recent_activity]🚀 Auto-loading workout data...');
+      _retryLoadWorkouts(context);
+    }
+  }
+
+  /// 🔧 FIX: Metodo retry migliorato con protezione da retry multipli
+  void _retryLoadWorkouts(BuildContext context) {
+    if (_isRetrying) {
+      print('[CONSOLE] [recent_activity]⚠️ Retry already in progress, skipping...');
+      return;
+    }
+
+    setState(() {
+      _isRetrying = true;
+    });
+
+    final authBloc = context.read<AuthBloc>();
+    final authState = authBloc.state;
+
+    print('[CONSOLE] [recent_activity]🔄 Retrying workout load, auth state: ${authState.runtimeType}');
+
+    if (authState is AuthAuthenticated) {
+      final userId = authState.user.id;
+      print('[CONSOLE] [recent_activity]📊 Loading for authenticated user: $userId');
+      context.read<WorkoutHistoryBloc>().add(GetWorkoutHistory(userId: userId));
+    } else if (authState is AuthLoginSuccess) {
+      final userId = authState.user.id;
+      print('[CONSOLE] [recent_activity]📊 Loading for login success user: $userId');
+      context.read<WorkoutHistoryBloc>().add(GetWorkoutHistory(userId: userId));
+    } else {
+      print('[CONSOLE] [recent_activity]❌ Cannot retry: user not authenticated (${authState.runtimeType})');
+      // Prova a verificare lo stato auth
+      authBloc.add(const AuthStatusChecked());
+    }
+
+    // Reset retry flag dopo delay
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          _isRetrying = false;
+        });
+      }
+    });
+  }
+
+  /// Build della card singolo workout
+  Widget _buildWorkoutCard(dynamic workout) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.2),
+        ),
+      ),
       child: Row(
         children: [
-          Container(
-            width: 32.w,
-            height: 32.w,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(icon, color: iconColor, size: 16.sp),
+          Icon(
+            Icons.fitness_center,
+            color: AppColors.indigo600,
+            size: 20.sp,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -118,90 +334,39 @@ class RecentActivitySection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  workout.schedaNome ?? 'Allenamento',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: isDarkMode ? Colors.white : Colors.black,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  subtitle,
+                  _formatDate(workout.dataAllenamento),
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.chevron_right,
-            color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
-            size: 20.sp,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(bool isDarkMode) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: isDarkMode
-            ? Border.all(color: Colors.grey.shade800, width: 0.5)
-            : null,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.fitness_center_outlined,
-            size: 40.sp,
-            color: Colors.grey.shade400,
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Nessun allenamento registrato',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            'Inizia il tuo primo workout!',
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: Colors.grey.shade500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingState(bool isDarkMode) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20.w),
-      height: 120.h,
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: const Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  String _formatWorkoutTime(String dataAllenamento) {
+  /// Formatta la data in formato user-friendly
+  String _formatDate(dynamic date) {
     try {
-      final dateTime = DateTime.parse(dataAllenamento);
+      DateTime dateTime;
+      if (date is String) {
+        dateTime = DateTime.parse(date);
+      } else if (date is DateTime) {
+        dateTime = date;
+      } else {
+        return 'Data non disponibile';
+      }
+
       final now = DateTime.now();
       final difference = now.difference(dateTime);
 
@@ -216,21 +381,6 @@ class RecentActivitySection extends StatelessWidget {
       }
     } catch (e) {
       return 'Data non valida';
-    }
-  }
-
-  void _retryLoadWorkouts(BuildContext context) {
-    final authBloc = context.read<AuthBloc>();
-    final authState = authBloc.state;
-
-    if (authState is AuthAuthenticated) {
-      final userId = authState.user.id;
-      context.read<WorkoutHistoryBloc>().add(GetWorkoutHistory(userId: userId));
-    } else if (authState is AuthLoginSuccess) {
-      final userId = authState.user.id;
-      context.read<WorkoutHistoryBloc>().add(GetWorkoutHistory(userId: userId));
-    } else {
-      print('[CONSOLE] [recent_activity] ⚠️ Cannot retry: user not authenticated (${authState.runtimeType})');
     }
   }
 }
