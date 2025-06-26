@@ -1,4 +1,4 @@
-// lib/features/stats/models/stats_models.dart
+// lib/features/stats/models/stats_response_models.dart
 
 // ============================================================================
 // 📊 SIMPLE STATS MODELS - NO BUILD RUNNER REQUIRED
@@ -67,7 +67,7 @@ class UserStatsResponse {
   factory UserStatsResponse.fromJson(Map<String, dynamic> json) {
     return UserStatsResponse(
       success: json['success'] ?? false,
-      userStats: UserStats.fromJson(json['user_stats'] ?? {}),
+      userStats: UserStats.fromJson(json['stats'] ?? {}),  // ✅ CORREZIONE: 'stats' non 'user_stats'
       isPremium: json['is_premium'] ?? false,
       message: json['message'] ?? '',
     );
@@ -128,11 +128,9 @@ class UserStats {
       firstWorkoutDate: json['first_workout_date'],
       lastWorkoutDate: json['last_workout_date'],
       mostTrainedMuscleGroup: json['most_trained_muscle_group'],
-      favoriteExercise: json['favorite_exercise'] != null
-          ? ExercisePreference.fromJson(json['favorite_exercise'])
-          : null,
-      progressTrends: json['progress_trends'] != null
-          ? (json['progress_trends'] as List)
+      favoriteExercise: UserStats._parseFavoriteExercise(json['favorite_exercise']), // ✅ CORREZIONE
+      progressTrends: json['progress_trend_30_days'] != null
+          ? (json['progress_trend_30_days'] as List)
           .map((e) => ProgressTrend.fromJson(e))
           .toList()
           : null,
@@ -145,6 +143,27 @@ class UserStats {
           ? WeeklyComparison.fromJson(json['weekly_comparison'])
           : null,
     );
+  }
+
+  // ✅ CORREZIONE: Helper per gestire favorite_exercise che può essere String o Object
+  static ExercisePreference? _parseFavoriteExercise(dynamic favoriteExerciseData) {
+    if (favoriteExerciseData == null) return null;
+
+    // Se è una stringa (come arriva dall'API), crea un ExercisePreference base
+    if (favoriteExerciseData is String) {
+      return ExercisePreference(
+        exerciseName: favoriteExerciseData,
+        timesPerformed: 0,
+        totalVolumeKg: 0.0,
+      );
+    }
+
+    // Se è un oggetto (formato completo), usa il parsing normale
+    if (favoriteExerciseData is Map<String, dynamic>) {
+      return ExercisePreference.fromJson(favoriteExerciseData);
+    }
+
+    return null;
   }
 }
 
@@ -183,10 +202,10 @@ class ProgressTrend {
 
   factory ProgressTrend.fromJson(Map<String, dynamic> json) {
     return ProgressTrend(
-      date: json['date'] ?? '',
-      workouts: json['workouts'] ?? 0,
-      durationMinutes: json['duration_minutes'] ?? 0,
-      weightKg: (json['weight_kg'] ?? 0.0).toDouble(),
+      date: json['workout_date'] ?? json['date'] ?? '',
+      workouts: json['workout_count'] ?? 0,
+      durationMinutes: json['total_duration'] ?? 0,
+      weightKg: (json['total_volume'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -207,9 +226,9 @@ class TopExercise {
   factory TopExercise.fromJson(Map<String, dynamic> json) {
     return TopExercise(
       exerciseName: json['exercise_name'] ?? '',
-      totalVolumeKg: (json['total_volume_kg'] ?? 0.0).toDouble(),
-      totalSeries: json['total_series'] ?? 0,
-      averageWeightKg: (json['average_weight_kg'] ?? 0.0).toDouble(),
+      totalVolumeKg: (json['total_volume'] ?? 0.0).toDouble(),
+      totalSeries: json['series_count'] ?? 0,
+      averageWeightKg: (json['avg_weight'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -229,13 +248,37 @@ class WeeklyComparison {
     required this.improvementPercentage,
   });
 
-  factory WeeklyComparison.fromJson(Map<String, dynamic> json) {
+  factory WeeklyComparison.fromJson(dynamic json) {
+    // L'API restituisce un array, prendiamo il primo elemento
+    if (json is List && json.isNotEmpty) {
+      final weekData = json[0] as Map<String, dynamic>;
+      return WeeklyComparison(
+        thisWeekWorkouts: weekData['workout_count'] ?? 0,
+        lastWeekWorkouts: 0, // Non disponibile in questo formato
+        thisWeekDuration: weekData['total_duration'] ?? 0,
+        lastWeekDuration: 0, // Non disponibile in questo formato
+        improvementPercentage: 0.0, // Non disponibile in questo formato
+      );
+    }
+
+    // Fallback per formato oggetto
+    if (json is Map<String, dynamic>) {
+      return WeeklyComparison(
+        thisWeekWorkouts: json['this_week_workouts'] ?? 0,
+        lastWeekWorkouts: json['last_week_workouts'] ?? 0,
+        thisWeekDuration: json['this_week_duration'] ?? 0,
+        lastWeekDuration: json['last_week_duration'] ?? 0,
+        improvementPercentage: (json['improvement_percentage'] ?? 0.0).toDouble(),
+      );
+    }
+
+    // Default
     return WeeklyComparison(
-      thisWeekWorkouts: json['this_week_workouts'] ?? 0,
-      lastWeekWorkouts: json['last_week_workouts'] ?? 0,
-      thisWeekDuration: json['this_week_duration'] ?? 0,
-      lastWeekDuration: json['last_week_duration'] ?? 0,
-      improvementPercentage: (json['improvement_percentage'] ?? 0.0).toDouble(),
+      thisWeekWorkouts: 0,
+      lastWeekWorkouts: 0,
+      thisWeekDuration: 0,
+      lastWeekDuration: 0,
+      improvementPercentage: 0.0,
     );
   }
 }
@@ -325,14 +368,26 @@ class PeriodStats {
           ? (json['muscle_groups_in_period'] as List)
           .map((e) => MuscleGroupPeriod.fromJson(e))
           .toList()
+          : json['muscle_group_distribution'] != null
+          ? (json['muscle_group_distribution'] as List)
+          .map((e) => MuscleGroupPeriod.fromJson(e))
+          .toList()
           : null,
       timelineProgression: json['timeline_progression'] != null
           ? (json['timeline_progression'] as List)
           .map((e) => TimelineProgress.fromJson(e))
           .toList()
+          : json['progression_data'] != null
+          ? (json['progression_data'] as List)
+          .map((e) => TimelineProgress.fromJson(e))
+          .toList()
           : null,
       topExercisesInPeriod: json['top_exercises_in_period'] != null
           ? (json['top_exercises_in_period'] as List)
+          .map((e) => TopExercisePeriod.fromJson(e))
+          .toList()
+          : json['top_exercises_period'] != null
+          ? (json['top_exercises_period'] as List)
           .map((e) => TopExercisePeriod.fromJson(e))
           .toList()
           : null,
@@ -341,27 +396,9 @@ class PeriodStats {
           : null,
     );
   }
-
-  String get periodDisplayName {
-    switch (period) {
-      case 'week':
-        return 'Questa settimana';
-      case 'month':
-        return 'Questo mese';
-      case 'year':
-        return 'Quest\'anno';
-      case 'last_week':
-        return 'Settimana scorsa';
-      case 'last_month':
-        return 'Mese scorso';
-      case 'last_year':
-        return 'Anno scorso';
-      default:
-        return period.toUpperCase();
-    }
-  }
 }
 
+// Premium stats helper classes
 class DayDistribution {
   final String dayName;
   final int dayNumber;
@@ -390,23 +427,23 @@ class DayDistribution {
 
 class MuscleGroupPeriod {
   final String muscleGroup;
-  final int workoutCount;
-  final int totalSeries;
-  final double totalVolumeKg;
+  final int sessionsCount;
+  final int seriesCount;
+  final double totalVolume;
 
   MuscleGroupPeriod({
     required this.muscleGroup,
-    required this.workoutCount,
-    required this.totalSeries,
-    required this.totalVolumeKg,
+    required this.sessionsCount,
+    required this.seriesCount,
+    required this.totalVolume,
   });
 
   factory MuscleGroupPeriod.fromJson(Map<String, dynamic> json) {
     return MuscleGroupPeriod(
-      muscleGroup: json['muscle_group'] ?? '',
-      workoutCount: json['workout_count'] ?? 0,
-      totalSeries: json['total_series'] ?? 0,
-      totalVolumeKg: (json['total_volume_kg'] ?? 0.0).toDouble(),
+      muscleGroup: json['gruppo_muscolare'] ?? json['muscle_group'] ?? '',
+      sessionsCount: json['sessions_count'] ?? 0,
+      seriesCount: json['series_count'] ?? 0,
+      totalVolume: (json['total_volume'] ?? 0.0).toDouble(),
     );
   }
 }
@@ -415,44 +452,47 @@ class TimelineProgress {
   final String date;
   final int dailyWorkouts;
   final int dailyDuration;
-  final double dailyWeight;
+  final int dailySeries;
 
   TimelineProgress({
     required this.date,
     required this.dailyWorkouts,
     required this.dailyDuration,
-    required this.dailyWeight,
+    required this.dailySeries,
   });
 
   factory TimelineProgress.fromJson(Map<String, dynamic> json) {
     return TimelineProgress(
-      date: json['date'] ?? '',
+      date: json['workout_date'] ?? json['date'] ?? '',
       dailyWorkouts: json['daily_workouts'] ?? 0,
       dailyDuration: json['daily_duration'] ?? 0,
-      dailyWeight: (json['daily_weight'] ?? 0.0).toDouble(),
+      dailySeries: json['daily_series'] ?? 0,
     );
   }
 }
 
 class TopExercisePeriod {
   final String exerciseName;
-  final double totalVolumeKg;
-  final int totalSeries;
-  final int workoutCount;
+  final int seriesPerformed;
+  final double totalVolume;
+  final double avgWeight;
+  final double maxWeight;
 
   TopExercisePeriod({
     required this.exerciseName,
-    required this.totalVolumeKg,
-    required this.totalSeries,
-    required this.workoutCount,
+    required this.seriesPerformed,
+    required this.totalVolume,
+    required this.avgWeight,
+    required this.maxWeight,
   });
 
   factory TopExercisePeriod.fromJson(Map<String, dynamic> json) {
     return TopExercisePeriod(
       exerciseName: json['exercise_name'] ?? '',
-      totalVolumeKg: (json['total_volume_kg'] ?? 0.0).toDouble(),
-      totalSeries: json['total_series'] ?? 0,
-      workoutCount: json['workout_count'] ?? 0,
+      seriesPerformed: json['series_performed'] ?? 0,
+      totalVolume: (json['total_volume'] ?? 0.0).toDouble(),
+      avgWeight: (json['avg_weight'] ?? 0.0).toDouble(),
+      maxWeight: (json['max_weight'] ?? 0.0).toDouble(),
     );
   }
 }

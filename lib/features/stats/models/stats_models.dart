@@ -63,7 +63,7 @@ class UserStatsResponse {
   factory UserStatsResponse.fromJson(Map<String, dynamic> json) {
     return UserStatsResponse(
       success: json['success'] ?? false,
-      userStats: UserStats.fromJson(json['user_stats'] ?? {}),
+      userStats: UserStats.fromJson(json['stats'] ?? {}),  // ✅ CORREZIONE: 'stats' non 'user_stats'
       isPremium: json['is_premium'] ?? false,
       message: json['message'] ?? '',
     );
@@ -124,11 +124,9 @@ class UserStats {
       firstWorkoutDate: json['first_workout_date'],
       lastWorkoutDate: json['last_workout_date'],
       mostTrainedMuscleGroup: json['most_trained_muscle_group'],
-      favoriteExercise: json['favorite_exercise'] != null
-          ? ExercisePreference.fromJson(json['favorite_exercise'])
-          : null,
-      progressTrends: json['progress_trends'] != null
-          ? (json['progress_trends'] as List)
+      favoriteExercise: UserStats._parseFavoriteExercise(json['favorite_exercise']), // ✅ CORREZIONE
+      progressTrends: json['progress_trend_30_days'] != null
+          ? (json['progress_trend_30_days'] as List)
           .map((e) => ProgressTrend.fromJson(e))
           .toList()
           : null,
@@ -141,6 +139,27 @@ class UserStats {
           ? WeeklyComparison.fromJson(json['weekly_comparison'])
           : null,
     );
+  }
+
+  // ✅ CORREZIONE: Helper per gestire favorite_exercise che può essere String o Object
+  static ExercisePreference? _parseFavoriteExercise(dynamic favoriteExerciseData) {
+    if (favoriteExerciseData == null) return null;
+
+    // Se è una stringa (come arriva dall'API), crea un ExercisePreference base
+    if (favoriteExerciseData is String) {
+      return ExercisePreference(
+        exerciseName: favoriteExerciseData,
+        timesPerformed: 0,
+        totalVolumeKg: 0.0,
+      );
+    }
+
+    // Se è un oggetto (formato completo), usa il parsing normale
+    if (favoriteExerciseData is Map<String, dynamic>) {
+      return ExercisePreference.fromJson(favoriteExerciseData);
+    }
+
+    return null;
   }
 }
 
@@ -179,10 +198,10 @@ class ProgressTrend {
 
   factory ProgressTrend.fromJson(Map<String, dynamic> json) {
     return ProgressTrend(
-      date: json['date'] ?? '',
-      workouts: _parseToInt(json['workouts']),
-      durationMinutes: _parseToInt(json['duration_minutes']),
-      weightKg: _parseToDouble(json['weight_kg']),
+      date: json['workout_date'] ?? json['date'] ?? '',
+      workouts: _parseToInt(json['workout_count']),
+      durationMinutes: _parseToInt(json['total_duration']),
+      weightKg: _parseToDouble(json['total_volume']),
     );
   }
 }
@@ -203,9 +222,9 @@ class TopExercise {
   factory TopExercise.fromJson(Map<String, dynamic> json) {
     return TopExercise(
       exerciseName: json['exercise_name'] ?? '',
-      totalVolumeKg: _parseToDouble(json['total_volume_kg']),
-      totalSeries: _parseToInt(json['total_series']),
-      averageWeightKg: _parseToDouble(json['average_weight_kg']),
+      totalVolumeKg: _parseToDouble(json['total_volume']),
+      totalSeries: _parseToInt(json['series_count']),
+      averageWeightKg: _parseToDouble(json['avg_weight']),
     );
   }
 }
@@ -225,13 +244,37 @@ class WeeklyComparison {
     required this.improvementPercentage,
   });
 
-  factory WeeklyComparison.fromJson(Map<String, dynamic> json) {
+  factory WeeklyComparison.fromJson(dynamic json) {
+    // L'API restituisce un array, prendiamo il primo elemento
+    if (json is List && json.isNotEmpty) {
+      final weekData = json[0] as Map<String, dynamic>;
+      return WeeklyComparison(
+        thisWeekWorkouts: _parseToInt(weekData['workout_count']),
+        lastWeekWorkouts: 0, // Non disponibile in questo formato
+        thisWeekDuration: _parseToInt(weekData['total_duration']),
+        lastWeekDuration: 0, // Non disponibile in questo formato
+        improvementPercentage: 0.0, // Non disponibile in questo formato
+      );
+    }
+
+    // Fallback per formato oggetto
+    if (json is Map<String, dynamic>) {
+      return WeeklyComparison(
+        thisWeekWorkouts: _parseToInt(json['this_week_workouts']),
+        lastWeekWorkouts: _parseToInt(json['last_week_workouts']),
+        thisWeekDuration: _parseToInt(json['this_week_duration']),
+        lastWeekDuration: _parseToInt(json['last_week_duration']),
+        improvementPercentage: _parseToDouble(json['improvement_percentage']),
+      );
+    }
+
+    // Default
     return WeeklyComparison(
-      thisWeekWorkouts: _parseToInt(json['this_week_workouts']),
-      lastWeekWorkouts: _parseToInt(json['last_week_workouts']),
-      thisWeekDuration: _parseToInt(json['this_week_duration']),
-      lastWeekDuration: _parseToInt(json['last_week_duration']),
-      improvementPercentage: _parseToDouble(json['improvement_percentage']),
+      thisWeekWorkouts: 0,
+      lastWeekWorkouts: 0,
+      thisWeekDuration: 0,
+      lastWeekDuration: 0,
+      improvementPercentage: 0.0,
     );
   }
 }
@@ -264,12 +307,9 @@ class PeriodStatsResponse {
 }
 
 class PeriodStats {
-  // BASE INFO
   final String period;
   final String startDate;
   final String endDate;
-
-  // BASE STATS (FREE)
   final int workoutCount;
   final int totalDurationMinutes;
   final int totalSeries;
@@ -277,7 +317,7 @@ class PeriodStats {
   final double averageDuration;
   final String? mostActiveDay;
 
-  // PREMIUM STATS
+  // ✅ AGGIUNTE: Proprietà premium richieste dal widget
   final List<DayDistribution>? weeklyDistribution;
   final List<MuscleGroupPeriod>? muscleGroupsInPeriod;
   final List<TimelineProgress>? timelineProgression;
@@ -301,14 +341,34 @@ class PeriodStats {
     this.comparisonWithPrevious,
   });
 
+  // ✅ AGGIUNTA: Proprietà richiesta dal widget
+  String get periodDisplayName {
+    switch (period) {
+      case 'week':
+        return 'Questa settimana';
+      case 'month':
+        return 'Questo mese';
+      case 'year':
+        return 'Quest\'anno';
+      case 'last_week':
+        return 'Settimana scorsa';
+      case 'last_month':
+        return 'Mese scorso';
+      case 'last_year':
+        return 'Anno scorso';
+      default:
+        return period;
+    }
+  }
+
   factory PeriodStats.fromJson(Map<String, dynamic> json) {
     return PeriodStats(
       period: json['period'] ?? '',
       startDate: json['start_date'] ?? '',
       endDate: json['end_date'] ?? '',
-      workoutCount: json['workout_count'] ?? 0,
-      totalDurationMinutes: json['total_duration_minutes'] ?? 0,
-      totalSeries: json['total_series'] ?? 0,
+      workoutCount: _parseToInt(json['workout_count']),
+      totalDurationMinutes: _parseToInt(json['total_duration_minutes']),
+      totalSeries: _parseToInt(json['total_series']),
       totalWeightKg: _parseToDouble(json['total_weight_kg']),
       averageDuration: _parseToDouble(json['average_duration']),
       mostActiveDay: json['most_active_day'],
@@ -339,33 +399,19 @@ class PeriodStats {
           ? (json['top_exercises_in_period'] as List)
           .map((e) => TopExercisePeriod.fromJson(e))
           .toList()
+          : json['top_exercises_period'] != null
+          ? (json['top_exercises_period'] as List)
+          .map((e) => TopExercisePeriod.fromJson(e))
+          .toList()
           : null,
       comparisonWithPrevious: json['comparison_with_previous'] != null
           ? PeriodComparison.fromJson(json['comparison_with_previous'])
           : null,
     );
   }
-
-  String get periodDisplayName {
-    switch (period) {
-      case 'week':
-        return 'Questa settimana';
-      case 'month':
-        return 'Questo mese';
-      case 'year':
-        return 'Quest\'anno';
-      case 'last_week':
-        return 'Settimana scorsa';
-      case 'last_month':
-        return 'Mese scorso';
-      case 'last_year':
-        return 'Anno scorso';
-      default:
-        return period.toUpperCase();
-    }
-  }
 }
 
+// ✅ AGGIUNTE: Classi premium richieste dal widget
 class DayDistribution {
   final String dayName;
   final int dayNumber;
@@ -384,8 +430,8 @@ class DayDistribution {
   factory DayDistribution.fromJson(Map<String, dynamic> json) {
     return DayDistribution(
       dayName: json['day_name'] ?? '',
-      dayNumber: json['day_number'] ?? 0,
-      workoutCount: json['workout_count'] ?? 0,
+      dayNumber: _parseToInt(json['day_number']),
+      workoutCount: _parseToInt(json['workout_count']),
       totalDuration: _parseToInt(json['total_duration']),
       avgDuration: _parseToDouble(json['avg_duration']),
     );
@@ -394,23 +440,23 @@ class DayDistribution {
 
 class MuscleGroupPeriod {
   final String muscleGroup;
-  final int workoutCount;
-  final int totalSeries;
-  final double totalVolumeKg;
+  final int sessionsCount;
+  final int seriesCount;
+  final double totalVolume;
 
   MuscleGroupPeriod({
     required this.muscleGroup,
-    required this.workoutCount,
-    required this.totalSeries,
-    required this.totalVolumeKg,
+    required this.sessionsCount,
+    required this.seriesCount,
+    required this.totalVolume,
   });
 
   factory MuscleGroupPeriod.fromJson(Map<String, dynamic> json) {
     return MuscleGroupPeriod(
-      muscleGroup: json['muscle_group'] ?? json['gruppo_muscolare'] ?? '',
-      workoutCount: _parseToInt(json['workout_count'] ?? json['sessions_count']),
-      totalSeries: _parseToInt(json['total_series'] ?? json['series_count']),
-      totalVolumeKg: _parseToDouble(json['total_volume_kg'] ?? json['total_volume']),
+      muscleGroup: json['gruppo_muscolare'] ?? json['muscle_group'] ?? '',
+      sessionsCount: _parseToInt(json['sessions_count']),
+      seriesCount: _parseToInt(json['series_count']),
+      totalVolume: _parseToDouble(json['total_volume']),
     );
   }
 }
@@ -419,44 +465,47 @@ class TimelineProgress {
   final String date;
   final int dailyWorkouts;
   final int dailyDuration;
-  final double dailyWeight;
+  final int dailySeries;
 
   TimelineProgress({
     required this.date,
     required this.dailyWorkouts,
     required this.dailyDuration,
-    required this.dailyWeight,
+    required this.dailySeries,
   });
 
   factory TimelineProgress.fromJson(Map<String, dynamic> json) {
     return TimelineProgress(
-      date: json['date'] ?? json['workout_date'] ?? '',
+      date: json['workout_date'] ?? json['date'] ?? '',
       dailyWorkouts: _parseToInt(json['daily_workouts']),
       dailyDuration: _parseToInt(json['daily_duration']),
-      dailyWeight: _parseToDouble(json['daily_weight']),
+      dailySeries: _parseToInt(json['daily_series']),
     );
   }
 }
 
 class TopExercisePeriod {
   final String exerciseName;
-  final double totalVolumeKg;
-  final int totalSeries;
-  final int workoutCount;
+  final int seriesPerformed;
+  final double totalVolume;
+  final double avgWeight;
+  final double maxWeight;
 
   TopExercisePeriod({
     required this.exerciseName,
-    required this.totalVolumeKg,
-    required this.totalSeries,
-    required this.workoutCount,
+    required this.seriesPerformed,
+    required this.totalVolume,
+    required this.avgWeight,
+    required this.maxWeight,
   });
 
   factory TopExercisePeriod.fromJson(Map<String, dynamic> json) {
     return TopExercisePeriod(
       exerciseName: json['exercise_name'] ?? '',
-      totalVolumeKg: _parseToDouble(json['total_volume_kg']),
-      totalSeries: _parseToInt(json['total_series']),
-      workoutCount: _parseToInt(json['workout_count']),
+      seriesPerformed: _parseToInt(json['series_performed']),
+      totalVolume: _parseToDouble(json['total_volume']),
+      avgWeight: _parseToDouble(json['avg_weight']),
+      maxWeight: _parseToDouble(json['max_weight']),
     );
   }
 }
@@ -491,27 +540,21 @@ class PeriodComparison {
 }
 
 // ============================================================================
-// 🔧 HELPER FUNCTIONS FOR SAFE PARSING
+// 🛠️ HELPER FUNCTIONS
 // ============================================================================
 
-/// Parse value to int, handling both int and String inputs
 int _parseToInt(dynamic value) {
   if (value == null) return 0;
   if (value is int) return value;
   if (value is double) return value.toInt();
-  if (value is String) {
-    return int.tryParse(value) ?? 0;
-  }
+  if (value is String) return int.tryParse(value) ?? 0;
   return 0;
 }
 
-/// Parse value to double, handling both double and String inputs
 double _parseToDouble(dynamic value) {
   if (value == null) return 0.0;
   if (value is double) return value;
   if (value is int) return value.toDouble();
-  if (value is String) {
-    return double.tryParse(value) ?? 0.0;
-  }
+  if (value is String) return double.tryParse(value) ?? 0.0;
   return 0.0;
 }
