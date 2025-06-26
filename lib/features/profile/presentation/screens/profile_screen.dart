@@ -384,39 +384,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           SizedBox(height: 16.h),
-
-          // Barra completezza
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Completezza Profilo',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                  Text(
-                    '$completeness%',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              LinearProgressIndicator(
-                value: completeness / 100,
-                backgroundColor: Colors.white.withOpacity(0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ],
-          ),
         ],
       ),
     );

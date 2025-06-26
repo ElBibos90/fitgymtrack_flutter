@@ -589,9 +589,90 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   // ============================================================================
 
   bool _isSubscriptionCacheValid() {
-    return _cachedSubscription != null &&
-        _lastSubscriptionUpdate != null &&
-        DateTime.now().difference(_lastSubscriptionUpdate!) < _subscriptionCacheDuration;
+    // Controlli base esistenti
+    if (_cachedSubscription == null || _lastSubscriptionUpdate == null) {
+      print('[CONSOLE] [subscription_bloc]🔍 Cache invalid: missing data');
+      return false;
+    }
+
+    // 🆕 CONTROLLO SCADENZA LOGICA
+    if (_cachedSubscription!.endDate != null && _cachedSubscription!.endDate!.isNotEmpty) {
+      try {
+        final endDate = DateTime.parse(_cachedSubscription!.endDate!);
+        final now = DateTime.now();
+
+        if (now.isAfter(endDate)) {
+          print('[CONSOLE] [subscription_bloc]⚠️ Cached subscription expired logically (${_cachedSubscription!.endDate}), forcing refresh');
+          print('[CONSOLE] [subscription_bloc]📊 Now: ${now.toIso8601String()}, EndDate: ${endDate.toIso8601String()}');
+          return false; // Cache NON valida anche se temporalmente recente
+        }
+
+        // 🔍 OPTIONAL: Log per abbonamenti che scadono presto (solo per debug)
+        final daysToExpiry = endDate.difference(now).inDays;
+        if (daysToExpiry <= 7 && daysToExpiry >= 0) {
+          print('[CONSOLE] [subscription_bloc]📅 Subscription expires in $daysToExpiry days');
+        }
+
+        // ✅ Log positivo per abbonamenti validi (solo occasionale)
+        if (daysToExpiry > 30) {
+          // Log solo ogni tanto per non spammare
+          final shouldLog = DateTime.now().millisecondsSinceEpoch % 300000 < 5000; // ~ogni 5min
+          if (shouldLog) {
+            print('[CONSOLE] [subscription_bloc]✅ Subscription valid for $daysToExpiry more days');
+          }
+        }
+
+      } catch (e) {
+        print('[CONSOLE] [subscription_bloc]⚠️ Error parsing endDate: "${_cachedSubscription!.endDate}" - $e');
+        // Se non riusciamo a parsare la data, usiamo la logica di cache normale
+        // Questo permette compatibilità con formati di data diversi o valori null
+      }
+    }
+
+    // Controllo tempo normale (esistente)
+    final cacheAge = DateTime.now().difference(_lastSubscriptionUpdate!);
+    final isTimeValid = cacheAge < _subscriptionCacheDuration;
+
+    if (!isTimeValid) {
+      print('[CONSOLE] [subscription_bloc]⏰ Cache expired by time (${cacheAge.inMinutes}min > ${_subscriptionCacheDuration.inMinutes}min)');
+    } else {
+      // ⚡ Log cache hit (molto ridotto per performance)
+      final shouldLogCacheHit = DateTime.now().millisecondsSinceEpoch % 180000 < 3000; // ~ogni 3min
+      if (shouldLogCacheHit) {
+        print('[CONSOLE] [subscription_bloc]⚡ Using cached subscription (age: ${cacheAge.inMinutes}min)');
+      }
+    }
+
+    return isTimeValid;
+  }
+
+  bool isSubscriptionLogicallyExpired(Subscription subscription) {
+    if (subscription.endDate == null || subscription.endDate!.isEmpty) {
+      return false; // Abbonamenti senza scadenza (es. Free) non scadono mai
+    }
+
+    try {
+      final endDate = DateTime.parse(subscription.endDate!);
+      return DateTime.now().isAfter(endDate);
+    } catch (e) {
+      print('[CONSOLE] [subscription_bloc]⚠️ Error checking expiration for endDate: "${subscription.endDate}" - $e');
+      return false; // In caso di errore, assumiamo non scaduto
+    }
+  }
+
+  int? getDaysUntilExpiration(Subscription subscription) {
+    if (subscription.endDate == null || subscription.endDate!.isEmpty) {
+      return null; // Abbonamenti senza scadenza
+    }
+
+    try {
+      final endDate = DateTime.parse(subscription.endDate!);
+      final difference = endDate.difference(DateTime.now());
+      return difference.inDays;
+    } catch (e) {
+      print('[CONSOLE] [subscription_bloc]⚠️ Error calculating days until expiration: $e');
+      return null;
+    }
   }
 
   bool _isPlansCacheValid() {
