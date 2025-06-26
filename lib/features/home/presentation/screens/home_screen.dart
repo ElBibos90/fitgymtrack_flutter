@@ -13,6 +13,7 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
+import '../../../stats/presentation/screens/stats_screen.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onNavigateToProfile: _handleProfileNavigation,
     ),
         () => WorkoutPlansScreen(controller: _workoutController),
-        () => const StatsPage(),
+        () => const StatsScreen(),
         () => const SubscriptionScreen(),
   ];
 
@@ -426,21 +427,5 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void navigateToStats() {
     print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
     _onTabTapped(2);
-  }
-}
-
-/// Placeholder per la pagina statistiche (da codice esistente)
-class StatsPage extends StatelessWidget {
-  const StatsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Statistiche\n(Coming Soon)',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-      ),
-    );
   }
 }
