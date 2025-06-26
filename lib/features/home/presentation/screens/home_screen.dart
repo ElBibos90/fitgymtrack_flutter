@@ -1,5 +1,6 @@
 // lib/features/home/presentation/screens/home_screen.dart (VERSIONE FISSATA)
 
+import 'package:fitgymtrack/core/extensions/context_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +12,8 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
+import 'package:go_router/go_router.dart';
+
 
 /// Home Screen refactorizzato - ✅ FIX COMPLETO per navigazione corretta
 class HomeScreen extends StatefulWidget {
@@ -251,17 +254,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// 🆕 Gestisce navigazione al profilo (placeholder)
+
   void _handleProfileNavigation() {
     print('[CONSOLE] [home_screen]👤 Profile navigation requested');
-    // TODO: Implementare navigazione al profilo
-    // Per ora mostra un messaggio
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profilo - Feature in arrivo!'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    print('[CONSOLE] [home_screen]🔄 Navigating to ProfileScreen...');
+    context.go('/profile');
   }
 
   /// ✅ Naviga alla tab workout (chiamato da DashboardService via callback)

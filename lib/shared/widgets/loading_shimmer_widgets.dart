@@ -275,7 +275,7 @@ class ShimmerRecentActivity extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min, // 🔧 FIX: Usa spazio minimo necessario
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Titolo sezione
         Padding(
@@ -288,30 +288,17 @@ class ShimmerRecentActivity extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
 
-        // 🔧 FIX: Usa LayoutBuilder per calcolare spazio disponibile
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Calcola quanto spazio rimane dopo titolo e spacing
-            final usedHeight = 20.h + 12.h; // titolo + spacing
-            final availableHeight = constraints.maxHeight - usedHeight;
-
-            // Calcola quante card possiamo mostrare (ogni card è ~80h + 8h margin)
-            const cardHeight = 88.0; // 80h card + 8h margin approssimato
-            final maxCards = (availableHeight / cardHeight).floor().clamp(1, 3);
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                maxCards,
-                    (index) => Container(
-                  margin: EdgeInsets.only(
-                    bottom: index < maxCards - 1 ? 8.h : 0,
-                  ),
-                  child: const ShimmerCard(),
-                ),
-              ),
-            );
-          },
+        // ✅ FIX: Usa Container con altezza fissa invece di LayoutBuilder problematico
+        Container(
+          height: 180.h, // Altezza fissa per evitare calcoli infiniti
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ShimmerCard(height: 80),
+              SizedBox(height: 8.h),
+              const ShimmerCard(height: 80),
+            ],
+          ),
         ),
       ],
     );
