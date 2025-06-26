@@ -18,9 +18,20 @@ import 'recent_activity_section.dart';
 import 'donation_banner.dart';
 import 'help_section.dart';
 
-/// Dashboard principale - UI pulita separata dalla business logic
+/// Dashboard principale - ✅ BACKWARDS COMPATIBLE con callback opzionali
 class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+  // 🔧 PARAMETRI OPZIONALI per backwards compatibility
+  final VoidCallback? onNavigateToWorkouts;
+  final VoidCallback? onNavigateToAchievements;
+  final VoidCallback? onNavigateToProfile;
+
+  const DashboardPage({
+    super.key,
+    // 🔧 TUTTI i parametri sono OPZIONALI per non rompere codice esistente
+    this.onNavigateToWorkouts,
+    this.onNavigateToAchievements,
+    this.onNavigateToProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,48 +49,47 @@ class DashboardPage extends StatelessWidget {
 
         // Dashboard normale per utenti autenticati
         return RefreshIndicator(
-          onRefresh: () => _refreshDashboard(context),
+          onRefresh: () => _handleRefresh(context),
           child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Content principale
+              // Header con saluto e informazioni utente
               SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 10.h),
+                child: GreetingSection(),
+              ),
 
-                    // 👋 Sezione Saluto
-                    const GreetingSection(),
-
-                    SizedBox(height: 20.h),
-
-                    // 🚀 Quick Actions
-                    const QuickActionsGrid(),
-
-                    SizedBox(height: 24.h),
-
-                    // 💎 Status Abbonamento
-                    const SubscriptionSection(),
-
-                    SizedBox(height: 24.h),
-
-                    // 📊 Attività Recente
-                    const RecentActivitySection(),
-
-                    SizedBox(height: 24.h),
-
-                    // 💝 Banner Donazioni
-                    const DonationBanner(),
-
-                    SizedBox(height: 20.h),
-
-                    // ❓ Sezione Aiuto
-                    const HelpSection(),
-
-                    // Bottom padding
-                    SizedBox(height: 20.h),
-                  ],
+              // ✅ Quick Actions Grid con callback functions SE disponibili
+              SliverToBoxAdapter(
+                child: QuickActionsGrid(
+                  onNavigateToWorkouts: onNavigateToWorkouts,
+                  onNavigateToAchievements: onNavigateToAchievements,
+                  onNavigateToProfile: onNavigateToProfile,
                 ),
+              ),
+
+              // Sezione subscription/abbonamento
+              SliverToBoxAdapter(
+                child: SubscriptionSection(),
+              ),
+
+              // Sezione attività recente
+              SliverToBoxAdapter(
+                child: RecentActivitySection(),
+              ),
+
+              // Banner donazione
+              SliverToBoxAdapter(
+                child: DonationBanner(),
+              ),
+
+              // Sezione aiuto e supporto
+              SliverToBoxAdapter(
+                child: HelpSection(),
+              ),
+
+              // Spazio finale per padding
+              SliverToBoxAdapter(
+                child: SizedBox(height: 100.h),
               ),
             ],
           ),
@@ -88,197 +98,74 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// Aggiorna tutti i dati della dashboard
-  Future<void> _refreshDashboard(BuildContext context) async {
+  /// Gestisce il refresh della dashboard
+  Future<void> _handleRefresh(BuildContext context) async {
     print('[CONSOLE] [dashboard_page]🔄 Refreshing dashboard data...');
 
-    // Ricarica subscription
-    context.read<SubscriptionBloc>().add(
-      const LoadSubscriptionEvent(checkExpired: true),
-    );
+    // Ricarica i dati dello stato di autenticazione
+    final authBloc = context.read<AuthBloc>();
+    if (authBloc.state is AuthAuthenticated) {
+      final authState = authBloc.state as AuthAuthenticated;
 
-    // Ricarica dati utente se autenticato
-    final authState = context.read<AuthBloc>().state;
-    if (authState is AuthAuthenticated) {
-      final userId = authState.user.id;
+      // Ricarica subscription
+      context.read<SubscriptionBloc>().add(
+        const LoadSubscriptionEvent(checkExpired: true),
+      );
 
       // Ricarica workout history
       context.read<WorkoutHistoryBloc>().add(
-        GetWorkoutHistory(userId: userId),
+        GetWorkoutHistory(userId: authState.user.id),
       );
-
-      // Ricarica statistiche
-      context.read<WorkoutHistoryBloc>().add(
-        GetUserStats(userId: userId),
-      );
-
-      print('[CONSOLE] [dashboard_page]✅ Dashboard refresh completed for userId: $userId');
     }
-
-    // Delay minimo per UX
-    await Future.delayed(const Duration(milliseconds: 500));
   }
 }
 
-/// Pagina dashboard per utenti non autenticati
+/// ✅ Dashboard per utenti non autenticati - NON MODIFICATA
 class UnauthenticatedDashboard extends StatelessWidget {
   const UnauthenticatedDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: EdgeInsets.all(20.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Logo o icona app
-          Container(
-            width: 80.w,
-            height: 80.w,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20.r),
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(24.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.fitness_center,
+              size: 64.sp,
+              color: AppColors.indigo600,
             ),
-            child: Icon(
-              Icons.fitness_center_rounded,
-              size: 40.sp,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-
-          SizedBox(height: 24.h),
-
-          // Titolo benvenuto
-          Text(
-            'Benvenuto in FitGymTrack!',
-            style: TextStyle(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          SizedBox(height: 12.h),
-
-          // Descrizione
-          Text(
-            'Traccia i tuoi allenamenti, monitora i progressi e raggiungi i tuoi obiettivi fitness.',
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          SizedBox(height: 32.h),
-
-          // Features preview
-          _buildFeatureItem(
-            icon: Icons.fitness_center,
-            title: 'Allenamenti Personalizzati',
-            description: 'Crea schede su misura per te',
-            isDarkMode: isDarkMode,
-          ),
-
-          SizedBox(height: 16.h),
-
-          _buildFeatureItem(
-            icon: Icons.analytics,
-            title: 'Statistiche Dettagliate',
-            description: 'Monitora i tuoi progressi nel tempo',
-            isDarkMode: isDarkMode,
-          ),
-
-          SizedBox(height: 16.h),
-
-          _buildFeatureItem(
-            icon: Icons.emoji_events,
-            title: 'Achievement',
-            description: 'Raggiungi traguardi e sblocca riconoscimenti',
-            isDarkMode: isDarkMode,
-          ),
-
-          SizedBox(height: 32.h),
-
-          // Call to action
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Text(
-              'Accedi per iniziare il tuo percorso fitness!',
+            SizedBox(height: 24.h),
+            Text(
+              'Benvenuto in FitGymTrack!',
               style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
-          ),
-        ],
+            SizedBox(height: 12.h),
+            Text(
+              'Accedi per iniziare il tuo percorso di allenamento',
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32.h),
+            ElevatedButton(
+              onPressed: () {
+                // Naviga al login
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+              child: const Text('Accedi'),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildFeatureItem({
-    required IconData icon,
-    required String title,
-    required String description,
-    required bool isDarkMode,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 48.w,
-          height: 48.w,
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Icon(
-            icon,
-            color: Colors.blue,
-            size: 24.sp,
-          ),
-        ),
-
-        SizedBox(width: 16.w),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 // lib/features/profile/models/user_profile_models.dart
+// 🔧 CORRECTED: Consistent with existing code using displayName
 
-/// Model per il profilo utente integrato con user_profiles.php
+/// Model per il profilo utente integrato con utente_profilo.php
 class UserProfile {
   final int userId;
   final int? height;          // cm
@@ -8,7 +9,7 @@ class UserProfile {
   final int? age;            // anni
   final String? gender;      // male/female/other
   final String experienceLevel; // beginner/intermediate/advanced
-  final String? fitnessGoals;   // general_fitness, etc.
+  final String? fitnessGoals;   // general_fitness, muscle_gain, etc.
   final String? injuries;       // note infortuni
   final String? preferences;    // preferenze allenamento
   final String? notes;          // note personali
@@ -41,7 +42,7 @@ class UserProfile {
     );
   }
 
-  /// Factory dal JSON dell'API
+  /// 🔧 FIXED: Factory dal JSON dell'API (compatibile con utente_profilo.php)
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
       userId: _parseInt(json['user_id']),
@@ -49,8 +50,9 @@ class UserProfile {
       weight: _parseDoubleOrNull(json['weight']),
       age: _parseIntOrNull(json['age']),
       gender: json['gender'] as String?,
-      experienceLevel: json['experience_level'] as String? ?? 'beginner',
-      fitnessGoals: json['fitness_goals'] as String?,
+      // 🔧 FIX: Il backend restituisce experienceLevel già come stringa
+      experienceLevel: json['experienceLevel'] as String? ?? 'beginner',
+      fitnessGoals: json['fitnessGoals'] as String?,
       injuries: json['injuries'] as String?,
       preferences: json['preferences'] as String?,
       notes: json['notes'] as String?,
@@ -59,20 +61,19 @@ class UserProfile {
     );
   }
 
-  /// Converte in JSON per l'API
+  /// 🔧 FIXED: Converte in JSON per l'API (compatibile con utente_profilo.php)
   Map<String, dynamic> toJson() {
     return {
       'user_id': userId,
-      'height': height,
-      'weight': weight,
-      'age': age,
-      'gender': gender,
-      'experience_level': experienceLevel,
-      'fitness_goals': fitnessGoals,
-      'injuries': injuries,
-      'preferences': preferences,
-      'notes': notes,
-      'updated_at': DateTime.now().toIso8601String(),
+      if (height != null) 'height': height,
+      if (weight != null) 'weight': weight,
+      if (age != null) 'age': age,
+      if (gender != null) 'gender': gender,
+      'experienceLevel': experienceLevel, // Il backend gestisce la conversione string->int
+      if (fitnessGoals != null) 'fitnessGoals': fitnessGoals,
+      if (injuries != null) 'injuries': injuries,
+      if (preferences != null) 'preferences': preferences,
+      if (notes != null) 'notes': notes,
     };
   }
 
@@ -85,33 +86,36 @@ class UserProfile {
 
   String get bmiCategory {
     final bmiValue = bmi;
-    if (bmiValue == null) return 'N/A';
+    if (bmiValue == null) return 'Non calcolabile';
+
     if (bmiValue < 18.5) return 'Sottopeso';
-    if (bmiValue < 25) return 'Normale';
+    if (bmiValue < 25) return 'Normopeso';
     if (bmiValue < 30) return 'Sovrappeso';
     return 'Obeso';
   }
 
-  /// Calcola la completezza del profilo (0-100%)
+  /// Calcola la percentuale di completamento del profilo
   int get completenessPercentage {
-    int completed = 0;
-    const int totalFields = 7;
+    int filledFields = 0;
+    const totalFields = 9; // Campi principali da compilare
 
-    if (height != null) completed++;
-    if (weight != null) completed++;
-    if (age != null) completed++;
-    if (gender != null && gender!.isNotEmpty) completed++;
-    if (experienceLevel.isNotEmpty) completed++;
-    if (fitnessGoals != null && fitnessGoals!.isNotEmpty) completed++;
-    if (preferences != null && preferences!.isNotEmpty) completed++;
+    if (height != null) filledFields++;
+    if (weight != null) filledFields++;
+    if (age != null) filledFields++;
+    if (gender != null && gender!.isNotEmpty) filledFields++;
+    filledFields++; // experienceLevel è sempre presente
+    if (fitnessGoals != null && fitnessGoals!.isNotEmpty) filledFields++;
+    if (injuries != null && injuries!.isNotEmpty) filledFields++;
+    if (preferences != null && preferences!.isNotEmpty) filledFields++;
+    if (notes != null && notes!.isNotEmpty) filledFields++;
 
-    return ((completed / totalFields) * 100).round();
+    return ((filledFields / totalFields) * 100).round();
   }
 
-  /// Indica se il profilo è completo (>80%)
-  bool get isComplete => completenessPercentage >= 80;
+  /// Verifica se il profilo è considerato completo (>= 70%)
+  bool get isComplete => completenessPercentage >= 70;
 
-  /// Lista dei campi mancanti
+  /// Ottiene lista di campi mancanti per completare il profilo
   List<String> get missingFields {
     final missing = <String>[];
 
@@ -119,14 +123,12 @@ class UserProfile {
     if (weight == null) missing.add('Peso');
     if (age == null) missing.add('Età');
     if (gender == null || gender!.isEmpty) missing.add('Genere');
-    if (experienceLevel.isEmpty) missing.add('Livello esperienza');
     if (fitnessGoals == null || fitnessGoals!.isEmpty) missing.add('Obiettivi fitness');
-    if (preferences == null || preferences!.isEmpty) missing.add('Preferenze');
 
     return missing;
   }
 
-  /// Crea una copia con valori modificati
+  /// Crea una copia con modifiche
   UserProfile copyWith({
     int? userId,
     int? height,
@@ -195,17 +197,19 @@ class UserProfile {
   }
 }
 
-/// Enum per i livelli di esperienza
+// ============================================================================
+// 🔧 FIXED: ENUMS CON displayName (non label) per coerenza
+// ============================================================================
+
+/// Livelli di esperienza - 🔧 FIXED: usa displayName
 enum ExperienceLevel {
   beginner('beginner', 'Principiante', 'Nuovo al fitness o <6 mesi'),
   intermediate('intermediate', 'Intermedio', '6 mesi - 2 anni di esperienza'),
-  advanced('advanced', 'Avanzato', '>2 anni di esperienza'),
-  expert('expert', 'Esperto', 'Livello professionale');
+  advanced('advanced', 'Avanzato', '>2 anni di esperienza');
 
   const ExperienceLevel(this.value, this.displayName, this.description);
-
   final String value;
-  final String displayName;
+  final String displayName; // 🔧 FIXED: displayName invece di label
   final String description;
 
   static ExperienceLevel fromString(String value) {
@@ -216,7 +220,7 @@ enum ExperienceLevel {
   }
 }
 
-/// Enum per gli obiettivi fitness
+/// Obiettivi fitness - 🔧 FIXED: usa displayName
 enum FitnessGoal {
   generalFitness('general_fitness', 'Fitness Generale', 'Migliorare la forma fisica'),
   weightLoss('weight_loss', 'Perdita Peso', 'Perdere peso e grasso corporeo'),
@@ -228,9 +232,8 @@ enum FitnessGoal {
   rehabilitation('rehabilitation', 'Riabilitazione', 'Recupero da infortuni');
 
   const FitnessGoal(this.value, this.displayName, this.description);
-
   final String value;
-  final String displayName;
+  final String displayName; // 🔧 FIXED: displayName invece di label
   final String description;
 
   static FitnessGoal fromString(String value) {
@@ -241,23 +244,21 @@ enum FitnessGoal {
   }
 }
 
-/// Enum per i generi
+/// Generi - 🔧 FIXED: usa displayName + icon
 enum Gender {
   male('male', 'Maschio', '♂️'),
   female('female', 'Femmina', '♀️'),
-  other('other', 'Altro', '⚧️'),
-  preferNotToSay('prefer_not_to_say', 'Preferisco non dirlo', '');
+  other('other', 'Altro', '⚧️');
 
   const Gender(this.value, this.displayName, this.icon);
-
   final String value;
-  final String displayName;
-  final String icon;
+  final String displayName; // 🔧 FIXED: displayName invece di label
+  final String icon; // 🔧 FIXED: aggiunto icon
 
   static Gender fromString(String value) {
     return Gender.values.firstWhere(
           (gender) => gender.value == value,
-      orElse: () => Gender.preferNotToSay,
+      orElse: () => Gender.male,
     );
   }
 }

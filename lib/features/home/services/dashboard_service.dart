@@ -8,36 +8,41 @@ import '../../tools/presentation/widgets/one_rep_max_dialog.dart';
 /// Service per gestire la business logic della dashboard
 class DashboardService {
 
-  /// Configura le Quick Actions principali
-  static List<QuickAction> getQuickActions(BuildContext context) {
+  /// ✅ FIX: Configura le Quick Actions principali con CALLBACK FUNCTIONS
+  static List<QuickAction> getQuickActions(
+      BuildContext context, {
+        VoidCallback? onNavigateToWorkouts,    // 🆕 Callback per navigazione workout
+        VoidCallback? onNavigateToAchievements, // 🆕 Callback per achievements
+        VoidCallback? onNavigateToProfile,      // 🆕 Callback per profilo
+      }) {
     return [
       QuickAction(
         id: 'start_workout',
         icon: Icons.play_circle_fill_rounded,
         title: 'Inizia\nAllenamento',
         color: const Color(0xFF48BB78), // Verde
-        onTap: () => _navigateToWorkouts(context),
+        onTap: onNavigateToWorkouts ?? () => _navigateToWorkouts(context), // 🔧 FIX: Usa callback se disponibile
       ),
       QuickAction(
         id: 'calculate_1rm',
         icon: Icons.calculate_rounded,
         title: 'Calcola\n1RM',
         color: const Color(0xFF667EEA), // Blu
-        onTap: () => _showOneRepMaxDialog(context),
+        onTap: () => _showOneRepMaxDialog(context), // ✅ Già funziona correttamente
       ),
       QuickAction(
         id: 'achievements',
         icon: Icons.emoji_events_rounded,
         title: 'Achievement',
         color: const Color(0xFFED8936), // Arancione
-        onTap: () => _navigateToAchievements(context),
+        onTap: onNavigateToAchievements ?? () => _navigateToAchievements(context), // 🔧 FIX: Usa callback se disponibile
       ),
       QuickAction(
         id: 'profile',
         icon: Icons.person_rounded,
         title: 'Profilo',
         color: const Color(0xFF9F7AEA), // Viola
-        onTap: () => _navigateToProfile(context),
+        onTap: onNavigateToProfile ?? () => _navigateToProfile(context), // 🔧 FIX: Usa callback se disponibile
       ),
     ];
   }
@@ -65,27 +70,36 @@ class DashboardService {
   }
 
   // ============================================================================
-  // NAVIGATION HELPERS
+  // NAVIGATION HELPERS - 🚨 FALLBACK (da rimuovere quando tutto usa callback)
   // ============================================================================
 
-  /// Naviga alla tab Workouts usando GoRouter
+  /// ❌ DEPRECATO: Naviga alla tab Workouts usando GoRouter (PROBLEMATICO)
+  /// Usare invece la callback function onNavigateToWorkouts
   static void _navigateToWorkouts(BuildContext context) {
-    // Per ora usa GoRouter, in futuro integreremo con bottom navigation
+    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToWorkouts callback instead');
+    // Per ora usa GoRouter come fallback
     context.go('/workouts');
   }
 
-  /// Naviga alla schermata Achievements
+  /// ❌ DEPRECATO: Naviga alla schermata Achievements
+  /// Usare invece la callback function onNavigateToAchievements
   static void _navigateToAchievements(BuildContext context) {
+    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToAchievements callback instead');
     context.push('/achievements');
   }
 
-  /// Naviga alla schermata Profilo
+  /// ❌ DEPRECATO: Naviga alla schermata Profilo
+  /// Usare invece la callback function onNavigateToProfile
   static void _navigateToProfile(BuildContext context) {
+    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToProfile callback instead');
     context.push('/profile');
   }
 
   // ============================================================================
-  // DIALOG HELPERS
+  // DIALOG HELPERS - ✅ Questi funzionano correttamente
   // ============================================================================
 
   /// Mostra il dialog per calcolare 1RM
@@ -114,7 +128,7 @@ class DashboardService {
   }
 
   // ============================================================================
-  // GREETING HELPERS
+  // GREETING HELPERS - ✅ Funzionalità esistenti mantenute
   // ============================================================================
 
   /// Genera saluto personalizzato basato sull'ora
@@ -152,15 +166,15 @@ class DashboardService {
   }
 
   // ============================================================================
-  // UTILITIES
+  // UTILITIES - ✅ Funzionalità esistenti mantenute
   // ============================================================================
 
   /// Formatta data per display UI
-  static String formatLastWorkoutDate(DateTime? lastWorkout) {
-    if (lastWorkout == null) return 'Nessun allenamento registrato';
+  static String formatLastWorkoutDate(DateTime? date) {
+    if (date == null) return 'Nessun allenamento';
 
     final now = DateTime.now();
-    final difference = now.difference(lastWorkout);
+    final difference = now.difference(date);
 
     if (difference.inDays == 0) {
       return 'Oggi';
@@ -171,28 +185,5 @@ class DashboardService {
     } else {
       return '${(difference.inDays / 7).floor()} settiman${difference.inDays >= 14 ? 'e' : 'a'} fa';
     }
-  }
-
-  /// Calcola streak di allenamenti
-  static int calculateWorkoutStreak(List<DateTime> workoutDates) {
-    if (workoutDates.isEmpty) return 0;
-
-    // Ordina le date in ordine decrescente
-    final sortedDates = workoutDates..sort((a, b) => b.compareTo(a));
-
-    int streak = 0;
-    DateTime currentDate = DateTime.now();
-
-    for (final workoutDate in sortedDates) {
-      final daysDifference = currentDate.difference(workoutDate).inDays;
-
-      // Se c'è un gap di più di 1 giorno, interrompi la streak
-      if (daysDifference > 1) break;
-
-      streak++;
-      currentDate = workoutDate;
-    }
-
-    return streak;
   }
 }

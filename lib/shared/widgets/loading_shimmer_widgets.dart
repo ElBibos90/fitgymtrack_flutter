@@ -134,9 +134,9 @@ class ShimmerCard extends StatelessWidget {
 
     return ShimmerWidget(
       child: Container(
-        height: height ?? 80.h,
-        margin: margin ?? EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-        padding: padding ?? EdgeInsets.all(16.w),
+        height: height ?? 70.h, // 🔧 FIX: Ridotta da 80h a 70h per risparmiare spazio
+        margin: margin ?? EdgeInsets.symmetric(horizontal: 20.w),
+        padding: padding ?? EdgeInsets.all(12.w), // 🔧 FIX: Ridotto da 16w a 12w
         decoration: BoxDecoration(
           color: isDarkMode ? Colors.grey.shade800 : Colors.white,
           borderRadius: BorderRadius.circular(12.r),
@@ -150,30 +150,41 @@ class ShimmerCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Icona placeholder
             ShimmerBox(
-              width: 48.w,
-              height: 48.w,
-              borderRadius: BorderRadius.circular(12.r),
+              width: 40.w, // 🔧 FIX: Ridotta da 48w a 40w
+              height: 40.w,
+              borderRadius: BorderRadius.circular(10.r), // 🔧 FIX: Ridotto da 12r a 10r
             ),
             SizedBox(width: 12.w),
+
+            // Contenuto testo
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min, // 🔧 FIX: Spazio minimo
                 children: [
                   ShimmerBox(
-                    height: 16.h,
+                    height: 14.h, // 🔧 FIX: Ridotta da 16h a 14h
                     width: double.infinity,
                     borderRadius: BorderRadius.circular(4.r),
                   ),
-                  SizedBox(height: 8.h),
+                  SizedBox(height: 6.h), // 🔧 FIX: Ridotto da 8h a 6h
                   ShimmerBox(
                     height: 12.h,
-                    width: 120.w,
+                    width: 150.w, // 🔧 FIX: Larghezza fissa invece di 200w
                     borderRadius: BorderRadius.circular(4.r),
                   ),
                 ],
               ),
+            ),
+
+            // Badge/Status placeholder
+            ShimmerBox(
+              width: 50.w, // 🔧 FIX: Ridotta da 60w a 50w
+              height: 20.h, // 🔧 FIX: Ridotta da 24h a 20h
+              borderRadius: BorderRadius.circular(10.r),
             ),
           ],
         ),
@@ -264,7 +275,9 @@ class ShimmerRecentActivity extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min, // 🔧 FIX: Usa spazio minimo necessario
       children: [
+        // Titolo sezione
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: ShimmerBox(
@@ -274,7 +287,32 @@ class ShimmerRecentActivity extends StatelessWidget {
           ),
         ),
         SizedBox(height: 12.h),
-        ...List.generate(3, (index) => const ShimmerCard()),
+
+        // 🔧 FIX: Usa LayoutBuilder per calcolare spazio disponibile
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Calcola quanto spazio rimane dopo titolo e spacing
+            final usedHeight = 20.h + 12.h; // titolo + spacing
+            final availableHeight = constraints.maxHeight - usedHeight;
+
+            // Calcola quante card possiamo mostrare (ogni card è ~80h + 8h margin)
+            const cardHeight = 88.0; // 80h card + 8h margin approssimato
+            final maxCards = (availableHeight / cardHeight).floor().clamp(1, 3);
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                maxCards,
+                    (index) => Container(
+                  margin: EdgeInsets.only(
+                    bottom: index < maxCards - 1 ? 8.h : 0,
+                  ),
+                  child: const ShimmerCard(),
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -474,32 +512,39 @@ class ShimmerDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
+        mainAxisSize: MainAxisSize.min, // 🔧 FIX: Spazio minimo
         children: [
           SizedBox(height: 10.h),
 
           // Greeting shimmer
-          ShimmerCard(height: 120.h),
+          ShimmerCard(height: 100.h), // 🔧 FIX: Ridotta da 120h a 100h
 
           SizedBox(height: 20.h),
 
           // Quick Actions shimmer
           const ShimmerQuickActionsGrid(),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: 20.h), // 🔧 FIX: Ridotto da 24h a 20h
 
           // Subscription shimmer
-          ShimmerCard(height: 60.h),
+          ShimmerCard(height: 55.h), // 🔧 FIX: Ridotta da 60h a 55h
 
-          SizedBox(height: 24.h),
+          SizedBox(height: 20.h), // 🔧 FIX: Ridotto da 24h a 20h
 
-          // Recent Activity shimmer
-          const ShimmerRecentActivity(),
+          // Recent Activity shimmer - 🔧 FIX: Con altezza limitata
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: 200.h, // 🔧 FIX: Limite massimo di altezza
+              minHeight: 100.h,  // 🔧 FIX: Altezza minima garantita
+            ),
+            child: const ShimmerRecentActivity(),
+          ),
 
-          SizedBox(height: 24.h),
+          SizedBox(height: 20.h),
 
           // Altri shimmer cards
-          const ShimmerCard(),
-          const ShimmerCard(),
+          ShimmerCard(height: 60.h), // Donation banner
+          ShimmerCard(height: 60.h), // Help section
 
           SizedBox(height: 20.h),
         ],

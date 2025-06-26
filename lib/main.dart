@@ -18,6 +18,8 @@ import 'features/workouts/presentation/screens/workout_plans_screen.dart';
 import 'features/subscription/presentation/screens/subscription_screen.dart';
 import 'features/subscription/models/subscription_models.dart';
 
+import '../../features/profile/bloc/profile_bloc.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -77,6 +79,10 @@ class FitGymTrackApp extends StatelessWidget {
             // SUBSCRIPTION BLOC PROVIDER
             BlocProvider<SubscriptionBloc>(
               create: (context) => getIt<SubscriptionBloc>(),
+            ),
+
+            BlocProvider<ProfileBloc>(
+              create: (context) => getIt<ProfileBloc>(),
             ),
 
             // STRIPE BLOC PROVIDER

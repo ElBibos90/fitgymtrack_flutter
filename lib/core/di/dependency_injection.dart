@@ -21,6 +21,9 @@ import '../../features/payments/di/stripe_dependency_injection.dart';
 
 import '../../features/feedback/repository/feedback_repository.dart';
 
+import '../../features/profile/repository/profile_repository.dart';
+import '../../features/profile/bloc/profile_bloc.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -71,6 +74,11 @@ class DependencyInjection {
       );
     });
 
+    // Profile Repository
+    getIt.registerLazySingleton<ProfileRepository>(() => ProfileRepository(
+      apiClient: getIt<ApiClient>(),
+    ));
+
     // ============================================================================
     // WORKOUT BLOCS (SINGLETONS)
     // ============================================================================
@@ -95,6 +103,13 @@ class DependencyInjection {
       //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating WorkoutHistoryBloc instance...');
       return WorkoutHistoryBloc(
         workoutRepository: getIt<WorkoutRepository>(),
+      );
+    });
+
+    getIt.registerLazySingleton<ProfileBloc>(() {
+      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ProfileBloc instance...');
+      return ProfileBloc(
+        repository: getIt<ProfileRepository>(),
       );
     });
 
@@ -187,7 +202,8 @@ class DependencyInjection {
     int count = 0;
     if (getIt.isRegistered<AuthRepository>()) count++;
     if (getIt.isRegistered<WorkoutRepository>()) count++;
-    if (getIt.isRegistered<FeedbackRepository>()) count++; // 🔴 NUOVO
+    if (getIt.isRegistered<FeedbackRepository>()) count++;
+    if (getIt.isRegistered<ProfileRepository>()) count++;
     return count;
   }
 
@@ -203,6 +219,7 @@ class DependencyInjection {
     if (getIt.isRegistered<WorkoutBloc>()) count++;
     if (getIt.isRegistered<ActiveWorkoutBloc>()) count++;
     if (getIt.isRegistered<WorkoutHistoryBloc>()) count++;
+    if (getIt.isRegistered<ProfileBloc>()) count++;
 
     return count;
   }

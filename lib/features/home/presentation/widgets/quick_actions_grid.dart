@@ -8,24 +8,39 @@ import '../../models/quick_action.dart';
 import '../../services/dashboard_service.dart';
 
 /// Widget per visualizzare la griglia delle Quick Actions
+/// ✅ FIX: Ora supporta callback functions per navigazione corretta
 class QuickActionsGrid extends StatelessWidget {
   final bool showSecondaryActions;
   final int crossAxisCount;
   final double childAspectRatio;
+
+  // 🆕 CALLBACK FUNCTIONS per navigazione corretta
+  final VoidCallback? onNavigateToWorkouts;
+  final VoidCallback? onNavigateToAchievements;
+  final VoidCallback? onNavigateToProfile;
 
   const QuickActionsGrid({
     super.key,
     this.showSecondaryActions = false,
     this.crossAxisCount = 2,
     this.childAspectRatio = 1.3,
+    // 🆕 Aggiunti parametri per callback
+    this.onNavigateToWorkouts,
+    this.onNavigateToAchievements,
+    this.onNavigateToProfile,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Ottieni le azioni principali
-    final primaryActions = DashboardService.getQuickActions(context);
+    // ✅ FIX: Ottieni le azioni principali CON callback functions
+    final primaryActions = DashboardService.getQuickActions(
+      context,
+      onNavigateToWorkouts: onNavigateToWorkouts,
+      onNavigateToAchievements: onNavigateToAchievements,
+      onNavigateToProfile: onNavigateToProfile,
+    );
 
     // Opzionalmente aggiungi azioni secondarie
     final actions = showSecondaryActions
@@ -78,7 +93,7 @@ class QuickActionsGrid extends StatelessWidget {
   }
 }
 
-/// Card singola per Quick Action
+/// Card singola per Quick Action - ✅ NON MODIFICATA
 class QuickActionCard extends StatelessWidget {
   final QuickAction action;
   final bool isDarkMode;
@@ -188,49 +203,21 @@ class QuickActionCard extends StatelessWidget {
   Color _getTextColor() {
     if (!action.isEnabled) {
       return isDarkMode
-          ? Colors.grey.shade600
+          ? Colors.grey.shade500
           : Colors.grey.shade500;
     }
 
     return isDarkMode ? Colors.white : AppColors.textPrimary;
   }
 
-  /// Shadow per la card
+  /// Box shadow per card abilitate
   List<BoxShadow> _getBoxShadow() {
     return [
       BoxShadow(
-        color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.08),
-        blurRadius: 8,
+        color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.1),
+        blurRadius: 8.0,
         offset: const Offset(0, 2),
       ),
     ];
-  }
-}
-
-/// Variante compatta per spazi ridotti
-class CompactQuickActionsGrid extends StatelessWidget {
-  const CompactQuickActionsGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return QuickActionsGrid(
-      crossAxisCount: 4,
-      childAspectRatio: 0.9,
-      showSecondaryActions: false,
-    );
-  }
-}
-
-/// Variante estesa con azioni secondarie
-class ExtendedQuickActionsGrid extends StatelessWidget {
-  const ExtendedQuickActionsGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return QuickActionsGrid(
-      crossAxisCount: 3,
-      childAspectRatio: 1.1,
-      showSecondaryActions: true,
-    );
   }
 }

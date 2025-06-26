@@ -1,4 +1,4 @@
-// lib/features/home/presentation/screens/home_screen.dart (VERSIONE COMPLETA)
+// lib/features/home/presentation/screens/home_screen.dart (VERSIONE FISSATA)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,7 +12,7 @@ import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
 
-/// Home Screen refactorizzato - FIX COMPLETO per problema Attività Recente
+/// Home Screen refactorizzato - ✅ FIX COMPLETO per navigazione corretta
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -30,9 +30,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Controller per lazy loading delle tab
   final WorkoutTabController _workoutController = WorkoutTabController();
 
-  // Lista delle pagine - Pulita e organizzata
+  // ✅ FIX: Lista delle pagine con callback functions per DashboardPage
   late final List<Widget> _pages = [
-    const DashboardPage(), // 🆕 Widget separato pulito
+    DashboardPage(
+      // 🆕 CALLBACK FUNCTIONS per navigazione corretta
+      onNavigateToWorkouts: () => _onTabTapped(1),       // Tab Workouts
+      onNavigateToAchievements: _handleAchievementsNavigation, // Placeholder per achievements
+      onNavigateToProfile: _handleProfileNavigation,     // Placeholder per profilo
+    ),
     WorkoutPlansScreen(controller: _workoutController),
     const StatsPage(), // TODO: Creare StatsPage separata
     const SubscriptionScreen(),
@@ -52,176 +57,59 @@ class _HomeScreenState extends State<HomeScreen> {
       label: 'Statistiche',
     ),
     const BottomNavigationBarItem(
-      icon: Icon(Icons.workspace_premium_rounded),
-      label: 'Premium',
+      icon: Icon(Icons.card_membership_rounded),
+      label: 'Abbonamento',
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    // 🔧 FIX: Inizializza solo dopo che il widget è costruito
+    print('[CONSOLE] [home_screen]🚀 HomeScreen initialized');
+
+    // Carica subscription all'avvio
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAndInitializeData();
+      if (mounted) {
+        context.read<SubscriptionBloc>().add(
+          const LoadSubscriptionEvent(checkExpired: true),
+        );
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return BlocListener<AuthBloc, AuthState>(
-      listener: _handleAuthStateChange, // 🔧 FIX: Listener migliorato
+      listener: (context, state) {
+        if (state is AuthAuthenticated && !_isDataInitialized) {
+          _isDataInitialized = true;
+          _initializeData();
+        }
+      },
       child: Scaffold(
         appBar: _buildAppBar(context),
         body: IndexedStack(
           index: _selectedIndex,
           children: _pages,
         ),
-        bottomNavigationBar: _buildBottomNavigation(isDarkMode),
+        bottomNavigationBar: _buildBottomNavigation(
+          Theme.of(context).brightness == Brightness.dark,
+        ),
       ),
     );
   }
 
-  // ============================================================================
-  // 🔧 FIX: AUTH STATE CHANGE HANDLER MIGLIORATO
-  // ============================================================================
-
-  void _handleAuthStateChange(BuildContext context, AuthState state) {
-    print('[CONSOLE] [home_screen]🔍 Auth state changed: ${state.runtimeType}');
-
-    if (state is AuthLoginSuccess || state is AuthAuthenticated) {
-      // 🔧 FIX: Inizializza dati immediatamente quando auth è confermato
-      if (!_isDataInitialized) {
-        print('[CONSOLE] [home_screen]✅ Auth confirmed, initializing data...');
-        _initializeDataImmediately(state);
-      }
-      // Mantieni anche la logica originale di _reloadUserData
-      int userId;
-      if (state is AuthAuthenticated) {
-        userId = state.user.id;
-      } else {
-        userId = (state as AuthLoginSuccess).user.id;
-      }
-      print('[CONSOLE] [home_screen]✅ User authenticated, reloading data for userId: $userId...');
-      _reloadUserData(userId);
-    } else if (state is AuthUnauthenticated || state is AuthError) {
-      // Reset flag se l'utente si disconnette
-      _isDataInitialized = false;
-      print('[CONSOLE] [home_screen]❌ User unauthenticated, resetting data flag');
-    }
-  }
-
-  // ============================================================================
-  // 🔧 FIX: METODI DI INIZIALIZZAZIONE MIGLIORATI
-  // ============================================================================
-
-  /// Controlla lo stato auth e inizializza se necessario
-  void _checkAndInitializeData() {
-    final authState = context.read<AuthBloc>().state;
-    print('[CONSOLE] [home_screen]🔍 Checking auth state: ${authState.runtimeType}');
-
-    if ((authState is AuthAuthenticated || authState is AuthLoginSuccess) && !_isDataInitialized) {
-      _initializeDataImmediately(authState);
-    } else if (authState is AuthInitial) {
-      // Solo se è davvero iniziale, controlla lo stato
-      print('[CONSOLE] [home_screen]🔄 Auth state is initial, checking status...');
-      context.read<AuthBloc>().add(const AuthStatusChecked());
-    }
-  }
-
-  /// 🔧 FIX: Inizializzazione immediata e sicura dei dati
-  void _initializeDataImmediately(AuthState authState) {
-    if (_isDataInitialized) {
-      print('[CONSOLE] [home_screen]⚠️ Data already initialized, skipping...');
-      return;
-    }
-
-    print('[CONSOLE] [home_screen]🚀 Starting immediate data initialization...');
-    _isDataInitialized = true;
-
-    // Estrai userId dallo stato auth
-    int userId;
-    if (authState is AuthAuthenticated) {
-      userId = authState.user.id;
-    } else if (authState is AuthLoginSuccess) {
-      userId = authState.user.id;
-    } else {
-      print('[CONSOLE] [home_screen]❌ Invalid auth state for data initialization');
-      _isDataInitialized = false;
-      return;
-    }
-
-    print('[CONSOLE] [home_screen]📚 Initializing data for userId: $userId');
-
-    // 1. Carica subscription immediatamente
-    context.read<SubscriptionBloc>().add(
-      const LoadSubscriptionEvent(checkExpired: true),
-    );
-
-    // 2. 🔧 FIX: Carica workout history immediatamente con delay minimo per stabilità
-    Future.microtask(() {
-      if (mounted) {
-        print('[CONSOLE] [home_screen]📊 Loading workout history for userId: $userId');
-        context.read<WorkoutHistoryBloc>().add(
-          GetWorkoutHistory(userId: userId),
-        );
-
-        // 🔧 RIMOSSO: GetUserStats che causa errore 404
-        // context.read<WorkoutHistoryBloc>().add(
-        //   GetUserStats(userId: userId),
-        // );
-      }
-    });
-
-    print('[CONSOLE] [home_screen]✅ Data initialization completed for userId: $userId');
-  }
-
-  /// Inizializza tutti i dati necessari (METODO ORIGINALE MANTENUTO)
+  /// Inizializza i dati per utente autenticato
   void _initializeData() {
-    print('[CONSOLE] [home_screen]🔧 Initializing dashboard data...');
-
-    // Carica subscription
-    context.read<SubscriptionBloc>().add(
-      const LoadSubscriptionEvent(checkExpired: true),
-    );
-
-    // Verifica stato auth - FIX: Gestisci anche AuthLoginSuccess
-    final authState = context.read<AuthBloc>().state;
-    print('[CONSOLE] [home_screen]🔍 Auth state: ${authState.runtimeType}');
-
-    if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
-      // FIX: Gestisci entrambi gli stati di auth
-      int userId;
-      if (authState is AuthAuthenticated) {
-        userId = authState.user.id;
-      } else {
-        userId = (authState as AuthLoginSuccess).user.id;
-      }
-
-      print('[CONSOLE] [home_screen]✅ User is authenticated, loading data for userId: $userId');
-      _reloadUserData(userId);
-    } else {
-      print('[CONSOLE] [home_screen]⚠️ User not authenticated, current state: ${authState.runtimeType}');
-
-      // FIX: Solo force auth check se è davvero necessario
-      if (authState is AuthInitial || authState is AuthUnauthenticated) {
-        context.read<AuthBloc>().add(const AuthStatusChecked());
-
-        // Retry dopo delay solo se necessario
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            final newState = context.read<AuthBloc>().state;
-            if (newState is AuthInitial || newState is AuthUnauthenticated) {
-              _initializeData();
-            }
-          }
-        });
-      }
+    final authBloc = context.read<AuthBloc>();
+    if (authBloc.state is AuthAuthenticated) {
+      final authState = authBloc.state as AuthAuthenticated;
+      print('[CONSOLE] [home_screen]📚 Initializing data for user: ${authState.user.id}');
+      _reloadUserData(authState.user.id);
     }
   }
 
-  /// Ricarica dati specifici dell'utente (METODO ORIGINALE MANTENUTO)
+  /// Ricarica dati specifici dell'utente
   void _reloadUserData(int userId) {
     print('[CONSOLE] [home_screen]📚 Loading data for userId: $userId');
 
@@ -229,11 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<WorkoutHistoryBloc>().add(
       GetWorkoutHistory(userId: userId),
     );
-
-    // 🔧 RIMOSSO: GetUserStats che causa errore 404
-    // context.read<WorkoutHistoryBloc>().add(
-    //   GetUserStats(userId: userId),
-    // );
 
     print('[CONSOLE] [home_screen]✅ Data loading initiated for userId: $userId');
   }
@@ -352,21 +235,50 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ============================================================================
-  // NAVIGATION HELPERS - Per quick actions
+  // ✅ FIX: NAVIGATION HELPERS - Per quick actions con logging
   // ============================================================================
 
-  /// Naviga alla tab workout (chiamato da DashboardService)
+  /// 🆕 Gestisce navigazione agli achievements (placeholder)
+  void _handleAchievementsNavigation() {
+    print('[CONSOLE] [home_screen]🏆 Achievement navigation requested');
+    // TODO: Implementare navigazione agli achievements
+    // Per ora mostra un messaggio
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Achievement - Feature in arrivo!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// 🆕 Gestisce navigazione al profilo (placeholder)
+  void _handleProfileNavigation() {
+    print('[CONSOLE] [home_screen]👤 Profile navigation requested');
+    // TODO: Implementare navigazione al profilo
+    // Per ora mostra un messaggio
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Profilo - Feature in arrivo!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// ✅ Naviga alla tab workout (chiamato da DashboardService via callback)
   void navigateToWorkouts() {
+    print('[CONSOLE] [home_screen]🏋️ Navigating to workouts tab via callback');
     _onTabTapped(1);
   }
 
-  /// Naviga alla tab subscription
+  /// ✅ Naviga alla tab subscription (chiamato da DashboardService via callback)
   void navigateToSubscription() {
+    print('[CONSOLE] [home_screen]💳 Navigating to subscription tab via callback');
     _onTabTapped(3);
   }
 
-  /// Naviga alla tab stats
+  /// ✅ Naviga alla tab stats (chiamato da DashboardService via callback)
   void navigateToStats() {
+    print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
     _onTabTapped(2);
   }
 }
