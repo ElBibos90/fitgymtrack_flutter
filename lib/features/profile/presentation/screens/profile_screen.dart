@@ -1,5 +1,4 @@
-// lib/features/profile/presentation/screens/profile_screen.dart
-// ✅ VERSIONE REALE - Salvataggio database funzionante!
+// lib/features/profile/presentation/screens/profile_screen.dart - FIX TIMING
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +9,7 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../models/user_profile_models.dart';
 import '../../bloc/profile_bloc.dart';
 
-/// ✅ Schermata del profilo utente - VERSIONE REALE con salvataggio DB
+/// ✅ Schermata del profilo utente - FIX TIMING per caricamento dati
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -21,6 +20,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   UserProfile? _userProfile;
   bool _isEditing = false;
+  bool _hasInitialized = false; // 🔧 FIX: Flag per tracking inizializzazione
 
   // Controllers per i form
   final _heightController = TextEditingController();
@@ -54,20 +54,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.read<ProfileBloc>().add(const LoadUserProfile());
   }
 
-  /// ✅ Popola i controller con i dati reali
+  /// 🔧 FIX: Popola i controller con setState per aggiornare l'UI
   void _populateControllers(UserProfile profile) {
-    _userProfile = profile;
+    print('[CONSOLE] [profile_screen] 📝 Populating controllers with profile data...');
 
-    _heightController.text = profile.height?.toString() ?? '';
-    _weightController.text = profile.weight?.toString() ?? '';
-    _ageController.text = profile.age?.toString() ?? '';
-    _notesController.text = profile.notes ?? '';
+    // 🔧 FIX: Usa setState per aggiornare l'UI
+    setState(() {
+      _userProfile = profile;
+      _hasInitialized = true; // Marca come inizializzato
 
-    _selectedGender = profile.gender != null ? Gender.fromString(profile.gender!) : null;
-    _selectedExperience = ExperienceLevel.fromString(profile.experienceLevel);
-    _selectedGoal = profile.fitnessGoals != null ? FitnessGoal.fromString(profile.fitnessGoals!) : null;
+      // Popola i controller di testo
+      _heightController.text = profile.height?.toString() ?? '';
+      _weightController.text = profile.weight?.toString() ?? '';
+      _ageController.text = profile.age?.toString() ?? '';
+      _notesController.text = profile.notes ?? '';
 
-    print('[CONSOLE] [profile_screen] ✅ Controllers populated with real data');
+      // 🔧 FIX: Popola i dropdown con gestione sicura
+      _selectedGender = profile.gender != null ? Gender.fromString(profile.gender!) : null;
+      _selectedExperience = ExperienceLevel.fromString(profile.experienceLevel);
+      _selectedGoal = profile.fitnessGoals != null ? FitnessGoal.fromString(profile.fitnessGoals!) : null;
+    });
+
+    print('[CONSOLE] [profile_screen] ✅ Controllers populated: Gender=${_selectedGender?.displayName}, Experience=${_selectedExperience.displayName}, Goal=${_selectedGoal?.displayName}');
   }
 
   @override
@@ -100,15 +108,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else if (state is ProfileError) {
       return _buildErrorState(state.message);
     } else if (state is ProfileLoaded) {
-      // ✅ Popola i controller quando carica i dati reali
-      if (_userProfile?.userId != state.profile.userId) {
+      // 🔧 FIX: Usa addPostFrameCallback per evitare setState durante build
+      if (!_hasInitialized || _userProfile?.userId != state.profile.userId) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _populateControllers(state.profile);
         });
       }
-      return _buildProfileContent(isDarkMode, state.profile);
+      return _buildProfileContent(context, state.profile, isDarkMode: isDarkMode);
     } else if (state is ProfileUpdating) {
-      return _buildProfileContent(isDarkMode, state.currentProfile, isUpdating: true);
+      return _buildProfileContent(context, state.currentProfile, isDarkMode: isDarkMode, isUpdating: true);
     }
 
     return _buildEmptyState();
@@ -158,7 +166,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         onPressed: () {
           print('[CONSOLE] [profile_screen] ⬅️ Navigating back to dashboard');
-          // ✅ FIX: Usa context.go invece di Navigator.pop() per evitare errori di stack
           context.go('/dashboard');
         },
       ),
@@ -256,6 +263,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
+          SizedBox(height: 8.h),
+          Text(
+            'Crea il tuo profilo per iniziare',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.grey.shade600,
+            ),
+          ),
           SizedBox(height: 24.h),
           ElevatedButton(
             onPressed: _createProfile,
@@ -266,56 +281,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileContent(bool isDarkMode, UserProfile profile, {bool isUpdating = false}) {
+  Widget _buildProfileContent(BuildContext context, UserProfile profile, {required bool isDarkMode, bool isUpdating = false}) {
+    // 🔧 FIX: Usa il getter esistente dal modello
+    int completeness = profile.completenessPercentage;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16.w),
       child: Column(
         children: [
-          // Header con statistiche
-          _buildProfileHeader(isDarkMode, profile),
+          // Header del profilo
+          _buildProfileHeader(profile, isDarkMode, completeness),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: 24.h),
 
           // Informazioni di base
           _buildBasicInfoSection(isDarkMode, profile),
 
-          SizedBox(height: 20.h),
+          SizedBox(height: 16.h),
 
-          // Fitness info
+          // Informazioni fitness
           _buildFitnessInfoSection(isDarkMode, profile),
 
-          if (profile.notes != null && profile.notes!.isNotEmpty) ...[
-            SizedBox(height: 20.h),
-            _buildNotesSection(isDarkMode, profile),
-          ],
-
           if (_isEditing) ...[
-            SizedBox(height: 30.h),
-            _buildSaveButton(isUpdating),
+            SizedBox(height: 16.h),
+            _buildNotesSection(isDarkMode),
+            SizedBox(height: 32.h),
+            _buildActionButtons(isUpdating),
+          ] else ...[
+            SizedBox(height: 100.h), // Extra space per bottom navigation
           ],
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader(bool isDarkMode, UserProfile profile) {
-    final completeness = profile.completenessPercentage;
-
+  Widget _buildProfileHeader(UserProfile profile, bool isDarkMode, int completeness) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            isDarkMode ? Colors.blue.shade800 : Colors.blue.shade600,
+            isDarkMode ? Colors.purple.shade700 : Colors.purple.shade500,
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         children: [
-          // Avatar e nome
           Row(
             children: [
               Container(
@@ -323,11 +339,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 60.w,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(30.r),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.person,
-                  size: 30.sp,
+                  size: 32.sp,
                   color: Colors.white,
                 ),
               ),
@@ -438,7 +454,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         _buildInfoRow(
           'Genere',
-          _isEditing ? _buildGenderDropdown(isDarkMode) : (_selectedGender?.displayName ?? 'Non specificato'),
+          _isEditing
+              ? _buildGenderDropdown(isDarkMode)
+              : _selectedGender?.displayName ?? 'Non specificato',
           Icons.person,
           isDarkMode,
         ),
@@ -454,13 +472,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         _buildInfoRow(
           'Livello di Esperienza',
-          _isEditing ? _buildExperienceDropdown(isDarkMode) : _selectedExperience.displayName,
+          _isEditing
+              ? _buildExperienceDropdown(isDarkMode)
+              : _selectedExperience.displayName,
           Icons.trending_up,
           isDarkMode,
         ),
         _buildInfoRow(
           'Obiettivo Principale',
-          _isEditing ? _buildGoalDropdown(isDarkMode) : (_selectedGoal?.displayName ?? 'Non specificato'),
+          _isEditing
+              ? _buildGoalDropdown(isDarkMode)
+              : _selectedGoal?.displayName ?? 'Non specificato',
           Icons.flag,
           isDarkMode,
         ),
@@ -468,29 +490,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildNotesSection(bool isDarkMode, UserProfile profile) {
+  Widget _buildNotesSection(bool isDarkMode) {
     return _buildSection(
-      title: 'Note Personali',
-      icon: Icons.notes,
+      title: 'Note Aggiuntive',
+      icon: Icons.note,
       isDarkMode: isDarkMode,
       children: [
-        _isEditing
-            ? _buildTextArea(_notesController, 'Aggiungi note personali...', isDarkMode)
-            : Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Text(
-            profile.notes ?? 'Nessuna nota',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-            ),
-          ),
-        ),
+        _buildTextArea(_notesController, 'Aggiungi note, preferenze o informazioni aggiuntive...', isDarkMode),
       ],
     );
   }
@@ -505,15 +511,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+        color: isDarkMode ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,7 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Icon(
                 icon,
                 size: 20.sp,
-                color: Theme.of(context).colorScheme.primary,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
               ),
               SizedBox(width: 8.w),
               Text(
@@ -536,7 +538,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
           ...children,
         ],
       ),
@@ -545,13 +547,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildInfoRow(String label, dynamic value, IconData icon, bool isDarkMode) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
           Icon(
             icon,
             size: 16.sp,
-            color: isDarkMode ? Colors.white54 : AppColors.textSecondary,
+            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
           ),
           SizedBox(width: 12.w),
           Expanded(
@@ -613,6 +615,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // 🔧 FIX: Dropdown con valore corrente garantito
   Widget _buildGenderDropdown(bool isDarkMode) {
     return DropdownButtonFormField<Gender>(
       value: _selectedGender,
@@ -682,6 +685,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _selectedGoal = value;
         });
       },
+    );
+  }
+
+  Widget _buildActionButtons(bool isUpdating) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: isUpdating ? null : () {
+              setState(() {
+                _isEditing = false;
+                // Ripristina i valori originali
+                if (_userProfile != null) {
+                  _populateControllers(_userProfile!);
+                }
+              });
+            },
+            child: const Text('Annulla'),
+          ),
+        ),
+        SizedBox(width: 16.w),
+        Expanded(
+          flex: 2,
+          child: _buildSaveButton(isUpdating),
+        ),
+      ],
     );
   }
 

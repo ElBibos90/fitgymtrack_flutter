@@ -1,22 +1,26 @@
-// lib/features/payments/presentation/screens/stripe_payment_screen.dart
+// lib/features/payments/presentation/screens/stripe_payment_screen.dart - 🔧 FIX OVERLAY DONAZIONI
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../core/config/stripe_config.dart';
-import '../../bloc/stripe_bloc.dart';
-import '../widgets/stripe_widgets.dart';
-import '../../../subscription/presentation/widgets/subscription_widgets.dart';
 
+// Theme imports
+import '../../../../shared/theme/app_colors.dart';
+
+// Feature imports
+import '../../bloc/stripe_bloc.dart';
+import '../../models/stripe_models.dart';
+import '../widgets/stripe_widgets.dart';
+
+/// 🚀 StripePaymentScreen - FIXED: Overlay cleanup for donations
+/// 🔧 FIX: Risolve il problema dell'overlay "nebbia" dopo donazioni
 class StripePaymentScreen extends StatefulWidget {
-  final String paymentType; // 'subscription' o 'donation'
-  final Map<String, dynamic>? parameters;
+  final String paymentType;
 
   const StripePaymentScreen({
     super.key,
     required this.paymentType,
-    this.parameters,
   });
 
   @override
@@ -27,13 +31,16 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   late PageController _pageController;
   int _currentPage = 0;
 
+  // 🔧 FIX: Stati per gestire overlay e cleanup
+  bool _isPaymentProcessing = false;
+  bool _paymentCompleted = false;
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
 
-    // Inizializza Stripe se non è già stato fatto
-    context.read<StripeBloc>().add(const InitializeStripeEvent());
+    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Screen initialized for ${widget.paymentType}');
   }
 
   @override
@@ -47,6 +54,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           widget.paymentType == 'subscription' ? 'Abbonamento Premium' : 'Donazione',
@@ -75,97 +83,9 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
         ],
       ),
       body: BlocConsumer<StripeBloc, StripeState>(
-        // 🔧 FIX CRITICO: Nuovo listener che gestisce StripePaymentReady per donazioni
+        // 🔧 FIX: Listener corretto per gestire overlay
         listener: (context, state) {
-          print('[CONSOLE][stripe_payment_screen] 🔧 State changed: ${state.runtimeType}');
-
-          // 🔧 FIX: Gestione automatica StripePaymentReady per donazioni
-          if (state is StripePaymentReady) {
-            print('[CONSOLE][stripe_payment_screen] 🔧 Payment Ready - processing automatically for ${state.paymentType}');
-
-            // Per le donazioni, processa automaticamente il payment
-            if (state.paymentType == 'donation') {
-              // Presenta automaticamente il payment sheet
-              context.read<StripeBloc>().add(ProcessPaymentEvent(
-                clientSecret: state.paymentIntent.clientSecret,
-                paymentType: state.paymentType,
-              ));
-            } else if (state is StripeErrorState) {
-              final errorMessage = (state as StripeErrorState).message;
-              print('[CONSOLE][stripe_payment_screen] ❌ Stripe Error: $errorMessage');
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.white),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('Errore pagamento'),
-                            Text(
-                              'DEBUG: $errorMessage',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  duration: Duration(seconds: 8), // Più lungo per leggere l'errore
-                ),
-              );
-            } else {
-              // Per le subscription, mantieni il comportamento esistente
-              _handleStateChanges(context, state);
-            }
-          } else if (state is StripePaymentSuccess) {
-            print('[CONSOLE][stripe_payment_screen] ✅ Payment Success!');
-
-            // Vai alla pagina di completamento
-            _pageController.animateToPage(
-              2, // Pagina di successo
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-
-            // Mostra messaggio di successo
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
-                  ],
-                ),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                duration: Duration(seconds: 4),
-              ),
-            );
-
-            // 🔧 FIX: Chiudi la finestra dialog dopo aver mostrato il successo
-            Future.delayed(const Duration(seconds: 2), () {
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
-            });
-          } else {
-            // Per tutti gli altri stati, usa il metodo esistente
-            _handleStateChanges(context, state);
-          }
+          _handleStripeStateChanges(context, state);
         },
         builder: (context, state) {
           return Column(
@@ -198,6 +118,161 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 
+  // ============================================================================
+  // 🔧 FIX: STRIPE STATE MANAGEMENT - Gestione corretta degli stati
+  // ============================================================================
+
+  void _handleStripeStateChanges(BuildContext context, StripeState state) {
+    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] State changed: ${state.runtimeType}');
+
+    if (state is StripePaymentLoading) {
+      // 🔧 FIX: Attiva overlay quando inizia il processing
+      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Loading state - showing overlay');
+      setState(() {
+        _isPaymentProcessing = true;
+        _paymentCompleted = false;
+      });
+
+    } else if (state is StripePaymentReady) {
+      // 🔧 FIX: Gestione automatica per donazioni
+      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Payment Ready - processing automatically for ${state.paymentType}');
+
+      // Per le donazioni, processa automaticamente il payment
+      if (state.paymentType == 'donation') {
+        // Presenta automaticamente il payment sheet
+        context.read<StripeBloc>().add(ProcessPaymentEvent(
+          clientSecret: state.paymentIntent.clientSecret,
+          paymentType: state.paymentType,
+        ));
+      } else {
+        // Per le subscription, naviga alla pagina di pagamento
+        _pageController.animateToPage(
+          1, // Pagina di pagamento
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+
+    } else if (state is StripePaymentSuccess) {
+      // 🔧 FIX: Cleanup completo overlay e gestisci successo
+      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Payment Success! Cleaning up overlay');
+      setState(() {
+        _isPaymentProcessing = false; // Rimuovi overlay
+        _paymentCompleted = true;     // Segna come completato
+      });
+
+      // Vai alla pagina di completamento
+      _pageController.animateToPage(
+        2, // Pagina di successo
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+
+      // Mostra messaggio di successo
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(state.message)),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: Duration(seconds: 4),
+        ),
+      );
+
+      // 🔧 FIX: Chiudi la finestra dialog dopo 3 secondi per donazioni
+      if (widget.paymentType == 'donation') {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
+        });
+      }
+
+    } else if (state is StripeErrorState) {
+      // 🔧 FIX: Cleanup overlay anche in caso di errore
+      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Error state: ${state.message}');
+      setState(() {
+        _isPaymentProcessing = false; // Rimuovi overlay
+        _paymentCompleted = false;    // Non completato
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(state.message)),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+
+    } else {
+      // 🔧 FIX: Per qualsiasi altro stato, assicurati che l'overlay sia rimosso
+      if (_isPaymentProcessing && !_paymentCompleted) {
+        print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Unknown state, cleaning up overlay');
+        setState(() {
+          _isPaymentProcessing = false;
+        });
+      }
+    }
+  }
+
+  // ============================================================================
+  // PAYMENT ACTIONS
+  // ============================================================================
+
+  void _startDonationPayment(double amount) {
+    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting donation payment: €$amount');
+
+    final amountInCents = (amount * 100).round();
+
+    context.read<StripeBloc>().add(CreateDonationPaymentEvent(
+      amount: amountInCents,
+      metadata: {
+        'source': 'donation_screen',
+        'amount_euros': amount.toString(),
+      },
+    ));
+
+    // Vai alla pagina di caricamento
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _processPayment(String clientSecret, String paymentType) {
+    context.read<StripeBloc>().add(ProcessPaymentEvent(
+      clientSecret: clientSecret,
+      paymentType: paymentType,
+    ));
+
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  // ============================================================================
+  // UI BUILDERS
+  // ============================================================================
+
   Widget _buildProgressIndicator(BuildContext context, StripeState state, bool isDarkMode) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -211,11 +286,17 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       ),
       child: Row(
         children: [
-          _buildStepIndicator(1, 'Seleziona', _currentPage >= 0, isDarkMode),
-          Expanded(child: _buildStepLine(_currentPage >= 1, isDarkMode)),
-          _buildStepIndicator(2, 'Paga', _currentPage >= 1, isDarkMode),
-          Expanded(child: _buildStepLine(_currentPage >= 2, isDarkMode)),
-          _buildStepIndicator(3, 'Completo', _currentPage >= 2, isDarkMode),
+          Expanded(
+            child: Row(
+              children: [
+                _buildStepIndicator(0, 'Selezione', _currentPage >= 0, isDarkMode),
+                _buildStepConnector(isDarkMode),
+                _buildStepIndicator(1, 'Pagamento', _currentPage >= 1, isDarkMode),
+                _buildStepConnector(isDarkMode),
+                _buildStepIndicator(2, 'Completato', _currentPage >= 2, isDarkMode),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -228,46 +309,45 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
           width: 32.w,
           height: 32.w,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             color: isActive
                 ? (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600)
-                : (isDarkMode ? Colors.grey[700] : AppColors.border),
+                : (isDarkMode ? Colors.grey[700] : Colors.grey[300]),
+            shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
-              step.toString(),
+              '${step + 1}',
               style: TextStyle(
-                fontSize: 14.sp,
+                color: isActive ? Colors.white : (isDarkMode ? Colors.white54 : Colors.grey[600]),
                 fontWeight: FontWeight.bold,
-                color: isActive ? Colors.white : (isDarkMode ? Colors.grey[400] : AppColors.textSecondary),
+                fontSize: 14.sp,
               ),
             ),
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 4.h),
         Text(
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             color: isActive
                 ? (isDarkMode ? Colors.white : AppColors.textPrimary)
-                : (isDarkMode ? Colors.grey[400] : AppColors.textSecondary),
+                : (isDarkMode ? Colors.white54 : Colors.grey[600]),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStepLine(bool isActive, bool isDarkMode) {
-    return Container(
-      height: 2.h,
-      margin: EdgeInsets.symmetric(horizontal: 8.w),
-      decoration: BoxDecoration(
-        color: isActive
-            ? (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600)
-            : (isDarkMode ? Colors.grey[700] : AppColors.border),
-        borderRadius: BorderRadius.circular(1.r),
+  Widget _buildStepConnector(bool isDarkMode) {
+    return Expanded(
+      child: Container(
+        height: 2.h,
+        margin: EdgeInsets.only(bottom: 20.h),
+        decoration: BoxDecoration(
+          color: isDarkMode ? Colors.grey[700] : Colors.grey[300],
+          borderRadius: BorderRadius.circular(1.r),
+        ),
       ),
     );
   }
@@ -287,58 +367,98 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Scegli il tuo piano',
+            'Piano Premium',
             style: TextStyle(
-              fontSize: 24.sp,
+              fontSize: 32.sp,
               fontWeight: FontWeight.bold,
               color: isDarkMode ? Colors.white : AppColors.textPrimary,
             ),
           ),
           SizedBox(height: 8.h),
           Text(
-            'Sblocca tutte le funzionalità premium',
+            'Sblocca tutte le funzionalità avanzate',
             style: TextStyle(
               fontSize: 16.sp,
               color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
             ),
           ),
+
           SizedBox(height: 32.h),
 
-          // Piani subscription
-          Expanded(
-            child: ListView(
+          // Premium features
+          _buildFeaturesList(isDarkMode),
+
+          const Spacer(),
+
+          // Pricing
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(20.w),
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: isDarkMode ? Colors.grey[700]! : AppColors.border,
+              ),
+            ),
+            child: Column(
               children: [
-                _buildSubscriptionPlanCard(
-                  context,
-                  'premium_monthly',
-                  StripeConfig.subscriptionPlans['premium_monthly']!,
-                  isDarkMode,
-                  isPopular: true,
+                Text(
+                  '€4.99/mese',
+                  style: TextStyle(
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                  ),
                 ),
-                SizedBox(height: 16.h),
-                _buildSubscriptionPlanCard(
-                  context,
-                  'premium_yearly',
-                  StripeConfig.subscriptionPlans['premium_yearly']!,
-                  isDarkMode,
+                SizedBox(height: 8.h),
+                Text(
+                  'Cancella in qualsiasi momento',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Sezione sicurezza
-          _buildSecuritySection(context, isDarkMode),
+          SizedBox(height: 24.h),
+
+          SizedBox(
+            width: double.infinity,
+            height: 56.h,
+            child: ElevatedButton(
+              onPressed: state is StripePaymentLoading ? null : () => _startSubscriptionPayment(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              child: state is StripePaymentLoading
+                  ? SizedBox(
+                width: 24.w,
+                height: 24.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDarkMode ? Colors.black : Colors.white,
+                  ),
+                ),
+              )
+                  : Text(
+                'Inizia abbonamento Premium',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSubscriptionPlanCard(BuildContext context, String planId, dynamic plan, bool isDarkMode, {bool isPopular = false}) {
-    return SubscriptionPlanCard(
-      plan: plan,
-      isCurrentPlan: false,
-      onSubscribe: () => _startSubscriptionPayment(planId),
-      isLoading: false,
     );
   }
 
@@ -351,14 +471,14 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
           Text(
             'Supporta FitGymTrack',
             style: TextStyle(
-              fontSize: 24.sp,
+              fontSize: 32.sp,
               fontWeight: FontWeight.bold,
               color: isDarkMode ? Colors.white : AppColors.textPrimary,
             ),
           ),
           SizedBox(height: 8.h),
           Text(
-            'Il tuo supporto ci aiuta a migliorare l\'app per tutti',
+            'Aiutaci a migliorare l\'app che ami',
             style: TextStyle(
               fontSize: 16.sp,
               color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
@@ -385,12 +505,12 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
             mainAxisSpacing: 12.h,
             childAspectRatio: 2,
             children: [
-              _buildDonationButton(context, 2.99, isDarkMode),
-              _buildDonationButton(context, 4.99, isDarkMode),
-              _buildDonationButton(context, 9.99, isDarkMode),
-              _buildDonationButton(context, 19.99, isDarkMode),
-              _buildDonationButton(context, 49.99, isDarkMode),
-              _buildCustomDonationButton(context, isDarkMode),
+              _buildDonationButton(context, 2.99, isDarkMode, state),
+              _buildDonationButton(context, 4.99, isDarkMode, state),
+              _buildDonationButton(context, 9.99, isDarkMode, state),
+              _buildDonationButton(context, 19.99, isDarkMode, state),
+              _buildDonationButton(context, 49.99, isDarkMode, state),
+              _buildCustomDonationButton(context, isDarkMode, state),
             ],
           ),
 
@@ -403,12 +523,51 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 
-  Widget _buildDonationButton(BuildContext context, double amount, bool isDarkMode) {
+  Widget _buildFeaturesList(bool isDarkMode) {
+    final features = [
+      'Schede di allenamento illimitate',
+      'Esercizi personalizzati',
+      'Statistiche avanzate e analytics',
+      'Backup automatico nel cloud',
+      'Supporto prioritario',
+      'Nuove funzionalità in anteprima',
+    ];
+
+    return Column(
+      children: features.map((feature) => Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.h),
+        child: Row(
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: AppColors.success,
+              size: 20.sp,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                feature,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      )).toList(),
+    );
+  }
+
+  Widget _buildDonationButton(BuildContext context, double amount, bool isDarkMode, StripeState state) {
+    final isLoading = state is StripePaymentLoading;
+
     return ElevatedButton(
-      onPressed: () => _startDonationPayment(amount),
+      onPressed: isLoading ? null : () => _startDonationPayment(amount),
       style: ElevatedButton.styleFrom(
         backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[100],
         foregroundColor: isDarkMode ? Colors.white : AppColors.textPrimary,
+        disabledBackgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[200],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),
           side: BorderSide(
@@ -416,7 +575,18 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
           ),
         ),
       ),
-      child: Text(
+      child: isLoading
+          ? SizedBox(
+        width: 16.w,
+        height: 16.w,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            isDarkMode ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+      )
+          : Text(
         '€${amount.toStringAsFixed(2)}',
         style: TextStyle(
           fontSize: 16.sp,
@@ -426,9 +596,11 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 
-  Widget _buildCustomDonationButton(BuildContext context, bool isDarkMode) {
+  Widget _buildCustomDonationButton(BuildContext context, bool isDarkMode, StripeState state) {
+    final isLoading = state is StripePaymentLoading;
+
     return OutlinedButton(
-      onPressed: () => _showCustomDonationDialog(context),
+      onPressed: isLoading ? null : () => _showCustomDonationDialog(context),
       style: OutlinedButton.styleFrom(
         foregroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
         side: BorderSide(
@@ -449,10 +621,11 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   }
 
   Widget _buildPaymentPage(BuildContext context, StripeState state, bool isDarkMode) {
-    if (state is StripePaymentLoading) {
+    // 🔧 FIX: Mostra overlay di loading se stiamo processando
+    if (_isPaymentProcessing || state is StripePaymentLoading) {
       return _buildLoadingPage(
         context,
-        state.message ?? 'Preparazione pagamento...',
+        (state is StripePaymentLoading ? state.message : null) ?? 'Preparazione pagamento...',
         isDarkMode,
       );
     }
@@ -511,33 +684,8 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
 
             const Spacer(),
 
-            // 🔧 FIX: Per le donazioni, non mostrare pulsante manuale
-            if (widget.paymentType == 'subscription') ...[
-              // Pulsante pagamento per subscription
-              SizedBox(
-                width: double.infinity,
-                height: 56.h,
-                child: ElevatedButton.icon(
-                  onPressed: () => _processPayment(state.paymentIntent.clientSecret, state.paymentType),
-                  icon: const Icon(Icons.payment),
-                  label: Text(
-                    'Paga €${(state.paymentIntent.amount / 100).toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                    foregroundColor: isDarkMode ? Colors.black : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[
-              // 🔧 FIX: Per le donazioni, mostra messaggio che il payment si apre automaticamente
+            // 🔧 FIX: Per le donazioni, mostra che il payment si apre automaticamente
+            if (widget.paymentType == 'donation') ...[
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16.w),
@@ -566,6 +714,30 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ] else ...[
+              // Pulsante pagamento per subscription
+              SizedBox(
+                width: double.infinity,
+                height: 56.h,
+                child: ElevatedButton.icon(
+                  onPressed: () => _processPayment(state.paymentIntent.clientSecret, state.paymentType),
+                  icon: const Icon(Icons.payment),
+                  label: Text(
+                    'Paga €${(state.paymentIntent.amount / 100).toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -631,39 +803,29 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
 
   Widget _buildSecuritySection(BuildContext context, bool isDarkMode) {
     return Container(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : Colors.green[50],
+        color: isDarkMode ? AppColors.surfaceDark.withOpacity(0.5) : AppColors.surfaceLight.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isDarkMode ? Colors.grey[700]! : AppColors.border,
+        ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.security,
-            color: AppColors.success,
-            size: 24.sp,
+            color: isDarkMode ? Colors.green[400] : Colors.green[600],
+            size: 20.sp,
           ),
-          SizedBox(width: 12.w),
+          SizedBox(width: 8.w),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Pagamento sicuro',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  'Powered by Stripe - standard bancario di sicurezza',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                  ),
-                ),
-              ],
+            child: Text(
+              'Pagamenti sicuri gestiti da Stripe',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+              ),
             ),
           ),
         ],
@@ -671,57 +833,25 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 
-  // Action methods
+  // ============================================================================
+  // DIALOGS
+  // ============================================================================
 
-  void _startSubscriptionPayment(String planId) {
-    final priceId = StripeConfig.subscriptionPlans[planId]?.stripePriceId ?? 'price_1RXVOfHHtQGHyul9qMGFmpmO';
+  void _startSubscriptionPayment() {
+    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting subscription payment');
+
+    // Usa il vero priceId dal config
+    const premiumPriceId = 'price_1RXVOfHHtQGHyul9qMGFmpmO'; // Real price ID dal config
 
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
-      priceId: priceId,
+      priceId: premiumPriceId,
       metadata: {
-        'plan_id': planId,
-        'user_platform': 'flutter',
+        'source': 'payment_screen',
+        'plan': 'premium_monthly',
       },
     ));
 
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _startDonationPayment(double amount) {
-    print('[CONSOLE][stripe_payment_screen] 🔧 Starting donation payment for €${amount}');
-
-    // 🔧 DEBUG: Aggiungi listener temporaneo per debug
-    final subscription = context.read<StripeBloc>().stream.listen((state) {
-      print('[CONSOLE][stripe_payment_screen] 🔍 DEBUG State: ${state.runtimeType}');
-      if (state is StripePaymentReady) {
-        print('[CONSOLE][stripe_payment_screen] 🔍 DEBUG StripePaymentReady: paymentType=${state.paymentType}, amount=${state.paymentIntent.amount}');
-      }
-    });
-
-    // Cancella il listener dopo 10 secondi
-    Future.delayed(const Duration(seconds: 10), () => subscription.cancel());
-
-    context.read<StripeBloc>().add(CreateDonationPaymentEvent(
-      amount: StripeConfig.euroToCents(amount),
-      metadata: {
-        'donation_type': 'one_time',
-        'user_platform': 'flutter',
-      },
-    ));
-
-    // 🔧 FIX: NON fare nextPage() qui - sarà gestito automaticamente dal listener
-    // Il listener farà automaticamente ProcessPaymentEvent quando arriva StripePaymentReady
-  }
-
-  void _processPayment(String clientSecret, String paymentType) {
-    context.read<StripeBloc>().add(ProcessPaymentEvent(
-      clientSecret: clientSecret,
-      paymentType: paymentType,
-    ));
-
+    // Vai alla pagina di caricamento
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -783,27 +913,5 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
         );
       },
     );
-  }
-
-  // 🔧 MANTENUTO: Metodo originale per subscription (non modificato)
-  void _handleStateChanges(BuildContext context, StripeState state) {
-    if (state is StripePaymentSuccess) {
-      // Il pagamento è completato, mostra la pagina di successo
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.message), // ✅ StripePaymentSuccess HA message
-          backgroundColor: AppColors.success,
-        ),
-      );
-    } else if (state is StripeErrorState) {
-      // Errore nel pagamento
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.message), // ✅ StripeErrorState HA message
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-    // 🔧 FIX: Non tentare di accedere a .message per altri tipi di stato
   }
 }

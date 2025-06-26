@@ -1,13 +1,25 @@
-// lib/features/subscription/presentation/screens/subscription_screen.dart
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:async';  // 🚀 NUOVO: Per StreamSubscription e Timer
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../core/config/stripe_config.dart';
-import '../../../payments/bloc/stripe_bloc.dart';
-import '../../bloc/subscription_bloc.dart';
+// lib/features/subscription/presentation/screens/subscription_screen.dart - 🔧 FIX OVERLAY LOADING
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
+
+// App imports
+import '../../../../shared/theme/app_colors.dart';
+import '../../../../shared/widgets/custom_snackbar.dart';
+
+// Feature imports - subscription
+import '../../bloc/subscription_bloc.dart';
+import '../../models/subscription_models.dart';
+import '../widgets/subscription_widgets.dart';
+
+// Feature imports - payments
+import '../../../payments/bloc/stripe_bloc.dart';
+import '../../../payments/models/stripe_models.dart';
+
+/// 🚀 SubscriptionScreen - FIXED: Overlay Loading Cleanup
+/// 🔧 FIX: Risolve il problema dell'overlay "nebbia" dopo pagamenti
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
 
@@ -16,25 +28,16 @@ class SubscriptionScreen extends StatefulWidget {
 }
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
-  bool _hasTriedInitialization = false;
+  // 🔧 FIX: Stati separati per gestire overlay e cleanup
   bool _justCompletedPayment = false;
-  bool _isProcessingPayment = false;
-  bool _paymentSheetOpened = false;  // 🚀 NUOVO: Previene chiamate multiple
-  String _selectedPaymentType = 'recurring';
+  bool _isPaymentProcessing = false; // Nuovo flag per gestire overlay
 
   @override
   void initState() {
     super.initState();
-    print('[CONSOLE][subscription_screen]💳 [SUBSCRIPTION] Screen loaded');
-    // Carica subscription status
-    context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent());
-  }
 
-  @override
-  void dispose() {
-    // Reset flags on dispose
-    _paymentSheetOpened = false;
-    super.dispose();
+    // Carica subscription al primo avvio
+    context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
   }
 
   @override
@@ -45,214 +48,252 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: BlocConsumer<StripeBloc, StripeState>(
         listener: (context, state) {
-          print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe state: ${state.runtimeType}');
-
-          if (state is StripePaymentLoading || state is StripeInitializing) {
-            setState(() {
-              _isProcessingPayment = true;
-            });
-          }
-
-          if (state is StripePaymentReady && !_paymentSheetOpened) {  // 🚀 FIX: Previene chiamate multiple
-            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet (ONCE)');
-            _paymentSheetOpened = true;  // Marca come aperto
-            _presentPaymentSheet(context, state);
-          } else if (state is StripePaymentSuccess) {
-            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Success!');
-
-            // 🚀 RESET FLAGS
-            _paymentSheetOpened = false;
-
-            setState(() {
-              _isProcessingPayment = false;
-              _justCompletedPayment = true;
-            });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
-                  ],
-                ),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                duration: Duration(seconds: 4),
-              ),
-            );
-
-            // Reload subscription after successful payment
-            context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent());
-
-          } else if (state is StripeErrorState) {
-            print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
-
-            // 🚀 RESET FLAGS
-            _paymentSheetOpened = false;
-
-            setState(() {
-              _isProcessingPayment = false;
-            });
-
-            if (_justCompletedPayment && state.message.contains('caricamento subscription')) {
-              print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after payment');
-              _justCompletedPayment = false;
-              return;
-            }
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text(state.message)),
-                  ],
-                ),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                duration: Duration(seconds: 5),
-              ),
-            );
-          } else {
-            // 🚀 RESET FLAGS per altri stati
-            if (state is! StripePaymentLoading && state is! StripeInitializing) {
-              setState(() {
-                _isProcessingPayment = false;
-              });
-            }
-          }
+          _handleStripeStateChanges(context, state);
         },
         builder: (context, stripeState) {
-          return BlocBuilder<SubscriptionBloc, SubscriptionState>(
-            builder: (context, subscriptionState) {
-              if (subscriptionState is SubscriptionLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              // 🚀 FIX 2: DETERMINA SE UTENTE HA PREMIUM
-              bool userHasPremium = false;
-              if (subscriptionState is SubscriptionLoaded) {
-                final subscription = subscriptionState.subscription;
-                userHasPremium = subscription.isPremium && !subscription.isExpired;
-              }
-
-              return CustomScrollView(
-                slivers: [
-                  // APP BAR
-                  SliverAppBar(
-                    expandedHeight: 120.h,
-                    floating: true,
-                    pinned: true,
-                    backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    automaticallyImplyLeading: false,
-                    flexibleSpace: FlexibleSpaceBar(
-                      title: Text(
-                        'Premium Subscription',
-                        style: TextStyle(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                        ),
-                      ),
-                      centerTitle: true,
+          return CustomScrollView(
+            slivers: [
+              // 🎨 MODERN APP BAR
+              SliverAppBar(
+                expandedHeight: 120.h,
+                floating: true,
+                pinned: true,
+                backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+                automaticallyImplyLeading: false,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'Abbonamento',
+                    style: TextStyle(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
+                  centerTitle: true,
+                ),
+              ),
 
-                  // CONTENT
-                  SliverPadding(
-                    padding: EdgeInsets.all(16.w),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
+              // 🎨 CONTENT
+              SliverPadding(
+                padding: EdgeInsets.all(16.w),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // 🔧 FIX: Payment Loading Overlay gestito correttamente
+                    if (_isPaymentProcessing && stripeState is StripePaymentLoading)
+                      _buildPaymentLoadingOverlay(stripeState, isDarkMode),
 
-                        // 🔧 Payment Loading Overlay
-                        if (_isProcessingPayment)
-                          _buildPaymentLoadingOverlay(isDarkMode),
+                    // 🚀 Payment Success Banner se abbiamo appena completato un pagamento
+                    if (_justCompletedPayment && !_isPaymentProcessing)
+                      _buildPaymentSuccessBanner(isDarkMode),
 
-                        // 🚀 Payment Success Banner
-                        if (_justCompletedPayment)
-                          _buildPaymentSuccessBanner(isDarkMode),
-
-                        // 📊 Current Plan Card
-                        _buildCurrentPlanCard(subscriptionState, isDarkMode),
-
-                        SizedBox(height: 32.h),
-
-                        // 🚀 FIX 2: NASCONDI OPZIONI ABBONAMENTO SE PREMIUM ATTIVO
-                        if (!userHasPremium) ...[
-                          // Titolo Abbonamenti Disponibili
-                          Text(
-                            'Scegli il tuo piano',
-                            style: TextStyle(
-                              fontSize: 22.sp,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                            ),
-                          ),
-
-                          SizedBox(height: 16.h),
-
-                          // Payment Type Selector
-                          _buildPaymentTypeSelector(isDarkMode),
-
-                          SizedBox(height: 20.h),
-
-                          // Available Plans
-                          _buildAvailablePlansSection(subscriptionState, stripeState, isDarkMode),
-
-                        ] else ...[
-                          // Messaggio per utenti Premium
-                          _buildPremiumUserMessage(isDarkMode),
-                        ],
-
-                        SizedBox(height: 32.h),
-
-                        // 💡 Features comparison (sempre visibile)
-                        _buildFeaturesComparison(isDarkMode),
-
-                        SizedBox(height: 100.h), // Bottom padding
-                      ]),
+                    // 📊 Current Plan Card - Using SubscriptionBloc
+                    BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                      builder: (context, subscriptionState) {
+                        return _buildCurrentPlanCard(subscriptionState, isDarkMode);
+                      },
                     ),
-                  ),
-                ],
-              );
-            },
+
+                    SizedBox(height: 32.h),
+
+                    // 🚀 Available Plans - Using SubscriptionBloc
+                    BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                      builder: (context, subscriptionState) {
+                        return _buildAvailablePlansSection(subscriptionState, stripeState, isDarkMode);
+                      },
+                    ),
+
+                    SizedBox(height: 32.h),
+
+                    // 💡 Features comparison
+                    _buildFeaturesComparison(isDarkMode),
+
+                    SizedBox(height: 100.h), // Bottom padding for navigation
+                  ]),
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  /// 🔧 Payment Loading Overlay
-  Widget _buildPaymentLoadingOverlay(bool isDarkMode) {
+  // ============================================================================
+  // 🔧 FIX: STRIPE STATE MANAGEMENT - Gestione corretta degli stati
+  // ============================================================================
+
+  void _handleStripeStateChanges(BuildContext context, StripeState state) {
+    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
+
+    if (state is StripePaymentLoading) {
+      // 🔧 FIX: Attiva overlay quando inizia il processing
+      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Loading - showing overlay');
+      setState(() {
+        _isPaymentProcessing = true;
+        _justCompletedPayment = false; // Reset flag successo
+      });
+
+    } else if (state is StripePaymentReady) {
+      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
+      _presentPaymentSheet(context, state);
+
+    } else if (state is StripePaymentSuccess) {
+      // 🔧 FIX: Cleanup completo overlay e attiva banner successo
+      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Success! Cleaning up overlay');
+      setState(() {
+        _isPaymentProcessing = false; // Rimuovi overlay
+        _justCompletedPayment = true;  // Mostra banner successo
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(state.message)),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: Duration(seconds: 4),
+        ),
+      );
+
+      // 🔧 FIX: Reload subscription after successful payment
+      context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
+
+      // 🔧 FIX: Rimuovi banner successo dopo 5 secondi
+      Future.delayed(Duration(seconds: 5), () {
+        if (mounted) {
+          setState(() {
+            _justCompletedPayment = false;
+          });
+        }
+      });
+
+    } else if (state is StripeErrorState) {
+      // 🔧 FIX: Cleanup overlay anche in caso di errore
+      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
+      setState(() {
+        _isPaymentProcessing = false; // Rimuovi overlay
+        _justCompletedPayment = false; // Non mostrare banner successo
+      });
+
+      if (_justCompletedPayment && state.message.contains('caricamento subscription')) {
+        print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(state.message)),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+
+    } else {
+      // 🔧 FIX: Per qualsiasi altro stato, assicurati che l'overlay sia rimosso
+      if (_isPaymentProcessing) {
+        print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Unknown state, cleaning up overlay');
+        setState(() {
+          _isPaymentProcessing = false;
+        });
+      }
+    }
+  }
+
+  // ============================================================================
+  // PAYMENT SHEET PRESENTATION
+  // ============================================================================
+
+  Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
+    try {
+      // Avvia immediatamente il processing del pagamento
+      context.read<StripeBloc>().add(ProcessPaymentEvent(
+        clientSecret: state.paymentIntent.clientSecret,
+        paymentType: state.paymentType,
+      ));
+    } catch (e) {
+      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] Error presenting payment sheet: $e');
+
+      // 🔧 FIX: Cleanup in caso di errore
+      setState(() {
+        _isPaymentProcessing = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore nell\'apertura del pagamento: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  // ============================================================================
+  // SUBSCRIPTION ACTIONS
+  // ============================================================================
+
+  void _subscribeToPremium(BuildContext context) {
+    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting Premium subscription...');
+
+    // Usa il vero priceId dal config
+    const premiumPriceId = 'price_1RXVOfHHtQGHyul9qMGFmpmO'; // Real price ID dal config
+
+    context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
+      priceId: premiumPriceId,
+      metadata: {
+        'source': 'subscription_screen',
+        'plan': 'premium_monthly',
+      },
+    ));
+  }
+
+  // ============================================================================
+  // UI BUILDERS
+  // ============================================================================
+
+  /// 🔧 FIX: Payment Loading Overlay con cleanup corretto
+  Widget _buildPaymentLoadingOverlay(StripePaymentLoading state, bool isDarkMode) {
     return Container(
-      margin: EdgeInsets.only(bottom: 24.h),
+      width: double.infinity,
       padding: EdgeInsets.all(20.w),
+      margin: EdgeInsets.only(bottom: 24.h),
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: isDarkMode ? Colors.blue.shade400 : AppColors.indigo600,
+          color: AppColors.info.withOpacity(0.3),
         ),
       ),
       child: Column(
         children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isDarkMode ? Colors.blue.shade400 : AppColors.indigo600,
+          SizedBox(
+            width: 40.w,
+            height: 40.w,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+              strokeWidth: 3,
             ),
           ),
           SizedBox(height: 16.h),
           Text(
-            'Preparazione pagamento...',
+            state.message ?? 'Preparazione pagamento...',
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
@@ -283,29 +324,54 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.success),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(
-            Icons.check_circle,
-            size: 32.sp,
-            color: AppColors.success,
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Pagamento completato con successo!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.check_circle,
               color: AppColors.success,
+              size: 24.sp,
             ),
           ),
-          Text(
-            'Il tuo abbonamento Premium è ora attivo',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pagamento Completato! 🎉',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Il tuo abbonamento Premium è attivo!',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 🔧 FIX: Pulsante per chiudere manualmente il banner
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _justCompletedPayment = false;
+              });
+            },
+            icon: Icon(
+              Icons.close,
+              color: AppColors.success,
+              size: 20.sp,
             ),
           ),
         ],
@@ -313,7 +379,306 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  /// 🚀 FIX 2: Messaggio per utenti Premium
+  /// 📊 Current Plan Card
+  Widget _buildCurrentPlanCard(SubscriptionState subscriptionState, bool isDarkMode) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDarkMode ? Colors.grey[700]! : AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.card_membership,
+                color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                size: 24.sp,
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Piano Attuale',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+
+          if (subscriptionState is SubscriptionLoaded) ...[
+            if (subscriptionState.subscription.isPremium && !subscriptionState.subscription.isExpired) ...[
+              // Premium attivo
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.purple.shade400, Colors.blue.shade400],
+                      ),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      'PREMIUM',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                  Text(
+                    subscriptionState.subscription.formattedPrice,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                subscriptionState.subscription.endDate != null
+                    ? 'Scade il ${_formatDate(subscriptionState.subscription.endDate!)}'
+                    : 'Piano attivo',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                ),
+              ),
+            ] else ...[
+              // Piano Free
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      'GRATUITO',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                  Text(
+                    '€0.00',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
+              Text(
+                'Funzionalità di base incluse',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ] else if (subscriptionState is SubscriptionLoading) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 16.w,
+                  height: 16.w,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  'Caricamento piano...',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Text(
+              'Piano non disponibile',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 🚀 Available Plans Section
+  Widget _buildAvailablePlansSection(SubscriptionState subscriptionState, StripeState stripeState, bool isDarkMode) {
+    final isCurrentlyPremium = subscriptionState is SubscriptionLoaded &&
+        subscriptionState.subscription.isPremium && !subscriptionState.subscription.isExpired;
+
+    if (isCurrentlyPremium) {
+      return _buildPremiumUserMessage(isDarkMode);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Piani Disponibili',
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 16.h),
+
+        // Premium Plan Card personalizzata
+        _buildPremiumPlanCard(stripeState, isDarkMode),
+      ],
+    );
+  }
+
+  /// Widget personalizzato per il piano Premium
+  Widget _buildPremiumPlanCard(StripeState stripeState, bool isDarkMode) {
+    final isLoading = stripeState is StripePaymentLoading;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+          width: 2,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [Colors.indigo.withOpacity(0.2), Colors.purple.withOpacity(0.1)]
+              : [Colors.indigo.withOpacity(0.1), Colors.purple.withOpacity(0.05)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Premium',
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Icon(
+                Icons.star,
+                color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                size: 24.sp,
+              ),
+              Spacer(),
+              Text(
+                '€4.99/mese',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+
+          // Features
+          ...[
+            'Schede illimitate',
+            'Esercizi personalizzati',
+            'Statistiche avanzate',
+            'Backup automatico',
+            'Supporto prioritario',
+          ].map((feature) => Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.h),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 20.sp,
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  feature,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          )),
+
+          SizedBox(height: 20.h),
+
+          // Subscribe button
+          SizedBox(
+            width: double.infinity,
+            height: 48.h,
+            child: ElevatedButton(
+              onPressed: isLoading ? null : () => _subscribeToPremium(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                foregroundColor: isDarkMode ? Colors.black : Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              child: isLoading
+                  ? SizedBox(
+                width: 20.w,
+                height: 20.w,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDarkMode ? Colors.black : Colors.white,
+                  ),
+                ),
+              )
+                  : Text(
+                'Inizia abbonamento Premium',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🚀 Premium User Message
   Widget _buildPremiumUserMessage(bool isDarkMode) {
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -350,19 +715,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               color: Colors.white.withOpacity(0.9),
             ),
           ),
-          SizedBox(height: 20.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(25.r),
-            ),
-            child: Text(
-              'Piano attivo',
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          SizedBox(height: 16.h),
+          ElevatedButton.icon(
+            onPressed: () => context.push('/payment/donation'),
+            icon: Icon(Icons.favorite, color: Colors.red.shade400),
+            label: Text('Fai una donazione'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.purple.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
               ),
             ),
           ),
@@ -371,729 +733,91 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
-  /// Current Plan Card
-  Widget _buildCurrentPlanCard(SubscriptionState subscriptionState, bool isDarkMode) {
-    bool hasPremium = false;
-    String planName = 'Piano Free';
-    String planDescription = 'Gratuito';
-    List<String> features = [
-      'Schede di allenamento (max 3)',
-      'Esercizi personalizzati (max 5)',
-    ];
-
-    if (subscriptionState is SubscriptionLoaded) {
-      final subscription = subscriptionState.subscription;
-      hasPremium = subscription.isPremium && !subscription.isExpired;
-
-      if (hasPremium) {
-        planName = 'Piano Premium';
-        planDescription = 'Attivo';
-        features = ['Accesso completo a tutte le funzionalità'];
-      }
-    } else if (_justCompletedPayment) {
-      planName = 'Piano Premium';
-      planDescription = 'In attivazione...';
-      features = ['Il tuo abbonamento Premium verrà attivato a breve'];
-      hasPremium = true;
-    }
-
+  /// 💡 Features Comparison
+  Widget _buildFeaturesComparison(bool isDarkMode) {
     return Container(
-      width: double.infinity,
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        gradient: hasPremium
-            ? LinearGradient(
-          colors: [Colors.purple.shade400, Colors.blue.shade400],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        )
-            : null,
-        color: hasPremium ? null : (isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight),
+        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: hasPremium ? Colors.transparent : (isDarkMode ? Colors.grey.shade700 : AppColors.border),
+          color: isDarkMode ? Colors.grey[700]! : AppColors.border,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      planName,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.bold,
-                        color: hasPremium ? Colors.white : (isDarkMode ? Colors.white : AppColors.textPrimary),
-                      ),
-                    ),
-                    Text(
-                      planDescription,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: hasPremium
-                            ? Colors.white.withOpacity(0.9)
-                            : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (hasPremium && !_justCompletedPayment)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(
-                    'ATTIVO',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              if (_justCompletedPayment)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(
-                    'ATTIVAZIONE',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-            ],
+          Text(
+            'Confronto Funzionalità',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
+            ),
           ),
-
           SizedBox(height: 16.h),
 
-          Text(
-            _justCompletedPayment ? 'Stato attivazione' : (hasPremium ? 'Il tuo piano include:' : 'Il tuo piano include:'),
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: hasPremium ? Colors.white : (isDarkMode ? Colors.white : AppColors.textPrimary),
-            ),
-          ),
-
-          SizedBox(height: 12.h),
-
-          ...features.map((feature) => Padding(
-            padding: EdgeInsets.symmetric(vertical: 4.h),
-            child: Row(
-              children: [
-                Icon(
-                  hasPremium ? Icons.check_circle : Icons.info_outline,
-                  size: 16.sp,
-                  color: hasPremium ? Colors.white : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
-                ),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: Text(
-                    feature,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: hasPremium ? Colors.white : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )),
+          _buildFeatureRow('Schede di allenamento', 'Fino a 3', 'Illimitate', isDarkMode),
+          _buildFeatureRow('Esercizi personalizzati', '❌', '✅', isDarkMode),
+          _buildFeatureRow('Statistiche avanzate', '❌', '✅', isDarkMode),
+          _buildFeatureRow('Backup automatico', '❌', '✅', isDarkMode),
+          _buildFeatureRow('Supporto prioritario', '❌', '✅', isDarkMode),
         ],
       ),
     );
   }
 
-  /// Payment Type Selector
-  Widget _buildPaymentTypeSelector(bool isDarkMode) {
-    return Container(
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isDarkMode ? Colors.grey.shade700 : AppColors.border,
-        ),
-      ),
+  Widget _buildFeatureRow(String feature, String free, String premium, bool isDarkMode) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
           Expanded(
-            child: _buildPaymentTypeOption(
-              title: 'Ricorrente',
-              subtitle: 'Si rinnova automaticamente',
-              value: 'recurring',
-              icon: Icons.refresh,
-              isDarkMode: isDarkMode,
+            flex: 2,
+            child: Text(
+              feature,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: isDarkMode ? Colors.white : AppColors.textPrimary,
+              ),
             ),
           ),
           Expanded(
-            child: _buildPaymentTypeOption(
-              title: 'Una tantum',
-              subtitle: '30 giorni, poi scade',
-              value: 'onetime',
-              icon: Icons.payment,
-              isDarkMode: isDarkMode,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentTypeOption({
-    required String title,
-    required String subtitle,
-    required String value,
-    required IconData icon,
-    required bool isDarkMode,
-  }) {
-    final isSelected = _selectedPaymentType == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPaymentType = value;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDarkMode ? Colors.blue.shade700 : AppColors.indigo600)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 20.sp,
-              color: isSelected
-                  ? Colors.white
-                  : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? Colors.white
-                    : (isDarkMode ? Colors.white : AppColors.textPrimary),
-              ),
-            ),
-            Text(
-              subtitle,
+            child: Text(
+              free,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 10.sp,
-                color: isSelected
-                    ? Colors.white.withOpacity(0.8)
-                    : (isDarkMode ? Colors.white70 : AppColors.textSecondary),
+                fontSize: 14.sp,
+                color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Available Plans Section
-  Widget _buildAvailablePlansSection(SubscriptionState subscriptionState, StripeState? stripeState, bool isDarkMode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Premium Plan Card
-        _buildPlanCard(
-          subscriptionState: subscriptionState,
-          stripeState: stripeState,
-          name: 'Premium',
-          price: '€4,99',
-          description: _selectedPaymentType == 'recurring' ? 'al mese' : 'per 30 giorni',
-          features: [
-            'Schede di allenamento illimitate',
-            'Esercizi personalizzati illimitati',
-            'Statistiche avanzate',
-            'Backup cloud',
-            'Nessuna pubblicità',
-          ],
-          isPremium: true,
-          isDarkMode: isDarkMode,
-          onTap: () => _handleSubscriptionPayment(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlanCard({
-    required SubscriptionState subscriptionState,
-    required StripeState? stripeState,
-    required String name,
-    required String price,
-    required String description,
-    required List<String> features,
-    required bool isPremium,
-    required bool isDarkMode,
-    VoidCallback? onTap,
-  }) {
-    bool isActive = false;
-    bool isDisabled = false;
-    String buttonText = 'SOTTOSCRIVI';
-
-    if (subscriptionState is SubscriptionLoaded) {
-      final subscription = subscriptionState.subscription;
-      final userHasPremium = subscription.isPremium && !subscription.isExpired;
-
-      if (isPremium) {
-        isActive = userHasPremium;
-        isDisabled = userHasPremium || _justCompletedPayment;
-        buttonText = userHasPremium ? 'PIANO ATTUALE' : (_justCompletedPayment ? 'IN ATTIVAZIONE' : 'SOTTOSCRIVI');
-      }
-    } else if (_justCompletedPayment && isPremium) {
-      isActive = true;
-      isDisabled = true;
-      buttonText = 'IN ATTIVAZIONE';
-    }
-
-    if (isPremium && stripeState != null) {
-      if (stripeState is StripePaymentLoading || stripeState is StripeInitializing) {
-        isDisabled = true;
-        buttonText = 'PREPARAZIONE...';
-      } else if (stripeState is StripeErrorState && !isActive) {
-        buttonText = 'RIPROVA';
-        isDisabled = false;
-      }
-    }
-
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: 16.h),
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: isPremium && !isDisabled
-              ? (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600)
-              : (isDarkMode ? Colors.grey.shade700 : AppColors.border),
-          width: isPremium && !isDisabled ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+          ),
+          Expanded(
+            child: Text(
+              premium,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.purple.shade400,
+              ),
+            ),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16.r),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16.r),
-          onTap: isDisabled ? null : onTap,
-          child: Padding(
-            padding: EdgeInsets.all(20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          description,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      price,
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 16.h),
-
-                ...features.map((feature) => Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.h),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16.sp,
-                        color: isDarkMode ? Colors.green.shade400 : AppColors.success,
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-
-                SizedBox(height: 20.h),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isDisabled ? null : onTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isActive
-                          ? AppColors.success
-                          : (isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600),
-                      disabledBackgroundColor: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                      foregroundColor: Colors.white,
-                      disabledForegroundColor: isDarkMode ? Colors.white54 : Colors.grey.shade600,
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
-  /// Features Comparison
-  Widget _buildFeaturesComparison(bool isDarkMode) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Confronto funzionalità',
-          style: TextStyle(
-            fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: 16.h),
+  // ============================================================================
+  // HELPERS
+  // ============================================================================
 
-        _buildComparisonTable(isDarkMode),
-      ],
-    );
-  }
-
-  Widget _buildComparisonTable(bool isDarkMode) {
-    final features = [
-      {'name': 'Schede di allenamento', 'free': 'Fino a 3', 'premium': 'Illimitate'},
-      {'name': 'Esercizi personalizzati', 'free': 'Fino a 5', 'premium': 'Illimitati'},
-      {'name': 'Statistiche avanzate', 'free': 'Base', 'premium': 'Dettagliate'},
-      {'name': 'Backup cloud', 'free': '❌', 'premium': '✅'},
-      {'name': 'Nessuna pubblicità', 'free': '❌', 'premium': '✅'},
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isDarkMode ? Colors.grey.shade700 : AppColors.border,
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12.r),
-                topRight: Radius.circular(12.r),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    'Funzionalità',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Gratuito',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Premium',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Features rows
-          ...features.asMap().entries.map((entry) {
-            final index = entry.key;
-            final feature = entry.value;
-            final isLast = index == features.length - 1;
-
-            return Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                border: isLast ? null : Border(
-                  bottom: BorderSide(
-                    color: isDarkMode ? Colors.grey.shade700 : AppColors.border,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      feature['name']!,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      feature['free']!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      feature['premium']!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  /// Handle Subscription Payment - SIMPLIFIED
-  void _handleSubscriptionPayment() {
-    if (_isProcessingPayment || _paymentSheetOpened) {
-      print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Payment already in progress, ignoring');
-      return;
-    }
-
-    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting payment process for $_selectedPaymentType');
-
-    // 🚀 SIMPLIFIED: Direct initialization and payment creation
-    final stripeBloc = context.read<StripeBloc>();
-
-    if (stripeBloc.state is! StripeReady) {
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Initializing Stripe...');
-      _hasTriedInitialization = true;
-      stripeBloc.add(const InitializeStripeEvent());
-
-      // Listen ONCE for Stripe ready, then create payment
-      late StreamSubscription subscription;
-      subscription = stripeBloc.stream.listen((state) {
-        if (state is StripeReady && !_paymentSheetOpened) {
-          subscription.cancel(); // ✅ Cancel listener immediately
-          _createPaymentIntent();
-        } else if (state is StripeErrorState) {
-          subscription.cancel();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Errore inizializzazione: ${state.message}'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      });
-
-      // Auto-cancel after 30 seconds
-      Timer(const Duration(seconds: 30), () {
-        subscription.cancel();
-      });
-    } else {
-      // Stripe already ready, create payment immediately
-      _createPaymentIntent();
-    }
-  }
-
-  void _createPaymentIntent() {
-    // 🚀 FIX: Safe access to subscription plans
-    final subscriptionPlans = StripeConfig.subscriptionPlans;
-
-    if (subscriptionPlans.isEmpty) {
-      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] No subscription plans configured');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore: Piani abbonamento non configurati'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    // Try multiple possible keys for premium plan
-    SubscriptionPlan? selectedPlan;
-
-    // Try common keys
-    final possibleKeys = [
-      'premium_monthly',
-      'premium',
-      'premium_monthly_recurring',
-      'premium_plan',
-    ];
-
-    for (final key in possibleKeys) {
-      selectedPlan = subscriptionPlans[key];
-      if (selectedPlan != null) {
-        print('[CONSOLE][subscription_screen]✅ [SUBSCRIPTION] Found plan with key: $key');
-        break;
-      }
-    }
-
-    // Fallback: take first available plan
-    if (selectedPlan == null && subscriptionPlans.isNotEmpty) {
-      selectedPlan = subscriptionPlans.values.first;
-      print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Using fallback plan: ${selectedPlan.name}');
-    }
-
-    if (selectedPlan == null) {
-      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] No plans available');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore: Nessun piano disponibile'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Creating payment for plan: ${selectedPlan.name} (${selectedPlan.stripePriceId})');
-
-    context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
-      priceId: selectedPlan.stripePriceId,
-      metadata: {
-        'plan_id': selectedPlan.id,
-        'payment_type': _selectedPaymentType,
-        'user_platform': 'flutter',
-        'source': 'subscription_screen',
-      },
-    ));
-  }
-
-  Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
+  String _formatDate(String dateString) {
     try {
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Presenting Payment Sheet (SINGLE CALL)...');
-
-      // 🚀 REMOVED: SnackBar che potrebbe causare conflitti
-      // Directly present payment sheet without intermediary UI
-
-      context.read<StripeBloc>().add(ProcessPaymentEvent(
-        clientSecret: state.paymentIntent.clientSecret,
-        paymentType: state.paymentType,
-      ));
-
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
     } catch (e) {
-      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] Error presenting Payment Sheet: $e');
-
-      // Reset flags on error
-      setState(() {
-        _paymentSheetOpened = false;
-        _isProcessingPayment = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Errore apertura pagamento: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      return dateString; // Fallback se il parsing fallisce
     }
   }
 }
