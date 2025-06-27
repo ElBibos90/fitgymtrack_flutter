@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../stats/models/stats_models.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../stats/presentation/widgets/stats_card.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class PremiumStatsSection extends StatelessWidget {
   final UserStatsResponse userStats;
@@ -323,6 +325,28 @@ class PremiumStatsSection extends StatelessWidget {
 
   Widget _buildChartsSection(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final progressTrends = userStats.userStats.progressTrends;
+
+    // Aggregazione per settimana
+    final Map<String, int> weeklyWorkouts = {};
+    if (progressTrends != null && progressTrends.isNotEmpty) {
+      for (final trend in progressTrends) {
+        final date = DateTime.tryParse(trend.date);
+        if (date == null) continue;
+        // Calcola il lunedì della settimana
+        final weekStart = date.subtract(Duration(days: date.weekday - 1));
+        final weekEnd = weekStart.add(const Duration(days: 6));
+        String weekLabel;
+        try {
+          weekLabel = '${DateFormat('d MMM', 'it').format(weekStart)}-${DateFormat('d MMM', 'it').format(weekEnd)}';
+        } catch (_) {
+          weekLabel = '${DateFormat('d MMM').format(weekStart)}-${DateFormat('d MMM').format(weekEnd)}';
+        }
+        weeklyWorkouts[weekLabel] = (weeklyWorkouts[weekLabel] ?? 0) + trend.workouts;
+      }
+    }
+    final weekLabels = weeklyWorkouts.keys.toList();
+    final weekValues = weeklyWorkouts.values.toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,39 +360,86 @@ class PremiumStatsSection extends StatelessWidget {
           ),
         ),
         SizedBox(height: 12.h),
-
-        // Placeholder per futuri grafici
-        Container(
-          height: 100.h,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
+        if (weeklyWorkouts.isNotEmpty)
+          Container(
+            height: 220.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
+              ),
             ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.trending_up,
-                  color: AppColors.indigo600,
-                  size: 32.sp,
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  'Grafici avanzati in arrivo',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: AppColors.textSecondary,
+            padding: EdgeInsets.all(16.w),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: true, drawVerticalLine: false),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 32),
                   ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= weekLabels.length) return const SizedBox.shrink();
+                        final label = weekLabels[index];
+                        return Text(
+                          label,
+                          style: TextStyle(fontSize: 10.sp, color: AppColors.textSecondary),
+                        );
+                      },
+                      interval: 1,
+                    ),
+                  ),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
-              ],
+                borderData: FlBorderData(show: false),
+                minX: 0,
+                maxX: (weekLabels.length - 1).toDouble(),
+                minY: 0,
+                maxY: weekValues.isNotEmpty ? (weekValues.reduce((a, b) => a > b ? a : b) + 1).toDouble() : 1,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: [
+                      for (int i = 0; i < weekValues.length; i++)
+                        FlSpot(i.toDouble(), weekValues[i].toDouble()),
+                    ],
+                    isCurved: true,
+                    color: AppColors.indigo600,
+                    barWidth: 3,
+                    dotData: FlDotData(show: true),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Container(
+            height: 100.h,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(
+                color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'Dati non disponibili',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ),
           ),
-        ),
+        SizedBox(height: 16.h),
+        // TODO: Implementare altri grafici avanzati (es. volume, peso, distribuzione muscolare)
       ],
     );
   }

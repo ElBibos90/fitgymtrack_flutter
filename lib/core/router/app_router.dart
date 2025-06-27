@@ -24,6 +24,7 @@ import '../../features/payments/presentation/screens/stripe_payment_screen.dart'
 import '../../features/feedback/presentation/screens/feedback_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../shared/widgets/auth_wrapper.dart';
+import '../../features/workouts/presentation/screens/workout_details_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -236,44 +237,8 @@ class AppRouter {
                 ),
               );
             }
-
-            // 🚧 TODO: Implementare WorkoutDetailsScreen
             return AuthWrapper(
-              authenticatedChild: Scaffold(
-                appBar: AppBar(
-                  title: const Text('Dettagli Scheda'),
-                ),
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.construction,
-                        size: 64,
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Schermata in sviluppo',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Dettagli per scheda ID: $workoutId',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => context.go('/workouts'),
-                        child: const Text('Torna alle Schede'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              authenticatedChild: WorkoutDetailsScreen(workoutId: workoutId),
               unauthenticatedChild: const LoginScreen(),
             );
           },
