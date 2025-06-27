@@ -486,7 +486,6 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
   void _onExerciseSelected(ExerciseItem exercise) {
     widget.onExerciseSelected(exercise);
-    Navigator.of(context).pop();
   }
 
   Widget _buildFooter(BuildContext context) {

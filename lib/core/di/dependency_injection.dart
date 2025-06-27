@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import '../services/session_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
+import 'package:flutter/widgets.dart';
 
 // Auth feature
 import '../../features/auth/repository/auth_repository.dart';
@@ -166,6 +167,13 @@ class DependencyInjection {
     }
 
     //print('[CONSOLE] [dependency_injection]✅ [DI] Dependency injection completed successfully!');
+
+    // ============================================================================
+    // ROUTE OBSERVER (per navigazione e refresh automatico)
+    // ============================================================================
+    if (!getIt.isRegistered<RouteObserver<ModalRoute<void>>>()) {
+      getIt.registerLazySingleton<RouteObserver<ModalRoute<void>>>(() => RouteObserver<ModalRoute<void>>());
+    }
 
     // ============================================================================
     // DIAGNOSTIC INFO

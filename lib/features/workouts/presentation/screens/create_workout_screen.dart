@@ -234,38 +234,26 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   // ✅ FIX: Gestione del back navigation super-sicura
   void _handleBackNavigation() {
-    ////print('[CONSOLE] [create_workout_screen]🔄 Handling back navigation');
-
-    // ✅ APPROCCIO SUPER-SICURO: Preserva sempre lo stato delle schede
     final currentState = _workoutBloc.state;
-
-    // Se siamo in uno stato di loading temporaneo per gli esercizi disponibili,
-    // torna al precedente stato stabile delle schede
     if (currentState is AvailableExercisesLoaded && _currentUserId != null) {
-      // Ricarica le schede per tornare allo stato principale
       _workoutBloc.loadWorkoutPlans(_currentUserId!);
-
-      // Aspetta un breve momento e poi torna indietro
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
-          Navigator.of(context).pop();
+          _workoutBloc.resetState();
+          Navigator.of(context).pop(true); // Notifica la schermata precedente
         }
       });
     } else if (currentState is! WorkoutPlansLoaded && _currentUserId != null) {
-      // Se non abbiamo le schede, ricaricale
       _workoutBloc.loadWorkoutPlans(_currentUserId!);
-
-      // Torna indietro dopo il caricamento
-      Future.delayed(const Duration(milliseconds: 200), () {
+      Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
-          Navigator.of(context).pop();
+          _workoutBloc.resetState();
+          Navigator.of(context).pop(true);
         }
       });
     } else {
-      // Se tutto è ok, torna indietro immediatamente
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      _workoutBloc.resetState();
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -703,11 +691,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       );
       return;
     }
-
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     if (_selectedExercises.isEmpty) {
       CustomSnackbar.show(
         context,
@@ -716,12 +702,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       );
       return;
     }
-
     if (_isEditing) {
       _updateWorkout();
     } else {
       _createWorkout();
     }
+    // Dopo il salvataggio, reset bloc e pop
+    _workoutBloc.resetState();
+    context.pop(true);
   }
 
   void _createWorkout() {
@@ -817,6 +805,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   void _onCancel() {
     _workoutBloc.resetState();
-    context.pop();
+    context.pop(true);
   }
 }

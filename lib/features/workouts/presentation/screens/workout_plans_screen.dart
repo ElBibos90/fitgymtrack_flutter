@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -60,7 +61,7 @@ class WorkoutPlansScreen extends StatefulWidget {
   State<WorkoutPlansScreen> createState() => _WorkoutPlansScreenState();
 }
 
-class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
+class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware {
   late WorkoutBloc _workoutBloc;
   late SessionService _sessionService;
 
@@ -82,10 +83,28 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Registra la schermata nel RouteObserver
+    final routeObserver = getIt<RouteObserver<ModalRoute<void>>>();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void dispose() {
     // 🚀 NUOVO: Scollega il controller
     widget.controller?._detachState();
+    // Deregistra dal RouteObserver
+    final routeObserver = getIt<RouteObserver<ModalRoute<void>>>();
+    routeObserver.unsubscribe(this);
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Quando si torna su questa schermata, forza il reload delle schede
+    _loadWorkoutPlans();
+    super.didPopNext();
   }
 
   /// 🚀 METODI PRIVATI chiamati dal controller

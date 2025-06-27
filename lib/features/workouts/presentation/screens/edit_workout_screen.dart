@@ -207,6 +207,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     );
 
     _workoutBloc.updateWorkout(request);
+    _workoutBloc.resetState();
+    context.pop(true);
   }
 
   void _updateExercise(int index, WorkoutExercise updatedExercise) {
@@ -365,7 +367,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   void _onCancel() {
     _workoutBloc.resetState();
-    context.pop();
+    context.pop(true);
   }
 
   @override

@@ -33,6 +33,9 @@ class AppRouter {
     return GoRouter(
       navigatorKey: _rootNavigatorKey,
       initialLocation: '/splash',
+      observers: [
+        getIt<RouteObserver<ModalRoute<void>>>(),
+      ],
       routes: [
         // ============================================================================
         // AUTH ROUTES
