@@ -19,6 +19,7 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
 import '../../../exercises/models/exercises_response.dart';
+import '../../../../shared/widgets/exercise_editor.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
   final int? workoutId; // null per creazione, valorizzato per modifica
@@ -50,6 +51,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   List<ExerciseItem> _availableExercises = [];
   bool _showExerciseDialog = false;
   bool _isLoadingAvailableExercises = false;
+  int? _editIndex;
+  bool _loading = false;
+  String? _error;
 
   @override
   void initState() {
@@ -809,5 +813,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     //print('[CONSOLE] [create_workout_screen]Updating workout - Esercizi count: ${request.esercizi.length}');
 
     _workoutBloc.updateWorkout(request);
+  }
+
+  void _onCancel() {
+    _workoutBloc.resetState();
+    context.pop();
   }
 }

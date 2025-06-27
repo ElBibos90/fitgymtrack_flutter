@@ -19,6 +19,7 @@ import '../../../../core/services/session_service.dart';
 import '../../../exercises/models/exercises_response.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
+import '../../../../shared/widgets/exercise_editor.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
   final int workoutId;
@@ -51,6 +52,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   bool _showExerciseDialog = false;
   bool _isLoadingAvailableExercises = false;
   int? _currentUserId;
+  int? _editIndex;
+  String? _error;
 
   @override
   void initState() {
@@ -63,6 +66,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   @override
   void dispose() {
+    // Reset bloc state se disponibile
+    _workoutBloc.resetState();
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -358,6 +363,11 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     }
   }
 
+  void _onCancel() {
+    _workoutBloc.resetState();
+    context.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -372,7 +382,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           title: 'Modifica Scheda',
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () async => await _onWillPop(), // ✅ Usa il metodo custom anche per l'icona
+            onPressed: _onCancel,
           ),
           actions: [
             if (_hasChanges && !_isLoading)
@@ -643,7 +653,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () => context.pop(),
+            onPressed: _onCancel,
             style: OutlinedButton.styleFrom(
               padding: EdgeInsets.symmetric(vertical: 12.h),
               side: BorderSide(color: colorScheme.outline),

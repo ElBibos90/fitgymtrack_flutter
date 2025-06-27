@@ -6,6 +6,7 @@ import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
 import '../../features/exercises/models/exercises_response.dart';
 import 'create_exercise_dialog.dart';
+import 'exercise_editor.dart';
 
 class ExerciseSelectionDialog extends StatefulWidget {
   final List<ExerciseItem> exercises;
@@ -40,33 +41,14 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
   // ✨ NUOVO STATO per il dialog di creazione
   bool _showCreateExerciseDialog = false;
+  bool _showEditor = false;
 
-  List<ExerciseItem> get _filteredExercises {
-    var filtered = widget.exercises;
+  List<ExerciseItem> _exercises = [];
 
-    // Filtro per nome (ricerca)
-    if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((exercise) =>
-          exercise.nome.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
-    }
-
-    // Filtro per gruppo muscolare
-    if (_selectedMuscleGroup != null && _selectedMuscleGroup!.isNotEmpty) {
-      filtered = filtered.where((exercise) =>
-      exercise.gruppoMuscolare?.toLowerCase() == _selectedMuscleGroup!.toLowerCase()).toList();
-    }
-
-    return filtered;
-  }
-
-  List<String> get _availableMuscleGroups {
-    final groups = widget.exercises
-        .where((exercise) => exercise.gruppoMuscolare != null)
-        .map((exercise) => exercise.gruppoMuscolare!)
-        .toSet()
-        .toList();
-    groups.sort();
-    return groups;
+  @override
+  void initState() {
+    super.initState();
+    _exercises = List.from(widget.exercises);
   }
 
   @override
@@ -78,6 +60,14 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    if (_showEditor) {
+      return ExerciseEditor(
+        isFirst: false,
+        onSave: _addNewExercise,
+        onCancel: () => setState(() => _showEditor = false),
+      );
+    }
 
     return Stack(
       children: [
@@ -539,5 +529,53 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
         ],
       ),
     );
+  }
+
+  List<ExerciseItem> get _filteredExercises {
+    var filtered = _exercises;
+
+    // Filtro per nome (ricerca)
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((exercise) =>
+          exercise.nome.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    }
+
+    // Filtro per gruppo muscolare
+    if (_selectedMuscleGroup != null && _selectedMuscleGroup!.isNotEmpty) {
+      filtered = filtered.where((exercise) =>
+      exercise.gruppoMuscolare?.toLowerCase() == _selectedMuscleGroup!.toLowerCase()).toList();
+    }
+
+    return filtered;
+  }
+
+  List<String> get _availableMuscleGroups {
+    final groups = _exercises
+        .where((exercise) => exercise.gruppoMuscolare != null)
+        .map((exercise) => exercise.gruppoMuscolare!)
+        .toSet()
+        .toList();
+    groups.sort();
+    return groups;
+  }
+
+  void _addNewExercise(Map<String, dynamic> data) {
+    final newItem = ExerciseItem(
+      id: data['id'] ?? 0,
+      nome: data['nome'] ?? '',
+      gruppoMuscolare: data['gruppoMuscolare'],
+      attrezzatura: data['attrezzatura'],
+      descrizione: data['descrizione'],
+      isCustom: true,
+      serieDefault: data['serie'] ?? 3,
+      ripetizioniDefault: data['ripetizioni'] ?? 10,
+      pesoDefault: data['peso'] ?? 20.0,
+      isIsometric: data['isIsometric'] ?? false,
+    );
+    setState(() {
+      _exercises.add(newItem);
+      _showEditor = false;
+    });
+    widget.onExerciseSelected(newItem);
   }
 }

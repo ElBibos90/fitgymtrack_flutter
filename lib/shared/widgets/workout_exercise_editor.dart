@@ -254,11 +254,10 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
             ),
           ),
           // Azioni (move, edit, delete)
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          Wrap(
+            spacing: 4.0,
             children: [
               if (!_isEditing) ...[
-                // Move up
                 if (!widget.isFirst)
                   IconButton(
                     onPressed: widget.onMoveUp,
@@ -267,7 +266,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                       color: colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
-                // Move down
                 if (!widget.isLast)
                   IconButton(
                     onPressed: widget.onMoveDown,
@@ -276,7 +274,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                       color: colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
-                // Edit
                 IconButton(
                   onPressed: () => setState(() => _isEditing = true),
                   icon: Icon(
@@ -284,7 +281,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                   ),
                 ),
-                // Delete
                 IconButton(
                   onPressed: widget.onDelete,
                   icon: Icon(
@@ -293,7 +289,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                   ),
                 ),
               ] else ...[
-                // Save
                 IconButton(
                   onPressed: _saveChanges,
                   icon: Icon(
@@ -301,7 +296,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                     color: Colors.green,
                   ),
                 ),
-                // Cancel
                 IconButton(
                   onPressed: _cancelChanges,
                   icon: Icon(
