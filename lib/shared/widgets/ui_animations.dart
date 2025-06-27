@@ -371,7 +371,7 @@ class _AnimatedButtonState extends State<AnimatedButton>
 
     _colorAnimation = ColorTween(
       begin: widget.backgroundColor ?? Theme.of(context).primaryColor,
-      end: (widget.backgroundColor ?? Theme.of(context).primaryColor).withOpacity(0.8),
+      end: (widget.backgroundColor ?? Theme.of(context).primaryColor).withValues(alpha: 0.8),
     ).animate(_controller);
   }
 
@@ -475,7 +475,7 @@ class _CustomLoadingAnimationState extends State<CustomLoadingAnimation>
                       width: widget.size * 0.15,
                       height: widget.size * 0.15,
                       decoration: BoxDecoration(
-                        color: widget.color.withOpacity(0.8 - (index * 0.2)),
+                        color: widget.color.withValues(alpha: 0.8 - (index * 0.2)),
                         shape: BoxShape.circle,
                       ),
                     ),

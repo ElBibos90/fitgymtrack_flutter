@@ -209,8 +209,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: errorMessage.isNotEmpty ? errorMessage : "Errore sconosciuto"));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -239,8 +239,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: errorMessage));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -264,8 +264,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: response.message));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -290,8 +290,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: response.message));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -308,7 +308,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       onSuccess: (_) {
         emit(const AuthUnauthenticated());
       },
-      onFailure: (error) {
+      onFailure: (exception, message) {
         emit(const AuthUnauthenticated());
       },
     );
@@ -424,8 +424,8 @@ class RegisterBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: errorMessage));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -482,8 +482,8 @@ class PasswordResetBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: response.message));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }
@@ -508,8 +508,8 @@ class PasswordResetBloc extends Bloc<AuthEvent, AuthState> {
           emit(AuthError(message: response.message));
         }
       },
-      onFailure: (error) {
-        emit(AuthError(message: error.message));
+      onFailure: (exception, message) {
+        emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );
   }

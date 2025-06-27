@@ -582,10 +582,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(32.w),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              color: colorScheme.surfaceVariant.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(AppConfig.radiusM),
               border: Border.all(
-                color: colorScheme.outline.withOpacity(0.3),
+                color: colorScheme.outline.withValues(alpha: 0.3),
                 style: BorderStyle.solid,
               ),
             ),
@@ -594,7 +594,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 Icon(
                   Icons.fitness_center,
                   size: 48.sp,
-                  color: colorScheme.onSurface.withOpacity(0.4),
+                  color: colorScheme.onSurface.withValues(alpha: 0.4),
                 ),
                 SizedBox(height: 12.h),
                 Text(
@@ -610,7 +610,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                   'Tocca "Aggiungi" per selezionare degli esercizi',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -713,7 +713,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
               state.message,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),

@@ -20,7 +20,7 @@ class DonationBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -50,7 +50,7 @@ class DonationBanner extends StatelessWidget {
                   'Aiutaci a migliorare FitGymTrack',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -60,7 +60,7 @@ class DonationBanner extends StatelessWidget {
             // 🔧 FIX: Naviga direttamente alla schermata donazione Stripe
             onPressed: () => context.push('/payment/donation'),
             style: TextButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
             ),
             child: Text(

@@ -461,8 +461,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
 
   // 🚀 FASE 4: NUOVA SEZIONE REST-PAUSE UI
   Widget _buildRestPauseSection(ColorScheme colorScheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -630,8 +628,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
   }
 
   Widget _buildSetTypeDropdown(ColorScheme colorScheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return DropdownButtonFormField<String>(
       value: _selectedSetType,
       style: TextStyle(color: colorScheme.onSurface),
@@ -644,7 +640,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConfig.radiusS),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
       ),
       items: const [

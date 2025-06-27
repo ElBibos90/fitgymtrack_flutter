@@ -16,14 +16,14 @@ class PremiumUpgradeBanner extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.indigo600.withOpacity(0.1),
-            AppColors.green600.withOpacity(0.1),
+            AppColors.indigo600.withValues(alpha: 0.1),
+            AppColors.green600.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.indigo600.withOpacity(0.3)),
+        border: Border.all(color: AppColors.indigo600.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

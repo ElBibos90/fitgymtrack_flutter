@@ -135,7 +135,7 @@ class PremiumStatsSection extends StatelessWidget {
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: isDarkMode ? AppColors.border.withOpacity(0.3) : AppColors.border,
+          color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
         ),
       ),
       child: Column(
@@ -211,8 +211,8 @@ class PremiumStatsSection extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: isImprovement
-                      ? AppColors.success.withOpacity(0.1)
-                      : AppColors.error.withOpacity(0.1),
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
@@ -264,7 +264,7 @@ class PremiumStatsSection extends StatelessWidget {
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: isDarkMode ? AppColors.border.withOpacity(0.3) : AppColors.border,
+          color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
         ),
       ),
       child: Column(
@@ -345,7 +345,7 @@ class PremiumStatsSection extends StatelessWidget {
             color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: isDarkMode ? AppColors.border.withOpacity(0.3) : AppColors.border,
+              color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
             ),
           ),
           child: Center(

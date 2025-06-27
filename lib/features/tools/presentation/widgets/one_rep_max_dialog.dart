@@ -115,7 +115,7 @@ class _OneRepMaxDialogState extends State<OneRepMaxDialog> {
           width: 36.w, // 🛡️ FIX: Slightly smaller
           height: 36.w,
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8.r), // 🛡️ FIX: Smaller radius
           ),
           child: Icon(
@@ -374,10 +374,10 @@ class _OneRepMaxDialogState extends State<OneRepMaxDialog> {
       width: double.infinity,
       padding: EdgeInsets.all(14.w), // 🛡️ FIX: Reduced padding
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: Colors.green.withOpacity(0.3),
+          color: Colors.green.withValues(alpha: 0.3),
         ),
       ),
       child: Column(

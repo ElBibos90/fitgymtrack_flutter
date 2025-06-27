@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../theme/app_colors.dart';
+import '../../core/config/app_config.dart';
+
+
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -39,11 +41,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       leading: leading ?? (showBackButton && Navigator.canPop(context)
           ? IconButton(
-        icon: Icon(
-          Icons.arrow_back,
-          color: colorScheme.onSurface, // ✅ DINAMICO!
-          size: 24.sp,
-        ),
+        icon: const Icon(Icons.arrow_back),
         onPressed: onBackPressed ?? () => Navigator.pop(context),
       )
           : null),

@@ -1,8 +1,6 @@
 // 🚀 STEP 4: Sistema completo per gestione dati REST-PAUSE
 // File: lib/shared/widgets/rest_pause_data_manager.dart
 
-import 'package:flutter/material.dart';
-
 /// Dati di una singola micro-serie completata
 class MicroSeriesData {
   final int targetReps;
@@ -182,9 +180,10 @@ class RestPauseDataHelper {
           .where((reps) => reps > 0)
           .toList();
     } catch (e) {
-      print('⚠️ [REST-PAUSE DATA] Error parsing sequence "$sequence": $e');
-      return [];
+      // Gestisci errori di parsing
     }
+
+    return [];
   }
 
   /// Crea RestPauseExecutionData iniziale

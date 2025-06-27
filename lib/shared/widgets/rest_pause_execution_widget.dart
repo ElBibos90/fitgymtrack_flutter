@@ -85,7 +85,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
   late AnimationController _pulseController;
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _progressAnimation;
 
   // ====== TEXT CONTROLLERS ======
   final TextEditingController _repsController = TextEditingController();
@@ -123,10 +122,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
 
     _pulseController.repeat(reverse: true);
@@ -266,7 +261,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
   Widget _buildHeader() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
@@ -315,7 +309,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
   Widget _buildProgressIndicator() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,7 +364,6 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
 
   Widget _buildMicroSeriesUI() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
@@ -379,11 +371,11 @@ class _RestPauseExecutionWidgetState extends State<RestPauseExecutionWidget>
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: isDark
-                ? colorScheme.surface
+                ? Colors.deepPurple.withValues(alpha: 0.1)
                 : Colors.white,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: Colors.deepPurple.withValues(alpha:isDark ? 0.6 : 0.3),
+              color: Colors.deepPurple.withValues(alpha: isDark ? 0.6 : 0.3),
               width: isDark ? 1.5 : 1,
             ),
           ),

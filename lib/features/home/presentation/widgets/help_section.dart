@@ -18,8 +18,8 @@ class HelpSection extends StatelessWidget {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: isDarkMode
-            ? AppColors.surfaceDark.withOpacity(0.5)
-            : AppColors.surfaceLight.withOpacity(0.5),
+            ? AppColors.surfaceDark.withValues(alpha: 0.5)
+            : AppColors.surfaceLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
@@ -176,7 +176,7 @@ class HelpSection extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Column(

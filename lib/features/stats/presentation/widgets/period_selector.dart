@@ -25,7 +25,7 @@ class PeriodSelector extends StatelessWidget {
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: isDarkMode ? AppColors.border.withOpacity(0.3) : AppColors.border,
+          color: isDarkMode ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
         ),
       ),
       child: Row(

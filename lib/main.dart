@@ -16,6 +16,8 @@ import 'shared/theme/app_theme.dart';
 import 'shared/theme/app_colors.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
+import 'core/config/app_config.dart';
+import 'features/payments/services/stripe_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,12 +28,17 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  print('[CONSOLE] [main]🚀 FITGYMTRACK STARTED');
-
-  // 🚀 PERFORMANCE: Initialize dependency injection
+  // Inizializza dependency injection
   await DependencyInjection.init();
 
-  runApp(const FitGymTrackApp());
+  runApp(
+    ScreenUtilInit(
+      designSize: const Size(375, 812),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) => const FitGymTrackApp(),
+    ),
+  );
 }
 
 class FitGymTrackApp extends StatelessWidget {
@@ -39,114 +46,46 @@ class FitGymTrackApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MultiBlocProvider(
-          providers: [
-            // ============================================================================
-            // 🚀 CRITICAL BLOC PROVIDERS - Caricati immediatamente
-            // ============================================================================
-
-            BlocProvider<AuthBloc>(
-              create: (context) {
-                print('[CONSOLE] [main]🔑 Creating AuthBloc - CRITICAL');
-                return getIt<AuthBloc>();
-              },
-            ),
-
-            // ============================================================================
-            // 🔄 ESSENTIAL BLOC PROVIDERS - Caricati subito ma con lazy init
-            // ============================================================================
-
-            BlocProvider<SubscriptionBloc>(
-              create: (context) {
-                print('[CONSOLE] [main]💳 Creating SubscriptionBloc - ESSENTIAL');
-                return getIt<SubscriptionBloc>();
-              },
-            ),
-
-            BlocProvider<WorkoutHistoryBloc>(
-              create: (context) {
-                print('[CONSOLE] [main]📊 Creating WorkoutHistoryBloc - ESSENTIAL');
-                return getIt<WorkoutHistoryBloc>();
-              },
-            ),
-
-            // ============================================================================
-            // ⏳ LAZY BLOC PROVIDERS - Caricati solo quando necessari
-            // ============================================================================
-
-            BlocProvider<RegisterBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo quando si va su register
-              create: (context) {
-                print('[CONSOLE] [main]📝 Creating RegisterBloc - LAZY');
-                return getIt<RegisterBloc>();
-              },
-            ),
-
-            BlocProvider<PasswordResetBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo quando serve reset password
-              create: (context) {
-                print('[CONSOLE] [main]🔄 Creating PasswordResetBloc - LAZY');
-                return getIt<PasswordResetBloc>();
-              },
-            ),
-
-            BlocProvider<WorkoutBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo quando si crea/modifica workout
-              create: (context) {
-                print('[CONSOLE] [main]💪 Creating WorkoutBloc - LAZY');
-                return getIt<WorkoutBloc>();
-              },
-            ),
-
-            BlocProvider<ActiveWorkoutBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo durante allenamento attivo
-              create: (context) {
-                print('[CONSOLE] [main]⚡ Creating ActiveWorkoutBloc - LAZY');
-                return getIt<ActiveWorkoutBloc>();
-              },
-            ),
-
-            BlocProvider<PlateauBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo per analisi avanzate
-              create: (context) {
-                print('[CONSOLE] [main]📈 Creating PlateauBloc - LAZY');
-                return getIt<PlateauBloc>();
-              },
-            ),
-
-            BlocProvider<StripeBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo quando si fa payment
-              create: (context) {
-                print('[CONSOLE] [main]💰 Creating StripeBloc - LAZY');
-                return getIt<StripeBloc>();
-              },
-            ),
-
-            BlocProvider<ProfileBloc>(
-              lazy: true, // 🚀 PERFORMANCE: Solo quando si accede al profilo
-              create: (context) {
-                print('[CONSOLE] [main]👤 Creating ProfileBloc - LAZY');
-                return getIt<ProfileBloc>();
-              },
-            ),
-          ],
-          child: AppCleanup(
-            child: MaterialApp.router(
-              title: 'FitGymTrack',
-              debugShowCheckedModeBanner: false,
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: ThemeMode.system,
-              routerConfig: AppRouter.createRouter(),
-            ),
-          ),
-        );
-      },
+    return MultiBlocProvider(
+      providers: [
+        // 🔑 CRITICAL: AuthBloc - Gestione autenticazione
+        BlocProvider<AuthBloc>(create: (context) => getIt<AuthBloc>()),
+        
+        // 💳 ESSENTIAL: SubscriptionBloc - Gestione abbonamenti
+        BlocProvider<SubscriptionBloc>(create: (context) => getIt<SubscriptionBloc>()),
+        
+        // 📊 ESSENTIAL: WorkoutHistoryBloc - Storico allenamenti
+        BlocProvider<WorkoutHistoryBloc>(create: (context) => getIt<WorkoutHistoryBloc>()),
+        
+        // 📝 LAZY: RegisterBloc - Registrazione utente
+        BlocProvider<RegisterBloc>(create: (context) => getIt<RegisterBloc>()),
+        
+        // 🔄 LAZY: PasswordResetBloc - Reset password
+        BlocProvider<PasswordResetBloc>(create: (context) => getIt<PasswordResetBloc>()),
+        
+        // 💪 LAZY: WorkoutBloc - Gestione workout
+        BlocProvider<WorkoutBloc>(create: (context) => getIt<WorkoutBloc>()),
+        
+        // ⚡ LAZY: ActiveWorkoutBloc - Workout attivo
+        BlocProvider<ActiveWorkoutBloc>(create: (context) => getIt<ActiveWorkoutBloc>()),
+        
+        // 📈 LAZY: PlateauBloc - Rilevamento plateau
+        BlocProvider<PlateauBloc>(create: (context) => getIt<PlateauBloc>()),
+        
+        // 💰 LAZY: StripeBloc - Pagamenti
+        BlocProvider<StripeBloc>(create: (context) => getIt<StripeBloc>()),
+        
+        // 👤 LAZY: ProfileBloc - Profilo utente
+        BlocProvider<ProfileBloc>(create: (context) => getIt<ProfileBloc>()),
+      ],
+      child: MaterialApp.router(
+        title: 'FitGymTrack',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        routerConfig: AppRouter.createRouter(),
+      ),
     );
   }
 }
@@ -227,13 +166,9 @@ class _SplashScreenState extends State<SplashScreen>
   /// 🚀 PERFORMANCE: Preload solo dati critici durante splash
   void _preloadCriticalData() async {
     try {
-      print('[CONSOLE] [splash]🚀 Starting critical data preload...');
-
       // Solo se user è già autenticato, preload subscription
       final authBloc = context.read<AuthBloc>();
       if (authBloc.state is AuthAuthenticated) {
-        print('[CONSOLE] [splash]💳 User authenticated, preloading subscription...');
-
         // Preload subscription in background (non blocca la UI)
         Future.microtask(() {
           context.read<SubscriptionBloc>().add(
@@ -241,10 +176,7 @@ class _SplashScreenState extends State<SplashScreen>
           );
         });
       }
-
-      print('[CONSOLE] [splash]✅ Critical data preload completed');
     } catch (e) {
-      print('[CONSOLE] [splash]❌ Preload error: $e');
       // Non bloccare l'app per errori di preload
     }
   }
@@ -273,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),

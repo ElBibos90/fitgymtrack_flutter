@@ -338,7 +338,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 60.w,
                 height: 60.w,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -374,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _selectedExperience.displayName,
                       style: TextStyle(
                         fontSize: 14.sp,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],

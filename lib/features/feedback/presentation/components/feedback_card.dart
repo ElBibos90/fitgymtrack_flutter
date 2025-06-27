@@ -33,7 +33,7 @@ class FeedbackCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
         side: BorderSide(
-          color: _getStatusColor().withOpacity(0.3),
+          color: _getStatusColor().withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -72,7 +72,7 @@ class FeedbackCard extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: _getTypeColor().withOpacity(0.1),
+            color: _getTypeColor().withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Text(
@@ -115,7 +115,7 @@ class FeedbackCard extends StatelessWidget {
                       vertical: 2.h,
                     ),
                     decoration: BoxDecoration(
-                      color: _getSeverityColor().withOpacity(0.2),
+                      color: _getSeverityColor().withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4.r),
                     ),
                     child: Text(
@@ -272,10 +272,10 @@ class FeedbackCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
+          color: Colors.blue.withValues(alpha: 0.3),
         ),
       ),
       child: Column(

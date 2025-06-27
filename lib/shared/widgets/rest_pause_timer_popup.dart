@@ -49,9 +49,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   late AnimationController _breathController;
 
   late Animation<double> _pulseAnimation;
-  late Animation<double> _progressAnimation;
   late Animation<double> _breathAnimation;
-  late Animation<Color?> _colorAnimation;
 
   @override
   void initState() {
@@ -97,18 +95,9 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
-    );
-
     _breathAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
     );
-
-    _colorAnimation = ColorTween(
-      begin: Colors.orange,
-      end: Colors.deepOrange,
-    ).animate(_pulseController);
 
     // Start animations
     _pulseController.repeat(reverse: true);

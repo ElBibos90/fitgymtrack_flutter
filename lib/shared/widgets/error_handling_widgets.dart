@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../theme/app_colors.dart';
 
 /// Tipi di errori gestiti
 enum ErrorType {
@@ -53,7 +52,7 @@ class ErrorStateWidget extends StatelessWidget {
             width: 80.w,
             height: 80.w,
             decoration: BoxDecoration(
-              color: errorInfo.color.withOpacity(0.1),
+              color: errorInfo.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(40.r),
             ),
             child: icon ?? Icon(
@@ -157,7 +156,6 @@ class ErrorStateWidget extends StatelessWidget {
           color: Colors.blue,
         );
       case ErrorType.unknown:
-      default:
         return _ErrorInfo(
           icon: Icons.error_outline,
           title: 'Qualcosa è Andato Storto',
@@ -207,10 +205,10 @@ class InlineErrorWidget extends StatelessWidget {
       padding: EdgeInsets.all(12.w),
       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: errorColor.withOpacity(0.1),
+        color: errorColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: errorColor.withOpacity(0.3),
+          color: errorColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -237,7 +235,7 @@ class InlineErrorWidget extends StatelessWidget {
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: errorColor.withOpacity(0.2),
+                  color: errorColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
@@ -366,12 +364,15 @@ class AsyncStateWidget<T> extends StatelessWidget {
     }
 
     if (snapshot.hasError) {
-      return errorBuilder?.call(snapshot.error!) ??
-          ErrorStateWidget(
-            errorType: _determineErrorType(snapshot.error!),
-            message: snapshot.error.toString(),
-            onRetry: onRetry,
-          );
+      final error = snapshot.error;
+      if (error != null) {
+        return errorBuilder?.call(error) ??
+            ErrorStateWidget(
+              errorType: _determineErrorType(error),
+              message: error.toString(),
+              onRetry: onRetry,
+            );
+      }
     }
 
     if (!snapshot.hasData) {
@@ -386,7 +387,20 @@ class AsyncStateWidget<T> extends StatelessWidget {
       );
     }
 
-    return dataBuilder(snapshot.data!);
+    final data = snapshot.data;
+    if (data != null) {
+      return dataBuilder(data);
+    }
+
+    return Center(
+      child: Text(
+        emptyMessage ?? 'Nessun dato disponibile',
+        style: TextStyle(
+          fontSize: 16.sp,
+          color: Colors.grey.shade600,
+        ),
+      ),
+    );
   }
 
   ErrorType _determineErrorType(Object error) {
@@ -530,7 +544,6 @@ class NetworkErrorHandler {
       case ErrorType.server:
         return 'Problemi del server. Riprova più tardi.';
       case ErrorType.unknown:
-      default:
         return 'Errore temporaneo. Riprova tra un momento.';
     }
   }

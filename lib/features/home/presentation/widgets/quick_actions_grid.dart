@@ -133,14 +133,14 @@ class QuickActionCard extends StatelessWidget {
               width: 44.w,
               height: 44.w,
               decoration: BoxDecoration(
-                color: action.color.withOpacity(action.isEnabled ? 0.1 : 0.05),
+                color: action.color.withValues(alpha: action.isEnabled ? 0.1 : 0.05),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Icon(
                 action.icon,
                 color: action.isEnabled
                     ? action.color
-                    : action.color.withOpacity(0.4),
+                    : action.color.withValues(alpha: 0.4),
                 size: 24.sp,
               ),
             ),
@@ -169,7 +169,7 @@ class QuickActionCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Text(
@@ -192,8 +192,8 @@ class QuickActionCard extends StatelessWidget {
   Color _getBackgroundColor() {
     if (!action.isEnabled) {
       return isDarkMode
-          ? AppColors.surfaceDark.withOpacity(0.5)
-          : Colors.white.withOpacity(0.5);
+          ? AppColors.surfaceDark.withValues(alpha: 0.5)
+          : Colors.white.withValues(alpha: 0.5);
     }
 
     return isDarkMode ? AppColors.surfaceDark : Colors.white;
@@ -214,7 +214,7 @@ class QuickActionCard extends StatelessWidget {
   List<BoxShadow> _getBoxShadow() {
     return [
       BoxShadow(
-        color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.1),
+        color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.1),
         blurRadius: 8.0,
         offset: const Offset(0, 2),
       ),

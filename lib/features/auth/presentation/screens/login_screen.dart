@@ -118,36 +118,42 @@ class _LoginScreenState extends State<LoginScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(
-                              width: 10.w,
-                              height: 10.w,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF90CAF9)
-                                    : AppColors.indigo600,
-                                shape: BoxShape.circle,
+                            Flexible(
+                              child: Container(
+                                width: 10.w,
+                                height: 10.w,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF90CAF9)
+                                      : AppColors.indigo600,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
                             SizedBox(width: 8.w),
-                            Container(
-                              width: 6.w,
-                              height: 6.w,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF90CAF9)
-                                    : AppColors.indigo600,
-                                shape: BoxShape.circle,
+                            Flexible(
+                              child: Container(
+                                width: 6.w,
+                                height: 6.w,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF90CAF9)
+                                      : AppColors.indigo600,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
                             SizedBox(width: 8.w),
-                            Container(
-                              width: 10.w,
-                              height: 10.w,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF90CAF9)
-                                    : AppColors.indigo600,
-                                shape: BoxShape.circle,
+                            Flexible(
+                              child: Container(
+                                width: 10.w,
+                                height: 10.w,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF90CAF9)
+                                      : AppColors.indigo600,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
                           ],

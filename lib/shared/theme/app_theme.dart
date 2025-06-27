@@ -95,7 +95,6 @@ class AppTheme {
         background: AppColors.backgroundDark,
         error: AppColors.error,
         onSurface: Colors.white,
-        onBackground: Colors.white,
         onPrimary: AppColors.backgroundDark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,

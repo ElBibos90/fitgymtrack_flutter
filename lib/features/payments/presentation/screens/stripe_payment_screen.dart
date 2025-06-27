@@ -12,6 +12,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../bloc/stripe_bloc.dart';
 import '../../models/stripe_models.dart';
 import '../widgets/stripe_widgets.dart';
+import '../../../../shared/widgets/loading_overlay.dart';
 
 /// 🚀 StripePaymentScreen - FIXED: Overlay cleanup for donations
 /// 🔧 FIX: Risolve il problema dell'overlay "nebbia" dopo donazioni
@@ -45,6 +46,8 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
 
   @override
   void dispose() {
+    // 🔧 FIX: Rimuovi overlay se la schermata viene smontata
+    _isPaymentProcessing = false;
     _pageController.dispose();
     super.dispose();
   }
@@ -53,67 +56,71 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        title: Text(
-          widget.paymentType == 'subscription' ? 'Abbonamento Premium' : 'Donazione',
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
+    return LoadingOverlay(
+      isLoading: _isPaymentProcessing,
+      message: 'Elaborazione pagamento...',
+      child: Scaffold(
+        backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
+        appBar: AppBar(
+          title: Text(
+            widget.paymentType == 'subscription' ? 'Abbonamento Premium' : 'Donazione',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDarkMode ? Colors.white : AppColors.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
+          backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+          elevation: 0,
+          leading: IconButton(
             icon: Icon(
-              Icons.help_outline,
+              Icons.arrow_back,
               color: isDarkMode ? Colors.white : AppColors.textPrimary,
             ),
-            onPressed: () => _showHelpDialog(context),
+            onPressed: () => context.pop(),
           ),
-        ],
-      ),
-      body: BlocConsumer<StripeBloc, StripeState>(
-        // 🔧 FIX: Listener corretto per gestire overlay
-        listener: (context, state) {
-          _handleStripeStateChanges(context, state);
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              // Progress indicator per subscription
-              if (widget.paymentType == 'subscription')
-                _buildProgressIndicator(context, state, isDarkMode),
-
-              // Content
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (page) {
-                    setState(() {
-                      _currentPage = page;
-                    });
-                  },
-                  children: [
-                    _buildSelectionPage(context, state, isDarkMode),
-                    _buildPaymentPage(context, state, isDarkMode),
-                    _buildCompletionPage(context, state, isDarkMode),
-                  ],
-                ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.help_outline,
+                color: isDarkMode ? Colors.white : AppColors.textPrimary,
               ),
-            ],
-          );
-        },
+              onPressed: () => _showHelpDialog(context),
+            ),
+          ],
+        ),
+        body: BlocConsumer<StripeBloc, StripeState>(
+          // 🔧 FIX: Listener corretto per gestire overlay
+          listener: (context, state) {
+            _handleStripeStateChanges(context, state);
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                // Progress indicator per subscription
+                if (widget.paymentType == 'subscription')
+                  _buildProgressIndicator(context, state, isDarkMode),
+
+                // Content
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (page) {
+                      setState(() {
+                        _currentPage = page;
+                      });
+                    },
+                    children: [
+                      _buildSelectionPage(context, state, isDarkMode),
+                      _buildPaymentPage(context, state, isDarkMode),
+                      _buildCompletionPage(context, state, isDarkMode),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -154,19 +161,24 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       }
 
     } else if (state is StripePaymentSuccess) {
-      // 🔧 FIX: Cleanup completo overlay e gestisci successo
-      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Payment Success! Cleaning up overlay');
+      print('[CONSOLE][DEBUG] Payment success, removing overlay e forzando pagina 2');
       setState(() {
-        _isPaymentProcessing = false; // Rimuovi overlay
-        _paymentCompleted = true;     // Segna come completato
+        _isPaymentProcessing = false;
+        _paymentCompleted = true;
+        _currentPage = 2;
       });
+      _pageController.jumpToPage(2);
 
-      // Vai alla pagina di completamento
-      _pageController.animateToPage(
-        2, // Pagina di successo
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      // Forza un ulteriore rebuild dopo 100ms
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          print('[CONSOLE][DEBUG] Forzo setState dopo 100ms');
+          setState(() {
+            _isPaymentProcessing = false;
+            _currentPage = 2;
+          });
+        }
+      });
 
       // Mostra messaggio di successo
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,10 +199,15 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
         ),
       );
 
-      // 🔧 FIX: Chiudi la finestra dialog dopo 3 secondi per donazioni
       if (widget.paymentType == 'donation') {
         Future.delayed(const Duration(seconds: 3), () {
           if (context.mounted) {
+            print('[CONSOLE][DEBUG] Forzo jumpToPage(2) e setState nella delayed close');
+            _pageController.jumpToPage(2);
+            setState(() {
+              _isPaymentProcessing = false;
+              _currentPage = 2;
+            });
             Navigator.of(context).pop();
           }
         });
@@ -621,15 +638,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   }
 
   Widget _buildPaymentPage(BuildContext context, StripeState state, bool isDarkMode) {
-    // 🔧 FIX: Mostra overlay di loading se stiamo processando
-    if (_isPaymentProcessing || state is StripePaymentLoading) {
-      return _buildLoadingPage(
-        context,
-        (state is StripePaymentLoading ? state.message : null) ?? 'Preparazione pagamento...',
-        isDarkMode,
-      );
-    }
-
+    // 🔧 FIX: RIMOSSO overlay di loading come pagina del PageView
     if (state is StripePaymentReady) {
       return Padding(
         padding: EdgeInsets.all(24.w),
@@ -768,44 +777,11 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     );
   }
 
-  Widget _buildLoadingPage(BuildContext context, String message, bool isDarkMode) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
-            ),
-          ),
-          SizedBox(height: 24.h),
-          Text(
-            message,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Il sistema di pagamento si aprirà automaticamente',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSecuritySection(BuildContext context, bool isDarkMode) {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.surfaceDark.withOpacity(0.5) : AppColors.surfaceLight.withOpacity(0.5),
+        color: isDarkMode ? AppColors.surfaceDark.withValues(alpha: 0.5) : AppColors.surfaceLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: isDarkMode ? Colors.grey[700]! : AppColors.border,

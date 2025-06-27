@@ -43,9 +43,9 @@ class _AttachmentPickerWidgetState extends State<AttachmentPickerWidget> {
         Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+            color: Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(6.r),
-            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -102,10 +102,10 @@ class _AttachmentPickerWidgetState extends State<AttachmentPickerWidget> {
           Container(
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: AppColors.indigo600.withOpacity(0.1),
+              color: AppColors.indigo600.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(
-                color: AppColors.indigo600.withOpacity(0.3),
+                color: AppColors.indigo600.withValues(alpha: 0.3),
               ),
             ),
             child: Column(

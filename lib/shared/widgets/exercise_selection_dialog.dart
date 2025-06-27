@@ -78,7 +78,6 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Stack(
       children: [
@@ -94,7 +93,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
               borderRadius: BorderRadius.circular(AppConfig.radiusL),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -139,7 +138,6 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
   Widget _buildHeader(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -150,7 +148,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
           topRight: Radius.circular(AppConfig.radiusL),
         ),
         border: Border(
-          bottom: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -176,7 +174,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
               },
               icon: Icon(
                 Icons.add_circle,
-                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 size: 28.sp,
               ),
               tooltip: 'Crea nuovo esercizio',
@@ -188,7 +186,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
             onPressed: widget.onDismissRequest,
             icon: Icon(
               Icons.close,
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
               size: 24.sp,
             ),
           ),
@@ -209,7 +207,6 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
   Widget _buildFilters(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -224,11 +221,11 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
             decoration: InputDecoration(
               hintText: 'Cerca esercizi...',
               hintStyle: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               prefixIcon: Icon(
                 Icons.search,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -238,7 +235,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                 },
                 icon: Icon(
                   Icons.clear,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               )
                   : null,
@@ -248,7 +245,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                borderSide: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
+                borderSide: BorderSide(color: colorScheme.outline),
               ),
             ),
             onChanged: (value) {
@@ -267,7 +264,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
             decoration: InputDecoration(
               labelText: 'Filtra per gruppo muscolare',
               labelStyle: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -307,18 +304,18 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                 },
                 icon: Icon(
                   Icons.add,
-                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 label: Text(
                   'Crea nuovo esercizio',
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
-                    color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   padding: EdgeInsets.symmetric(vertical: 12.h),
                 ),
@@ -349,7 +346,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
             Icon(
               Icons.search_off,
               size: 64.sp,
-              color: colorScheme.onSurface.withOpacity(0.4),
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             SizedBox(height: 16.h),
             Text(
@@ -367,7 +364,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                   : 'Non ci sono esercizi disponibili',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -404,19 +401,18 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
   Widget _buildExerciseItem(BuildContext context, ExerciseItem exercise, bool isSelected) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
       decoration: BoxDecoration(
         color: isSelected
-            ? (isDark ? const Color(0xFF90CAF9).withOpacity(0.1) : AppColors.indigo600.withOpacity(0.1))
+            ? AppColors.indigo600.withValues(alpha: 0.1)
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConfig.radiusM),
         border: Border.all(
           color: isSelected
-              ? (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600)
-              : colorScheme.outline.withOpacity(0.3),
+              ? AppColors.indigo600
+              : colorScheme.outline.withValues(alpha: 0.3),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -428,7 +424,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
             color: isSelected
-                ? (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600)
+                ? AppColors.indigo600
                 : colorScheme.onSurface,
           ),
         ),
@@ -441,7 +437,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                 exercise.gruppoMuscolare!,
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -453,14 +449,14 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                   Icon(
                     Icons.fitness_center,
                     size: 12.sp,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   SizedBox(width: 4.w),
                   Text(
                     exercise.attrezzatura!,
                     style: TextStyle(
                       fontSize: 11.sp,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -472,7 +468,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                 exercise.descrizione!,
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -483,25 +479,28 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
         trailing: isSelected
             ? Icon(
           Icons.check_circle,
-          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+          color: AppColors.indigo600,
           size: 24.sp,
         )
             : Icon(
           Icons.add_circle_outline,
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
           size: 24.sp,
         ),
         onTap: isSelected ? null : () {
-          print('[CONSOLE] [exercise_selection_dialog]Selected exercise: ${exercise.nome}');
-          widget.onExerciseSelected(exercise);
+          _onExerciseSelected(exercise);
         },
       ),
     );
   }
 
+  void _onExerciseSelected(ExerciseItem exercise) {
+    widget.onExerciseSelected(exercise);
+    Navigator.of(context).pop();
+  }
+
   Widget _buildFooter(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -512,7 +511,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
           bottomRight: Radius.circular(AppConfig.radiusL),
         ),
         border: Border(
-          top: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -522,7 +521,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
               '${_filteredExercises.length} esercizi trovati',
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -532,7 +531,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
               'Chiudi',
               style: TextStyle(
                 fontSize: 16.sp,
-                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                color: AppColors.indigo600,
                 fontWeight: FontWeight.w600,
               ),
             ),

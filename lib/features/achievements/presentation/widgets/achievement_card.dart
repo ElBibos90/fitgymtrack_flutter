@@ -35,13 +35,13 @@ class AchievementCard extends StatelessWidget {
           border: _getBorder(),
           boxShadow: achievement.isUnlocked ? [
             BoxShadow(
-              color: achievement.color.withOpacity(0.2),
+              color: achievement.color.withValues(alpha: 0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ] : [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -94,11 +94,11 @@ class AchievementCard extends StatelessWidget {
       height: compact ? 40.w : 48.w,
       decoration: BoxDecoration(
         color: achievement.isUnlocked
-            ? achievement.color.withOpacity(0.2)
-            : Colors.grey.withOpacity(0.1),
+            ? achievement.color.withValues(alpha: 0.2)
+            : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: achievement.isUnlocked
-            ? Border.all(color: achievement.color.withOpacity(0.3))
+            ? Border.all(color: achievement.color.withValues(alpha: 0.3))
             : null,
       ),
       child: Stack(
@@ -117,7 +117,7 @@ class AchievementCard extends StatelessWidget {
           if (!achievement.isUnlocked)
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12.r),
               ),
             ),
@@ -257,13 +257,13 @@ class AchievementCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: achievement.isUnlocked
-            ? achievement.color.withOpacity(0.1)
-            : Colors.grey.withOpacity(0.1),
+            ? achievement.color.withValues(alpha: 0.1)
+            : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: achievement.isUnlocked
-              ? achievement.color.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.3),
+              ? achievement.color.withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -334,20 +334,20 @@ class AchievementCard extends StatelessWidget {
     }
 
     return isDarkMode
-        ? AppColors.surfaceDark.withOpacity(0.7)
+        ? AppColors.surfaceDark.withValues(alpha: 0.7)
         : Colors.grey.shade50;
   }
 
   Border? _getBorder() {
     if (achievement.isUnlocked) {
       return Border.all(
-        color: achievement.color.withOpacity(0.3),
+        color: achievement.color.withValues(alpha: 0.3),
         width: 1,
       );
     }
 
     return Border.all(
-      color: Colors.grey.withOpacity(0.2),
+      color: Colors.grey.withValues(alpha: 0.2),
       width: 1,
     );
   }
@@ -395,7 +395,7 @@ class _AchievementDetailsDialog extends StatelessWidget {
             width: 40.w,
             height: 40.w,
             decoration: BoxDecoration(
-              color: achievement.color.withOpacity(0.1),
+              color: achievement.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10.r),
             ),
             child: Icon(
@@ -477,9 +477,9 @@ class _AchievementDetailsDialog extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -505,9 +505,9 @@ class _AchievementDetailsDialog extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: achievement.color.withOpacity(0.1),
+                color: achievement.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: achievement.color.withOpacity(0.3)),
+                border: Border.all(color: achievement.color.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

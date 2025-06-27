@@ -141,13 +141,13 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -174,7 +174,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     '${_stats!.totalPoints} punti totali',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -183,7 +183,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 width: 60.w,
                 height: 60.w,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(30.r),
                 ),
                 child: Icon(
@@ -210,7 +210,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               Container(
                 width: 1,
                 height: 30.h,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 margin: EdgeInsets.symmetric(horizontal: 16.w),
               ),
               Expanded(
@@ -223,7 +223,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               Container(
                 width: 1,
                 height: 30.h,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 margin: EdgeInsets.symmetric(horizontal: 16.w),
               ),
               Expanded(
@@ -246,13 +246,13 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 'Progresso verso livello ${_stats!.userLevel + 1}',
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
               SizedBox(height: 4.h),
               LinearProgressIndicator(
                 value: _stats!.levelProgress,
-                backgroundColor: Colors.white.withOpacity(0.3),
+                backgroundColor: Colors.white.withValues(alpha: 0.3),
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ],
@@ -268,7 +268,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         Icon(
           icon,
           size: 20.sp,
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         SizedBox(height: 4.h),
         Text(
@@ -283,7 +283,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           label,
           style: TextStyle(
             fontSize: 10.sp,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
           textAlign: TextAlign.center,
         ),
@@ -382,10 +382,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             padding: EdgeInsets.all(16.w),
             margin: EdgeInsets.only(bottom: 16.h),
             decoration: BoxDecoration(
-              color: category.color.withOpacity(0.1),
+              color: category.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.r),
               border: Border.all(
-                color: category.color.withOpacity(0.3),
+                color: category.color.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -412,7 +412,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         category.description,
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: category.color.withOpacity(0.8),
+                          color: category.color.withValues(alpha: 0.8),
                         ),
                       ),
                     ],

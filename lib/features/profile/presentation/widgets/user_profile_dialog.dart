@@ -167,7 +167,7 @@ class _UserProfileDialogState extends State<UserProfileDialog> {
           width: 36.w,
           height: 36.w,
           decoration: BoxDecoration(
-            color: AppColors.indigo600.withOpacity(0.1),
+            color: AppColors.indigo600.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Icon(
@@ -341,10 +341,10 @@ class _UserProfileDialogState extends State<UserProfileDialog> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.indigo600.withOpacity(0.1),
+        color: AppColors.indigo600.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.indigo600.withOpacity(0.3),
+          color: AppColors.indigo600.withValues(alpha: 0.3),
         ),
       ),
       child: Row(

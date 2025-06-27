@@ -3,11 +3,21 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/session_service.dart';
+import '../../../core/utils/result.dart';
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import '../models/register_request.dart';
 import '../models/register_response.dart';
 import '../models/password_reset_models.dart';
+
+class AuthException implements Exception {
+  final String message;
+
+  AuthException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 class AuthRepository {
   final ApiClient _apiClient;
@@ -39,7 +49,7 @@ class AuthRepository {
       return Result.success(response);
     } catch (e) {
       ////print('[CONSOLE] [auth_repository]Errore login: ${e.toString()}');
-      return Result.failure(_handleApiError(e));
+      return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
@@ -68,7 +78,7 @@ class AuthRepository {
         return Result.success(errorResponse);
       } else {
         ////print('[CONSOLE] [auth_repository]Errore registrazione: ${e.toString()}');
-        return Result.failure(_handleApiError(e));
+        return Result.error(_handleApiError(e).toString(), _handleApiError(e));
       }
     }
   }
@@ -119,7 +129,7 @@ class AuthRepository {
       }
     } catch (e) {
       ////print('[CONSOLE] [auth_repository]Errore richiesta reset password: ${e.toString()}');
-      return Result.failure(_handleApiError(e));
+      return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
@@ -173,7 +183,7 @@ class AuthRepository {
       }
     } catch (e) {
       //print('[CONSOLE] [auth_repository]Errore conferma reset password: ${e.toString()}');
-      return Result.failure(_handleApiError(e));
+      return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
@@ -182,7 +192,7 @@ class AuthRepository {
       await sessionService.clearSession();
       return Result.success(null);
     } catch (e) {
-      return Result.failure(AuthException('Errore durante il logout: ${e.toString()}'));
+      return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
@@ -228,37 +238,4 @@ class AuthRepository {
 
     return AuthException(error.toString());
   }
-}
-
-class Result<T> {
-  final T? data;
-  final AuthException? error;
-  final bool isSuccess;
-
-  Result._(this.data, this.error, this.isSuccess);
-
-  factory Result.success(T data) => Result._(data, null, true);
-  factory Result.failure(AuthException error) => Result._(null, error, false);
-
-  R fold<R>({
-    required R Function(T data) onSuccess,
-    required R Function(AuthException error) onFailure,
-  }) {
-    if (isSuccess && data != null) {
-      return onSuccess(data as T);
-    } else if (error != null) {
-      return onFailure(error!);
-    } else {
-      return onFailure(AuthException('Stato risultato sconosciuto'));
-    }
-  }
-}
-
-class AuthException implements Exception {
-  final String message;
-
-  AuthException(this.message);
-
-  @override
-  String toString() => message;
 }

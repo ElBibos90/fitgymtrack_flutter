@@ -36,7 +36,7 @@ class GreetingSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -65,7 +65,7 @@ class GreetingSection extends StatelessWidget {
                           DashboardService.getMotivationalMessage(),
                           style: TextStyle(
                             fontSize: 14.sp,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             height: 1.3,
                           ),
                         ),
@@ -78,7 +78,7 @@ class GreetingSection extends StatelessWidget {
                     width: 50.w,
                     height: 50.w,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(
@@ -182,7 +182,7 @@ class GreetingSection extends StatelessWidget {
             Container(
               width: 1,
               height: 30.h,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               margin: EdgeInsets.symmetric(horizontal: 16.w),
             ),
 
@@ -226,7 +226,7 @@ class GreetingSection extends StatelessWidget {
         Icon(
           icon,
           size: 16.sp,
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
         ),
         SizedBox(width: 6.w),
         Flexible(
@@ -237,7 +237,7 @@ class GreetingSection extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -277,10 +277,10 @@ class CompactGreetingSection extends StatelessWidget {
           margin: EdgeInsets.symmetric(horizontal: 20.w),
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
             ),
           ),
           child: Row(

@@ -85,7 +85,7 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
               _buildBody(context, state),
               if (state is FeedbackSubmitting)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   child: const Center(
                     child: CircularProgressIndicator(),
                   ),
@@ -139,10 +139,10 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.indigo600.withOpacity(0.1),
+        color: AppColors.indigo600.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: AppColors.indigo600.withOpacity(0.2),
+          color: AppColors.indigo600.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -170,7 +170,7 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
           Text(
             'Aiutaci a migliorare l\'app condividendo le tue idee, segnalando problemi o lasciando suggerimenti.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -442,10 +442,10 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: Colors.green.withOpacity(0.3),
+          color: Colors.green.withValues(alpha: 0.3),
         ),
       ),
       child: Row(

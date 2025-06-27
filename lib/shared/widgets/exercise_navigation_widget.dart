@@ -362,7 +362,7 @@ class ExerciseNavigationWidget extends StatelessWidget {
             final index = entry.key;
             final exercise = entry.value;
             return _buildExerciseItem(context, exercise, index);
-          }).toList(),
+          }),
         ],
       ),
     );

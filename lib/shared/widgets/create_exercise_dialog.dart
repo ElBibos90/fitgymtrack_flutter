@@ -84,7 +84,6 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -99,7 +98,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           borderRadius: BorderRadius.circular(AppConfig.radiusL),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -133,7 +132,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           topRight: Radius.circular(AppConfig.radiusL),
         ),
         border: Border(
-          bottom: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -158,7 +157,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
             onPressed: widget.onDismiss,
             icon: Icon(
               Icons.close,
-              color: colorScheme.onSurface.withOpacity(0.6),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
               size: 24.sp,
             ),
           ),
@@ -203,7 +202,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
               decoration: InputDecoration(
                 labelText: 'Gruppo Muscolare *',
                 labelStyle: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -240,7 +239,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
               decoration: InputDecoration(
                 labelText: 'Attrezzatura',
                 labelStyle: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -269,7 +268,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
             // Checkbox isometrico
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
               ),
               child: CheckboxListTile(
@@ -284,7 +283,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   'Spunta se è un esercizio a tempo fisso (es. plank)',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 value: _isIsometric,
@@ -313,10 +312,10 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(AppConfig.radiusS),
                 border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -333,7 +332,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                       'I campi contrassegnati con * sono obbligatori. L\'esercizio creato sarà disponibile solo per te.',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: colorScheme.onSurface.withOpacity(0.7),
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -359,7 +358,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           bottomRight: Radius.circular(AppConfig.radiusL),
         ),
         border: Border(
-          top: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+          top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
         ),
       ),
       child: Row(
@@ -447,13 +446,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       // Rimuovi campi null
       requestData.removeWhere((key, value) => value == null);
 
-      print('[CONSOLE] [create_exercise_dialog]Sending corrected request: $requestData');
-
       // Chiama l'API custom_exercise_standalone.php
       final apiClient = getIt<ApiClient>();
       final response = await apiClient.createCustomExercise(requestData);
-
-      print('[CONSOLE] [create_exercise_dialog]API Response: $response');
 
       if (response != null && response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
@@ -499,8 +494,6 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
         throw Exception('Formato risposta non valido');
       }
     } catch (e) {
-      print('[CONSOLE] [create_exercise_dialog]Error: $e');
-
       if (mounted) {
         String errorMessage = 'Errore durante la creazione dell\'esercizio';
 

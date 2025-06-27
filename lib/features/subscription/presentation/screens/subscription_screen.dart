@@ -17,6 +17,7 @@ import '../widgets/subscription_widgets.dart';
 // Feature imports - payments
 import '../../../payments/bloc/stripe_bloc.dart';
 import '../../../payments/models/stripe_models.dart';
+import '../../../../core/config/stripe_config.dart';
 
 /// 🚀 SubscriptionScreen - FIXED: Overlay Loading Cleanup
 /// 🔧 FIX: Risolve il problema dell'overlay "nebbia" dopo pagamenti
@@ -38,10 +39,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     // Carica subscription al primo avvio
     context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
+    
+    // 🔧 FIX: Ascolta aggiornamenti del bloc Stripe per ricaricare subscription
+    context.read<StripeBloc>().stream.listen((stripeState) {
+      if (stripeState is StripePaymentSuccess && stripeState.paymentType == 'subscription') {
+        print('[CONSOLE][DEBUG] SubscriptionScreen: Payment success, reloading subscription');
+        // Ricarica subscription dopo pagamento riuscito
+        context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(
+          checkExpired: false,
+          forceRefresh: true,
+        ));
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print('[CONSOLE][DEBUG] SubscriptionScreen didChangeDependencies');
+    setState(() {
+      print('[CONSOLE][DEBUG] Forzo _isPaymentProcessing = false in didChangeDependencies');
+      _isPaymentProcessing = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    print('[CONSOLE][DEBUG] SubscriptionScreen build, _isPaymentProcessing=$_isPaymentProcessing');
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -123,97 +147,82 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // ============================================================================
 
   void _handleStripeStateChanges(BuildContext context, StripeState state) {
-    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe state changed: ${state.runtimeType}');
-
+    print('[CONSOLE][DEBUG] SubscriptionScreen _handleStripeStateChanges: ${state.runtimeType}');
+    
     if (state is StripePaymentLoading) {
       // 🔧 FIX: Attiva overlay quando inizia il processing
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Loading - showing overlay');
+      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = true');
       setState(() {
         _isPaymentProcessing = true;
-        _justCompletedPayment = false; // Reset flag successo
       });
-
     } else if (state is StripePaymentReady) {
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Ready - opening Payment Sheet');
+      // 🔧 FIX: Avvia automaticamente il Payment Sheet per subscription
+      print('[CONSOLE][DEBUG] SubscriptionScreen: Payment Ready - opening Payment Sheet');
       _presentPaymentSheet(context, state);
-
+      
     } else if (state is StripePaymentSuccess) {
-      // 🔧 FIX: Cleanup completo overlay e attiva banner successo
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Payment Success! Cleaning up overlay');
+      // 🔧 FIX: Rimuovi overlay quando il pagamento va a buon fine
+      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = false (SUCCESS)');
       setState(() {
-        _isPaymentProcessing = false; // Rimuovi overlay
-        _justCompletedPayment = true;  // Mostra banner successo
+        _isPaymentProcessing = false;
+        _justCompletedPayment = true;
       });
-
+      
+      // Forza un ulteriore reset dopo 500ms per sicurezza
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          print('[CONSOLE][DEBUG] SubscriptionScreen: Forcing _isPaymentProcessing = false after 500ms');
+          setState(() {
+            _isPaymentProcessing = false;
+          });
+        }
+      });
+      
+      // Mostra messaggio di successo
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(Icons.check_circle, color: Colors.white),
               SizedBox(width: 8),
-              Expanded(child: Text(state.message)),
+              Expanded(
+                child: Text(
+                  'Pagamento completato con successo!',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ],
           ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          duration: Duration(seconds: 4),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
-
-      // 🔧 FIX: Reload subscription after successful payment
-      context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
-
-      // 🔧 FIX: Rimuovi banner successo dopo 5 secondi
-      Future.delayed(Duration(seconds: 5), () {
-        if (mounted) {
-          setState(() {
-            _justCompletedPayment = false;
-          });
-        }
-      });
-
     } else if (state is StripeErrorState) {
-      // 🔧 FIX: Cleanup overlay anche in caso di errore
-      print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Stripe Error: ${state.message}');
+      // 🔧 FIX: Rimuovi overlay in caso di errore
+      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = false (ERROR)');
       setState(() {
-        _isPaymentProcessing = false; // Rimuovi overlay
-        _justCompletedPayment = false; // Non mostrare banner successo
+        _isPaymentProcessing = false;
       });
-
-      if (_justCompletedPayment && state.message.contains('caricamento subscription')) {
-        print('[CONSOLE][subscription_screen]⚠️ [SUBSCRIPTION] Ignoring subscription loading error after successful payment');
-        return;
-      }
-
+      
+      // Mostra messaggio di errore
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error_outline, color: Colors.white),
+              Icon(Icons.error, color: Colors.white),
               SizedBox(width: 8),
-              Expanded(child: Text(state.message)),
+              Expanded(
+                child: Text(
+                  'Errore durante il pagamento: ${state.message}',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
             ],
           ),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          duration: Duration(seconds: 5),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
         ),
       );
-
-    } else {
-      // 🔧 FIX: Per qualsiasi altro stato, assicurati che l'overlay sia rimosso
-      if (_isPaymentProcessing) {
-        print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Unknown state, cleaning up overlay');
-        setState(() {
-          _isPaymentProcessing = false;
-        });
-      }
     }
   }
 
@@ -249,19 +258,61 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // SUBSCRIPTION ACTIONS
   // ============================================================================
 
-  void _subscribeToPremium(BuildContext context) {
-    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting Premium subscription...');
+  void _subscribeToPremium(BuildContext context, {bool isRecurring = true}) {
+    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting Premium subscription (recurring: $isRecurring)...');
 
-    // Usa il vero priceId dal config
-    const premiumPriceId = 'price_1RXVOfHHtQGHyul9qMGFmpmO'; // Real price ID dal config
+    // 🔧 FIX: Usa i piani configurati invece di priceId hardcoded
+    final plan = isRecurring 
+        ? StripeConfig.recurringPlan 
+        : StripeConfig.onetimePlan;
 
     context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
-      priceId: premiumPriceId,
+      priceId: plan.stripePriceId,
       metadata: {
         'source': 'subscription_screen',
-        'plan': 'premium_monthly',
+        'plan': plan.id,
+        'payment_type': plan.paymentType,
+        'is_recurring': plan.isRecurring.toString(),
       },
     ));
+  }
+
+  void _showPlanSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Scegli il tuo piano'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.repeat, color: Colors.blue),
+              title: Text('Abbonamento Ricorrente'),
+              subtitle: Text('€4.99/mese - Si rinnova automaticamente'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _subscribeToPremium(context, isRecurring: true);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.access_time, color: Colors.green),
+              title: Text('Accesso Una Tantum'),
+              subtitle: Text('€4.99 - 30 giorni senza rinnovo'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _subscribeToPremium(context, isRecurring: false);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annulla'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ============================================================================
@@ -278,7 +329,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
-          color: AppColors.info.withOpacity(0.3),
+          color: AppColors.info.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -320,7 +371,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       margin: EdgeInsets.only(bottom: 24.h),
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.success.withOpacity(0.2) : AppColors.success.withOpacity(0.1),
+        color: isDarkMode ? AppColors.success.withValues(alpha: 0.2) : AppColors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: AppColors.success),
       ),
@@ -329,7 +380,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.2),
+              color: AppColors.success.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -574,8 +625,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDarkMode
-              ? [Colors.indigo.withOpacity(0.2), Colors.purple.withOpacity(0.1)]
-              : [Colors.indigo.withOpacity(0.1), Colors.purple.withOpacity(0.05)],
+              ? [Colors.indigo.withValues(alpha: 0.2), Colors.purple.withValues(alpha: 0.1)]
+              : [Colors.indigo.withValues(alpha: 0.1), Colors.purple.withValues(alpha: 0.05)],
         ),
       ),
       child: Column(
@@ -645,7 +696,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             width: double.infinity,
             height: 48.h,
             child: ElevatedButton(
-              onPressed: isLoading ? null : () => _subscribeToPremium(context),
+              onPressed: isLoading ? null : () => _showPlanSelectionDialog(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: isDarkMode ? const Color(0xFF90CAF9) : AppColors.indigo600,
                 foregroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -665,7 +716,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 ),
               )
                   : Text(
-                'Inizia abbonamento Premium',
+                'Scegli il tuo piano',
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
@@ -712,7 +763,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16.sp,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           SizedBox(height: 16.h),

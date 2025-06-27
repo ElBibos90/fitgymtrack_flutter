@@ -374,10 +374,10 @@ class _CustomShimmerState extends State<_CustomShimmer>
 /// 🚀 PERFORMANCE: Extension per colori shimmer ottimizzati
 extension AppColorsShimmer on AppColors {
   static Color get shimmerBase =>
-      AppColors.surfaceLight.withOpacity(0.3);
+      AppColors.surfaceLight.withValues(alpha: 0.3);
 
   static Color get shimmerHighlight =>
-      AppColors.surfaceLight.withOpacity(0.1);
+      AppColors.surfaceLight.withValues(alpha: 0.1);
 }
 
 // ============================================================================

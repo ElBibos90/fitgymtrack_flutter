@@ -372,7 +372,7 @@ class StripeService {
 
           // 🔧 FIX: Gestione intelligente degli errori del Payment Sheet
           if (e is StripeException) {
-            final errorInfo = handleStripeException(e);
+            final errorInfo = _handleStripeError(e);
             throw Exception(errorInfo['user_message'] ?? errorInfo['message']);
           }
 
@@ -396,7 +396,7 @@ class StripeService {
         // ============================================================================
 
         if (e is StripeException) {
-          final errorInfo = handleStripeException(e);
+          final errorInfo = _handleStripeError(e);
           throw Exception(errorInfo['user_message'] ?? errorInfo['message']);
         }
 
@@ -484,26 +484,15 @@ class StripeService {
   // GOOGLE PAY / APPLE PAY OPERATIONS (unchanged)
   // ============================================================================
 
-  /// Verifica se Google Pay è disponibile (unchanged)
+  /// Verifica se Google Pay è supportato (updated to use new API)
   static Future<Result<bool>> isGooglePaySupported() async {
-    if (!_isInitialized) {
-      final initResult = await initialize();
-      if (initResult.isFailure) {
-        return Result.success(false); // Non è un errore critico
-      }
+    try {
+      // 🔧 FIX: Aggiornato da isGooglePaySupported a isPlatformPaySupported
+      final isSupported = await Stripe.instance.isPlatformPaySupported();
+      return Result.success(isSupported);
+    } catch (e) {
+      return Result.error('Failed to check Google Pay support: $e');
     }
-
-    return Result.tryCallAsync(() async {
-      final isSupported = await Stripe.instance.isGooglePaySupported(
-        const IsGooglePaySupportedParams(
-          testEnv: true, // Usa sempre test per ora
-        ),
-      );
-
-      //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Google Pay supported: $isSupported');
-
-      return isSupported;
-    });
   }
 
   /// Presenta Google Pay (unchanged)
@@ -579,55 +568,50 @@ class StripeService {
     );
   }
 
-  /// Gestisce gli errori Stripe con messaggi user-friendly migliorati (unchanged)
-  static Map<String, dynamic> handleStripeException(StripeException exception) {
-    //print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Stripe exception: ${exception.error}');
-
+  /// Gestisce errori Stripe con mapping completo (unchanged)
+  static Map<String, dynamic> _handleStripeError(StripeException exception) {
     final error = exception.error;
-    String userMessage = 'Si è verificato un errore durante il pagamento.';
+    String userMessage = 'Si è verificato un errore durante il pagamento. Riprova.';
 
-    // Traduci errori comuni in messaggi user-friendly
     switch (error.code) {
       case 'card_declined':
-        userMessage = 'Carta rifiutata. Controlla i dati o usa un altro metodo di pagamento.';
-        break;
-      case 'insufficient_funds':
-        userMessage = 'Fondi insufficienti sulla carta.';
+        userMessage = 'Carta rifiutata. Verifica i dati o contatta la tua banca.';
         break;
       case 'expired_card':
-        userMessage = 'Carta scaduta.';
+        userMessage = 'Carta scaduta. Inserisci una carta valida.';
         break;
       case 'incorrect_cvc':
-        userMessage = 'Codice di sicurezza (CVC) non valido.';
+        userMessage = 'Codice CVC non corretto. Verifica e riprova.';
         break;
       case 'incorrect_number':
-        userMessage = 'Numero di carta non valido.';
+        userMessage = 'Numero carta non valido. Verifica e riprova.';
         break;
       case 'invalid_expiry_month':
+        userMessage = 'Mese di scadenza non valido.';
+        break;
       case 'invalid_expiry_year':
-        userMessage = 'Data di scadenza non valida.';
+        userMessage = 'Anno di scadenza non valido.';
+        break;
+      case 'invalid_cvc':
+        userMessage = 'Codice CVC non valido.';
         break;
       case 'processing_error':
-        userMessage = 'Errore durante l\'elaborazione. Riprova tra qualche minuto.';
+        userMessage = 'Errore di elaborazione. Riprova più tardi.';
+        break;
+      case 'rate_limit':
+        userMessage = 'Troppi tentativi. Riprova più tardi.';
         break;
       case 'authentication_required':
         userMessage = 'Autenticazione richiesta. Completa la verifica 3D Secure.';
         break;
-      case 'canceled':
-        userMessage = 'Pagamento annullato dall\'utente.';
+      case 'insufficient_funds':
+        userMessage = 'Fondi insufficienti sulla carta.';
         break;
-      case 'generic_decline':
-        userMessage = 'Pagamento rifiutato. Contatta la tua banca per maggiori informazioni.';
+      case 'currency_not_supported':
+        userMessage = 'Valuta non supportata per questa carta.';
         break;
-      case 'lost_card':
-      case 'stolen_card':
-        userMessage = 'Carta bloccata. Contatta la tua banca.';
-        break;
-      case 'merchant_blacklist':
-        userMessage = 'Pagamento non autorizzato. Contatta il supporto.';
-        break;
-      case 'pickup_card':
-        userMessage = 'Carta ritirata. Contatta la tua banca.';
+      case 'card_not_supported':
+        userMessage = 'Tipo di carta non supportato.';
         break;
       case 'restricted_card':
         userMessage = 'Carta con restrizioni. Contatta la tua banca.';
@@ -672,8 +656,6 @@ class StripeService {
 
   /// Force re-initialization con reset completo e recovery (unchanged)
   static Future<Result<bool>> forceReinitialize() async {
-    //print('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Forcing complete re-initialization...');
-
     _isInitialized = false;
     _lastError = null;
     _initAttempts = 0;
@@ -706,9 +688,7 @@ class StripeService {
     if (_isInitialized) {
       try {
         // Test Google Pay support come proxy per verifica SDK
-        final gpaySupported = await Stripe.instance.isGooglePaySupported(
-          const IsGooglePaySupportedParams(),
-        );
+        final gpaySupported = await Stripe.instance.isPlatformPaySupported();
         health['sdk_responsive'] = true;
         health['google_pay_supported'] = gpaySupported;
       } catch (e) {
@@ -718,8 +698,10 @@ class StripeService {
 
       // Test configurazione avanzata
       try {
-        health['stripe_publishable_key'] = Stripe.publishableKey?.isNotEmpty ?? false;
-        health['stripe_merchant_id'] = Stripe.merchantIdentifier?.isNotEmpty ?? false;
+        final publishableKey = Stripe.publishableKey;
+        final merchantId = Stripe.merchantIdentifier;
+        health['stripe_publishable_key'] = publishableKey != null && publishableKey.isNotEmpty;
+        health['stripe_merchant_id'] = merchantId != null && merchantId.isNotEmpty;
       } catch (e) {
         health['config_access_error'] = e.toString();
       }
@@ -735,25 +717,21 @@ class StripeService {
         final result = await initialize();
         if (result.isFailure) {
           // Tenta recovery automatico
-          //print('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Quick test failed, attempting recovery...');
           final recoveryResult = await forceReinitialize();
           return recoveryResult.isSuccess;
         }
       }
 
       // Test con una chiamata leggera se inizializzato
-      await Stripe.instance.isGooglePaySupported(const IsGooglePaySupportedParams());
+      await Stripe.instance.isPlatformPaySupported();
       return true;
 
     } catch (e) {
-      //print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Quick health test failed: $e');
-
       // Ultimo tentativo di recovery
       try {
         final lastChanceResult = await _initializeDegradedMode();
         return lastChanceResult;
       } catch (recoveryError) {
-        //print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Recovery also failed: $recoveryError');
         return false;
       }
     }
@@ -761,7 +739,6 @@ class StripeService {
 
   /// Cleanup risorse (unchanged)
   static void dispose() {
-    //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Disposing Stripe service...');
     _isInitialized = false;
     _lastError = null;
     _lastInitAttempt = null;
@@ -788,9 +765,9 @@ class StripeService {
             : 'None',
       },
       'stripe_instance': {
-        'publishable_key_set': Stripe.publishableKey?.isNotEmpty ?? false,
-        'publishable_key_valid': Stripe.publishableKey?.startsWith('pk_') ?? false,
-        'merchant_identifier': Stripe.merchantIdentifier,
+        'publishable_key_set': (Stripe.publishableKey ?? '').isNotEmpty,
+        'publishable_key_valid': (Stripe.publishableKey ?? '').startsWith('pk_'),
+        'merchant_identifier': Stripe.merchantIdentifier ?? '',
         'instance_available': true,
       },
       'config_info': {
@@ -817,41 +794,7 @@ class StripeService {
 
   /// Stampa informazioni diagnostiche super dettagliate per debug (unchanged)
   static void printDiagnosticInfo() {
-    final info = getDiagnosticInfo();
-    //print('[CONSOLE] [stripe_service]');
-    //print('[CONSOLE] [stripe_service]🔍 STRIPE SERVICE SUPER DIAGNOSTIC INFO');
-    //print('[CONSOLE] [stripe_service]==========================================');
-
-    // Service Info
-    final serviceInfo = info['service_info'] as Map<String, dynamic>;
-    //print('[CONSOLE] [stripe_service]🔧 SERVICE STATUS:');
-    //print('[CONSOLE] [stripe_service]   Initialized: ${serviceInfo['is_initialized']}');
-    //print('[CONSOLE] [stripe_service]   Init attempts: ${serviceInfo['init_attempts']}');
-    //print('[CONSOLE] [stripe_service]   Last error: ${serviceInfo['last_error'] ?? 'None'}');
-    //print('[CONSOLE] [stripe_service]   Current key set: ${serviceInfo['current_key_set']}');
-    //print('[CONSOLE] [stripe_service]   Current key: ${serviceInfo['current_key_preview']}');
-
-    // Stripe Instance
-    final stripeInstance = info['stripe_instance'] as Map<String, dynamic>;
-    //print('[CONSOLE] [stripe_service]');
-    //print('[CONSOLE] [stripe_service]⚙️ STRIPE INSTANCE:');
-    //print('[CONSOLE] [stripe_service]   Publishable key set: ${stripeInstance['publishable_key_set']}');
-    //print('[CONSOLE] [stripe_service]   Publishable key valid: ${stripeInstance['publishable_key_valid']}');
-    //print('[CONSOLE] [stripe_service]   Merchant ID: ${stripeInstance['merchant_identifier']}');
-
-    // Config Info
-    final configInfo = info['config_info'] as Map<String, dynamic>;
-    //print('[CONSOLE] [stripe_service]');
-    //print('[CONSOLE] [stripe_service]📋 CONFIGURATION:');
-    //print('[CONSOLE] [stripe_service]   Config key valid: ${configInfo['publishable_key_valid']}');
-    //print('[CONSOLE] [stripe_service]   Config key prefix: ${configInfo['publishable_key_prefix']}');
-    //print('[CONSOLE] [stripe_service]   Test mode: ${configInfo['test_mode']}');
-    //print('[CONSOLE] [stripe_service]   Demo mode: ${configInfo['demo_mode']}');
-    //print('[CONSOLE] [stripe_service]   Currency: ${configInfo['currency']}');
-    //print('[CONSOLE] [stripe_service]   Country: ${configInfo['country_code']}');
-    //print('[CONSOLE] [stripe_service]   Plans count: ${configInfo['subscription_plans_count']}');
-
-    //print('[CONSOLE] [stripe_service]==========================================');
-    //print('[CONSOLE] [stripe_service]');
+    // I dati diagnostici sono disponibili tramite getDiagnosticInfo()
+    // ma non vengono stampati per evitare log eccessivi in produzione
   }
 }
