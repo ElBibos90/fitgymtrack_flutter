@@ -1,6 +1,7 @@
 // lib/features/workouts/presentation/widgets/workout_plan_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_card.dart';
@@ -124,7 +125,8 @@ class WorkoutPlanCard extends StatelessWidget {
           SizedBox(height: 12.h),
 
           // Statistiche esercizi
-          Row(
+          Wrap(
+            spacing: 8.w,
             children: [
               _buildStatChip(
                 context,
@@ -132,7 +134,6 @@ class WorkoutPlanCard extends StatelessWidget {
                 label: '${workoutPlan.esercizi.length} Esercizi',
                 color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
               ),
-              SizedBox(width: 8.w),
               _buildStatChip(
                 context,
                 icon: Icons.timer,
@@ -220,17 +221,19 @@ class WorkoutPlanCard extends StatelessWidget {
 
   // ✅ Gestione azioni del menu con conferma eliminazione
   void _handleMenuAction(BuildContext context, String action) {
-    switch (action) {
-      case 'details':
-        onTap?.call();
-        break;
-      case 'edit':
-        onEdit?.call();
-        break;
-      case 'delete':
-        _showDeleteConfirmationDialog(context);
-        break;
-    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      switch (action) {
+        case 'details':
+          onTap?.call();
+          break;
+        case 'edit':
+          onEdit?.call();
+          break;
+        case 'delete':
+          _showDeleteConfirmationDialog(context);
+          break;
+      }
+    });
   }
 
   // ✅ Dialog di conferma eliminazione

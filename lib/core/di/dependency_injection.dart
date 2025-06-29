@@ -1,6 +1,7 @@
 // lib/core/di/dependency_injection.dart
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter/widgets.dart';
 import '../services/session_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
@@ -45,6 +46,12 @@ class DependencyInjection {
     ));
 
     getIt.registerLazySingleton<ApiClient>(() => ApiClient(getIt()));
+
+    // ============================================================================
+    // ROUTE OBSERVER
+    // ============================================================================
+
+    getIt.registerLazySingleton<RouteObserver<ModalRoute<void>>>(() => RouteObserver<ModalRoute<void>>());
 
     // ============================================================================
     // REPOSITORIES (SOLO REALI)

@@ -85,9 +85,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Registra la schermata nel RouteObserver
     final routeObserver = getIt<RouteObserver<ModalRoute<void>>>();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
+    // NON forzare il refresh qui!
+    // _hasLoadedData = false;
+    // _isTabVisible = true;
+    // _loadWorkoutPlans();
   }
 
   @override

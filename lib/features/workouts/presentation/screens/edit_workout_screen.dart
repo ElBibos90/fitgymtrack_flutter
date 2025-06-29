@@ -208,7 +208,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
     _workoutBloc.updateWorkout(request);
     _workoutBloc.resetState();
-    context.pop(true);
+    context.go('/dashboard?tab=1');
   }
 
   void _updateExercise(int index, WorkoutExercise updatedExercise) {
@@ -367,7 +367,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   void _onCancel() {
     _workoutBloc.resetState();
-    context.pop(true);
+    context.go('/dashboard?tab=1');
   }
 
   @override
@@ -416,7 +416,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     isSuccess: true,
                   );
                   if (mounted) {
-                    context.pop();
+                    context.go('/dashboard?tab=1');
                   }
                 } else if (state is WorkoutError) {
                   CustomSnackbar.show(

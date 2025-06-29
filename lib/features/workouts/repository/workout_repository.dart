@@ -114,25 +114,26 @@ class WorkoutRepository {
   }
 
   // ============================================================================
-  // ✅ FIX 1: DELETE SCHEDA con form-data nel body
+  // ✅ FIX 1: DELETE SCHEDA con form-data nel body (POST)
   // ============================================================================
 
   Future<Result<DeleteWorkoutPlanResponse>> deleteWorkoutPlan(int schedaId) async {
     return await Result.tryCallAsync(() async {
       //print('[CONSOLE]Deleting workout plan: $schedaId');
 
-      // ✅ NUOVO: Richiesta DELETE manuale con form-data nel body
-      final response = await _dio.delete(
+      // ✅ NUOVO: Richiesta POST per eliminazione
+      final response = await _dio.post(
         '/schede_standalone.php',
-        data: 'scheda_id=$schedaId', // Form-urlencoded nel body
+        data: {
+          'action': 'delete',
+          'scheda_id': schedaId,
+        },
         options: Options(
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          contentType: Headers.formUrlEncodedContentType,
         ),
       );
 
-      //print('[CONSOLE]DELETE response: ${response.data}');
+      //print('[CONSOLE]POST DELETE response: [32m${response.data}[0m');
 
       if (response.data != null && response.data is Map<String, dynamic>) {
         return DeleteWorkoutPlanResponse.fromJson(response.data);
