@@ -1,3 +1,12 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -36,6 +45,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
@@ -55,7 +73,7 @@ android {
             )
             
             // 🔧 FIX: Usa debug signing per ora (come originale)
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -129,10 +147,6 @@ dependencies {
     
     // 🔧 FIX: ConstraintLayout per UI Stripe
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    
-    // 🔧 FIX: Google Play Core per Flutter deferred components
-    implementation("com.google.android.play:core:1.10.3")
-    implementation("com.google.android.play:core-ktx:1.8.1")
     
     // Test dependencies
     testImplementation("junit:junit:4.13.2")

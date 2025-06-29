@@ -67,6 +67,9 @@ dependencies:
   # Stripe SDK principale per Flutter
   flutter_stripe: ^10.1.1
 
+  # 🔗 URL Launcher per link esterni (Privacy Policy, Terms of Service)
+  url_launcher: ^6.2.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

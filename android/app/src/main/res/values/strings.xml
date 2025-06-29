@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">FitGym Tracker</string>
+    
+    <!-- App Description -->
+    <string name="app_description">App per il tracking degli allenamenti fitness con statistiche avanzate</string>
+    
+    <!-- Privacy Policy -->
+    <string name="privacy_policy_url">https://fitgymtrack.com/privacy-policy</string>
+    
+    <!-- Terms of Service -->
+    <string name="terms_of_service_url">https://fitgymtrack.com/terms-of-service</string>
+    
+    <!-- Support -->
+    <string name="support_url">https://fitgymtrack.com/support</string>
+    <string name="support_email">support@fitgymtrack.com</string>
+    
+    <!-- Developer Info -->
+    <string name="developer_name">FitGymTrack Team</string>
+    
+    <!-- App Category -->
+    <string name="app_category">Health &amp; Fitness</string>
+    
+    <!-- Content Rating -->
+    <string name="content_rating">Everyone</string>
+    
+    <!-- Version Info -->
+    <string name="version_name">1.0.0</string>
+    <string name="version_code">1</string>
+    
+    <!-- Permissions Descriptions -->
+    <string name="camera_permission_description">Necessaria per scattare foto degli esercizi</string>
+    <string name="storage_permission_description">Necessaria per salvare le foto degli esercizi</string>
+    <string name="internet_permission_description">Necessaria per sincronizzare i dati e i pagamenti</string>
+    <string name="vibrate_permission_description">Necessaria per le notifiche durante l\'allenamento</string>
+</resources> 
