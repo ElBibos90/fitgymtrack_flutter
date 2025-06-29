@@ -99,4 +99,35 @@ class AppConfig {
       return const EdgeInsets.all(spacingXL);
     }
   }
+
+  // ============================================================================
+  // GOOGLE PLAY STORE COMPLIANCE
+  // ============================================================================
+
+  /// URL Privacy Policy (richiesto da Google Play Store)
+  static const String privacyPolicyUrl = 'https://fitgymtrack.com/privacy-policy';
+  
+  /// URL Terms of Service (richiesto da Google Play Store)
+  static const String termsOfServiceUrl = 'https://fitgymtrack.com/terms-of-service';
+  
+  /// URL Support (opzionale ma consigliato)
+  static const String supportUrl = 'https://fitgymtrack.com/support';
+  
+  /// Email support (opzionale ma consigliato)
+  static const String supportEmail = 'support@fitgymtrack.com';
+  
+  /// Nome sviluppatore per Google Play Store
+  static const String developerName = 'FitGymTrack Team';
+  
+  /// Categoria app per Google Play Store
+  static const String appCategory = 'Health & Fitness';
+  
+  /// Contenuto rating per Google Play Store
+  static const String contentRating = 'Everyone';
+  
+  /// Versione minima Android supportata
+  static const int minAndroidVersion = 21; // Android 5.0
+  
+  /// Versione target Android
+  static const int targetAndroidVersion = 34; // Android 14
 }
