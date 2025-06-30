@@ -1,0 +1,33 @@
+Titolo:
+FitGymTrack - Allenamento e Progressi
+
+Breve descrizione:
+Allena corpo e mente! Crea, traccia e migliora i tuoi allenamenti in palestra con FitGymTrack. Statistiche, progressi, piani personalizzati e molto altro.
+
+Descrizione completa:
+FitGymTrack è l'app definitiva per chi vuole portare i propri allenamenti in palestra ad un livello superiore! Crea le tue schede personalizzate, monitora ogni esercizio, visualizza statistiche dettagliate e raggiungi i tuoi obiettivi fitness.
+
+Funzionalità principali:
+- Crea e gestisci schede di allenamento personalizzate
+- Traccia serie, ripetizioni, pesi e tempi di recupero
+- Statistiche avanzate sui tuoi progressi
+- Cronologia allenamenti e confronto risultati
+- Interfaccia intuitiva e dark mode
+- Notifiche e promemoria
+- Supporto a esercizi isometrici, superset, rest-pause
+- Backup cloud e sincronizzazione (se disponibile)
+
+Parole chiave:
+allenamento, palestra, fitness, workout, progressi, schede, esercizi, tracker, bodybuilding, forza, salute
+
+Istruzioni immagini:
+- 1 screenshot della dashboard principale
+- 1 screenshot della creazione/modifica scheda
+- 1 screenshot delle statistiche
+- 1 screenshot della schermata "Inizia Allenamento"
+- 1 screenshot della gestione esercizi
+
+Privacy Policy: [aggiungi link]
+Supporto: [aggiungi email o sito]
+
+Nota: Personalizza la descrizione secondo le linee guida Google Play e aggiorna i link a privacy e supporto. 
