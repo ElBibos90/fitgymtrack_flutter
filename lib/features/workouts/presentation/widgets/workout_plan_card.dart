@@ -14,10 +14,12 @@ class WorkoutPlanCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onStartWorkout;
+  final BuildContext parentContext;
 
   const WorkoutPlanCard({
     super.key,
     required this.workoutPlan,
+    required this.parentContext,
     this.onTap,
     this.onEdit,
     this.onDelete,
@@ -56,7 +58,8 @@ class WorkoutPlanCard extends StatelessWidget {
                         'Creata il ${_formatDate(workoutPlan.dataCreazione!)}',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+                          color: colorScheme.onSurface
+                              .withValues(alpha: 0.6), // ✅ DINAMICO!
                         ),
                       ),
                     ],
@@ -67,40 +70,22 @@ class WorkoutPlanCard extends StatelessWidget {
               PopupMenuButton<String>(
                 onSelected: (value) => _handleMenuAction(context, value),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'details',
-                    child: Row(
-                      children: [
-                        Icon(Icons.visibility, size: 20),
-                        SizedBox(width: 8),
-                        Text('Visualizza'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Modifica'),
-                      ],
-                    ),
-                  ),
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
                         Icon(Icons.delete, size: 20, color: AppColors.error),
                         const SizedBox(width: 8),
-                        const Text('Elimina', style: TextStyle(color: AppColors.error)),
+                        const Text('Elimina',
+                            style: TextStyle(color: AppColors.error)),
                       ],
                     ),
                   ),
                 ],
                 child: Icon(
                   Icons.more_vert,
-                  color: colorScheme.onSurface.withValues(alpha:0.6), // ✅ DINAMICO!
+                  color: colorScheme.onSurface
+                      .withValues(alpha: 0.6), // ✅ DINAMICO!
                   size: 24.sp,
                 ),
               ),
@@ -108,13 +93,15 @@ class WorkoutPlanCard extends StatelessWidget {
           ),
 
           // Descrizione (se presente)
-          if (workoutPlan.descrizione != null && workoutPlan.descrizione!.isNotEmpty) ...[
+          if (workoutPlan.descrizione != null &&
+              workoutPlan.descrizione!.isNotEmpty) ...[
             SizedBox(height: 8.h),
             Text(
               workoutPlan.descrizione!,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: colorScheme.onSurface.withValues(alpha:0.7), // ✅ DINAMICO!
+                color:
+                    colorScheme.onSurface.withValues(alpha: 0.7), // ✅ DINAMICO!
                 height: 1.3,
               ),
               maxLines: 2,
@@ -154,8 +141,10 @@ class WorkoutPlanCard extends StatelessWidget {
                   icon: const Icon(Icons.play_arrow, size: 20),
                   label: const Text('Inizia Allenamento'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                    foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+                    backgroundColor:
+                        isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    foregroundColor:
+                        isDark ? AppColors.backgroundDark : Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppConfig.radiusM),
@@ -168,12 +157,17 @@ class WorkoutPlanCard extends StatelessWidget {
               OutlinedButton(
                 onPressed: onEdit,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                  side: BorderSide(color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600),
+                  foregroundColor:
+                      isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                  side: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF90CAF9)
+                          : AppColors.indigo600),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppConfig.radiusM),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                  padding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
                 child: const Icon(Icons.edit, size: 20),
               ),
@@ -185,17 +179,17 @@ class WorkoutPlanCard extends StatelessWidget {
   }
 
   Widget _buildStatChip(
-      BuildContext context, {
-        required IconData icon,
-        required String label,
-        required Color color,
-      }) {
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppConfig.radiusS),
-        border: Border.all(color: color.withValues(alpha:0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -221,82 +215,16 @@ class WorkoutPlanCard extends StatelessWidget {
 
   // ✅ Gestione azioni del menu con conferma eliminazione
   void _handleMenuAction(BuildContext context, String action) {
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      switch (action) {
-        case 'details':
-          onTap?.call();
-          break;
-        case 'edit':
-          onEdit?.call();
-          break;
-        case 'delete':
-          _showDeleteConfirmationDialog(context);
-          break;
-      }
-    });
-  }
-
-  // ✅ Dialog di conferma eliminazione
-  Future<void> _showDeleteConfirmationDialog(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Scheda'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Sei sicuro di voler eliminare la scheda "${workoutPlan.nome}"?'),
-            SizedBox(height: AppConfig.spacingM.h),
-            Container(
-              padding: EdgeInsets.all(AppConfig.spacingS.w),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha:0.1),
-                borderRadius: BorderRadius.circular(AppConfig.radiusS.r),
-                border: Border.all(color: AppColors.error.withValues(alpha:0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.warning,
-                    color: AppColors.error,
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: AppConfig.spacingS.w),
-                  Expanded(
-                    child: Text(
-                      'Questa azione non può essere annullata.',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Elimina'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      onDelete?.call();
+    switch (action) {
+      case 'details':
+        onTap?.call();
+        break;
+      case 'edit':
+        onEdit?.call();
+        break;
+      case 'delete':
+        onDelete?.call();
+        break;
     }
   }
 

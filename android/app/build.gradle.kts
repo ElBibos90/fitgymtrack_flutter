@@ -47,10 +47,19 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
+            // Gestione sicura delle proprietà del keystore
+            if (keystoreProperties.containsKey("storeFile")) {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+            }
+            if (keystoreProperties.containsKey("storePassword")) {
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+            if (keystoreProperties.containsKey("keyAlias")) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+            }
+            if (keystoreProperties.containsKey("keyPassword")) {
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
         }
     }
 

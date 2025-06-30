@@ -61,7 +61,8 @@ class WorkoutPlansScreen extends StatefulWidget {
   State<WorkoutPlansScreen> createState() => _WorkoutPlansScreenState();
 }
 
-class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware {
+class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
+    with RouteAware {
   late WorkoutBloc _workoutBloc;
   late SessionService _sessionService;
 
@@ -228,7 +229,8 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware
         },
         builder: (context, state) {
           return LoadingOverlay(
-            isLoading: state is WorkoutLoading || state is WorkoutLoadingWithMessage,
+            isLoading:
+                state is WorkoutLoading || state is WorkoutLoadingWithMessage,
             message: state is WorkoutLoadingWithMessage ? state.message : null,
             child: RefreshIndicator(
               onRefresh: _refreshWorkoutPlans,
@@ -321,10 +323,81 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware
 
         return WorkoutPlanCard(
           workoutPlan: workoutPlan,
-          onTap: () => _showWorkoutDetails(workoutPlan),
-          onEdit: () => _editWorkout(workoutPlan),
-          onDelete: () => _deleteWorkout(workoutPlan.id),
-          onStartWorkout: () => _startWorkout(workoutPlan),
+          parentContext: context,
+          onTap: () {
+            Future.microtask(() => _showWorkoutDetails(workoutPlan));
+          },
+          onEdit: () {
+            Future.microtask(
+                () => context.push('/workouts/edit/${workoutPlan.id}'));
+          },
+          onDelete: () async {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Elimina Scheda'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        'Sei sicuro di voler eliminare la scheda "${workoutPlan.nome}"?'),
+                    SizedBox(height: AppConfig.spacingM.h),
+                    Container(
+                      padding: EdgeInsets.all(AppConfig.spacingS.w),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius:
+                            BorderRadius.circular(AppConfig.radiusS.r),
+                        border: Border.all(
+                            color: AppColors.error.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning,
+                            color: AppColors.error,
+                            size: 16.sp,
+                          ),
+                          SizedBox(width: AppConfig.spacingS.w),
+                          Expanded(
+                            child: Text(
+                              'Questa azione non può essere annullata.',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Annulla'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Elimina'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed == true) {
+              _deleteWorkout(workoutPlan.id);
+            }
+          },
+          onStartWorkout: () {
+            Future.microtask(() => _startWorkout(workoutPlan));
+          },
         );
       },
     );
@@ -421,10 +494,6 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen> with RouteAware
 
   void _showWorkoutDetails(workoutPlan) {
     context.push('/workouts/${workoutPlan.id}');
-  }
-
-  void _editWorkout(workoutPlan) {
-    context.push('/workouts/edit/${workoutPlan.id}');
   }
 
   void _startWorkout(workoutPlan) {
