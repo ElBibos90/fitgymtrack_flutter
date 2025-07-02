@@ -156,6 +156,9 @@ dependencies {
     
     // 🔧 FIX: ConstraintLayout per UI Stripe
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // ⌚️ Wear OS: Dipendenza per Data Layer API
+    implementation("com.google.android.gms:play-services-wearable:18.1.0")
     
     // Test dependencies
     testImplementation("junit:junit:4.13.2")

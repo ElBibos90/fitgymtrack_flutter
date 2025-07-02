@@ -14,6 +14,8 @@ import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/stats_screen.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -42,6 +44,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     2: false, // Stats
     3: false, // Subscription
   };
+
+  // Stato per Wear OS
+  bool _isWearConnected = false;
+  Timer? _wearPollingTimer;
 
   // ✅ Lista delle pagine con lazy initialization
   late final List<Widget Function()> _pageBuilders = [
@@ -83,6 +89,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     print('[CONSOLE] [home_screen]🚀 HomeScreen initialized');
 
+    // Controlla connessione Wear OS
+    _checkWearConnection();
+    _wearPollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _checkWearConnection();
+    });
+
     // 🚀 PERFORMANCE: Inizializzazione sequenziale post-frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -94,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _wearPollingTimer?.cancel();
     // WorkoutTabController non ha dispose() - solo detach
     ApiRequestDebouncer.clearCache('home_screen'); // Pulisci cache specifica
     super.dispose();
@@ -340,6 +353,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
       actions: [
+        if (_isWearConnected)
+          Padding(
+            padding: EdgeInsets.only(right: 8.w),
+            child: Icon(
+              Icons.watch_outlined,
+              color: Colors.greenAccent,
+              size: 26.sp,
+              semanticLabel: 'Wear OS collegato',
+            ),
+          ),
         IconButton(
           icon: Icon(
             Icons.logout,
@@ -427,5 +450,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void navigateToStats() {
     print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
     _onTabTapped(2);
+  }
+
+  Future<void> _checkWearConnection() async {
+    const platform = MethodChannel('fitgymtrack/wear');
+    try {
+      final bool connected = await platform.invokeMethod('isWearConnected');
+      if (mounted) {
+        setState(() {
+          _isWearConnected = connected;
+        });
+      }
+    } catch (e) {
+      // In caso di errore, non mostrare nulla
+      if (mounted) {
+        setState(() {
+          _isWearConnected = false;
+        });
+      }
+    }
   }
 }
