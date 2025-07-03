@@ -24,6 +24,9 @@ import '../../models/workout_plan_models.dart';
 import '../../bloc/plateau_bloc.dart';
 import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
+import '../../../../shared/widgets/add_exercise_during_workout_dialog.dart';
+import '../../../../shared/theme/app_colors.dart';
+import '../../../exercises/models/exercises_response.dart';
 
 import '../../../../shared/widgets/rest_pause_timer_popup.dart';
 
@@ -990,11 +993,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _currentRecoveryExerciseName = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "Recupero completato! Pronto per la prossima serie 💪",
-      isSuccess: true,
-    );
+    // 🚫 RIMOSSO: Messaggio rallentante - il timer è già visibile
   }
 
   // ============================================================================
@@ -1031,11 +1030,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _pendingIsometricExercise = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "🔥 Tenuta isometrica completata! 💪",
-      isSuccess: true,
-    );
+    // 🚫 RIMOSSO: Messaggio rallentante - il timer è già visibile
   }
 
   void _onIsometricTimerCancelled() {
@@ -1048,11 +1043,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _pendingIsometricExercise = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "Tenuta isometrica annullata",
-      isSuccess: false,
-    );
+    // 🚫 RIMOSSO: Messaggio rallentante - l'utente ha già annullato
   }
 
   // ============================================================================
@@ -1154,6 +1145,44 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
+  // ➕ ADD EXERCISE DURING WORKOUT
+  // ============================================================================
+
+  void _showAddExerciseDialog() {
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Errore: utente non autenticato'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // TODO: Carica esercizi disponibili se non già caricati
+    final availableExercises = <ExerciseItem>[]; // Per ora vuoto, da implementare
+    
+    showDialog(
+      context: context,
+      builder: (context) => AddExerciseDuringWorkoutDialog(
+        userId: _userId!,
+        availableExercises: availableExercises,
+        onExerciseAdded: _addExerciseToWorkout,
+      ),
+    );
+  }
+
+  void _addExerciseToWorkout(WorkoutExercise exercise) {
+    // TODO: Implementare aggiunta esercizio al workout attivo
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Esercizio "${exercise.nome}" aggiunto!'),
+        backgroundColor: AppColors.success,
+      ),
+    );
+  }
+
+  // ============================================================================
   // WORKOUT LOGIC (updated with fixes)
   // ============================================================================
 
@@ -1247,13 +1276,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
     _invalidateCacheForExercise(exerciseId);
 
-    CustomSnackbar.show(
-      context,
-      message: exercise.isIsometric
-          ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
-          : "Serie ${completedCount + 1} completata! 💪",
-      isSuccess: true,
-    );
+    // 🚫 RIMOSSO: Messaggio rallentante - la serie è già completata visivamente
 
     // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se necessario
     _triggerPlateauAnalysisIfNeeded(exercise);
@@ -1301,11 +1324,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           final nextExercise = currentGroup[_currentExerciseInGroup];
           final groupType = currentGroup.first.setType;
 
-          CustomSnackbar.show(
-            context,
-            message: "🔄 ${groupType.toUpperCase()}: ${nextExercise.nome}",
-            isSuccess: true,
-          );
+          // 🚫 RIMOSSO: Messaggio rallentante - la rotazione è già visibile
         }
       });
     }
@@ -1719,6 +1738,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 _pendingIsometricExercise = null;
               });
             },
+          ),
+
+        // ➕ NUOVO: FloatingActionButton per aggiungere esercizi
+        if (state is WorkoutSessionActive)
+          Positioned(
+            bottom: 100.h,
+            right: 20.w,
+            child: FloatingActionButton(
+              onPressed: _showAddExerciseDialog,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              child: const Icon(Icons.add),
+              tooltip: 'Aggiungi esercizio',
+            ),
           ),
       ],
     );

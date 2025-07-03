@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/legal_documents_screen.dart';
+import 'theme_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -66,10 +68,10 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 _buildSettingTile(
                   context,
-                  'Tema',
-                  'Cambia tema chiaro/scuro',
+                  'Tema e Colori',
+                  'Personalizza tema e colori dell\'app',
                   Icons.palette,
-                  () => _toggleTheme(context),
+                  () => _navigateToThemeSettings(context),
                   isDarkMode,
                 ),
                 _buildSettingTile(
@@ -322,6 +324,14 @@ class SettingsScreen extends StatelessWidget {
     // TODO: Implementare navigazione alle notifiche
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Funzionalità in arrivo!')),
+    );
+  }
+
+  void _navigateToThemeSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ThemeSettingsScreen(),
+      ),
     );
   }
 

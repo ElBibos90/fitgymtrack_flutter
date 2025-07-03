@@ -3,29 +3,33 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme {
+  // 🎨 METODI PER TEMI DINAMICI
+  static ThemeData getLightTheme({String themeName = 'indigo'}) {
+    final primaryColor = AppColors.getPrimaryColor(themeName);
+    final primaryDarkColor = AppColors.getPrimaryDarkColor(themeName);
+    
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.indigo600,
+        seedColor: primaryColor,
         brightness: Brightness.light,
-        primary: AppColors.indigo600,
+        primary: primaryColor,
         secondary: AppColors.green600,
         surface: AppColors.surfaceLight,
         background: AppColors.backgroundLight,
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.backgroundLight,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surfaceLight,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.indigo600,
+          backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -35,8 +39,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.indigo600,
-          side: const BorderSide(color: AppColors.indigo600),
+          foregroundColor: primaryColor,
+          side: BorderSide(color: primaryColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -44,7 +48,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.indigo600,
+          foregroundColor: primaryColor,
         ),
       ),
       cardTheme: CardThemeData(
@@ -67,7 +71,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderFocused, width: 2),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -80,16 +84,36 @@ class AppTheme {
         labelStyle: const TextStyle(color: AppColors.textSecondary),
         hintStyle: const TextStyle(color: AppColors.textHint),
       ),
+      // 🎨 NUOVO: FloatingActionButton theme
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      // 🎨 NUOVO: BottomNavigationBar theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceLight,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: AppColors.textSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
     );
   }
 
-  static ThemeData get darkTheme {
+  static ThemeData getDarkTheme({String themeName = 'indigo'}) {
+    final primaryColor = AppColors.getPrimaryColor(themeName);
+    final primaryDarkColor = AppColors.getPrimaryDarkColor(themeName);
+    
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF90CAF9),
+        seedColor: primaryColor,
         brightness: Brightness.dark,
-        primary: const Color(0xFF90CAF9),
+        primary: primaryColor,
         secondary: AppColors.green600,
         surface: AppColors.surfaceDark,
         background: AppColors.backgroundDark,
@@ -107,7 +131,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF90CAF9),
+          backgroundColor: primaryColor,
           foregroundColor: AppColors.backgroundDark,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -117,8 +141,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF90CAF9),
-          side: const BorderSide(color: Color(0xFF90CAF9)),
+          foregroundColor: primaryColor,
+          side: BorderSide(color: primaryColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -126,7 +150,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: const Color(0xFF90CAF9),
+          foregroundColor: primaryColor,
         ),
       ),
       cardTheme: CardThemeData(
@@ -149,7 +173,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF90CAF9), width: 2),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -186,6 +210,27 @@ class AppTheme {
         bodyMedium: TextStyle(color: Colors.white),
         titleLarge: TextStyle(color: Colors.white),
       ),
+      // 🎨 NUOVO: FloatingActionButton theme per dark mode
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: AppColors.backgroundDark,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      // 🎨 NUOVO: BottomNavigationBar theme per dark mode
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: const Color(0xFFBBBBBB),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
     );
   }
+
+  // 🎨 METODI LEGACY PER COMPATIBILITÀ
+  static ThemeData get lightTheme => getLightTheme();
+  static ThemeData get darkTheme => getDarkTheme();
 }
