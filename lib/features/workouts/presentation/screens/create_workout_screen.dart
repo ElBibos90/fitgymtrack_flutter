@@ -20,7 +20,6 @@ import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
 import '../../../exercises/models/exercises_response.dart';
 import '../../../../shared/widgets/exercise_editor.dart';
-import '../../../../shared/widgets/combined_exercise_group_widget.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
   final int? workoutId; // null per creazione, valorizzato per modifica
@@ -580,95 +579,20 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildExercisesList() {
-    final groupedExercises = _groupExercisesByType();
-    
     return Column(
       children: [
-        for (final group in groupedExercises)
-          if (group['type'] == 'combined')
-            CombinedExerciseGroupWidget(
-              exercises: group['exercises'] as List<WorkoutExercise>,
-              groupType: group['groupType'] as String,
-              onEditGroup: () => _editExerciseGroup(group['exercises'] as List<WorkoutExercise>),
-            )
-          else
-            for (int i = 0; i < (group['exercises'] as List<WorkoutExercise>).length; i++)
-              WorkoutExerciseEditor(
-                key: ValueKey('exercise_${(group['exercises'] as List<WorkoutExercise>)[i].id}_$i'),
-                exercise: (group['exercises'] as List<WorkoutExercise>)[i],
-                onUpdate: (updatedExercise) => _updateExercise(_getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]), updatedExercise),
-                onDelete: () => _removeExercise(_getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i])),
-                onMoveUp: _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) > 0 ? () => _moveExercise(_getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]), _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) - 1) : null,
-                onMoveDown: _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) < _selectedExercises.length - 1 ? () => _moveExercise(_getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]), _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) + 1) : null,
-                isFirst: _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) == 0,
-                isLast: _getExerciseIndex((group['exercises'] as List<WorkoutExercise>)[i]) == _selectedExercises.length - 1,
-              ),
+        for (int i = 0; i < _selectedExercises.length; i++)
+          WorkoutExerciseEditor(
+            key: ValueKey('exercise_${_selectedExercises[i].id}_$i'),
+            exercise: _selectedExercises[i],
+            onUpdate: (updatedExercise) => _updateExercise(i, updatedExercise),
+            onDelete: () => _removeExercise(i),
+            onMoveUp: i > 0 ? () => _moveExercise(i, i - 1) : null,
+            onMoveDown: i < _selectedExercises.length - 1 ? () => _moveExercise(i, i + 1) : null,
+            isFirst: i == 0,
+            isLast: i == _selectedExercises.length - 1,
+          ),
       ],
-    );
-  }
-
-  /// Raggruppa gli esercizi per tipo (normale, superset, circuit)
-  List<Map<String, dynamic>> _groupExercisesByType() {
-    final groups = <Map<String, dynamic>>[];
-    final processedIndices = <int>{};
-    
-    for (int i = 0; i < _selectedExercises.length; i++) {
-      if (processedIndices.contains(i)) continue;
-      
-      final exercise = _selectedExercises[i];
-      
-      // Se è un esercizio normale, aggiungilo come singolo
-      if (exercise.setType == 'normal' || exercise.setType.isEmpty) {
-        groups.add({
-          'type': 'single',
-          'exercises': [exercise],
-        });
-        processedIndices.add(i);
-        continue;
-      }
-      
-      // Se è parte di un gruppo, trova tutti gli esercizi del gruppo
-      final groupExercises = <WorkoutExercise>[];
-      final groupType = exercise.setType;
-      
-      for (int j = i; j < _selectedExercises.length; j++) {
-        final currentExercise = _selectedExercises[j];
-        if (currentExercise.setType == groupType && !processedIndices.contains(j)) {
-          groupExercises.add(currentExercise);
-          processedIndices.add(j);
-        } else if (currentExercise.setType != groupType) {
-          break;
-        }
-      }
-      
-      if (groupExercises.length > 1) {
-        groups.add({
-          'type': 'combined',
-          'exercises': groupExercises,
-          'groupType': groupType,
-        });
-      } else {
-        // Se è solo uno, trattalo come singolo
-        groups.add({
-          'type': 'single',
-          'exercises': groupExercises,
-        });
-      }
-    }
-    
-    return groups;
-  }
-
-  /// Trova l'indice di un esercizio nella lista principale
-  int _getExerciseIndex(WorkoutExercise exercise) {
-    return _selectedExercises.indexWhere((e) => e.id == exercise.id);
-  }
-
-  /// Modifica un gruppo di esercizi
-  void _editExerciseGroup(List<WorkoutExercise> groupExercises) {
-    // TODO: Implementare modifica gruppo
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Modifica gruppo in arrivo!')),
     );
   }
 

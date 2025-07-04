@@ -14,7 +14,6 @@ import 'features/subscription/bloc/subscription_bloc.dart';
 import 'features/payments/bloc/stripe_bloc.dart';
 import 'shared/theme/app_theme.dart';
 import 'shared/theme/app_colors.dart';
-import 'core/services/theme_service.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'core/config/app_config.dart';
@@ -42,37 +41,8 @@ void main() async {
   );
 }
 
-class FitGymTrackApp extends StatefulWidget {
+class FitGymTrackApp extends StatelessWidget {
   const FitGymTrackApp({super.key});
-
-  @override
-  State<FitGymTrackApp> createState() => _FitGymTrackAppState();
-}
-
-class _FitGymTrackAppState extends State<FitGymTrackApp> {
-  String _currentTheme = 'indigo';
-  ThemeMode _currentThemeMode = ThemeMode.system;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadThemePreferences();
-  }
-
-  Future<void> _loadThemePreferences() async {
-    try {
-      final themeService = ThemeService.instance;
-      final theme = await themeService.getSelectedTheme();
-      final mode = await themeService.getThemeMode();
-      
-      setState(() {
-        _currentTheme = theme;
-        _currentThemeMode = mode;
-      });
-    } catch (e) {
-      // Usa valori di default se c'è un errore
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +81,9 @@ class _FitGymTrackAppState extends State<FitGymTrackApp> {
       child: MaterialApp.router(
         title: 'FitGymTrack',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.getLightTheme(themeName: _currentTheme),
-        darkTheme: AppTheme.getDarkTheme(themeName: _currentTheme),
-        themeMode: _currentThemeMode,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
         routerConfig: AppRouter.createRouter(),
       ),
     );

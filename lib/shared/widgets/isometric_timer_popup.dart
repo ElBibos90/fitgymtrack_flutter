@@ -44,11 +44,6 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   bool _isPaused = false;
   bool _isDismissed = false;
 
-  // ⏱️ NUOVO: Countdown management
-  bool _isInCountdown = false;
-  int _countdownSeconds = 3;
-  Timer? _countdownTimer;
-
   // 🔊 Audio management
   late AudioPlayer _audioPlayer;
   bool _hasPlayedCompletionSound = false;
@@ -77,7 +72,6 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   @override
   void dispose() {
     _timer?.cancel();
-    _countdownTimer?.cancel();
     _audioPlayer.dispose();
     _slideController.dispose();
     _pulseController.dispose();
@@ -130,72 +124,6 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
 
     // Avvia l'animazione di ingresso
     _slideController.forward();
-  }
-
-  // ⏱️ NUOVO: Metodo per avviare il countdown
-  void _startCountdown() {
-    setState(() {
-      _isInCountdown = true;
-      _countdownSeconds = 3;
-    });
-
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted || _isDismissed) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        if (_countdownSeconds > 1) {
-          _countdownSeconds--;
-          // 🔊 Play countdown beep
-          _playCountdownBeep();
-        } else {
-          // Countdown finito, avvia il timer principale
-          timer.cancel();
-          _isInCountdown = false;
-          _startMainTimer();
-        }
-      });
-    });
-  }
-
-  // ⏱️ NUOVO: Metodo per avviare il timer principale
-  void _startMainTimer() {
-    if (_isDismissed) return;
-
-    _progressController.forward();
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted || _isDismissed) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-
-          // 🔊 Audio + Pulse negli ultimi 5 secondi (più lungo per isometrico)
-          if (_remainingSeconds <= 5 && _remainingSeconds > 0) {
-            _pulseController.repeat(reverse: true);
-
-            // 🔊 Play countdown beep negli ultimi 3 secondi
-            if (_remainingSeconds <= 3) {
-              _playCountdownBeep();
-            }
-          } else {
-            _pulseController.stop();
-            _pulseController.reset();
-          }
-        } else {
-          // Timer completato
-          timer.cancel();
-          _pulseController.stop();
-          _playCompletionSoundAndFinish();
-        }
-      });
-    });
   }
 
   // 🔊 Audio methods
@@ -251,14 +179,55 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   }
 
   void _startTimer() {
-    // ⏱️ NUOVO: Avvia il countdown invece del timer diretto
-    _startCountdown();
+    if (_isDismissed) return;
+
+    _progressController.forward();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _isDismissed) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+
+          // 🔊 Audio + Pulse negli ultimi 5 secondi (più lungo per isometrico)
+          if (_remainingSeconds <= 5 && _remainingSeconds > 0) {
+            _pulseController.repeat(reverse: true);
+
+            // 🔊 Play countdown beep negli ultimi 3 secondi
+            if (_remainingSeconds <= 3) {
+              _playCountdownBeep();
+            }
+
+            // Haptic feedback più intenso negli ultimi secondi
+            if (_remainingSeconds <= 3) {
+              HapticFeedback.heavyImpact();
+            } else {
+              HapticFeedback.lightImpact();
+            }
+          }
+        } else {
+          // Timer completato
+          timer.cancel();
+          _pulseController.stop();
+
+          // Haptic feedback finale - doppio impulso
+          HapticFeedback.heavyImpact();
+          Future.delayed(const Duration(milliseconds: 100), () {
+            HapticFeedback.heavyImpact();
+          });
+
+          // 🔧 FIX: Play audio e aspetta, poi callback e dismiss
+          _playCompletionSoundAndFinish();
+        }
+      });
+    });
   }
 
   void _pauseTimer() {
-    // ⏱️ NUOVO: Non permettere pausa durante countdown
-    if (_isInCountdown) return;
-    
     setState(() {
       _isPaused = !_isPaused;
     });
@@ -268,13 +237,12 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
       _progressController.stop();
       _pulseController.stop();
     } else {
-      _startMainTimer();
+      _startTimer();
     }
   }
 
   void _cancelTimer() {
     _timer?.cancel();
-    _countdownTimer?.cancel();
     _progressController.stop();
     _pulseController.stop();
 
@@ -477,7 +445,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                         child: Column(
                           children: [
                             Text(
-                              _isInCountdown ? 'PREPARATI' : 'TENUTA',
+                              'TENUTA',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
@@ -487,25 +455,13 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                             ),
                             SizedBox(height: 4.h),
                             Text(
-                              _isInCountdown 
-                                  ? _countdownSeconds.toString()
-                                  : _formatTime(_remainingSeconds),
+                              _formatTime(_remainingSeconds),
                               style: TextStyle(
-                                fontSize: _isInCountdown ? 48.sp : 32.sp,
+                                fontSize: 32.sp,
                                 fontWeight: FontWeight.bold,
                                 color: _getTimerColor(),
                               ),
                             ),
-                            if (_isInCountdown) ...[
-                              SizedBox(height: 4.h),
-                              Text(
-                                'secondi',
-                                style: TextStyle(
-                                  fontSize: 10.sp,
-                                  color: _getTimerColor().withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -563,35 +519,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
                   ),
 
                   // Status message
-                  if (_isInCountdown) ...[
-                    SizedBox(height: 16.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.timer,
-                            color: Colors.blue[700],
-                            size: 16.sp,
-                          ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            'Preparati per la tenuta isometrica!',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.blue[700],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (_isPaused) ...[
+                  if (_isPaused) ...[
                     SizedBox(height: 16.h),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
