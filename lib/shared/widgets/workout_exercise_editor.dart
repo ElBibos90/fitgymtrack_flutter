@@ -191,13 +191,41 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.exercise.nome,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+                Row(
+                  children: [
+                    // 🔧 FASE 3: Indicatore per esercizi combinati
+                    if (widget.exercise.setType == 'superset' || widget.exercise.setType == 'circuit')
+                      Container(
+                        margin: EdgeInsets.only(right: 8.w),
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: widget.exercise.setType == 'superset' 
+                              ? Colors.purple.withValues(alpha: 0.2)
+                              : Colors.orange.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Text(
+                          widget.exercise.setType == 'superset' ? 'SUPERSET' : 'CIRCUIT',
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                            color: widget.exercise.setType == 'superset' 
+                                ? Colors.purple 
+                                : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: Text(
+                        widget.exercise.nome,
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 if (widget.exercise.gruppoMuscolare != null) ...[
                   SizedBox(height: 4.h),

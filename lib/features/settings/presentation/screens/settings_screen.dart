@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/legal_documents_screen.dart';
+import '../widgets/theme_selector.dart';
+import '../widgets/color_picker.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -66,10 +68,10 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 _buildSettingTile(
                   context,
-                  'Tema',
-                  'Cambia tema chiaro/scuro',
+                  'Aspetto',
+                  'Personalizza tema e colori',
                   Icons.palette,
-                  () => _toggleTheme(context),
+                  () => _showAppearanceSettings(context),
                   isDarkMode,
                 ),
                 _buildSettingTile(
@@ -329,6 +331,79 @@ class SettingsScreen extends StatelessWidget {
     // TODO: Implementare cambio tema
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Funzionalità in arrivo!')),
+    );
+  }
+
+  void _showAppearanceSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20.r),
+            topRight: Radius.circular(20.r),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Container(
+              margin: EdgeInsets.only(top: 12.h),
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close),
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    'Aspetto',
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  children: [
+                    ThemeSelector(
+                      onThemeChanged: (themeMode) {
+                        // TODO: Applicare il tema
+                      },
+                    ),
+                    SizedBox(height: 32.h),
+                    ColorPicker(
+                      onColorChanged: (color) {
+                        // TODO: Applicare il colore
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

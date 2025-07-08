@@ -26,8 +26,9 @@ import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
 import '../../../../shared/widgets/rest_pause_timer_popup.dart';
-
 import '../../../../shared/widgets/rest_pause_data_manager.dart';
+import '../../../../shared/widgets/exercise_selection_dialog.dart';
+import '../../../exercises/models/exercises_response.dart';
 
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
@@ -92,6 +93,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   int _isometricSeconds = 0;
   String? _currentIsometricExerciseName;
   WorkoutExercise? _pendingIsometricExercise;
+
+
+
+
 
   // ✏️ Modified parameters storage
   Map<int, double> _modifiedWeights = {};
@@ -295,12 +300,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
               _invalidateCacheForExercise(exerciseId);
 
-              CustomSnackbar.show(
-                context,
-                message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\nSequenza: ${data.actualSequence}\nTotale: ${data.totalActualReps} reps",
-                isSuccess: true,
-                duration: const Duration(seconds: 4),
-              );
+              // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento serie per migliorare performance
+              // CustomSnackbar.show(
+              //   context,
+              //   message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\nSequenza: ${data.actualSequence}\nTotale: ${data.totalActualReps} reps",
+              //   isSuccess: true,
+              //   duration: const Duration(seconds: 4),
+              // );
 
               //print("🚀 [REST-PAUSE] Series saved with data:");
               //print("🚀 [REST-PAUSE]   - isRestPause: 1");
@@ -401,15 +407,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
     _invalidateCacheForExercise(exerciseId);
 
-    // Mostra feedback specifico per REST-PAUSE
-    CustomSnackbar.show(
-      context,
-      message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\n" +
-          "Sequenza: ${restPauseData.actualSequence}\n" +
-          "Totale: ${restPauseData.totalActualReps} reps",
-      isSuccess: true,
-      duration: const Duration(seconds: 4), // Più lungo per mostrare dettagli
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento REST-PAUSE per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: "🔥 REST-PAUSE Serie ${completedCount + 1} completata!\n" +
+    //       "Sequenza: ${restPauseData.actualSequence}\n" +
+    //       "Totale: ${restPauseData.totalActualReps} reps",
+    //   isSuccess: true,
+    //   duration: const Duration(seconds: 4), // Più lungo per mostrare dettagli
+    // );
 
     // Log dettagliato per debug
     //print("🚀 [REST-PAUSE] Series saved:");
@@ -723,6 +729,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     });
   }
 
+  // 🔧 FASE 1: Metodo per mostrare dialog aggiunta esercizio
+  void _showAddExerciseDialog() {
+    CustomSnackbar.show(
+      context,
+      message: 'Funzionalità in arrivo!',
+      isSuccess: false,
+    );
+  }
+
+
+
   void _handleExitConfirmed() {
     //print("🚪 [EXIT] User confirmed exit - cancelling workout");
 
@@ -990,11 +1007,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _currentRecoveryExerciseName = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "Recupero completato! Pronto per la prossima serie 💪",
-      isSuccess: true,
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento recupero per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: "Recupero completato! Pronto per la prossima serie 💪",
+    //   isSuccess: true,
+    // );
   }
 
   // ============================================================================
@@ -1031,11 +1049,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _pendingIsometricExercise = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "🔥 Tenuta isometrica completata! 💪",
-      isSuccess: true,
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento tenuta isometrica per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: "🔥 Tenuta isometrica completata! 💪",
+    //   isSuccess: true,
+    // );
   }
 
   void _onIsometricTimerCancelled() {
@@ -1048,11 +1067,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _pendingIsometricExercise = null;
     });
 
-    CustomSnackbar.show(
-      context,
-      message: "Tenuta isometrica annullata",
-      isSuccess: false,
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di annullamento tenuta isometrica per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: "Tenuta isometrica annullata",
+    //   isSuccess: false,
+    // );
   }
 
   // ============================================================================
@@ -1092,11 +1112,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   //  print("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
 
-    CustomSnackbar.show(
-      context,
-      message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
-      isSuccess: true,
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di aggiornamento parametri per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
+    //   isSuccess: true,
+    // );
 
     // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se non già analizzato o dismissed
     _triggerPlateauAnalysisIfNeeded(exercise);
@@ -1247,13 +1268,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
     _invalidateCacheForExercise(exerciseId);
 
-    CustomSnackbar.show(
-      context,
-      message: exercise.isIsometric
-          ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
-          : "Serie ${completedCount + 1} completata! 💪",
-      isSuccess: true,
-    );
+    // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento serie per migliorare performance
+    // CustomSnackbar.show(
+    //   context,
+    //   message: exercise.isIsometric
+    //       ? "🔥 Tenuta isometrica ${completedCount + 1} completata!"
+    //       : "Serie ${completedCount + 1} completata! 💪",
+    //   isSuccess: true,
+    // );
 
     // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se necessario
     _triggerPlateauAnalysisIfNeeded(exercise);
@@ -1301,11 +1323,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           final nextExercise = currentGroup[_currentExerciseInGroup];
           final groupType = currentGroup.first.setType;
 
-          CustomSnackbar.show(
-            context,
-            message: "🔄 ${groupType.toUpperCase()}: ${nextExercise.nome}",
-            isSuccess: true,
-          );
+          // 🔧 PERFORMANCE FIX: Rimosso messaggio di rotazione esercizi per migliorare performance
+          // CustomSnackbar.show(
+          //   context,
+          //   message: "🔄 ${groupType.toUpperCase()}: ${nextExercise.nome}",
+          //   isSuccess: true,
+          // );
         }
       });
     }
@@ -1459,11 +1482,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       //print("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
       _startWorkoutTimer();
 
-      CustomSnackbar.show(
-        context,
-        message: "Allenamento avviato con successo! 💪",
-        isSuccess: true,
-      );
+      // 🔧 PERFORMANCE FIX: Rimosso messaggio di avvio allenamento per migliorare performance
+      // CustomSnackbar.show(
+      //   context,
+      //   message: "Allenamento avviato con successo! 💪",
+      //   isSuccess: true,
+      // );
     }
 
     if (state is WorkoutSessionActive) {
@@ -1534,13 +1558,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       if (activePlateaus.isNotEmpty) {
         //print("🔧 [PLATEAU FIX] Plateau rilevati: ${activePlateaus.length}");
 
-        // 🔧 MINIMALE: Solo notifica discreta, NO banner invasivo
-        CustomSnackbar.show(
-          context,
-          message: "🎯 Plateau rilevato - Tap badge per suggerimenti!",
-          isSuccess: false,
-          duration: const Duration(seconds: 2),
-        );
+        // 🔧 PERFORMANCE FIX: Rimosso messaggio di plateau per migliorare performance
+        // CustomSnackbar.show(
+        //   context,
+        //   message: "🎯 Plateau rilevato - Tap badge per suggerimenti!",
+        //   isSuccess: false,
+        //   duration: const Duration(seconds: 2),
+        // );
       }
 
       // Track dismissed plateaus from state
@@ -1656,6 +1680,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         onPressed: _showExitConfirmDialog,
       ),
       actions: [
+        // 🔧 FASE 1: Pulsante Aggiungi Esercizio
+        IconButton(
+          icon: Icon(
+            Icons.add_circle_outline,
+            size: 24.sp,
+            color: colorScheme.onSurface,
+          ),
+          onPressed: _showAddExerciseDialog,
+          tooltip: 'Aggiungi esercizio',
+        ),
+        SizedBox(width: 8.w),
         Container(
           margin: EdgeInsets.only(right: 16.w),
           child: AnimatedBuilder(
@@ -1720,6 +1755,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               });
             },
           ),
+
+        // 🔧 FASE 1: Dialog per aggiungere esercizi (placeholder)
+        if (false) // Temporaneamente disabilitato
+          Container(), // Placeholder per il dialog
       ],
     );
   }
