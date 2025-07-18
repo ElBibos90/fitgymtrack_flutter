@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
 import '../../features/exercises/models/exercises_response.dart';
+import '../../features/exercises/services/image_service.dart';
 import 'create_exercise_dialog.dart';
 import 'exercise_editor.dart';
 
@@ -408,6 +409,42 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
       ),
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        leading: exercise.imageUrl != null
+            ? Container(
+                width: 60.w,
+                height: 60.w,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppConfig.radiusS),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppConfig.radiusS),
+                  child: ImageService.buildGifImage(
+                    imageUrl: exercise.imageUrl,
+                    width: 60.w,
+                    height: 60.w,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            : Container(
+                width: 60.w,
+                height: 60.w,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppConfig.radiusS),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Icon(
+                  Icons.fitness_center,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  size: 24.sp,
+                ),
+              ),
         title: Text(
           exercise.nome,
           style: TextStyle(
@@ -565,6 +602,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
       gruppoMuscolare: data['gruppoMuscolare'],
       attrezzatura: data['attrezzatura'],
       descrizione: data['descrizione'],
+      immagineNome: data['immagineNome'], // ✅ Aggiungi immagine
       isCustom: true,
       serieDefault: data['serie'] ?? 3,
       ripetizioniDefault: data['ripetizioni'] ?? 10,

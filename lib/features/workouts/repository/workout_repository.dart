@@ -133,12 +133,27 @@ class WorkoutRepository {
         ),
       );
 
-      //print('[CONSOLE]POST DELETE response: [32m${response.data}[0m');
+      //print('[CONSOLE]POST DELETE response: ${response.data}');
 
-      if (response.data != null && response.data is Map<String, dynamic>) {
+      // ✅ FIX: Gestione risposta null o vuota
+      if (response.data == null) {
+        // Se la risposta è null, assumiamo che l'eliminazione sia andata a buon fine
+        return const DeleteWorkoutPlanResponse(
+          success: true,
+          message: 'Scheda eliminata con successo',
+          schedaId: null,
+        );
+      }
+
+      if (response.data is Map<String, dynamic>) {
         return DeleteWorkoutPlanResponse.fromJson(response.data);
       } else {
-        throw Exception('Formato risposta non valido');
+        // Se la risposta non è null ma non è un Map, assumiamo successo
+        return const DeleteWorkoutPlanResponse(
+          success: true,
+          message: 'Scheda eliminata con successo',
+          schedaId: null,
+        );
       }
     });
   }

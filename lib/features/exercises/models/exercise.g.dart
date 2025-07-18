@@ -11,6 +11,7 @@ Exercise _$ExerciseFromJson(Map<String, dynamic> json) => Exercise(
       nome: json['nome'] as String,
       descrizione: json['descrizione'] as String,
       immagineUrl: json['immagine_url'] as String,
+      immagineNome: json['immagine_nome'] as String?,
       gruppoMuscolare: json['gruppo_muscolare'] as String,
       attrezzatura: json['attrezzatura'] as String,
       isIsometric: (json['is_isometric'] as num?)?.toInt() ?? 0,
@@ -23,6 +24,7 @@ Map<String, dynamic> _$ExerciseToJson(Exercise instance) => <String, dynamic>{
       'nome': instance.nome,
       'descrizione': instance.descrizione,
       'immagine_url': instance.immagineUrl,
+      'immagine_nome': instance.immagineNome,
       'gruppo_muscolare': instance.gruppoMuscolare,
       'attrezzatura': instance.attrezzatura,
       'is_isometric': instance.isIsometric,
@@ -40,6 +42,7 @@ UserExercise _$UserExerciseFromJson(Map<String, dynamic> json) => UserExercise(
       createdByUserId: (json['created_by_user_id'] as num).toInt(),
       status: json['status'] as String? ?? 'pending_review',
       immagineUrl: json['immagine_url'] as String?,
+      immagineNome: json['immagine_nome'] as String?,
     );
 
 Map<String, dynamic> _$UserExerciseToJson(UserExercise instance) =>
@@ -53,6 +56,7 @@ Map<String, dynamic> _$UserExerciseToJson(UserExercise instance) =>
       'created_by_user_id': instance.createdByUserId,
       'status': instance.status,
       'immagine_url': instance.immagineUrl,
+      'immagine_nome': instance.immagineNome,
     };
 
 CreateUserExerciseRequest _$CreateUserExerciseRequestFromJson(

@@ -47,7 +47,7 @@ switch ($method) {
             
             $query = "
                 SELECT se.id as scheda_esercizio_id, se.esercizio_id as id, e.nome, e.gruppo_muscolare, e.attrezzatura, e.descrizione, 
-                    e.is_isometric, se.serie, se.ripetizioni, se.peso, se.ordine, se.tempo_recupero, 
+                    e.is_isometric, e.immagine_nome, se.serie, se.ripetizioni, se.peso, se.ordine, se.tempo_recupero, 
                     se.note, se.set_type, se.linked_to_previous, se.is_rest_pause, se.rest_pause_reps, se.rest_pause_rest_seconds
                 FROM scheda_esercizi se
                 INNER JOIN esercizi e ON e.id = se.esercizio_id
@@ -113,17 +113,102 @@ switch ($method) {
         if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['scheda_id'])) {
             $scheda_id = intval($_POST['scheda_id']);
             debug_log("POST: Eliminazione scheda_id=$scheda_id");
+            debug_log("POST data ricevuta:", $_POST);
 
-            // Elimina la scheda
-            $stmt = $conn->prepare("DELETE FROM schede WHERE id = ?");
-            $stmt->bind_param('i', $scheda_id);
-            if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'message' => 'Scheda eliminata con successo.']);
-            } else {
+            // Verifica connessione database
+            if (!$conn) {
+                debug_log("❌ ERRORE: Connessione database non disponibile");
                 http_response_code(500);
-                echo json_encode(['success' => false, 'message' => 'Errore durante l\'eliminazione.']);
+                echo json_encode(['success' => false, 'message' => 'Errore connessione database']);
+                exit;
             }
-            $stmt->close();
+
+            // Inizia transazione per garantire integrità
+            $conn->begin_transaction();
+            
+            try {
+                // Verifica che la scheda esista
+                debug_log("Verifica esistenza scheda");
+                $check_stmt = $conn->prepare("SELECT id FROM schede WHERE id = ?");
+                if (!$check_stmt) {
+                    debug_log("❌ ERRORE PREPARE check: " . $conn->error);
+                    throw new Exception("Errore nella verifica scheda: " . $conn->error);
+                }
+                $check_stmt->bind_param('i', $scheda_id);
+                $check_stmt->execute();
+                $check_result = $check_stmt->get_result();
+                
+                if ($check_result->num_rows === 0) {
+                    debug_log("❌ ERRORE: Scheda $scheda_id non trovata");
+                    throw new Exception("Scheda non trovata");
+                }
+                debug_log("✅ Scheda $scheda_id trovata, procedo con l'eliminazione");
+                $check_stmt->close();
+                // 1. Elimina tutti gli esercizi della scheda
+                debug_log("Eliminazione esercizi della scheda");
+                $stmt = $conn->prepare("DELETE FROM scheda_esercizi WHERE scheda_id = ?");
+                if (!$stmt) {
+                    debug_log("❌ ERRORE PREPARE: " . $conn->error);
+                    throw new Exception("Errore nella preparazione query esercizi: " . $conn->error);
+                }
+                $stmt->bind_param('i', $scheda_id);
+                $result = $stmt->execute();
+                if (!$result) {
+                    debug_log("❌ ERRORE EXECUTE esercizi: " . $stmt->error);
+                    throw new Exception("Errore nell'eliminazione esercizi: " . $stmt->error);
+                }
+                $affected_rows = $stmt->affected_rows;
+                debug_log("✅ Eliminati $affected_rows esercizi dalla scheda");
+                $stmt->close();
+                
+                // 2. Elimina tutti gli assignment della scheda
+                debug_log("Eliminazione assignment della scheda");
+                $stmt = $conn->prepare("DELETE FROM user_workout_assignments WHERE scheda_id = ?");
+                if (!$stmt) {
+                    debug_log("❌ ERRORE PREPARE assignment: " . $conn->error);
+                    throw new Exception("Errore nella preparazione query assignment: " . $conn->error);
+                }
+                $stmt->bind_param('i', $scheda_id);
+                $result = $stmt->execute();
+                if (!$result) {
+                    debug_log("❌ ERRORE EXECUTE assignment: " . $stmt->error);
+                    throw new Exception("Errore nell'eliminazione assignment: " . $stmt->error);
+                }
+                $affected_rows = $stmt->affected_rows;
+                debug_log("✅ Eliminati $affected_rows assignment dalla scheda");
+                $stmt->close();
+                
+                // 3. Elimina la scheda
+                debug_log("Eliminazione scheda principale");
+                $stmt = $conn->prepare("DELETE FROM schede WHERE id = ?");
+                if (!$stmt) {
+                    debug_log("❌ ERRORE PREPARE scheda: " . $conn->error);
+                    throw new Exception("Errore nella preparazione query scheda: " . $conn->error);
+                }
+                $stmt->bind_param('i', $scheda_id);
+                $result = $stmt->execute();
+                if (!$result) {
+                    debug_log("❌ ERRORE EXECUTE scheda: " . $stmt->error);
+                    throw new Exception("Errore nell'eliminazione scheda: " . $stmt->error);
+                }
+                $affected_rows = $stmt->affected_rows;
+                debug_log("✅ Eliminata scheda (affected rows: $affected_rows)");
+                $stmt->close();
+                
+                // Commit della transazione
+                $conn->commit();
+                debug_log("✅ Scheda eliminata con successo");
+                
+                echo json_encode(['success' => true, 'message' => 'Scheda eliminata con successo.']);
+                
+            } catch (Exception $e) {
+                // Rollback in caso di errore
+                $conn->rollback();
+                debug_log("❌ ERRORE eliminazione: " . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Errore durante l\'eliminazione: ' . $e->getMessage()]);
+            }
+            
             exit;
         }
         // (Gestione creazione scheda nuova, già implementata in create_scheda_standalone.php)

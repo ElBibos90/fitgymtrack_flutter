@@ -10,6 +10,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
+import '../../../exercises/services/image_service.dart';
 
 class WorkoutDetailsScreen extends StatelessWidget {
   final int workoutId;
@@ -19,7 +20,23 @@ class WorkoutDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: getIt<WorkoutBloc>()..loadWorkoutPlanDetails(workoutId),
-      child: BlocBuilder<WorkoutBloc, WorkoutState>(
+      child: BlocListener<WorkoutBloc, WorkoutState>(
+        listener: (context, state) {
+          if (state is WorkoutPlanDeleted) {
+            CustomSnackbar.show(
+              context,
+              message: 'Scheda eliminata con successo',
+              isSuccess: true,
+            );
+          } else if (state is WorkoutError) {
+            CustomSnackbar.show(
+              context,
+              message: state.message,
+              isSuccess: false,
+            );
+          }
+        },
+        child: BlocBuilder<WorkoutBloc, WorkoutState>(
         builder: (context, state) {
           if (state is WorkoutLoading || state is WorkoutLoadingWithMessage) {
             return const LoadingOverlay(isLoading: true, child: SizedBox());
@@ -63,7 +80,6 @@ class WorkoutDetailsScreen extends StatelessWidget {
                       );
                       if (confirmed == true) {
                         context.read<WorkoutBloc>().deleteWorkout(plan.id);
-                        CustomSnackbar.show(context, message: 'Scheda eliminata', isSuccess: true);
                         context.go('/workouts');
                       }
                     },
@@ -127,6 +143,7 @@ class WorkoutDetailsScreen extends StatelessWidget {
           }
           return const SizedBox();
         },
+        ),
       ),
     );
   }
@@ -159,15 +176,50 @@ class WorkoutDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ex.nome, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
-            if (ex.gruppoMuscolare != null) ...[
-              SizedBox(height: 2.h),
-              Text('Muscolo: ${ex.gruppoMuscolare}', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
-            ],
-            if (ex.attrezzatura != null) ...[
-              SizedBox(height: 2.h),
-              Text('Attrezzatura: ${ex.attrezzatura}', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
-            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Immagine esercizio
+                if (ex.immagineNome != null) ...[
+                  Container(
+                    width: 80.w,
+                    height: 80.w,
+                    margin: EdgeInsets.only(right: 12.w),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: AppColors.indigo600.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: ImageService.buildGifImage(
+                        imageUrl: ImageService.getImageUrl(ex.immagineNome),
+                        width: 80.w,
+                        height: 80.w,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(ex.nome, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                      if (ex.gruppoMuscolare != null) ...[
+                        SizedBox(height: 2.h),
+                        Text('Muscolo: ${ex.gruppoMuscolare}', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                      ],
+                      if (ex.attrezzatura != null) ...[
+                        SizedBox(height: 2.h),
+                        Text('Attrezzatura: ${ex.attrezzatura}', style: TextStyle(fontSize: 12.sp, color: AppColors.textSecondary)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
             SizedBox(height: 6.h),
             Wrap(
               spacing: 8.w,

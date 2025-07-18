@@ -34,6 +34,7 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
       gruppoMuscolare: json['gruppo_muscolare'] as String?,
       attrezzatura: json['attrezzatura'] as String?,
       descrizione: json['descrizione'] as String?,
+      immagineNome: json['immagine_nome'] as String?,
       serie: json['serie'] == null ? 3 : _parseIntSafe(json['serie']),
       ripetizioni:
           json['ripetizioni'] == null ? 10 : _parseIntSafe(json['ripetizioni']),
@@ -67,6 +68,7 @@ Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
       'gruppo_muscolare': instance.gruppoMuscolare,
       'attrezzatura': instance.attrezzatura,
       'descrizione': instance.descrizione,
+      'immagine_nome': instance.immagineNome,
       'serie': instance.serie,
       'ripetizioni': instance.ripetizioni,
       'peso': _weightToJson(instance.peso),

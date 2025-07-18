@@ -29,6 +29,8 @@ import '../../../../shared/widgets/rest_pause_timer_popup.dart';
 import '../../../../shared/widgets/rest_pause_data_manager.dart';
 import '../../../../shared/widgets/exercise_selection_dialog.dart';
 import '../../../exercises/models/exercises_response.dart';
+import '../../../exercises/services/image_service.dart';
+import '../../../../core/config/app_config.dart';
 
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
@@ -1903,73 +1905,143 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            Text(
-              exercise.nome,
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onBackground,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 40.h),
-
-            // 📱 CARD SERIE ULTRA-COMPATTA - Layout Orizzontale
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha:0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Label "Serie"
-                  Text(
-                    'Serie ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface.withValues(alpha:0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  // Numero delle serie
-                  Text(
-                    '$completedSeries/${exercise.serie}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isCompleted ? Colors.green : exerciseColor,
-                    ),
-                  ),
-
-                  SizedBox(width: 16.w), // Spazio tra numero e puntini
-
-                  // Puntini indicatori in fila
-                  ...List.generate(exercise.serie, (i) {
-                    return Container(
-                      margin: EdgeInsets.only(left: i > 0 ? 6.w : 0), // Spazio tra puntini
-                      width: 8.w, // Puntini ancora più piccoli
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: i < completedSeries
-                            ? exerciseColor
-                            : colorScheme.surfaceVariant,
-                        shape: BoxShape.circle, // Perfettamente rotondi
+            // 🎯 NUOVO LAYOUT A DUE COLONNE: Info a sinistra, immagine a destra
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // COLONNA SINISTRA: Nome esercizio e serie
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nome esercizio
+                      Text(
+                        exercise.nome,
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onBackground,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    );
-                  }),
+
+                      SizedBox(height: 16.h),
+
+                      // 📱 CARD SERIE COMPATTA - Layout Verticale
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(10.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha:0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Label "Serie"
+                            Text(
+                              'Serie',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: colorScheme.onSurface.withValues(alpha:0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+
+                            SizedBox(height: 4.h),
+
+                            // Numero delle serie
+                            Text(
+                              '$completedSeries/${exercise.serie}',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                                color: isCompleted ? Colors.green : exerciseColor,
+                              ),
+                            ),
+
+                            SizedBox(height: 8.h),
+
+                            // Puntini indicatori in fila
+                            Row(
+                              children: List.generate(exercise.serie, (i) {
+                                return Container(
+                                  margin: EdgeInsets.only(right: i < exercise.serie - 1 ? 4.w : 0),
+                                  width: 6.w,
+                                  height: 6.w,
+                                  decoration: BoxDecoration(
+                                    color: i < completedSeries
+                                        ? exerciseColor
+                                        : colorScheme.surfaceVariant,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: 20.w),
+
+                // COLONNA DESTRA: Immagine esercizio
+                if (exercise.immagineNome != null) ...[
+                  Container(
+                    width: 160.w,
+                    height: 160.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      child: ImageService.buildGifImage(
+                        imageUrl: ImageService.getImageUrl(exercise.immagineNome),
+                        width: 160.w,
+                        height: 160.w,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // Placeholder se non c'è immagine
+                  Container(
+                    width: 160.w,
+                    height: 160.w,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.fitness_center,
+                      size: 48.w,
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
 
             SizedBox(height: 32.h),
@@ -2233,70 +2305,143 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
             SizedBox(height: 32.h),
 
-            Text(
-              currentExercise.nome,
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onBackground,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 40.h),
-
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.shadow.withValues(alpha:0.08),
-                    blurRadius: 6,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Label "Serie"
-                  Text(
-                    'Serie ',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface.withValues(alpha:0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    '$completedSeries/${currentExercise.serie}',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: isCompleted ? Colors.green : groupColor,
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(currentExercise.serie, (i) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.w),
-                        width: 12.w,
-                        height: 12.w,
-                        decoration: BoxDecoration(
-                          color: i < completedSeries
-                              ? groupColor
-                              : colorScheme.surfaceVariant,
-                          borderRadius: BorderRadius.circular(6.r),
+            // 🎯 NUOVO LAYOUT A DUE COLONNE: Info a sinistra, immagine a destra
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // COLONNA SINISTRA: Nome esercizio e serie
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nome esercizio
+                      Text(
+                        currentExercise.nome,
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onBackground,
                         ),
-                      );
-                    }),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      SizedBox(height: 16.h),
+
+                      // 📱 CARD SERIE COMPATTA - Layout Verticale
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          borderRadius: BorderRadius.circular(10.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.shadow.withValues(alpha:0.08),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Label "Serie"
+                            Text(
+                              'Serie',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: colorScheme.onSurface.withValues(alpha:0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+
+                            SizedBox(height: 4.h),
+
+                            // Numero delle serie
+                            Text(
+                              '$completedSeries/${currentExercise.serie}',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                                color: isCompleted ? Colors.green : groupColor,
+                              ),
+                            ),
+
+                            SizedBox(height: 8.h),
+
+                            // Puntini indicatori in fila
+                            Row(
+                              children: List.generate(currentExercise.serie, (i) {
+                                return Container(
+                                  margin: EdgeInsets.only(right: i < currentExercise.serie - 1 ? 4.w : 0),
+                                  width: 6.w,
+                                  height: 6.w,
+                                  decoration: BoxDecoration(
+                                    color: i < completedSeries
+                                        ? groupColor
+                                        : colorScheme.surfaceVariant,
+                                    shape: BoxShape.circle,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(width: 20.w),
+
+                // COLONNA DESTRA: Immagine esercizio
+                if (currentExercise.immagineNome != null) ...[
+                  Container(
+                    width: 160.w,
+                    height: 160.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      child: ImageService.buildGifImage(
+                        imageUrl: ImageService.getImageUrl(currentExercise.immagineNome),
+                        width: 160.w,
+                        height: 160.w,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  // Placeholder se non c'è immagine
+                  Container(
+                    width: 160.w,
+                    height: 160.w,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.fitness_center,
+                      size: 48.w,
+                      color: colorScheme.onSurface.withValues(alpha: 0.3),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
 
             SizedBox(height: 32.h),

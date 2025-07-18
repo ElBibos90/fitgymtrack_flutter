@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../../core/config/app_config.dart';
 
 part 'exercise.g.dart';
 
@@ -10,6 +11,8 @@ class Exercise {
   final String descrizione;
   @JsonKey(name: 'immagine_url')
   final String immagineUrl;
+  @JsonKey(name: 'immagine_nome')
+  final String? immagineNome;
   @JsonKey(name: 'gruppo_muscolare')
   final String gruppoMuscolare;
   final String attrezzatura;
@@ -24,6 +27,7 @@ class Exercise {
     required this.nome,
     required this.descrizione,
     required this.immagineUrl,
+    this.immagineNome,
     required this.gruppoMuscolare,
     required this.attrezzatura,
     this.isIsometric = 0,
@@ -33,6 +37,14 @@ class Exercise {
 
   /// Proprietà calcolata per facilitare l'uso
   bool get isIsometricBool => isIsometric > 0;
+
+  /// URL completo per l'immagine GIF
+  String? get imageUrl {
+    if (immagineNome != null && immagineNome!.isNotEmpty) {
+      return '${AppConfig.baseUrl}/serve_image.php?filename=$immagineNome';
+    }
+    return immagineUrl.isNotEmpty ? immagineUrl : null;
+  }
 
   factory Exercise.fromJson(Map<String, dynamic> json) => _$ExerciseFromJson(json);
   Map<String, dynamic> toJson() => _$ExerciseToJson(this);
@@ -54,6 +66,8 @@ class UserExercise {
   final String status;
   @JsonKey(name: 'immagine_url')
   final String? immagineUrl;
+  @JsonKey(name: 'immagine_nome')
+  final String? immagineNome;
 
   const UserExercise({
     required this.id,
@@ -65,10 +79,19 @@ class UserExercise {
     required this.createdByUserId,
     this.status = 'pending_review',
     this.immagineUrl,
+    this.immagineNome,
   });
 
   /// Proprietà calcolata per convertire Int a Boolean
   bool get isIsometric => isIsometricInt > 0;
+
+  /// URL completo per l'immagine GIF
+  String? get imageUrl {
+    if (immagineNome != null && immagineNome!.isNotEmpty) {
+      return '${AppConfig.baseUrl}/serve_image.php?filename=$immagineNome';
+    }
+    return immagineUrl?.isNotEmpty == true ? immagineUrl : null;
+  }
 
   factory UserExercise.fromJson(Map<String, dynamic> json) => _$UserExerciseFromJson(json);
   Map<String, dynamic> toJson() => _$UserExerciseToJson(this);

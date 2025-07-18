@@ -13,6 +13,7 @@ ExerciseItem _$ExerciseItemFromJson(Map<String, dynamic> json) => ExerciseItem(
       attrezzatura: json['attrezzatura'] as String?,
       descrizione: json['descrizione'] as String?,
       immagine: json['immagine'] as String?,
+      immagineNome: json['immagine_nome'] as String?,
       isCustom: json['is_custom'] as bool? ?? false,
       createdBy: (json['created_by'] as num?)?.toInt(),
       dataCreazione: json['data_creazione'] as String?,
@@ -34,6 +35,7 @@ Map<String, dynamic> _$ExerciseItemToJson(ExerciseItem instance) =>
       'attrezzatura': instance.attrezzatura,
       'descrizione': instance.descrizione,
       'immagine': instance.immagine,
+      'immagine_nome': instance.immagineNome,
       'is_custom': instance.isCustom,
       'created_by': instance.createdBy,
       'data_creazione': instance.dataCreazione,
@@ -154,4 +156,21 @@ Map<String, dynamic> _$CustomExerciseResponseToJson(
       'success': instance.success,
       'message': instance.message,
       'exercise_id': instance.exerciseId,
+    };
+
+AvailableImagesResponse _$AvailableImagesResponseFromJson(
+        Map<String, dynamic> json) =>
+    AvailableImagesResponse(
+      success: json['success'] as bool,
+      images:
+          (json['images'] as List<dynamic>).map((e) => e as String).toList(),
+      count: (json['count'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$AvailableImagesResponseToJson(
+        AvailableImagesResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'images': instance.images,
+      'count': instance.count,
     };

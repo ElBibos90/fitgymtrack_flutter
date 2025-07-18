@@ -98,6 +98,8 @@ class WorkoutExercise {
   final String? gruppoMuscolare;
   final String? attrezzatura;
   final String? descrizione;
+  @JsonKey(name: 'immagine_nome')
+  final String? immagineNome;
 
   // 🔧 PARSING ROBUSTO per valori numerici
   @JsonKey(fromJson: _parseIntSafe)
@@ -147,6 +149,7 @@ class WorkoutExercise {
     this.gruppoMuscolare,
     this.attrezzatura,
     this.descrizione,
+    this.immagineNome,
     this.serie = 3,
     this.ripetizioni = 10,
     this.peso = 0.0,
@@ -178,6 +181,7 @@ class WorkoutExercise {
     String? gruppoMuscolare,
     String? attrezzatura,
     String? descrizione,
+    String? immagineNome,
     int? serie,
     int? ripetizioni,
     double? peso,
@@ -199,6 +203,7 @@ class WorkoutExercise {
       gruppoMuscolare: gruppoMuscolare ?? this.gruppoMuscolare,
       attrezzatura: attrezzatura ?? this.attrezzatura,
       descrizione: descrizione ?? this.descrizione,
+      immagineNome: immagineNome ?? this.immagineNome,
       serie: serie ?? this.serie,
       ripetizioni: ripetizioni ?? this.ripetizioni,
       peso: peso ?? this.peso,

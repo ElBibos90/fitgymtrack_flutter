@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
 import '../../features/workouts/models/workout_plan_models.dart';
+import '../../features/exercises/services/image_service.dart';
 
 class WorkoutExerciseEditor extends StatefulWidget {
   final WorkoutExercise exercise;
@@ -193,6 +194,28 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               children: [
                 Row(
                   children: [
+                    // Immagine esercizio
+                    if (widget.exercise.immagineNome != null)
+                      Container(
+                        margin: EdgeInsets.only(right: 12.w),
+                        width: 50.w,
+                        height: 50.w,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AppConfig.radiusS),
+                          child: ImageService.buildGifImage(
+                            imageUrl: ImageService.getImageUrl(widget.exercise.immagineNome),
+                            width: 50.w,
+                            height: 50.w,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     // 🔧 FASE 3: Indicatore per esercizi combinati
                     if (widget.exercise.setType == 'superset' || widget.exercise.setType == 'circuit')
                       Container(

@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
+import 'environment.dart';
 
 class AppConfig {
   // ============================================================================
+  // API CONFIGURATION
+  // ============================================================================
+
+  /// Base URL per le API
+  static const String baseUrl = Environment.baseUrl;
+
+  // ============================================================================
   // DESIGN TOKENS
   // ============================================================================
+
+  // Colors
+  static const Color primaryColor = Color(0xFF3B82F6); // Indigo 500
+  static const Color secondaryColor = Color(0xFF6366F1); // Indigo 600
+  static const Color accentColor = Color(0xFF8B5CF6); // Violet 500
 
   // Spacing
   static const double spacingXS = 4.0;

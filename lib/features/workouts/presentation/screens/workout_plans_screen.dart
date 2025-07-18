@@ -500,15 +500,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
     context.push('/workouts/${workoutPlan.id}/start');
   }
 
-  Future<void> _deleteWorkout(int schedaId) async {
-    try {
-      _workoutBloc.deleteWorkout(schedaId);
-    } catch (e) {
-      CustomSnackbar.show(
-        context,
-        message: 'Errore nell\'eliminazione della scheda: $e',
-        isSuccess: false,
-      );
-    }
+  void _deleteWorkout(int schedaId) {
+    _workoutBloc.deleteWorkout(schedaId);
   }
 }

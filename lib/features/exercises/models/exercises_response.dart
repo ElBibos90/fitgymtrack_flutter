@@ -1,5 +1,6 @@
 // lib/features/exercises/models/exercises_response.dart
 import 'package:json_annotation/json_annotation.dart';
+import '../../../core/config/app_config.dart';
 
 part 'exercises_response.g.dart';
 
@@ -12,6 +13,8 @@ class ExerciseItem {
   final String? attrezzatura;
   final String? descrizione;
   final String? immagine;
+  @JsonKey(name: 'immagine_nome')
+  final String? immagineNome;
   @JsonKey(name: 'is_custom')
   final bool isCustom;
   @JsonKey(name: 'created_by')
@@ -39,6 +42,7 @@ class ExerciseItem {
     this.attrezzatura,
     this.descrizione,
     this.immagine,
+    this.immagineNome,
     this.isCustom = false,
     this.createdBy,
     this.dataCreazione,
@@ -61,6 +65,7 @@ class ExerciseItem {
       attrezzatura: json['attrezzatura'] as String?,
       descrizione: json['descrizione'] as String?,
       immagine: json['immagine'] as String?,
+      immagineNome: json['immagine_nome'] as String?,
       isCustom: _parseBool(json['is_custom']) ?? false,
       createdBy: _parseInt(json['created_by']),
       dataCreazione: json['data_creazione'] as String?,
@@ -104,6 +109,14 @@ class ExerciseItem {
     }
     if (value is int) return value != 0;
     return null;
+  }
+
+  /// URL completo per l'immagine GIF
+  String? get imageUrl {
+    if (immagineNome != null && immagineNome!.isNotEmpty) {
+      return '${AppConfig.baseUrl}/serve_image.php?filename=$immagineNome';
+    }
+    return immagine?.isNotEmpty == true ? immagine : null;
   }
 
   Map<String, dynamic> toJson() => _$ExerciseItemToJson(this);
@@ -248,4 +261,23 @@ class CustomExerciseResponse {
       _$CustomExerciseResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$CustomExerciseResponseToJson(this);
+}
+
+/// Risposta per le immagini disponibili
+@JsonSerializable()
+class AvailableImagesResponse {
+  final bool success;
+  final List<String> images;
+  final int count;
+
+  const AvailableImagesResponse({
+    required this.success,
+    required this.images,
+    required this.count,
+  });
+
+  factory AvailableImagesResponse.fromJson(Map<String, dynamic> json) =>
+      _$AvailableImagesResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AvailableImagesResponseToJson(this);
 }

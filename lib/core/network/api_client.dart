@@ -193,6 +193,13 @@ abstract class ApiClient {
   Future<dynamic> deleteExercise(@Query("id") int exerciseId);
 
   // ============================================================================
+  // IMAGES ENDPOINTS
+  // ============================================================================
+
+  @GET("/available_images.php")
+  Future<dynamic> getAvailableImages();
+
+  // ============================================================================
   // EXERCISES ENDPOINTS (STANDALONE)
   // ============================================================================
 
