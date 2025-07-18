@@ -57,6 +57,14 @@ function debug_log($message, $data = null) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Per metodi che modificano i dati, richiedi autenticazione
+if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
+    $userData = authMiddleware($conn); // accetta tutti gli utenti autenticati
+    if (!$userData) {
+        exit; // authMiddleware gestisce già la risposta
+    }
+}
+
 try {
     switch($method) {
         case 'GET':
@@ -67,7 +75,9 @@ try {
                 $stmt->execute();
                 $result = $stmt->get_result();
                 $exercise = $result->fetch_assoc();
-                
+                if (isset($exercise['is_isometric'])) {
+                    $exercise['is_isometric'] = (int)$exercise['is_isometric'];
+                }
                 if (!$exercise) {
                     http_response_code(404);
                     echo json_encode(['success' => false, 'message' => 'Esercizio non trovato']);
@@ -78,6 +88,9 @@ try {
                 $result = $conn->query("SELECT * FROM esercizi ORDER BY nome ASC");
                 $esercizi = array();
                 while($row = $result->fetch_assoc()) {
+                    if (isset($row['is_isometric'])) {
+                        $row['is_isometric'] = (int)$row['is_isometric'];
+                    }
                     $esercizi[] = $row;
                 }
                 echo json_encode($esercizi);
@@ -104,16 +117,21 @@ try {
             $conn->begin_transaction();
             
             try {
-                // Modifica la query per includere equipment_type_id
-                $stmt = $conn->prepare("INSERT INTO esercizi (nome, descrizione, immagine_url, gruppo_muscolare, attrezzatura, is_isometric, equipment_type_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                // Determina lo status in base al ruolo
+                $status = ($userData['role_name'] === 'admin') ? 'approved' : 'pending_review';
                 
-                // Imposta il valore predefinito per status a NULL o a un valore specifico se fornito
-                $status = isset($data['status']) ? $data['status'] : null;
+                // Gestisci il campo immagine (supporta sia immagine_url che immagine_nome per retrocompatibilità)
+                $immagine_url = isset($data['immagine_url']) ? $data['immagine_url'] : '';
+                $immagine_nome = isset($data['immagine_nome']) ? $data['immagine_nome'] : '';
                 
-                $stmt->bind_param("sssssiss", 
+                // Modifica la query per includere equipment_type_id e immagine_nome
+                $stmt = $conn->prepare("INSERT INTO esercizi (nome, descrizione, immagine_url, immagine_nome, gruppo_muscolare, attrezzatura, is_isometric, equipment_type_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                
+                $stmt->bind_param("ssssssiss", 
                     $data['nome'], 
                     $data['descrizione'], 
-                    $data['immagine_url'],
+                    $immagine_url,
+                    $immagine_nome,
                     $data['gruppo_muscolare'], 
                     $data['attrezzatura'],
                     $is_isometric,
@@ -191,13 +209,18 @@ try {
                 
                 $checkStmt->close();
                 
-                // Se lo status è incluso, aggiorna anche quello
-                if ($status !== null) {
-                    $stmt = $conn->prepare("UPDATE esercizi SET nome = ?, descrizione = ?, immagine_url = ?, gruppo_muscolare = ?, attrezzatura = ?, is_isometric = ?, equipment_type_id = ?, status = ? WHERE id = ?");
-                    $stmt->bind_param("sssssissi", 
+                // Gestisci il campo immagine (supporta sia immagine_url che immagine_nome per retrocompatibilità)
+                $immagine_url = isset($data['immagine_url']) ? $data['immagine_url'] : '';
+                $immagine_nome = isset($data['immagine_nome']) ? $data['immagine_nome'] : '';
+                
+                // Solo admin può aggiornare lo status
+                if ($status !== null && $userData['role_name'] === 'admin') {
+                    $stmt = $conn->prepare("UPDATE esercizi SET nome = ?, descrizione = ?, immagine_url = ?, immagine_nome = ?, gruppo_muscolare = ?, attrezzatura = ?, is_isometric = ?, equipment_type_id = ?, status = ? WHERE id = ?");
+                    $stmt->bind_param("ssssssissi", 
                         $data['nome'], 
                         $data['descrizione'], 
-                        $data['immagine_url'],
+                        $immagine_url,
+                        $immagine_nome,
                         $data['gruppo_muscolare'], 
                         $data['attrezzatura'],
                         $is_isometric,
@@ -207,11 +230,12 @@ try {
                     );
                 } else {
                     // Altrimenti aggiorna tutti i campi tranne status
-                    $stmt = $conn->prepare("UPDATE esercizi SET nome = ?, descrizione = ?, immagine_url = ?, gruppo_muscolare = ?, attrezzatura = ?, is_isometric = ?, equipment_type_id = ? WHERE id = ?");
-                    $stmt->bind_param("sssssiii", 
+                    $stmt = $conn->prepare("UPDATE esercizi SET nome = ?, descrizione = ?, immagine_url = ?, immagine_nome = ?, gruppo_muscolare = ?, attrezzatura = ?, is_isometric = ?, equipment_type_id = ? WHERE id = ?");
+                    $stmt->bind_param("ssssssiii", 
                         $data['nome'], 
                         $data['descrizione'], 
-                        $data['immagine_url'],
+                        $immagine_url,
+                        $immagine_nome,
                         $data['gruppo_muscolare'], 
                         $data['attrezzatura'],
                         $is_isometric,

@@ -34,6 +34,10 @@ try {
     if ($result) {
         $esercizi = array();
         while ($row = $result->fetch_assoc()) {
+            if (isset($row['is_isometric'])) {
+                $row['is_isometric'] = (int)$row['is_isometric'];
+            }
+            // RIMOSSA la normalizzazione di immagine_url: lasciamo immagine_nome e immagine_url come sono
             $esercizi[] = $row;
         }
         
