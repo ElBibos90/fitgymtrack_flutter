@@ -10,7 +10,7 @@ require_once 'stripe_auth_bridge.php';
 // 💳 STRIPE API KEYS - Sostituisci con le tue chiavi reali
 define('STRIPE_SECRET_KEY', 'sk_test_51RW3uvHHtQGHyul9p5RR6cxcgdZsXYtUr2DE7v7ue2FRUZAl1LKaDhFlWKTBIpmHz56y9Uhgq58Ztqq8i8lcEXTj00xoAbsxmw');  // ⚠️ DA CONFIGURARE
 define('STRIPE_PUBLISHABLE_KEY', 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY');
-define('STRIPE_WEBHOOK_SECRET', 'whsec_9QC6yRw5u8zwKuzvgsBQeIqVxzjRqowq');  // ⚠️ DA CONFIGURARE
+define('STRIPE_WEBHOOK_SECRET', 'whsec_9QC6yRw5u8zwKuzvgsBQeIqVxzjRqowq');  // ✅ Configurato per test
 
 // Test mode
 define('STRIPE_TEST_MODE', true);
@@ -24,7 +24,7 @@ define('STRIPE_COUNTRY', 'IT');
 // ============================================================================
 
 define('STRIPE_PREMIUM_MONTHLY_PRICE_ID', 'price_1RXVOfHHtQGHyul9qMGFmpmO');
-define('STRIPE_PREMIUM_YEARLY_PRICE_ID', 'price_premium_yearly_test');
+define('STRIPE_PREMIUM_YEARLY_PRICE_ID', 'price_1RbmRkHHtQGHyul92oUMSkUY');
 
 // ============================================================================
 // STRIPE PHP SDK - Download da https://github.com/stripe/stripe-php
@@ -34,13 +34,17 @@ define('STRIPE_PREMIUM_YEARLY_PRICE_ID', 'price_premium_yearly_test');
 // composer require stripe/stripe-php
 // require_once 'vendor/autoload.php';
 
-// Per ora uso un caricamento manuale (sostituisci con composer)
+// Caricamento automatico della libreria Stripe
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
 } else {
-    // ⚠️ FALLBACK: se non hai composer, scarica stripe-php e includilo manualmente
-    error_log("⚠️ STRIPE: SDK non trovato. Installa con: composer require stripe/stripe-php");
-    // require_once 'stripe-php/init.php';  // Percorso manuale se necessario
+    // ⚠️ FALLBACK: se non hai composer, usa la versione semplificata
+    error_log("⚠️ STRIPE: SDK non trovato. Usando fallback semplificato");
+    if (file_exists(__DIR__ . '/vendor/stripe/stripe-php/lib/Stripe/init.php')) {
+        require_once __DIR__ . '/vendor/stripe/stripe-php/lib/Stripe/init.php';
+    } else {
+        error_log("❌ STRIPE: Nessun SDK disponibile. Esegui install_stripe_sdk.php");
+    }
 }
 
 // Inizializza Stripe
@@ -61,7 +65,7 @@ if (class_exists('\Stripe\Stripe')) {
 function stripe_is_configured() {
     return class_exists('\Stripe\Stripe') && 
            !empty(STRIPE_SECRET_KEY) && 
-           STRIPE_SECRET_KEY !== 'sk_test_...';
+           strpos(STRIPE_SECRET_KEY, 'sk_') === 0;
 }
 
 /**

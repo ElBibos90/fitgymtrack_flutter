@@ -18,6 +18,7 @@ import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'core/config/app_config.dart';
 import 'features/payments/services/stripe_service.dart';
+import 'core/config/stripe_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,9 @@ void main() async {
 
   // Inizializza dependency injection
   await DependencyInjection.init();
+
+  // 🔍 DEBUG: Verifica configurazione Stripe all'avvio
+  StripeConfig.printTestingInfo();
 
   runApp(
     ScreenUtilInit(

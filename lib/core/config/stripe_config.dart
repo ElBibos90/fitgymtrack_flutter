@@ -8,9 +8,7 @@ class StripeConfig {
   // ============================================================================
 
   /// Publishable Key per Stripe (TEST KEYS for sandbox testing)
-  static const String publishableKey = kDebugMode
-      ? 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY' // ✅ REAL test key
-      : 'pk_live_REPLACE_WITH_PRODUCTION_KEY'; // For production later
+  static const String publishableKey = 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY'; // ✅ REAL test key
 
   /// 🔧 Merchant Identifier for Apple Pay
   static const String merchantIdentifier = 'merchant.com.fitgymtrack.app';
@@ -119,7 +117,6 @@ class StripeConfig {
   static bool get isDemoMode {
     // Demo mode se la chiave contiene pattern tipici di demo
     return publishableKey.contains('REPLACE') ||
-        publishableKey.length < 50 ||
         publishableKey == 'pk_test_51234567890abcdefghijklmnopqrstuvwxyz123456789012345678901234567890123456789012345678901234567890';
   }
 
