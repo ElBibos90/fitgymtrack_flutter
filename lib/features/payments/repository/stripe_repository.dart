@@ -321,8 +321,7 @@ class StripeRepository {
     required String paymentIntentId,
     required String subscriptionType,
   }) async {
-    /*print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId',
-    );*/
+    print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId');
 
     return Result.tryCallAsync(() async {
       // 🔧 FIX: Validazione payment intent ID
@@ -337,7 +336,7 @@ class StripeRepository {
         'confirmed_at': DateTime.now().toIso8601String(),
       };
 
-      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm data: $confirmData');
+      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm data: $confirmData');
 
       // 🔧 FIX: Richiesta con retry automatico e timeout esteso
       final response = await _makeAuthenticatedRequest(
@@ -348,12 +347,14 @@ class StripeRepository {
         timeoutSeconds: 30, // Timeout più lungo per conferma pagamento
       );
 
+      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm response: $response');
+
       if (response['success'] == true) {
-        /*print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Payment confirmed successfully',
-        );*/
+        print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Payment confirmed successfully');
 
         return true;
       } else {
+        print('[CONSOLE] [stripe_repository]❌ [STRIPE REPO] Payment confirmation failed: ${response['message']}');
         throw Exception(response['message'] ?? 'Errore nella conferma del pagamento');
       }
     });

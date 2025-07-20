@@ -431,13 +431,12 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
     }
   }
 
-  /// 🔧 FIX FINALE: Processa il pagamento tramite Payment Sheet con gestione CORRETTA del successo
-  /// 🔧 FIX FINALE: Processa il pagamento tramite Payment Sheet con gestione CORRETTA del successo
+  /// Processa il pagamento tramite Payment Sheet
   Future<void> _onProcessPayment(
       ProcessPaymentEvent event,
       Emitter<StripeState> emit,
       ) async {
-    //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Processing payment...');
+    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Processing payment...');
     emit(StripePaymentLoading(
       paymentType: event.paymentType,
       message: 'Elaborazione pagamento...',
@@ -450,23 +449,23 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       );
 
       // 🔧 FIX CRITICO: Analizza correttamente il Result
-      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
-      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
-      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
+      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
 
       if (result.isSuccess) {
         // ✅ SUCCESSO: Result è success significa che Payment Sheet è completato con successo
         final paymentOption = result.data;
 
-        //print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
-        //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
+        print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
 
         final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
 
-        //print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
+        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
 
         // 🚀 CRITICAL FIX: Chiama backend per confermare e sincronizzare DB
-        //print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
+        print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
 
         try {
           final confirmResult = await _repository.confirmPaymentSuccess(
@@ -475,7 +474,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           );
 
           if (confirmResult.isSuccess) {
-            //print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
+            print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
 
             // Emetti successo solo DOPO conferma backend
             emit(StripePaymentSuccess(
@@ -488,14 +487,14 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
             // 🚀 Refresh intelligente dei dati dopo conferma backend
             if (event.paymentType == 'subscription') {
-              //print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
+              print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
               add(const LoadCurrentSubscriptionEvent(afterPayment: true));
             }
 
             _refreshCustomerData();
 
           } else {
-            //print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation failed: ${confirmResult.message}');
+            print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation failed: ${confirmResult.message}');
 
             // Payment Sheet è riuscito ma backend ha fallito - mostra warning
             emit(StripePaymentSuccess(
@@ -511,7 +510,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           }
 
         } catch (confirmError) {
-          //print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation error: $confirmError');
+          print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Backend confirmation error: $confirmError');
 
           // Payment Sheet è riuscito ma backend non risponde - mostra warning
           emit(StripePaymentSuccess(
@@ -534,7 +533,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
         // ❌ ERRORE: Result è failure significa che c'è stato un vero errore
         final errorMessage = result.message ?? 'Pagamento fallito';
 
-        //print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment Sheet failed with error: $errorMessage');
+        print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment Sheet failed with error: $errorMessage');
 
         // Gestione errori specifici
         if (errorMessage.toLowerCase().contains('cancel') ||
@@ -546,7 +545,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       }
 
     } catch (e) {
-      //print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment processing exception: $e');
+      print('[CONSOLE] [stripe_bloc]❌ [STRIPE BLOC] Payment processing exception: $e');
       emit(StripeErrorState(message: 'Errore elaborazione pagamento: $e'));
     }
   }

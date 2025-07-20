@@ -4,6 +4,20 @@
 // STRIPE USER SUBSCRIPTION SYNC - INTEGRAZIONE COMPLETA CON RECURRING/ONETIME
 // ============================================================================
 
+// 🆕 NUOVO: Funzione per log dedicato
+function stripe_debug_log($message, $data = null) {
+    $log_file = __DIR__ . '/debug_subscription.log';
+    $timestamp = date('Y-m-d H:i:s');
+    
+    $log_entry = "[{$timestamp}] [STRIPE_DEBUG] {$message}";
+    if ($data) {
+        $log_entry .= " - " . json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
+    $log_entry .= "\n";
+    
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+}
+
 /**
  * Funzioni per sincronizzare automaticamente le subscription Stripe
  * con il database locale (users, user_subscriptions, subscription_plans)
@@ -78,14 +92,25 @@ function get_subscription_plan_info($plan_id) {
 function sync_user_subscription_after_stripe_payment($user_id, $stripe_subscription_id) {
     global $pdo;
     
-    stripe_log_info("Starting full sync for user {$user_id}, subscription {$stripe_subscription_id}");
+    stripe_debug_log("🚀 STARTING FULL SYNC", [
+        'user_id' => $user_id,
+        'stripe_subscription_id' => $stripe_subscription_id
+    ]);
     
     // Inizia transazione
     $pdo->beginTransaction();
     
     try {
         // 1. Recupera subscription da Stripe
+        stripe_debug_log("📡 Retrieving subscription from Stripe: {$stripe_subscription_id}");
         $stripe_subscription = \Stripe\Subscription::retrieve($stripe_subscription_id);
+        stripe_debug_log("✅ Stripe subscription retrieved successfully", [
+            'subscription_id' => $stripe_subscription->id,
+            'status' => $stripe_subscription->status,
+            'customer_id' => $stripe_subscription->customer,
+            'current_period_start' => $stripe_subscription->current_period_start,
+            'current_period_end' => $stripe_subscription->current_period_end
+        ]);
         
         // 2. Ottieni price_id e mappa al plan_id locale
         $stripe_price_id = $stripe_subscription->items->data[0]->price->id;
@@ -94,7 +119,7 @@ function sync_user_subscription_after_stripe_payment($user_id, $stripe_subscript
         // 🆕 NUOVO: Determina payment_type
         $payment_type = determine_payment_type_from_stripe_data($stripe_subscription);
         
-        stripe_log_info("Mapping Stripe data", [
+        stripe_debug_log("🗺️ Mapping Stripe data", [
             'price_id' => $stripe_price_id,
             'local_plan_id' => $local_plan_id,
             'payment_type' => $payment_type,
@@ -102,20 +127,29 @@ function sync_user_subscription_after_stripe_payment($user_id, $stripe_subscript
         ]);
         
         // 3. Aggiorna users.current_plan_id
+        stripe_debug_log("👤 Updating user current plan to {$local_plan_id}");
         update_user_current_plan($user_id, $local_plan_id);
         
         // 4. 🆕 UPDATED: Aggiorna/Crea user_subscriptions con payment_type
+        stripe_debug_log("📝 Updating user_subscriptions table with stripe_subscription_id: {$stripe_subscription_id}");
         update_or_create_user_subscription_with_type($user_id, $stripe_subscription, $local_plan_id, $payment_type);
         
         // 5. Aggiorna stripe_subscriptions (se non già fatto)
+        stripe_debug_log("💳 Updating stripe_subscriptions table");
         update_stripe_subscriptions_table($user_id, $stripe_subscription, $local_plan_id, $stripe_price_id);
         
         // 6. Pulisci subscription precedenti
+        stripe_debug_log("🧹 Cleaning up old subscriptions");
         cleanup_old_user_subscriptions($user_id, $stripe_subscription_id);
         
         $pdo->commit();
         
-        stripe_log_info("Full sync completed successfully for user {$user_id}");
+        stripe_debug_log("🎉 FULL SYNC COMPLETED SUCCESSFULLY", [
+            'user_id' => $user_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
+            'local_plan_id' => $local_plan_id,
+            'payment_type' => $payment_type
+        ]);
         
         return [
             'success' => true,
@@ -130,9 +164,11 @@ function sync_user_subscription_after_stripe_payment($user_id, $stripe_subscript
     } catch (Exception $e) {
         $pdo->rollBack();
         
-        stripe_log_error("Sync failed for user {$user_id}", [
+        stripe_debug_log("❌ SYNC FAILED", [
+            'user_id' => $user_id,
+            'stripe_subscription_id' => $stripe_subscription_id,
             'error' => $e->getMessage(),
-            'stripe_subscription_id' => $stripe_subscription_id
+            'trace' => $e->getTraceAsString()
         ]);
         
         throw $e;
@@ -149,7 +185,7 @@ function sync_user_subscription_after_stripe_payment($user_id, $stripe_subscript
 function update_user_current_plan($user_id, $plan_id) {
     global $pdo;
     
-    stripe_log_info("Updating user {$user_id} current_plan_id to {$plan_id}");
+    stripe_debug_log("Updating user {$user_id} current_plan_id to {$plan_id}");
     
     $stmt = $pdo->prepare("
         UPDATE users 
@@ -160,9 +196,9 @@ function update_user_current_plan($user_id, $plan_id) {
     $result = $stmt->execute([$plan_id, $user_id]);
     
     if ($result && $stmt->rowCount() > 0) {
-        stripe_log_info("User {$user_id} current_plan_id updated successfully");
+        stripe_debug_log("User {$user_id} current_plan_id updated successfully");
     } else {
-        stripe_log_error("Failed to update user {$user_id} current_plan_id");
+        stripe_debug_log("Failed to update user {$user_id} current_plan_id");
         throw new Exception("Failed to update user current plan");
     }
     
@@ -188,10 +224,15 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
     // 🆕 NUOVO: auto_renew dipende da payment_type
     $auto_renew = ($payment_type === 'recurring') ? 1 : 0;
     
-    stripe_log_info("Updating user_subscriptions for user {$user_id}", [
+    stripe_debug_log("📝 UPDATING USER_SUBSCRIPTIONS", [
+        'user_id' => $user_id,
+        'stripe_subscription_id' => $subscription_id,
         'payment_type' => $payment_type,
         'auto_renew' => $auto_renew,
-        'cancel_at_period_end' => $stripe_subscription->cancel_at_period_end
+        'cancel_at_period_end' => $stripe_subscription->cancel_at_period_end,
+        'start_date' => $start_date,
+        'end_date' => $end_date,
+        'status' => $status
     ]);
     
     // Controlla se esiste già una subscription per questo utente
@@ -203,9 +244,20 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
     $stmt->execute([$user_id, $subscription_id]);
     $existing_subscription = $stmt->fetch(PDO::FETCH_ASSOC);
     
+    stripe_debug_log("🔍 CHECKING EXISTING SUBSCRIPTION", [
+        'user_id' => $user_id,
+        'subscription_id' => $subscription_id,
+        'existing_found' => $existing_subscription ? 'YES' : 'NO',
+        'existing_id' => $existing_subscription ? $existing_subscription['id'] : null,
+        'existing_status' => $existing_subscription ? $existing_subscription['status'] : null
+    ]);
+    
     if ($existing_subscription) {
         // 🆕 UPDATED: Aggiorna subscription esistente con payment_type
-        stripe_log_info("Updating existing user_subscription {$existing_subscription['id']}");
+        stripe_debug_log("🔄 UPDATING EXISTING USER_SUBSCRIPTION", [
+            'existing_id' => $existing_subscription['id'],
+            'stripe_subscription_id' => $subscription_id
+        ]);
         
         $stmt = $pdo->prepare("
             UPDATE user_subscriptions 
@@ -236,9 +288,19 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
             $existing_subscription['id']
         ]);
         
+        stripe_debug_log("✅ UPDATE RESULT", [
+            'success' => $result,
+            'rows_affected' => $stmt->rowCount(),
+            'stripe_subscription_id' => $subscription_id
+        ]);
+        
     } else {
         // 🆕 UPDATED: Crea nuova subscription con payment_type
-        stripe_log_info("Creating new user_subscription for user {$user_id}");
+        stripe_debug_log("🆕 CREATING NEW USER_SUBSCRIPTION", [
+            'user_id' => $user_id,
+            'stripe_subscription_id' => $subscription_id,
+            'payment_type' => $payment_type
+        ]);
         
         // Prima, marca come expired le subscription attive precedenti
         $stmt = $pdo->prepare("
@@ -247,6 +309,9 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
             WHERE user_id = ? AND status = 'active' AND stripe_subscription_id IS NULL
         ");
         $stmt->execute([$user_id]);
+        stripe_debug_log("🧹 EXPIRED OLD SUBSCRIPTIONS", [
+            'rows_affected' => $stmt->rowCount()
+        ]);
         
         // Crea nuova subscription con campi aggiornati
         $stmt = $pdo->prepare("
@@ -258,6 +323,19 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
             ) VALUES (?, ?, ?, ?, ?, ?, ?, 'stripe', ?, CURRENT_TIMESTAMP, ?, ?, 
                      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ");
+        
+        stripe_debug_log("📝 EXECUTING INSERT WITH VALUES", [
+            'user_id' => $user_id,
+            'plan_id' => $local_plan_id,
+            'status' => $status,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'auto_renew' => $auto_renew,
+            'payment_type' => $payment_type,
+            'payment_reference' => $subscription_id,
+            'stripe_subscription_id' => $subscription_id,
+            'stripe_customer_id' => $customer_id
+        ]);
         
         $result = $stmt->execute([
             $user_id,
@@ -271,13 +349,30 @@ function update_or_create_user_subscription_with_type($user_id, $stripe_subscrip
             $subscription_id,
             $customer_id
         ]);
+        
+        stripe_debug_log("✅ INSERT RESULT", [
+            'success' => $result,
+            'insert_id' => $pdo->lastInsertId(),
+            'stripe_subscription_id' => $subscription_id
+        ]);
     }
     
     if (!$result) {
+        stripe_debug_log("❌ FAILED TO UPDATE USER_SUBSCRIPTIONS", [
+            'user_id' => $user_id,
+            'stripe_subscription_id' => $subscription_id,
+            'error_info' => $pdo->errorInfo()
+        ]);
         throw new Exception("Failed to update user_subscriptions table");
     }
     
-    stripe_log_info("user_subscriptions updated successfully for user {$user_id} with payment_type: {$payment_type}");
+    stripe_debug_log("🎉 USER_SUBSCRIPTIONS UPDATED SUCCESSFULLY", [
+        'user_id' => $user_id,
+        'stripe_subscription_id' => $subscription_id,
+        'payment_type' => $payment_type,
+        'method' => $existing_subscription ? 'UPDATE' : 'INSERT'
+    ]);
+    
     return $result;
 }
 
@@ -309,7 +404,7 @@ function map_stripe_status_to_local($stripe_status) {
 function update_stripe_subscriptions_table($user_id, $stripe_subscription, $local_plan_id, $stripe_price_id) {
     global $pdo;
     
-    stripe_log_info("Updating stripe_subscriptions table for user {$user_id}");
+    stripe_debug_log("Updating stripe_subscriptions table for user {$user_id}");
     
     $stmt = $pdo->prepare("
         INSERT INTO stripe_subscriptions (
@@ -343,7 +438,7 @@ function update_stripe_subscriptions_table($user_id, $stripe_subscription, $loca
         throw new Exception("Failed to update stripe_subscriptions table");
     }
     
-    stripe_log_info("stripe_subscriptions updated successfully");
+    stripe_debug_log("stripe_subscriptions updated successfully");
     return $result;
 }
 
@@ -357,7 +452,7 @@ function update_stripe_subscriptions_table($user_id, $stripe_subscription, $loca
 function cleanup_old_user_subscriptions($user_id, $current_stripe_subscription_id) {
     global $pdo;
     
-    stripe_log_info("Cleaning up old subscriptions for user {$user_id}");
+    stripe_debug_log("Cleaning up old subscriptions for user {$user_id}");
     
     // Marca come expired le subscription non-Stripe attive
     $stmt = $pdo->prepare("
@@ -371,7 +466,7 @@ function cleanup_old_user_subscriptions($user_id, $current_stripe_subscription_i
     $result = $stmt->execute([$user_id, $current_stripe_subscription_id]);
     
     if ($stmt->rowCount() > 0) {
-        stripe_log_info("Cleaned up {$stmt->rowCount()} old subscriptions for user {$user_id}");
+        stripe_debug_log("Cleaned up {$stmt->rowCount()} old subscriptions for user {$user_id}");
     }
     
     return $result;
@@ -383,7 +478,7 @@ function cleanup_old_user_subscriptions($user_id, $current_stripe_subscription_i
 function sync_expired_subscriptions() {
     global $pdo;
     
-    stripe_log_info("Starting expired subscriptions sync with onetime logic");
+    stripe_debug_log("Starting expired subscriptions sync with onetime logic");
     
     try {
         // 1. Trova subscription onetime scadute che devono essere downgrade a Free
@@ -398,7 +493,7 @@ function sync_expired_subscriptions() {
         $expired_onetime = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         foreach ($expired_onetime as $sub) {
-            stripe_log_info("Processing expired ONETIME subscription for user {$sub['user_id']}");
+            stripe_debug_log("Processing expired ONETIME subscription for user {$sub['user_id']}");
             
             // Aggiorna a piano Free
             update_user_current_plan($sub['user_id'], 1); // plan_id 1 = Free
@@ -425,7 +520,7 @@ function sync_expired_subscriptions() {
         $expired_stripe = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         foreach ($expired_stripe as $sub) {
-            stripe_log_info("Processing expired STRIPE subscription for user {$sub['user_id']} (type: {$sub['payment_type']})");
+            stripe_debug_log("Processing expired STRIPE subscription for user {$sub['user_id']} (type: {$sub['payment_type']})");
             
             // Aggiorna a piano Free
             update_user_current_plan($sub['user_id'], 1); // plan_id 1 = Free
@@ -440,10 +535,10 @@ function sync_expired_subscriptions() {
         }
         
         $total_processed = count($expired_onetime) + count($expired_stripe);
-        stripe_log_info("Expired subscriptions sync completed: {$total_processed} processed (onetime: " . count($expired_onetime) . ", stripe: " . count($expired_stripe) . ")");
+        stripe_debug_log("Expired subscriptions sync completed: {$total_processed} processed (onetime: " . count($expired_onetime) . ", stripe: " . count($expired_stripe) . ")");
         
     } catch (Exception $e) {
-        stripe_log_error("Failed to sync expired subscriptions", ['error' => $e->getMessage()]);
+        stripe_debug_log("Failed to sync expired subscriptions", ['error' => $e->getMessage()]);
     }
 }
 
@@ -505,28 +600,177 @@ function user_has_premium_access($user_id) {
 }
 
 /**
- * 🆕 UPDATED: Debug con informazioni payment_type
+ * 🆕 ENHANCED: Debug dello stato subscription dell'utente con focus su stripe_subscription_id
  */
 function debug_user_subscription_status($user_id) {
-    $status = get_user_subscription_status($user_id);
-    $has_premium = user_has_premium_access($user_id);
+    global $pdo;
     
-    stripe_log_info("=== USER SUBSCRIPTION DEBUG ===");
-    stripe_log_info("User ID: {$user_id}");
-    stripe_log_info("Username: {$status['username']}");
-    stripe_log_info("Current Plan: {$status['current_plan_name']} (ID: {$status['current_plan_id']})");
-    stripe_log_info("Subscription Status: {$status['subscription_status']}");
-    stripe_log_info("Payment Type: {$status['payment_type']}"); // 🆕 NUOVO
-    stripe_log_info("Auto Renew: {$status['auto_renew']}"); // 🆕 NUOVO
-    stripe_log_info("Start Date: {$status['start_date']}");
-    stripe_log_info("End Date: {$status['end_date']}");
-    stripe_log_info("Stripe Subscription: {$status['stripe_subscription_id']}");
-    stripe_log_info("Stripe Status: {$status['stripe_status']}");
-    stripe_log_info("Cancel at Period End: {$status['cancel_at_period_end']}"); // 🆕 NUOVO
-    stripe_log_info("Has Premium Access: " . ($has_premium ? 'YES' : 'NO'));
-    stripe_log_info("=== END DEBUG ===");
+    stripe_debug_log("[STRIPE_DEBUG] DEBUGGING USER SUBSCRIPTION STATUS", [
+        'user_id' => $user_id
+    ]);
     
-    return $status;
+    try {
+        // 1. Stato utente
+        $stmt = $pdo->prepare("
+            SELECT id, username, email, current_plan_id, created_at, last_login
+            FROM users 
+            WHERE id = ?
+        ");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        stripe_debug_log("[STRIPE_DEBUG] USER STATUS", [
+            'user_id' => $user['id'],
+            'username' => $user['username'],
+            'current_plan_id' => $user['current_plan_id'],
+            'last_login' => $user['last_login']
+        ]);
+        
+        // 2. User subscriptions
+        $stmt = $pdo->prepare("
+            SELECT id, plan_id, status, start_date, end_date, auto_renew, 
+                   payment_type, payment_provider, payment_reference,
+                   stripe_subscription_id, stripe_customer_id, created_at, updated_at
+            FROM user_subscriptions 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$user_id]);
+        $user_subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        stripe_debug_log("[STRIPE_DEBUG] USER_SUBSCRIPTIONS COUNT", [
+            'total_records' => count($user_subs)
+        ]);
+        
+        foreach ($user_subs as $index => $sub) {
+            stripe_debug_log("[STRIPE_DEBUG] USER_SUBSCRIPTION #{$index}", [
+                'id' => $sub['id'],
+                'plan_id' => $sub['plan_id'],
+                'status' => $sub['status'],
+                'payment_type' => $sub['payment_type'],
+                'auto_renew' => $sub['auto_renew'],
+                'stripe_subscription_id' => $sub['stripe_subscription_id'] ?? 'NULL',
+                'stripe_customer_id' => $sub['stripe_customer_id'] ?? 'NULL',
+                'payment_reference' => $sub['payment_reference'] ?? 'NULL',
+                'start_date' => $sub['start_date'],
+                'end_date' => $sub['end_date'],
+                'created_at' => $sub['created_at']
+            ]);
+        }
+        
+        // 3. Stripe subscriptions
+        $stmt = $pdo->prepare("
+            SELECT id, stripe_subscription_id, stripe_customer_id, status,
+                   current_period_start, current_period_end, cancel_at_period_end,
+                   plan_id, price_id, created_at, updated_at
+            FROM stripe_subscriptions 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$user_id]);
+        $stripe_subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        stripe_debug_log("[STRIPE_DEBUG] STRIPE_SUBSCRIPTIONS COUNT", [
+            'total_records' => count($stripe_subs)
+        ]);
+        
+        foreach ($stripe_subs as $index => $sub) {
+            stripe_debug_log("[STRIPE_DEBUG] STRIPE_SUBSCRIPTION #{$index}", [
+                'id' => $sub['id'],
+                'stripe_subscription_id' => $sub['stripe_subscription_id'],
+                'stripe_customer_id' => $sub['stripe_customer_id'],
+                'status' => $sub['status'],
+                'plan_id' => $sub['plan_id'],
+                'price_id' => $sub['price_id'],
+                'cancel_at_period_end' => $sub['cancel_at_period_end'],
+                'current_period_start' => $sub['current_period_start'],
+                'current_period_end' => $sub['current_period_end'],
+                'created_at' => $sub['created_at']
+            ]);
+        }
+        
+        // 4. Payment intents
+        $stmt = $pdo->prepare("
+            SELECT id, stripe_payment_intent_id, user_id, payment_type, amount, 
+                   currency, status, metadata, created_at, updated_at
+            FROM stripe_payment_intents 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$user_id]);
+        $payment_intents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        stripe_debug_log("[STRIPE_DEBUG] PAYMENT_INTENTS COUNT", [
+            'total_records' => count($payment_intents)
+        ]);
+        
+        foreach ($payment_intents as $index => $pi) {
+            stripe_debug_log("[STRIPE_DEBUG] PAYMENT_INTENT #{$index}", [
+                'id' => $pi['id'],
+                'stripe_payment_intent_id' => $pi['stripe_payment_intent_id'],
+                'payment_type' => $pi['payment_type'],
+                'amount' => $pi['amount'],
+                'status' => $pi['status'],
+                'metadata' => $pi['metadata'],
+                'created_at' => $pi['created_at']
+            ]);
+        }
+        
+        // 5. 🔍 ANALISI CRITICA: Verifica coerenza stripe_subscription_id
+        $active_user_subs = array_filter($user_subs, function($sub) {
+            return $sub['status'] === 'active';
+        });
+        
+        $active_stripe_subs = array_filter($stripe_subs, function($sub) {
+            return $sub['status'] === 'active';
+        });
+        
+        stripe_debug_log("[STRIPE_DEBUG] CRITICAL ANALYSIS", [
+            'active_user_subscriptions' => count($active_user_subs),
+            'active_stripe_subscriptions' => count($active_stripe_subs),
+            'user_subs_with_stripe_id' => count(array_filter($user_subs, function($sub) {
+                return !empty($sub['stripe_subscription_id']);
+            })),
+            'user_subs_without_stripe_id' => count(array_filter($user_subs, function($sub) {
+                return empty($sub['stripe_subscription_id']);
+            }))
+        ]);
+        
+        // 6. ⚠️ PROBLEMI IDENTIFICATI
+        $problems = [];
+        
+        if (count($active_user_subs) === 0) {
+            $problems[] = "No active user_subscriptions found";
+        }
+        
+        if (count($active_user_subs) > 1) {
+            $problems[] = "Multiple active user_subscriptions found";
+        }
+        
+        foreach ($active_user_subs as $sub) {
+            if (empty($sub['stripe_subscription_id'])) {
+                $problems[] = "Active user_subscription missing stripe_subscription_id (ID: {$sub['id']})";
+            }
+        }
+        
+        if (!empty($problems)) {
+            stripe_debug_log("[STRIPE_DEBUG] PROBLEMS IDENTIFIED", [
+                'user_id' => $user_id,
+                'problems' => $problems
+            ]);
+        } else {
+            stripe_debug_log("[STRIPE_DEBUG] NO PROBLEMS IDENTIFIED", [
+                'user_id' => $user_id
+            ]);
+        }
+        
+    } catch (Exception $e) {
+        stripe_debug_log("[STRIPE_DEBUG] DEBUG FAILED", [
+            'user_id' => $user_id,
+            'error' => $e->getMessage()
+        ]);
+    }
 }
 
 // ============================================================================
@@ -554,7 +798,7 @@ function stripe_payment_success_hook($user_id, $payment_intent_id, $subscription
         
         foreach ($invoices->data as $invoice) {
             if ($invoice->payment_intent === $payment_intent_id && $invoice->subscription) {
-                stripe_log_info("Found subscription {$invoice->subscription} for payment {$payment_intent_id}");
+                stripe_debug_log("Found subscription {$invoice->subscription} for payment {$payment_intent_id}");
                 
                 // Sincronizza tutto
                 sync_user_subscription_after_stripe_payment($user_id, $invoice->subscription);
@@ -564,7 +808,7 @@ function stripe_payment_success_hook($user_id, $payment_intent_id, $subscription
         }
         
     } catch (Exception $e) {
-        stripe_log_error("Payment success hook failed", [
+        stripe_debug_log("Payment success hook failed", [
             'user_id' => $user_id,
             'payment_intent_id' => $payment_intent_id,
             'error' => $e->getMessage()
@@ -582,12 +826,12 @@ function stripe_subscription_webhook_hook($stripe_subscription) {
         $user_id = get_user_id_from_stripe_customer($customer_id);
         
         if ($user_id) {
-            stripe_log_info("Webhook: syncing subscription {$stripe_subscription->id} for user {$user_id}");
+            stripe_debug_log("Webhook: syncing subscription {$stripe_subscription->id} for user {$user_id}");
             sync_user_subscription_after_stripe_payment($user_id, $stripe_subscription->id);
         }
         
     } catch (Exception $e) {
-        stripe_log_error("Subscription webhook hook failed", [
+        stripe_debug_log("Subscription webhook hook failed", [
             'subscription_id' => $stripe_subscription->id,
             'error' => $e->getMessage()
         ]);
@@ -616,11 +860,11 @@ function get_user_id_from_stripe_customer($stripe_customer_id) {
  * Da chiamare giornalmente via cron
  */
 function process_onetime_subscription_expiry() {
-    stripe_log_info("Starting daily onetime subscription expiry check");
+    stripe_debug_log("Starting daily onetime subscription expiry check");
     
     sync_expired_subscriptions();
     
-    stripe_log_info("Daily onetime subscription expiry check completed");
+    stripe_debug_log("Daily onetime subscription expiry check completed");
 }
 
 /**
@@ -653,12 +897,12 @@ function validate_onetime_subscription_setup($user_id, $stripe_subscription_id) 
                                      $validation['local_auto_renew_disabled'] && 
                                      $validation['stripe_cancel_at_period_end'];
         
-        stripe_log_info("Onetime subscription validation for user {$user_id}: " . json_encode($validation));
+        stripe_debug_log("Onetime subscription validation for user {$user_id}: " . json_encode($validation));
         
         return $validation;
         
     } catch (Exception $e) {
-        stripe_log_error("Failed to validate onetime subscription setup", [
+        stripe_debug_log("Failed to validate onetime subscription setup", [
             'user_id' => $user_id,
             'subscription_id' => $stripe_subscription_id,
             'error' => $e->getMessage()

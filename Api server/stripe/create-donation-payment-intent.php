@@ -3,9 +3,16 @@ include '../config.php';
 require_once '../auth_functions.php';
 require_once '../stripe_auth_bridge.php';
 require_once '../stripe_config.php';
+require_once __DIR__ . '/stripe_utils.php';
+
+// 🆕 DEBUG: Log per verificare se il file viene chiamato
+$log_file = __DIR__ . '/debug_subscription.log';
+$timestamp = date('Y-m-d H:i:s');
+$log_entry = "[{$timestamp}] [STRIPE_DEBUG] create-donation-payment-intent.php START - Method: {$_SERVER['REQUEST_METHOD']}\n";
+file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
 
 // ============================================================================
-// STRIPE DONATION PAYMENT INTENT
+// DONATION PAYMENT INTENT - UPDATED WITH COMPATIBILITY FIX
 // ============================================================================
 
 header('Content-Type: application/json');
@@ -94,7 +101,7 @@ function handle_create_donation_payment_intent($user_id) {
         ]);
         
         // Salva nel database
-        save_payment_intent_to_db($user_id, $payment_intent, 'donation');
+        save_payment_intent_to_db($user_id, $payment_intent, 'donation', 'one_time', null);
         
         stripe_log_info("Donation payment intent created: {$payment_intent->id} for user {$user_id}, amount: €" . stripe_cents_to_euros($amount));
         
@@ -188,28 +195,92 @@ function get_user_data($user_id) {
 }
 
 /**
- * Salva Payment Intent nel database
+ * 🆕 UPDATED: Salva Payment Intent nel database con payment_type e stripe_subscription_id
  */
-function save_payment_intent_to_db($user_id, $payment_intent, $payment_type) {
+function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $subscription_payment_type = 'recurring', $stripe_subscription_id = null) {
     global $pdo;
     
-    $stmt = $pdo->prepare("
-        INSERT INTO stripe_payment_intents (
-            user_id, stripe_payment_intent_id, amount, currency, status, payment_type, metadata
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-        status = VALUES(status),
-        updated_at = CURRENT_TIMESTAMP
-    ");
+    $log_file = __DIR__ . '/debug_subscription.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $log_entry = "[{$timestamp}] [STRIPE_DEBUG] === SAVE PAYMENT INTENT TO DB START ===\n";
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
     
-    $stmt->execute([
-        $user_id,
-        $payment_intent->id,
-        $payment_intent->amount,
-        $payment_intent->currency,
-        $payment_intent->status,
-        $payment_type,
-        json_encode($payment_intent->metadata->toArray())
-    ]);
+    if (!$pdo) {
+        $log_entry = "[{$timestamp}] [STRIPE_DEBUG] WARNING: PDO not available, skipping payment intent save\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        return;
+    }
+    
+    // 🆕 NUOVO: Include payment_type e stripe_subscription_id nei metadata
+    $metadata = $payment_intent->metadata->toArray();
+    $metadata['subscription_payment_type'] = $subscription_payment_type;
+    
+    // 🆕 CRITICO: Aggiungi stripe_subscription_id ai metadata
+    if ($stripe_subscription_id) {
+        $metadata['stripe_subscription_id'] = $stripe_subscription_id;
+        $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Added stripe_subscription_id to metadata: {$stripe_subscription_id}\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+    }
+    
+    $save_data = [
+        'payment_intent_id' => $payment_intent->id,
+        'user_id' => $user_id,
+        'amount' => $payment_intent->amount,
+        'currency' => $payment_intent->currency,
+        'status' => $payment_intent->status,
+        'payment_type' => $payment_type,
+        'subscription_payment_type' => $subscription_payment_type,
+        'stripe_subscription_id' => $stripe_subscription_id,
+        'metadata' => $metadata
+    ];
+    
+    $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Payment intent save data: " . json_encode($save_data) . "\n";
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+    
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO stripe_payment_intents (
+                user_id, stripe_payment_intent_id, amount, currency, status, payment_type, metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            status = VALUES(status),
+            metadata = VALUES(metadata),
+            updated_at = CURRENT_TIMESTAMP
+        ");
+        
+        $execute_params = [
+            $user_id,
+            $payment_intent->id,
+            $payment_intent->amount,
+            $payment_intent->currency,
+            $payment_intent->status,
+            $payment_type, // 'subscription'
+            json_encode($metadata)
+        ];
+        
+        $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Payment intent execute params: " . json_encode($execute_params) . "\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        
+        $result = $stmt->execute($execute_params);
+        
+        if ($result) {
+            $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Payment intent saved successfully, affected rows: " . $stmt->rowCount() . "\n";
+            file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        } else {
+            $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Failed to save payment intent to database\n";
+            file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        }
+        
+        $log_entry = "[{$timestamp}] [STRIPE_DEBUG] Payment intent saved with subscription metadata\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        
+    } catch (Exception $e) {
+        $log_entry = "[{$timestamp}] [STRIPE_DEBUG] ERROR saving payment intent to database: " . $e->getMessage() . "\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
+        throw $e;
+    }
+    
+    $log_entry = "[{$timestamp}] [STRIPE_DEBUG] === SAVE PAYMENT INTENT TO DB END ===\n";
+    file_put_contents($log_file, $log_entry, FILE_APPEND | LOCK_EX);
 }
 ?>

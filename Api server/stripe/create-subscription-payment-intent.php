@@ -225,7 +225,7 @@ function handle_create_subscription_payment_intent($user_id, $user_data) {
         
         // 🆕 UPDATED: Salva payment intent con payment_type nei metadata
         debug_log("Saving payment intent to database...");
-        save_payment_intent_to_db($user_id, $payment_intent, 'subscription', $payment_type);
+        save_payment_intent_to_db($user_id, $payment_intent, 'subscription', $payment_type, $subscription->id);
         debug_log("Payment intent saved to database");
         
         stripe_log_info("Subscription payment intent created successfully", [
@@ -548,9 +548,9 @@ function save_subscription_to_db($user_id, $subscription, $customer_id, $price_i
 }
 
 /**
- * 🆕 UPDATED: Salva Payment Intent nel database con payment_type
+ * 🆕 UPDATED: Salva Payment Intent nel database con payment_type e stripe_subscription_id
  */
-function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $subscription_payment_type = 'recurring') {
+function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $subscription_payment_type = 'recurring', $stripe_subscription_id = null) {
     global $pdo;
     
     debug_log("=== SAVE PAYMENT INTENT TO DB START ===");
@@ -560,9 +560,15 @@ function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $su
         return;
     }
     
-    // 🆕 NUOVO: Include payment_type nei metadata
+    // 🆕 NUOVO: Include payment_type e stripe_subscription_id nei metadata
     $metadata = $payment_intent->metadata->toArray();
     $metadata['subscription_payment_type'] = $subscription_payment_type;
+    
+    // 🆕 CRITICO: Aggiungi stripe_subscription_id ai metadata
+    if ($stripe_subscription_id) {
+        $metadata['stripe_subscription_id'] = $stripe_subscription_id;
+        debug_log("Added stripe_subscription_id to metadata: " . $stripe_subscription_id);
+    }
     
     $save_data = [
         'payment_intent_id' => $payment_intent->id,
@@ -572,6 +578,7 @@ function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $su
         'status' => $payment_intent->status,
         'payment_type' => $payment_type,
         'subscription_payment_type' => $subscription_payment_type,
+        'stripe_subscription_id' => $stripe_subscription_id,
         'metadata' => $metadata
     ];
     
@@ -608,9 +615,10 @@ function save_payment_intent_to_db($user_id, $payment_intent, $payment_type, $su
             debug_log("Failed to save payment intent to database");
         }
         
-        stripe_log_info("Payment intent saved with payment metadata", [
+        stripe_log_info("Payment intent saved with subscription metadata", [
             'payment_intent_id' => $payment_intent->id,
-            'subscription_payment_type' => $subscription_payment_type
+            'subscription_payment_type' => $subscription_payment_type,
+            'stripe_subscription_id' => $stripe_subscription_id
         ]);
         
     } catch (Exception $e) {
