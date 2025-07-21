@@ -124,8 +124,43 @@ Per ridurre il rumore nei log, il logging degli errori è stato commentato:
 **Per riabilitare il logging in futuro:**
 1. Decommentare le righe in `confirm-payment.php`
 
+## 🎯 **Risultato**
+
+- **Problema risolto**: Nessun più errore di troncamento dati
+- **Compatibilità**: Codice allineato con struttura tabella esistente
+- **Funzionalità**: `confirm-payment.php` ora funziona correttamente
+- **Integrità**: Timestamp Unix salvati correttamente come interi
+
+## 🚫 **Logging Disabilitato**
+
+Per ridurre il rumore nei log, il logging degli errori è stato commentato:
+- ✅ `php_errors.log`: Disabilitato in `confirm-payment.php`
+- ✅ `debug_subscription.log`: Disabilitato in `confirm-payment.php`
+
+**Per riabilitare il logging in futuro:**
+1. Decommentare le righe in `confirm-payment.php`
+
+## 💰 **Correzione Donazioni**
+
+### **Problema Identificato:**
+- **Errore 500**: `create-donation-payment-intent.php` non funzionava
+- **Causa 1**: File `stripe_utils.php` inesistente
+- **Causa 2**: Logging attivo su file non accessibile
+- **Causa 3**: Colonne `updated_at` mancanti
+
+### **Correzioni Applicate:**
+1. ✅ **Rimosso**: `require_once 'stripe_utils.php'` (file inesistente)
+2. ✅ **Commentato**: Tutto il logging su `debug_subscription.log`
+3. ✅ **Rimosso**: `updated_at` da `stripe_payment_intents`
+4. ✅ **Rimosso**: `updated_at` da `stripe_customers`
+
+### **File Modificati:**
+- `Api server/stripe/create-donation-payment-intent.php`
+- `Api server/stripe/test_donation.php` (nuovo test)
+
 ---
 **Data correzione:** 20 Luglio 2025  
 **Stato:** ✅ COMPLETATA  
-**Tester:** `test_fix.php`  
-**Logging:** 🚫 DISABILITATO 
+**Tester:** `test_fix.php`, `test_donation.php`  
+**Logging:** 🚫 DISABILITATO  
+**Donazioni:** ✅ FUNZIONANTI 
