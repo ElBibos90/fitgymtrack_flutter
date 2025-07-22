@@ -10,7 +10,6 @@ class SafeRow extends StatelessWidget {
   final TextDirection? textDirection;
   final VerticalDirection verticalDirection;
   final TextBaseline? textBaseline;
-  final Clip clipBehavior;
   final double? spacing;
   final bool wrapIfNeeded;
 
@@ -23,7 +22,6 @@ class SafeRow extends StatelessWidget {
     this.textDirection,
     this.verticalDirection = VerticalDirection.down,
     this.textBaseline,
-    this.clipBehavior = Clip.hardEdge,
     this.spacing,
     this.wrapIfNeeded = true,
   });
@@ -32,14 +30,13 @@ class SafeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!wrapIfNeeded) {
       return Row(
-        children: _buildChildrenWithSpacing(),
         mainAxisAlignment: mainAxisAlignment,
         crossAxisAlignment: crossAxisAlignment,
         mainAxisSize: mainAxisSize,
         textDirection: textDirection,
         verticalDirection: verticalDirection,
         textBaseline: textBaseline,
-        clipBehavior: clipBehavior,
+        children: _buildChildrenWithSpacing(),
       );
     }
 
@@ -54,14 +51,13 @@ class SafeRow extends StatelessWidget {
     // Se c'è abbastanza spazio, usa una Row normale
     if (_canFitInRow(maxWidth)) {
       return Row(
-        children: _buildChildrenWithSpacing(),
         mainAxisAlignment: mainAxisAlignment,
         crossAxisAlignment: crossAxisAlignment,
         mainAxisSize: mainAxisSize,
         textDirection: textDirection,
         verticalDirection: verticalDirection,
         textBaseline: textBaseline,
-        clipBehavior: clipBehavior,
+        children: _buildChildrenWithSpacing(),
       );
     }
 
@@ -95,10 +91,8 @@ class SafeRow extends StatelessWidget {
     for (final child in children) {
       if (child is SizedBox && child.width != null) {
         estimatedWidth += child.width!;
-      } else if (child is Container && child.width != null) {
-        estimatedWidth += child.width!;
       } else {
-        // Stima conservativa per widget di testo e altri
+        // Stima conservativa per widget di testo, Container e altri
         estimatedWidth += 100.w;
       }
       
