@@ -126,6 +126,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // 🔧 FIX 4: APP LIFECYCLE - Stato background
   bool _isAppInBackground = false;
 
+  // 🚀 NUOVO: Stato per indicatore di transizione auto-rotazione
+  bool _isAutoRotating = false;
+  String? _nextExerciseName;
+  late AnimationController _rotationIndicatorController;
+  late Animation<double> _rotationIndicatorAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -186,6 +192,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _slideController.dispose();
     _pulseController.dispose();
     _completeButtonController.dispose();
+    _rotationIndicatorController.dispose(); // 🚀 NUOVO: Dispose del controller di rotazione
     _pageController.dispose();
     _stopRecoveryTimer();
     super.dispose();
@@ -646,6 +653,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       vsync: this,
     );
 
+    // 🚀 NUOVO: Controller per indicatore di rotazione
+    _rotationIndicatorController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: Offset.zero,
@@ -667,10 +680,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _completeButtonController,
-      curve: Curves.easeInOut,
+      curve: Curves.elasticOut,
     ));
 
-    _pulseController.repeat(reverse: true);
+    // 🚀 NUOVO: Animazione per indicatore di rotazione
+    _rotationIndicatorAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _rotationIndicatorController,
+      curve: Curves.easeInOut,
+    ));
   }
 
   Future<void> _initializeWorkout() async {
@@ -1316,11 +1336,38 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final nextExerciseIndex = _findNextExerciseInSequentialRotation(state, currentGroup);
 
     if (nextExerciseIndex != _currentExerciseInGroup) {
+      // 🚀 NUOVO: Feedback immediato per l'utente
+      final nextExercise = currentGroup[nextExerciseIndex];
+      final groupType = currentGroup.first.setType;
+      
+      // Attiva l'indicatore di transizione
+      setState(() {
+        _isAutoRotating = true;
+        _nextExerciseName = nextExercise.nome;
+      });
+      
+      // Avvia l'animazione dell'indicatore
+      _rotationIndicatorController.forward();
+      
+      // Mostra messaggio di transizione immediato
+      CustomSnackbar.show(
+        context,
+        message: "🔄 Passaggio a: ${nextExercise.nome}",
+        isSuccess: true,
+        duration: const Duration(seconds: 2),
+      );
+
+      // Poi esegui la transizione dopo il delay
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
           setState(() {
             _currentExerciseInGroup = nextExerciseIndex;
+            _isAutoRotating = false;
+            _nextExerciseName = null;
           });
+          
+          // Reset dell'animazione
+          _rotationIndicatorController.reset();
 
           final nextExercise = currentGroup[_currentExerciseInGroup];
           final groupType = currentGroup.first.setType;
@@ -1757,6 +1804,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               });
             },
           ),
+
+        // 🚀 NUOVO: Indicatore di transizione auto-rotazione
+        if (_isAutoRotating && _nextExerciseName != null)
+          _buildAutoRotationIndicator(),
 
         // 🔧 FASE 1: Dialog per aggiungere esercizi (placeholder)
         if (false) // Temporaneamente disabilitato
@@ -2706,75 +2757,124 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         ],
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            SizedBox(
-              width: 80.w,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: canPrev ? _goToPreviousGroup : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceVariant,
-                  foregroundColor: canPrev ? colorScheme.onSecondary : colorScheme.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Row(
+            children: [
+              // Bottone Precedente
+              SizedBox(
+                width: 80.w,
+                height: 48.h,
+                child: ElevatedButton(
+                  onPressed: canPrev ? _goToPreviousGroup : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceVariant,
+                    foregroundColor: canPrev ? colorScheme.onSecondary : colorScheme.onSurfaceVariant,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    elevation: canPrev ? 1 : 0,
                   ),
-                  elevation: canPrev ? 1 : 0,
-                ),
-                child: Text(
-                  'Prec',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const Spacer(),
-
-            Row(
-              children: List.generate(_exerciseGroups.length, (index) {
-                return Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4.w),
-                  width: index == _currentGroupIndex ? 24.w : 8.w,
-                  height: 8.w,
-                  decoration: BoxDecoration(
-                    color: index == _currentGroupIndex
-                        ? colorScheme.primary
-                        : colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                );
-              }),
-            ),
-
-            const Spacer(),
-
-            SizedBox(
-              width: 80.w,
-              height: 48.h,
-              child: ElevatedButton(
-                onPressed: canNext ? _goToNextGroup : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceVariant,
-                  foregroundColor: canNext ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  elevation: canNext ? 1 : 0,
-                ),
-                child: Text(
-                  'Succ',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    'Prec',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // Spazio centrale per i dots
+              Expanded(
+                child: Center(
+                  child: _buildProgressDots(),
+                ),
+              ),
+
+              // Bottone Successivo
+              SizedBox(
+                width: 80.w,
+                height: 48.h,
+                child: ElevatedButton(
+                  onPressed: canNext ? _goToNextGroup : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceVariant,
+                    foregroundColor: canNext ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    elevation: canNext ? 1 : 0,
+                  ),
+                  child: Text(
+                    'Succ',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProgressDots() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Indicatore numerico
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Text(
+              '${_currentGroupIndex + 1}',
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onPrimary,
+              ),
+            ),
+          ),
+          
+          SizedBox(width: 8.w),
+          
+          // Separatore
+          Text(
+            '/',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          
+          SizedBox(width: 8.w),
+          
+          // Totale gruppi
+          Text(
+            '${_exerciseGroups.length}',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -3085,6 +3185,109 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAutoRotationIndicator() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AnimatedBuilder(
+      animation: _rotationIndicatorAnimation,
+      builder: (context, child) {
+        return Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.3 * _rotationIndicatorAnimation.value),
+            child: Center(
+              child: Transform.scale(
+                scale: 0.8 + (0.2 * _rotationIndicatorAnimation.value),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 24.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Icona di rotazione animata
+                      AnimatedBuilder(
+                        animation: _rotationIndicatorController,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: _rotationIndicatorController.value * 2 * 3.14159,
+                            child: Icon(
+                              Icons.refresh,
+                              size: 48.sp,
+                              color: Colors.blue,
+                            ),
+                          );
+                        },
+                      ),
+                      
+                      SizedBox(height: 16.h),
+                      
+                      // Testo di transizione
+                      Text(
+                        'Passaggio a:',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 8.h),
+                      
+                      Text(
+                        _nextExerciseName ?? '',
+                        style: TextStyle(
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      SizedBox(height: 16.h),
+                      
+                      // Barra di progresso
+                      Container(
+                        width: 200.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _rotationIndicatorAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

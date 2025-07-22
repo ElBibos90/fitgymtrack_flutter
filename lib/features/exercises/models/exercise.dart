@@ -41,7 +41,12 @@ class Exercise {
   /// URL completo per l'immagine GIF
   String? get imageUrl {
     if (immagineNome != null && immagineNome!.isNotEmpty) {
-      return '${AppConfig.baseUrl}/serve_image.php?filename=$immagineNome';
+      // Rimuovi eventuali slash finali da baseUrl per evitare doppi slash
+      String baseUrl = AppConfig.baseUrl;
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+      }
+      return '$baseUrl/serve_image.php?filename=$immagineNome';
     }
     return immagineUrl.isNotEmpty ? immagineUrl : null;
   }
@@ -88,7 +93,12 @@ class UserExercise {
   /// URL completo per l'immagine GIF
   String? get imageUrl {
     if (immagineNome != null && immagineNome!.isNotEmpty) {
-      return '${AppConfig.baseUrl}/serve_image.php?filename=$immagineNome';
+      // Rimuovi eventuali slash finali da baseUrl per evitare doppi slash
+      String baseUrl = AppConfig.baseUrl;
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+      }
+      return '$baseUrl/serve_image.php?filename=$immagineNome';
     }
     return immagineUrl?.isNotEmpty == true ? immagineUrl : null;
   }

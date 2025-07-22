@@ -30,7 +30,14 @@ class ImageService {
     if (imageName == null || imageName.isEmpty) {
       return '';
     }
-    return '${AppConfig.baseUrl}/serve_image.php?filename=$imageName';
+    
+    // Rimuovi eventuali slash finali da baseUrl per evitare doppi slash
+    String baseUrl = AppConfig.baseUrl;
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+    }
+    
+    return '$baseUrl/serve_image.php?filename=$imageName';
   }
 
   /// Widget per visualizzare un'immagine GIF con fallback
@@ -64,14 +71,24 @@ class ImageService {
           width: width,
           height: height,
         ),
-        errorWidget: (context, url, error) => _buildErrorWidget(
-          errorWidget: errorWidget,
-          width: width,
-          height: height,
-        ),
+        errorWidget: (context, url, error) {
+          // Log dell'errore per debug
+          debugPrint('Errore caricamento immagine: $error per URL: $url');
+          return _buildErrorWidget(
+            errorWidget: errorWidget,
+            width: width,
+            height: height,
+          );
+        },
         httpHeaders: const {
           'Accept': 'image/gif,image/*,*/*;q=0.8',
+          'Cache-Control': 'no-cache',
         },
+        // Aggiungi timeout e retry
+        maxWidthDiskCache: 1024,
+        maxHeightDiskCache: 1024,
+        memCacheWidth: 1024,
+        memCacheHeight: 1024,
       ),
     );
   }
@@ -141,26 +158,35 @@ class ImageService {
     return Container(
       width: width,
       height: height,
-      color: Colors.grey[100],
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
       child: errorWidget ??
           Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.broken_image,
-                  size: 32,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Immagine non disponibile',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.broken_image,
+                    size: 24,
+                    color: Colors.grey[400],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Immagine non disponibile',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
     );

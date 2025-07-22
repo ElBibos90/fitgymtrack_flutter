@@ -192,14 +192,29 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Nome dell'esercizio in evidenza sopra tutto
+                Text(
+                  widget.exercise.nome,
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                
+                SizedBox(height: 12.h),
+                
+                // Seconda riga: indicazioni e pulsanti
                 Row(
                   children: [
                     // Immagine esercizio
                     if (widget.exercise.immagineNome != null)
                       Container(
-                        margin: EdgeInsets.only(right: 12.w),
-                        width: 50.w,
-                        height: 50.w,
+                        margin: EdgeInsets.only(right: 8.w),
+                        width: 40.w,
+                        height: 40.w,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(AppConfig.radiusS),
                           border: Border.all(
@@ -210,97 +225,75 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
                           borderRadius: BorderRadius.circular(AppConfig.radiusS),
                           child: ImageService.buildGifImage(
                             imageUrl: ImageService.getImageUrl(widget.exercise.immagineNome),
-                            width: 50.w,
-                            height: 50.w,
+                            width: 40.w,
+                            height: 40.w,
                             fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                    // 🔧 FASE 3: Indicatore per esercizi combinati
-                    if (widget.exercise.setType == 'superset' || widget.exercise.setType == 'circuit')
-                      Container(
-                        margin: EdgeInsets.only(right: 8.w),
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: widget.exercise.setType == 'superset' 
-                              ? Colors.purple.withValues(alpha: 0.2)
-                              : Colors.orange.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(
-                          widget.exercise.setType == 'superset' ? 'SUPERSET' : 'CIRCUIT',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
-                            color: widget.exercise.setType == 'superset' 
-                                ? Colors.purple 
-                                : Colors.orange,
-                          ),
-                        ),
-                      ),
+                    
+                    // Indicatori (superset, circuit, rest-pause)
                     Expanded(
-                      child: Text(
-                        widget.exercise.nome,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
+                      child: Row(
+                        children: [
+                          // 🔧 FASE 3: Indicatore per esercizi combinati
+                          if (widget.exercise.setType == 'superset' || widget.exercise.setType == 'circuit')
+                            Container(
+                              margin: EdgeInsets.only(right: 6.w),
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: widget.exercise.setType == 'superset' 
+                                    ? Colors.purple.withValues(alpha: 0.2)
+                                    : Colors.orange.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Text(
+                                widget.exercise.setType == 'superset' ? 'SUPERSET' : 'CIRCUIT',
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: widget.exercise.setType == 'superset' 
+                                      ? Colors.purple 
+                                      : Colors.orange,
+                                ),
+                              ),
+                            ),
+                          
+                          // 🚀 FASE 4: Indicatore REST-PAUSE
+                          if (!_isEditing && widget.exercise.isRestPause)
+                            Container(
+                              margin: EdgeInsets.only(right: 6.w),
+                              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: Colors.deepPurple.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.flash_on,
+                                    size: 12.sp,
+                                    color: Colors.deepPurple,
+                                  ),
+                                  SizedBox(width: 2.w),
+                                  Text(
+                                    'REST-PAUSE',
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.deepPurple,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                if (widget.exercise.gruppoMuscolare != null) ...[
-                  SizedBox(height: 4.h),
-                  Text(
-                    widget.exercise.gruppoMuscolare!,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: colorScheme.onSurface.withValues(alpha:0.6),
-                    ),
-                  ),
-                ],
-                // 🚀 FASE 4: Indicatore REST-PAUSE nella view mode
-                if (!_isEditing && widget.exercise.isRestPause) ...[
-                  SizedBox(height: 4.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                    decoration: BoxDecoration(
-                      color: Colors.deepPurple.withValues(alpha:0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.deepPurple.withValues(alpha:0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.flash_on,
-                          size: 14.sp,
-                          color: Colors.deepPurple,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          'REST-PAUSE',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
-                        if (widget.exercise.restPauseReps != null) ...[
-                          SizedBox(width: 4.w),
-                          Text(
-                            '(${widget.exercise.restPauseReps})',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: Colors.deepPurple.withValues(alpha:0.8),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
+
               ],
             ),
           ),
@@ -827,4 +820,6 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
       ),
     );
   }
+
+
 }

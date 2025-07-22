@@ -189,7 +189,9 @@ class PlateauSuggestionDialog extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 6.h),
-                  Row(
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 8.h,
                     children: [
                       _buildInfoChip(
                         context,
@@ -197,14 +199,12 @@ class PlateauSuggestionDialog extends StatelessWidget {
                         Icons.fitness_center_rounded,
                         plateauColor,
                       ),
-                      SizedBox(width: 8.w),
                       _buildInfoChip(
                         context,
                         '${plateauInfo.currentReps} reps',
                         Icons.repeat_rounded,
                         plateauColor,
                       ),
-                      SizedBox(width: 8.w),
                       _buildInfoChip(
                         context,
                         '${plateauInfo.sessionsInPlateau} sessioni',

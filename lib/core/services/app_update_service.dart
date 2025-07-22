@@ -53,7 +53,8 @@ class AppUpdateService {
           
           final hasUpdate = _compareVersions(currentVersion, serverVersion) < 0;
           
-          if (hasUpdate || updateRequired) {
+          // 🔧 FIX: Mostra aggiornamento solo se c'è una versione nuova (updateRequired viene gestito separatamente)
+          if (hasUpdate) {
             print('[CONSOLE] [app_update_service]✅ Update available!');
             await _saveLastUpdateCheck();
             
