@@ -54,11 +54,7 @@ class AuthRepository {
   }
 
   Future<Result<RegisterResponse>> register(
-      String username,
-      String password,
-      String email,
-      String name,
-      ) async {
+      String username, String password, String email, String name) async {
     try {
       final registerRequest = RegisterRequest(
         username: username,
@@ -68,174 +64,102 @@ class AuthRepository {
       );
 
       final response = await _apiClient.register(registerRequest);
+
       return Result.success(response);
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 409) {
-        final errorResponse = RegisterResponse(
-          success: false,
-          message: "Username o email già in uso. Prova con credenziali diverse.",
-        );
-        return Result.success(errorResponse);
-      } else {
-        ////print('[CONSOLE] [auth_repository]Errore registrazione: ${e.toString()}');
         return Result.error(_handleApiError(e).toString(), _handleApiError(e));
-      }
     }
   }
 
   Future<Result<PasswordResetResponse>> requestPasswordReset(String email) async {
     try {
-      final resetRequest = PasswordResetRequest(email: email);
-
-      final responseData = await _apiClient.requestPasswordReset('request', resetRequest);
-
-      ////print('[CONSOLE] [auth_repository]Password reset response: $responseData');
-
-      final responseBody = responseData.toString();
-      if (responseBody.contains('<b>Warning</b>') ||
-          responseBody.contains('<b>Fatal error</b>') ||
-          responseBody.contains('<br />')) {
-
-        ////print('[CONSOLE] [auth_repository]Risposta contiene errori PHP: $responseBody');
-        return Result.success(PasswordResetResponse(
-          success: false,
-          message: "Errore del server. Contatta l'amministratore del sistema.",
-        ));
-      }
-
-      try {
-        final Map<String, dynamic> jsonData;
-        if (responseData is String) {
-          jsonData = jsonDecode(responseData);
-        } else {
-          jsonData = responseData as Map<String, dynamic>;
-        }
-
-        final success = jsonData['success'] ?? false;
-        final message = jsonData['message'] ?? '';
-        final token = jsonData['token'];
-
-        return Result.success(PasswordResetResponse(
-          success: success,
-          message: message,
-          token: token,
-        ));
-      } catch (jsonEx) {
-        ////print('[CONSOLE] [auth_repository]Risposta non è JSON valido: $responseData');
-        return Result.success(PasswordResetResponse(
-          success: false,
-          message: "Errore nel formato della risposta. Riprova più tardi.",
-        ));
-      }
+      final request = PasswordResetRequest(email: email);
+      final response = await _apiClient.requestPasswordReset('forgot-password', request);
+      return Result.success(response);
     } catch (e) {
-      ////print('[CONSOLE] [auth_repository]Errore richiesta reset password: ${e.toString()}');
       return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
   Future<Result<PasswordResetConfirmResponse>> confirmPasswordReset(
-      String token,
-      String code,
-      String newPassword,
-      ) async {
+      String token, String code, String newPassword) async {
     try {
-      final resetConfirmRequest = PasswordResetConfirmRequest(
+      final request = PasswordResetConfirmRequest(
         token: token,
         code: code,
         newPassword: newPassword,
       );
-
-      final responseData = await _apiClient.confirmPasswordReset('reset', resetConfirmRequest);
-
-      ////print('[CONSOLE] [auth_repository]Reset password response: $responseData');
-
-      final responseBody = responseData.toString();
-      if (responseBody.contains('<b>Warning</b>') ||
-          responseBody.contains('<b>Fatal error</b>') ||
-          responseBody.contains('<br />')) {
-
-        return Result.success(PasswordResetConfirmResponse(
-          success: false,
-          message: "Errore del server. Contatta l'amministratore del sistema.",
-        ));
-      }
-
-      try {
-        final Map<String, dynamic> jsonData;
-        if (responseData is String) {
-          jsonData = jsonDecode(responseData);
-        } else {
-          jsonData = responseData as Map<String, dynamic>;
-        }
-
-        final success = jsonData['success'] ?? false;
-        final message = jsonData['message'] ?? '';
-
-        return Result.success(PasswordResetConfirmResponse(
-          success: success,
-          message: message,
-        ));
-      } catch (jsonEx) {
-        return Result.success(PasswordResetConfirmResponse(
-          success: false,
-          message: "Errore nel formato della risposta. Riprova più tardi.",
-        ));
-      }
+      final response = await _apiClient.confirmPasswordReset('reset-password', request);
+      return Result.success(response);
     } catch (e) {
-      //print('[CONSOLE] [auth_repository]Errore conferma reset password: ${e.toString()}');
       return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
   Future<Result<void>> logout() async {
     try {
+      final token = await sessionService.getAuthToken();
+      if (token != null) {
+        await _apiClient.logout('logout', {'token': token});
+      }
       await sessionService.clearSession();
       return Result.success(null);
     } catch (e) {
+      // Anche se il logout fallisce, pulisci la sessione locale
+      await sessionService.clearSession();
       return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
 
+  /// 🔧 AGGIORNATO: Usa la validazione intelligente del token
   Future<bool> isAuthenticated() async {
-    return await sessionService.isAuthenticated();
+    try {
+      // Prima controlla se c'è un token
+      final hasToken = await sessionService.isAuthenticated();
+      if (!hasToken) {
+        print('[CONSOLE] [auth_repository]❌ No token found');
+        return false;
+      }
+
+      // Poi valida il token in modo intelligente
+      final isValid = await sessionService.validateTokenIntelligently();
+      print('[CONSOLE] [auth_repository]🔍 Token validation result: $isValid');
+      return isValid;
+      
+    } catch (e) {
+      print('[CONSOLE] [auth_repository]❌ Authentication check failed: $e');
+      return false;
+    }
   }
 
   Future<User?> getCurrentUser() async {
+    try {
     return await sessionService.getUserData();
+    } catch (e) {
+      print('[CONSOLE] [auth_repository]❌ Error getting current user: $e');
+      return null;
+    }
   }
 
-  AuthException _handleApiError(dynamic error) {
+  Exception _handleApiError(dynamic error) {
     if (error is DioException) {
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return AuthException('Timeout di connessione. Verifica la tua connessione.');
-
-        case DioExceptionType.badResponse:
-          final statusCode = error.response?.statusCode;
-          switch (statusCode) {
-            case 401:
-              return AuthException('Credenziali non valide.');
-            case 409:
-              return AuthException('Username o email già in uso.');
-            case 500:
-              return AuthException('Errore del server. Riprova più tardi.');
-            default:
-              return AuthException('Errore dal server: $statusCode');
-          }
-
-        case DioExceptionType.cancel:
-          return AuthException('Richiesta annullata.');
-
-        case DioExceptionType.unknown:
-          return AuthException('Impossibile connettersi al server. Verifica la tua connessione.');
-
-        default:
-          return AuthException('Errore di rete sconosciuto.');
+      if (error.response?.statusCode == 401) {
+        return AuthException('Credenziali non valide');
+      } else if (error.response?.statusCode == 400) {
+        final data = error.response?.data;
+        if (data is Map<String, dynamic> && data.containsKey('error')) {
+          return AuthException(data['error']);
+        }
+        return AuthException('Dati non validi');
+      } else if (error.response?.statusCode == 500) {
+        return AuthException('Errore del server');
+      } else if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return AuthException('Timeout di connessione');
+      } else if (error.type == DioExceptionType.connectionError) {
+        return AuthException('Errore di connessione');
       }
     }
-
-    return AuthException(error.toString());
+    return AuthException('Errore sconosciuto');
   }
 }

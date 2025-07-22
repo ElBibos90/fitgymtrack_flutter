@@ -1,0 +1,25 @@
+{
+  "database": {
+    "host": "104.248.103.182",
+    "user": "ElBibo",
+    "password": "Groot00",
+    "database": "Workout",
+    "port": 3306
+  },
+  "app": {
+    "name": "FitGymTrack",
+    "package_name": "com.fitgymtracker",
+    "min_required_version": "1.0.0"
+  },
+  "build": {
+    "target_platform": "android-arm64",
+    "build_type": "release",
+    "output_format": "appbundle"
+  },
+  "deploy": {
+    "auto_increment_build": true,
+    "run_tests": true,
+    "clean_build": true,
+    "update_dependencies": true
+  }
+} 

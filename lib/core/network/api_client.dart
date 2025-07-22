@@ -450,4 +450,11 @@ abstract class ApiClient {
 
   @GET("/android_period_stats.php")
   Future<dynamic> getPeriodStats(@Query("period") String period);
+
+  // ============================================================================
+  // APP VERSION ENDPOINTS
+  // ============================================================================
+
+  @GET("/version.php")
+  Future<dynamic> getAppVersion();
 }

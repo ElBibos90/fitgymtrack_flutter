@@ -14,6 +14,7 @@ import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/stats_screen.dart';
+import '../../../../core/services/app_update_service.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -136,9 +137,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isInitialDataLoaded = true;
       print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
 
+      // 🔧 NUOVO: Controllo aggiornamenti dopo l'inizializzazione
+      _checkForAppUpdates();
+
     } catch (e) {
       print('[CONSOLE] [home_screen]❌ Initialization error: $e');
       // Non bloccare l'app per errori di inizializzazione
+    }
+  }
+
+  /// 🔧 NUOVO: Controllo aggiornamenti dell'app
+  void _checkForAppUpdates() async {
+    try {
+      print('[CONSOLE] [home_screen]🚀 Starting app update check...');
+      final updateInfo = await AppUpdateService.checkForUpdates();
+      print('[CONSOLE] [home_screen]📱 Update check result: ${updateInfo?.toString() ?? 'null'}');
+      
+      if (updateInfo != null && mounted) {
+        print('[CONSOLE] [home_screen]✅ Update available, showing dialog...');
+        AppUpdateService.showUpdateDialog(context, updateInfo);
+      } else {
+        print('[CONSOLE] [home_screen]ℹ️ No update available');
+      }
+    } catch (e) {
+      print('[CONSOLE] [home_screen]❌ Update check error: $e');
     }
   }
 

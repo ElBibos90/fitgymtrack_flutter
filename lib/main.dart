@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/api_request_debouncer.dart';
+import 'core/services/app_update_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/workouts/bloc/plateau_bloc.dart';
 import 'features/subscription/bloc/subscription_bloc.dart';
@@ -180,6 +181,8 @@ class _SplashScreenState extends State<SplashScreen>
           );
         });
       }
+
+      // 🔧 RIMOSSO: Controllo aggiornamenti spostato nella home screen
     } catch (e) {
       // Non bloccare l'app per errori di preload
     }
