@@ -1,4 +1,4 @@
-﻿name: fitgymtrack
+name: fitgymtrack
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
@@ -69,6 +69,7 @@ dependencies:
 
   # ðŸ”— URL Launcher per link esterni (Privacy Policy, Terms of Service)
   url_launcher: ^6.2.5
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -86,7 +87,6 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
   # ðŸ†• BRANDING PACKAGES
-  flutter_launcher_icons: ^0.13.1
   flutter_native_splash: ^2.3.2
 
 flutter:
