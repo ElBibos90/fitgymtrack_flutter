@@ -157,11 +157,13 @@ class _FeedbackScreenContentState extends State<_FeedbackScreenContent> {
                 size: 24.sp,
               ),
               SizedBox(width: 8.w),
-              Text(
-                'Il tuo feedback è importante',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppColors.indigo600,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'Il tuo feedback è importante',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.indigo600,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
