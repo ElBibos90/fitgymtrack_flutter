@@ -14,15 +14,18 @@ try {
 
     $allenamento_id = intval($_GET['allenamento_id']);
 
-    // Query aggiornata per includere i campi REST-PAUSE
+    // Query corretta per includere il nome dell'esercizio tramite JOIN con scheda_esercizi
     $query = "
         SELECT sc.*, 
                sc.scheda_esercizio_id as esercizio_id,
                sc.serie_number as real_serie_number,
                sc.is_rest_pause,
                sc.rest_pause_reps,
-               sc.rest_pause_rest_seconds
+               sc.rest_pause_rest_seconds,
+               e.nome as esercizio_nome               
         FROM serie_completate sc
+        LEFT JOIN scheda_esercizi se ON se.id = sc.scheda_esercizio_id
+        LEFT JOIN esercizi e ON e.id = se.esercizio_id
         WHERE sc.allenamento_id = ?
         ORDER BY sc.timestamp ASC
     ";
