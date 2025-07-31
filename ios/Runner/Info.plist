@@ -49,7 +49,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<!-- 🔧 AUTOFILL: Configurazioni per autofill password su iOS -->
+	<!-- 🔧 AUTOFILL: Configurazioni essenziali per autofill password su iOS -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

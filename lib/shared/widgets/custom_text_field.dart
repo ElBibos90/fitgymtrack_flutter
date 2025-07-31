@@ -86,6 +86,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
       // 🔧 AUTOFILL: Configurazioni specifiche per iOS
       autocorrect: !widget.isPassword,
       enableIMEPersonalizedLearning: !widget.isPassword,
+      
+      // 🔧 AUTOFILL: Configurazioni per riconoscimento campi login
+      textCapitalization: widget.isPassword ? TextCapitalization.none : TextCapitalization.none,
+      enableInteractiveSelection: true,
 
       style: TextStyle(
         fontSize: 16.sp,
