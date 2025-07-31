@@ -49,5 +49,22 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- 🔧 AUTOFILL: Configurazioni per autofill password su iOS -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.fitgymtrack.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fitgymtrack</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

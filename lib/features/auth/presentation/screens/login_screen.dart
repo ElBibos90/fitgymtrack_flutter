@@ -25,7 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isAutofillComplete = false;
-  bool _hasManualInput = false;
 
   @override
   void dispose() {
@@ -37,11 +36,6 @@ class _LoginScreenState extends State<LoginScreen> {
   // 🔧 AUTOFILL: Gestione submit autofill migliorata per iOS
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      // Marca che c'è stato input manuale
-      if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
-        _hasManualInput = true;
-      }
-      
       context.read<AuthBloc>().add(
         AuthLoginRequested(
           username: _usernameController.text.trim(),
@@ -97,11 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
-            // Su iOS, chiama finishAutofillContext sia per autofill che per input manuale
+            // Su iOS, chiama finishAutofillContext sempre dopo un login riuscito
             if (Platform.isIOS) {
-              if (_isAutofillComplete || _hasManualInput) {
-                TextInput.finishAutofillContext();
-              }
+              // Su iOS, salva sempre le credenziali nel Keychain dopo un login riuscito
+              TextInput.finishAutofillContext();
             } else if (Platform.isAndroid) {
               TextInput.finishAutofillContext();
             }
@@ -221,8 +214,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               prefixIcon: Icons.person,
                               textInputAction: TextInputAction.next,
                               keyboardType: TextInputType.text,
-                              // 🔧 AUTOFILL: Hints per username
-                              autofillHints: const [AutofillHints.username],
+                              // 🔧 AUTOFILL: Hints per username con configurazione iOS
+                              autofillHints: Platform.isIOS 
+                                  ? const [AutofillHints.username, AutofillHints.email]
+                                  : const [AutofillHints.username],
                               enableSuggestions: true,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -243,8 +238,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               isPassword: true,
                               textInputAction: TextInputAction.done,
                               keyboardType: TextInputType.visiblePassword,
-                              // 🔧 AUTOFILL: Hints per password e callback migliorati per iOS
-                              autofillHints: const [AutofillHints.password],
+                              // 🔧 AUTOFILL: Hints per password con configurazione iOS
+                              autofillHints: Platform.isIOS 
+                                  ? const [AutofillHints.password, AutofillHints.newPassword]
+                                  : const [AutofillHints.password],
                               enableSuggestions: false, // Disabilita suggerimenti per password
                               onEditingComplete: _handleAutofillComplete,
                               onSubmitted: _handlePasswordSubmitted,

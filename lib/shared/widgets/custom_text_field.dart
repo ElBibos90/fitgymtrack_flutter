@@ -1,8 +1,9 @@
-// 🔧 AUTOFILL UPDATE: CustomTextField con supporto completo per autofill Android
+// 🔧 AUTOFILL UPDATE: CustomTextField con supporto completo per autofill iOS/Android
 // File: lib/shared/widgets/custom_text_field.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'dart:io' show Platform;
 import '../theme/app_colors.dart';
 
 class CustomTextField extends StatefulWidget {
@@ -71,7 +72,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       onTap: widget.onTap,
       readOnly: widget.readOnly,
 
-      // 🔧 AUTOFILL: Configurazione completa autofill
+      // 🔧 AUTOFILL: Configurazione completa autofill con supporto iOS
       autofillHints: widget.autofillHints,
       enableSuggestions: widget.enableSuggestions,
       onEditingComplete: widget.onEditingComplete,
@@ -81,6 +82,10 @@ class _CustomTextFieldState extends State<CustomTextField> {
       // 🔧 AUTOFILL: Configurazione smartdashes e smartquotes per password
       smartDashesType: widget.isPassword ? SmartDashesType.disabled : SmartDashesType.enabled,
       smartQuotesType: widget.isPassword ? SmartQuotesType.disabled : SmartQuotesType.enabled,
+
+      // 🔧 AUTOFILL: Configurazioni specifiche per iOS
+      autocorrect: !widget.isPassword,
+      enableIMEPersonalizedLearning: !widget.isPassword,
 
       style: TextStyle(
         fontSize: 16.sp,
