@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           });
         }
       } catch (e) {
-        print('[DEBUG] Error loading saved credentials: $e');
+        // Gestione silenziosa degli errori
       }
     }
   }
@@ -75,9 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         await _secureStorage.write(key: 'saved_username', value: _usernameController.text.trim());
         await _secureStorage.write(key: 'saved_password', value: _passwordController.text);
-        print('[DEBUG] Credentials saved successfully');
       } catch (e) {
-        print('[DEBUG] Error saving credentials: $e');
+        // Gestione silenziosa degli errori
       }
     }
   }
@@ -96,15 +95,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 🔧 AUTOFILL: Callback per autofill completion migliorato per iOS
   void _handleAutofillComplete() {
-    print('[DEBUG] Autofill complete called');
-    print('[DEBUG] Username: ${_usernameController.text.isNotEmpty}');
-    print('[DEBUG] Password: ${_passwordController.text.isNotEmpty}');
-    
     // Su iOS, verifica che entrambi i campi siano popolati prima di procedere
     if (Platform.isIOS) {
       if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
         _isAutofillComplete = true;
-        print('[DEBUG] Autofill marked as complete on iOS');
         // Su iOS, non eseguire automaticamente il login dall'autofill
         // L'utente deve premere il pulsante "Accedi"
       }
@@ -144,17 +138,13 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
-            print('[DEBUG] Login successful, saving credentials...');
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
             // Su iOS, salva le credenziali nel Keychain
             if (Platform.isIOS) {
-              print('[DEBUG] Saving credentials on iOS');
               _saveCredentials();
               // Su iOS, chiama finishAutofillContext sempre dopo un login riuscito
               TextInput.finishAutofillContext();
-              print('[DEBUG] finishAutofillContext called on iOS');
             } else if (Platform.isAndroid) {
-              print('[DEBUG] Calling finishAutofillContext on Android');
               TextInput.finishAutofillContext();
             }
             context.go('/dashboard');
