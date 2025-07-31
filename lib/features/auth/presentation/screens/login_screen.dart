@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io' show Platform;
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
@@ -23,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isAutofillComplete = false;
 
   @override
   void dispose() {
@@ -31,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // 🔧 AUTOFILL: Gestione submit autofill
+  // 🔧 AUTOFILL: Gestione submit autofill migliorata per iOS
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
@@ -43,10 +45,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // 🔧 AUTOFILL: Callback per autofill completion
+  // 🔧 AUTOFILL: Callback per autofill completion migliorato per iOS
   void _handleAutofillComplete() {
-    // Quando l'autofill completa, esegui login automaticamente se valido
-    if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+    // Su iOS, verifica che entrambi i campi siano popolati prima di procedere
+    if (Platform.isIOS) {
+      if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+        _isAutofillComplete = true;
+        // Su iOS, non eseguire automaticamente il login dall'autofill
+        // L'utente deve premere il pulsante "Accedi"
+      }
+    } else {
+      // Su Android, mantieni il comportamento originale
+      if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+        _handleLogin();
+      }
+    }
+  }
+
+  // 🔧 AUTOFILL: Gestione submit da tastiera migliorata per iOS
+  void _handlePasswordSubmitted(String value) {
+    if (Platform.isIOS) {
+      // Su iOS, non eseguire automaticamente il login da tastiera
+      // L'utente deve premere il pulsante "Accedi"
+      FocusScope.of(context).unfocus();
+    } else {
+      // Su Android, mantieni il comportamento originale
       _handleLogin();
     }
   }
@@ -68,7 +91,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
-            TextInput.finishAutofillContext();
+            // Su iOS, chiama finishAutofillContext solo se l'autofill è stato completato
+            if (Platform.isIOS && _isAutofillComplete) {
+              TextInput.finishAutofillContext();
+            } else if (Platform.isAndroid) {
+              TextInput.finishAutofillContext();
+            }
             context.go('/dashboard');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -207,11 +235,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               isPassword: true,
                               textInputAction: TextInputAction.done,
                               keyboardType: TextInputType.visiblePassword,
-                              // 🔧 AUTOFILL: Hints per password e callback
+                              // 🔧 AUTOFILL: Hints per password e callback migliorati per iOS
                               autofillHints: const [AutofillHints.password],
                               enableSuggestions: false, // Disabilita suggerimenti per password
                               onEditingComplete: _handleAutofillComplete,
-                              onSubmitted: (_) => _handleLogin(),
+                              onSubmitted: _handlePasswordSubmitted,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Inserisci la tua password';
