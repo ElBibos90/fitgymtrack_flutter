@@ -66,5 +66,31 @@
 			</array>
 		</dict>
 	</array>
+	<!-- 🔧 AUTOFILL: Configurazione per riconoscimento credenziali web -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>webcredentials:fitgymtrack.com</string>
+	</array>
+	<!-- 🔧 AUTOFILL: Configurazione per Password AutoFill -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Web Credentials</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.url</string>
+			</array>
+		</dict>
+	</array>
+	<!-- 🔧 AUTOFILL: Abilita accesso al Keychain -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.fitgymtrack.app</string>
+	</array>
 </dict>
 </plist>

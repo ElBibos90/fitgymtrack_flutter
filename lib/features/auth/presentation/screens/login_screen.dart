@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io' show Platform;
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
@@ -25,12 +26,60 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isAutofillComplete = false;
+  
+  // 🔧 AUTOFILL: Storage per credenziali iOS
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // 🔧 AUTOFILL: Carica credenziali salvate
+  Future<void> _loadSavedCredentials() async {
+    if (Platform.isIOS) {
+      try {
+        final savedUsername = await _secureStorage.read(key: 'saved_username');
+        final savedPassword = await _secureStorage.read(key: 'saved_password');
+        
+        if (savedUsername != null && savedPassword != null) {
+          setState(() {
+            _usernameController.text = savedUsername;
+            _passwordController.text = savedPassword;
+          });
+        }
+      } catch (e) {
+        print('[DEBUG] Error loading saved credentials: $e');
+      }
+    }
+  }
+
+  // 🔧 AUTOFILL: Salva credenziali
+  Future<void> _saveCredentials() async {
+    if (Platform.isIOS) {
+      try {
+        await _secureStorage.write(key: 'saved_username', value: _usernameController.text.trim());
+        await _secureStorage.write(key: 'saved_password', value: _passwordController.text);
+        print('[DEBUG] Credentials saved successfully');
+      } catch (e) {
+        print('[DEBUG] Error saving credentials: $e');
+      }
+    }
   }
 
   // 🔧 AUTOFILL: Gestione submit autofill migliorata per iOS
@@ -97,10 +146,11 @@ class _LoginScreenState extends State<LoginScreen> {
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
             print('[DEBUG] Login successful, saving credentials...');
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
-            // Su iOS, chiama finishAutofillContext sempre dopo un login riuscito
+            // Su iOS, salva le credenziali nel Keychain
             if (Platform.isIOS) {
-              print('[DEBUG] Calling finishAutofillContext on iOS');
-              // Su iOS, salva sempre le credenziali nel Keychain dopo un login riuscito
+              print('[DEBUG] Saving credentials on iOS');
+              _saveCredentials();
+              // Su iOS, chiama finishAutofillContext sempre dopo un login riuscito
               TextInput.finishAutofillContext();
               print('[DEBUG] finishAutofillContext called on iOS');
             } else if (Platform.isAndroid) {
