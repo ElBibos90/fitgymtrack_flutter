@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.visiblePassword,
                               // 🔧 AUTOFILL: Hints per password con configurazione iOS
                               autofillHints: Platform.isIOS 
-                                  ? const [AutofillHints.password, AutofillHints.newPassword, AutofillHints.currentPassword]
+                                  ? const [AutofillHints.password, AutofillHints.newPassword]
                                   : const [AutofillHints.password],
                               enableSuggestions: false, // Disabilita suggerimenti per password
                               onEditingComplete: _handleAutofillComplete,
