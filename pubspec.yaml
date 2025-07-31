@@ -1,8 +1,8 @@
-name: fitgymtrack
+﻿name: fitgymtrack
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
-version: 1.0.14+14
+version: 1.0.15+15
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -21,7 +21,7 @@ dependencies:
   path: ^1.8.3
 
 
-  # ðŸ”§ FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
+  # Ã°Å¸â€Â§ FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
   wakelock_plus: ^1.2.5
 
   # State Management
@@ -56,18 +56,18 @@ dependencies:
   # Dependency Injection
   get_it: ^7.7.0
 
-  # ðŸš€ RECOVERY TIMER DEPENDENCIES
+  # Ã°Å¸Å¡â‚¬ RECOVERY TIMER DEPENDENCIES
   # Audio per feedback sonoro cross-platform
   audioplayers: ^6.0.0
 
-  # ðŸ”§ FIX: Vibrazione con package aggiornato + compatibile
+  # Ã°Å¸â€Â§ FIX: Vibrazione con package aggiornato + compatibile
   haptic_feedback: ^0.5.1+1  # Alternativa moderna al vibration package
 
-  # ðŸ’³ STRIPE PAYMENT DEPENDENCIES
+  # Ã°Å¸â€™Â³ STRIPE PAYMENT DEPENDENCIES
   # Stripe SDK principale per Flutter
   flutter_stripe: ^10.1.1
 
-  # ðŸ”— URL Launcher per link esterni (Privacy Policy, Terms of Service)
+  # Ã°Å¸â€â€” URL Launcher per link esterni (Privacy Policy, Terms of Service)
   url_launcher: ^6.2.5
   flutter_launcher_icons: ^0.14.4
 
@@ -75,7 +75,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # ðŸ§ª TESTING DEPENDENCIES
+  # Ã°Å¸Â§Âª TESTING DEPENDENCIES
   integration_test:
     sdk: flutter
   bloc_test: ^9.1.6
@@ -86,17 +86,19 @@ dev_dependencies:
 
   flutter_lints: ^4.0.0
 
-  # ðŸ†• BRANDING PACKAGES
+  # Ã°Å¸â€ â€¢ BRANDING PACKAGES
   flutter_native_splash: ^2.3.2
 
 flutter:
   uses-material-design: true
 
-  # ðŸ”Š AUDIO ASSETS per timer feedback
+  # Ã°Å¸â€Å  AUDIO ASSETS per timer feedback
   assets:
     - assets/audio/
-    - assets/icon/        # ðŸ†• Per le icone personalizzate
-    - assets/splash/      # ðŸ†• Per lo splash screen
+    - assets/icon/        # Ã°Å¸â€ â€¢ Per le icone personalizzate
+    - assets/splash/      # Ã°Å¸â€ â€¢ Per lo splash screen
+
+
 
 
 
