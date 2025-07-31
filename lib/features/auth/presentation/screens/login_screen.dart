@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isAutofillComplete = false;
+  bool _hasManualInput = false;
 
   @override
   void dispose() {
@@ -36,6 +37,11 @@ class _LoginScreenState extends State<LoginScreen> {
   // 🔧 AUTOFILL: Gestione submit autofill migliorata per iOS
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
+      // Marca che c'è stato input manuale
+      if (_usernameController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
+        _hasManualInput = true;
+      }
+      
       context.read<AuthBloc>().add(
         AuthLoginRequested(
           username: _usernameController.text.trim(),
@@ -91,9 +97,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
-            // Su iOS, chiama finishAutofillContext solo se l'autofill è stato completato
-            if (Platform.isIOS && _isAutofillComplete) {
-              TextInput.finishAutofillContext();
+            // Su iOS, chiama finishAutofillContext sia per autofill che per input manuale
+            if (Platform.isIOS) {
+              if (_isAutofillComplete || _hasManualInput) {
+                TextInput.finishAutofillContext();
+              }
             } else if (Platform.isAndroid) {
               TextInput.finishAutofillContext();
             }
