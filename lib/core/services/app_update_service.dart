@@ -47,10 +47,12 @@ class AppUpdateService {
 
       // Controlla la versione sul server con targeting
       final apiClient = getIt<ApiClient>();
+      print('[CONSOLE] [app_update_service]🌐 Calling API with params: platform=$platform, isTester=$isTestUser');
       final response = await apiClient.getAppVersion(
         platform: platform,
         isTester: isTestUser,
       );
+      print('[CONSOLE] [app_update_service]🌐 API Response: $response');
       
       if (response is Map<String, dynamic>) {
         final serverVersion = response['version'] as String?;
@@ -218,9 +220,12 @@ class AppUpdateService {
       final authRepository = getIt<AuthRepository>();
       final user = await authRepository.getCurrentUser();
       
+      print('[CONSOLE] [app_update_service]🔍 DEBUG: User data: ${user?.toJson()}');
+      
       if (user != null) {
         final isTester = user.isTester ?? false;
         print('[CONSOLE] [app_update_service]👤 User tester status: $isTester');
+        print('[CONSOLE] [app_update_service]👤 User role: ${user.roleName}');
         return isTester;
       }
       

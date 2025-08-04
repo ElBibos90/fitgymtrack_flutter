@@ -94,7 +94,7 @@ function getAllUsers($conn, $user) {
             SELECT u.id, u.username, u.email, u.name, u.role_id, 
                 u.active, u.last_login, u.created_at, r.name as role_name,
                 u.trainer_id, t.username as trainer_username, t.name as trainer_name,
-                u.current_plan_id, p.name as plan_name
+                u.current_plan_id, p.name as plan_name, u.is_tester
             FROM users u
             JOIN user_role r ON u.role_id = r.id
             LEFT JOIN users t ON u.trainer_id = t.id
@@ -211,7 +211,7 @@ function getUserById($conn, $id, $user) {
             SELECT u.id, u.username, u.email, u.name, u.role_id, 
                    u.active, u.last_login, u.created_at, r.name as role_name,
                    u.trainer_id, t.username as trainer_username, t.name as trainer_name,
-                   u.current_plan_id, p.name as plan_name
+                   u.current_plan_id, p.name as plan_name, u.is_tester
             FROM users u
             JOIN user_role r ON u.role_id = r.id
             LEFT JOIN users t ON u.trainer_id = t.id
