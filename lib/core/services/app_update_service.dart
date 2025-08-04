@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
 import '../di/dependency_injection.dart';
+import '../services/session_service.dart';
 import '../../features/auth/repository/auth_repository.dart';
 
 /// 🔧 NUOVO: Servizio per gestire il controllo degli aggiornamenti dell'app
