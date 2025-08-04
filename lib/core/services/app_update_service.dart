@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
 import '../di/dependency_injection.dart';
+import '../../features/auth/repository/auth_repository.dart';
 
 /// 🔧 NUOVO: Servizio per gestire il controllo degli aggiornamenti dell'app
 class AppUpdateService {
@@ -38,9 +39,18 @@ class AppUpdateService {
 
       print('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
 
-      // Controlla la versione sul server
+      // 🔧 NUOVO: Ottieni informazioni utente per targeting
+      final isTestUser = await _checkIfUserIsTester();
+      final platform = Platform.isAndroid ? 'android' : 'ios';
+      
+      print('[CONSOLE] [app_update_service]🎯 Targeting - Platform: $platform, IsTester: $isTestUser');
+
+      // Controlla la versione sul server con targeting
       final apiClient = getIt<ApiClient>();
-      final response = await apiClient.getAppVersion();
+      final response = await apiClient.getAppVersion(
+        platform: platform,
+        isTester: isTestUser,
+      );
       
       if (response is Map<String, dynamic>) {
         final serverVersion = response['version'] as String?;
@@ -94,9 +104,16 @@ class AppUpdateService {
       final currentVersion = packageInfo.version;
       final currentBuild = packageInfo.buildNumber;
 
-      // Controlla la versione sul server
+      // 🔧 NUOVO: Ottieni informazioni utente per targeting
+      final isTestUser = await _checkIfUserIsTester();
+      final platform = Platform.isAndroid ? 'android' : 'ios';
+
+      // Controlla la versione sul server con targeting
       final apiClient = getIt<ApiClient>();
-      final response = await apiClient.getAppVersion();
+      final response = await apiClient.getAppVersion(
+        platform: platform,
+        isTester: isTestUser,
+      );
       
       if (response is Map<String, dynamic>) {
         final serverVersion = response['version'] as String?;
@@ -192,6 +209,27 @@ class AppUpdateService {
     
     print('[CONSOLE] [app_update_service]🔍 Versions are EQUAL: $version1 = $version2');
     return 0; // Versioni uguali
+  }
+
+  /// 🔧 NUOVO: Controlla se l'utente corrente è un tester
+  static Future<bool> _checkIfUserIsTester() async {
+    try {
+      // Usa AuthRepository per ottenere informazioni utente
+      final authRepository = getIt<AuthRepository>();
+      final user = await authRepository.getCurrentUser();
+      
+      if (user != null) {
+        final isTester = user.isTester ?? false;
+        print('[CONSOLE] [app_update_service]👤 User tester status: $isTester');
+        return isTester;
+      }
+      
+      print('[CONSOLE] [app_update_service]❌ No user found, assuming production user');
+      return false;
+    } catch (e) {
+      print('[CONSOLE] [app_update_service]❌ Error checking user tester status: $e');
+      return false; // In caso di errore, assume utente di produzione
+    }
   }
 
   /// Apre il link per l'aggiornamento

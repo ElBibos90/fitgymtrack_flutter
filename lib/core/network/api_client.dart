@@ -456,5 +456,8 @@ abstract class ApiClient {
   // ============================================================================
 
   @GET("/version.php")
-  Future<dynamic> getAppVersion();
+  Future<dynamic> getAppVersion({
+    @Query("platform") String? platform,
+    @Query("is_tester") bool? isTester,
+  });
 }

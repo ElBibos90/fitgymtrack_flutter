@@ -57,6 +57,29 @@ if ($newVersion -match '^(\d+\.\d+\.\d+)\+(\d+)$') {
 }
 
 Write-Host ""
+# 🔧 NUOVO: Richiedi tipo di deploy
+Write-Host "Tipo di deploy:" -ForegroundColor Yellow
+Write-Host "   1 = Test (solo tester)" -ForegroundColor Gray
+Write-Host "   2 = Production (tutti gli utenti)" -ForegroundColor Gray
+$deploymentType = Read-Host "Seleziona tipo (1/2)"
+
+# 🔧 NUOVO: Richiedi piattaforma target
+Write-Host ""
+Write-Host "Piattaforma target:" -ForegroundColor Yellow
+Write-Host "   1 = Android" -ForegroundColor Gray
+Write-Host "   2 = iOS" -ForegroundColor Gray
+Write-Host "   3 = Both (entrambe)" -ForegroundColor Gray
+$platform = Read-Host "Seleziona piattaforma (1/2/3)"
+
+# Mappa le risposte
+$targetAudience = if ($deploymentType -eq "1") { "test" } else { "production" }
+$platformTarget = switch ($platform) { 
+    "1" { "android" }
+    "2" { "ios" }
+    "3" { "both" }
+    default { "both" }
+}
+
 # Richiedi se è un aggiornamento critico
 $updateRequired = Read-Host "Aggiornamento forzato/critico? (y/N)"
 $isCritical = ($updateRequired -eq "y" -or $updateRequired -eq "Y")
@@ -74,6 +97,9 @@ if ([string]::IsNullOrWhiteSpace($updateMessage)) {
 Write-Host ""
 Write-Host "Riepilogo deploy completo:" -ForegroundColor Yellow
 Write-Host "   Versione: $currentVersion+$currentBuild -> $newVersion+$newBuild" -ForegroundColor White
+Write-Host "   Tipo: $(if ($deploymentType -eq "1") { 'TEST' } else { 'PRODUCTION' })" -ForegroundColor $(if ($deploymentType -eq "1") { "Yellow" } else { "Green" })
+Write-Host "   Piattaforma: $platformTarget" -ForegroundColor White
+Write-Host "   Target Audience: $targetAudience" -ForegroundColor White
 Write-Host "   Database: Aggiornamento automatico" -ForegroundColor White
 Write-Host "   Critico: $(if ($isCritical) { 'SÌ' } else { 'NO' })" -ForegroundColor $(if ($isCritical) { "Red" } else { "Green" })
 Write-Host "   Messaggio: $updateMessage" -ForegroundColor White
@@ -164,7 +190,8 @@ try:
     cursor = conn.cursor()
     
     print('Disattivazione versioni precedenti...')
-    cursor.execute("UPDATE app_versions SET is_active = 0")
+    # Disattiva SOLO le versioni dello stesso target_audience
+    cursor.execute("UPDATE app_versions SET is_active = 0 WHERE target_audience = %s", ('$targetAudience',))
     
     print('Inserimento nuova versione...')
     version_name = '$newVersion'
@@ -173,9 +200,9 @@ try:
     
     cursor.execute("""
         INSERT INTO app_versions 
-        (version_name, build_number, version_code, is_active, update_required, update_message, release_date, min_required_version) 
-        VALUES (%s, %s, %s, 1, %s, %s, NOW(), '1.0.0')
-    """, (version_name, build_number, version_code, $isCritical, '$updateMessage'))
+        (version_name, build_number, version_code, is_active, update_required, update_message, release_date, min_required_version, platform, target_audience) 
+        VALUES (%s, %s, %s, 1, %s, %s, NOW(), '1.0.0', %s, %s)
+    """, (version_name, build_number, version_code, $isCritical, '$updateMessage', '$platformTarget', '$targetAudience'))
     
     conn.commit()
     print(f'SUCCESSO: Database aggiornato con {version_name}+{build_number} (code: {version_code})')
@@ -194,6 +221,8 @@ except Exception as e:
     $pythonScript = $pythonScript -replace '\$versionCode', $versionCode
     $pythonScript = $pythonScript -replace '\$isCritical', $(if ($isCritical) { "True" } else { "False" })
     $pythonScript = $pythonScript -replace '\$updateMessage', $updateMessage
+    $pythonScript = $pythonScript -replace '\$platformTarget', $platformTarget
+    $pythonScript = $pythonScript -replace '\$targetAudience', $targetAudience
 
     Set-Content "temp_db_update.py" $pythonScript -Encoding UTF8
     & $pythonPath temp_db_update.py
@@ -241,13 +270,24 @@ Write-Host "   Dipendenze aggiornate" -ForegroundColor Green
 
 Write-Host ""
 
-# STEP 5: Compila AAB
-Write-Host "STEP 5: Compilazione AAB..." -ForegroundColor Yellow
-flutter build appbundle --release
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERRORE: Errore compilazione" -ForegroundColor Red
-    Read-Host "Premi Enter per uscire"
-    exit 1
+# STEP 5: Compila in base alla piattaforma selezionata
+if ($platformTarget -eq "android" -or $platformTarget -eq "both") {
+    Write-Host "STEP 5: Compilazione AAB per Android..." -ForegroundColor Yellow
+    flutter build appbundle --release
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERRORE: Errore compilazione Android" -ForegroundColor Red
+        Read-Host "Premi Enter per uscire"
+        exit 1
+    }
+    Write-Host "   AAB Android generato: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor Green
+}
+
+if ($platformTarget -eq "ios" -or $platformTarget -eq "both") {
+    Write-Host "STEP 5: Compilazione IPA per iOS..." -ForegroundColor Yellow
+    Write-Host "   NOTA: Per iOS, esegui manualmente:" -ForegroundColor Yellow
+    Write-Host "   1. flutter build ios --release" -ForegroundColor Gray
+    Write-Host "   2. Apri Xcode e fai Archive" -ForegroundColor Gray
+    Write-Host "   3. Carica su App Store Connect" -ForegroundColor Gray
 }
 
 Write-Host ""
@@ -255,16 +295,30 @@ Write-Host "============================================================" -Foreg
 Write-Host "DEPLOY COMPLETO CON SUCCESSO!" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "Versione: $newVersion+$newBuild" -ForegroundColor White
-Write-Host "AAB: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor White
+Write-Host "Tipo: $(if ($deploymentType -eq "1") { 'TEST' } else { 'PRODUCTION' })" -ForegroundColor $(if ($deploymentType -eq "1") { "Yellow" } else { "Green" })
+Write-Host "Piattaforma: $platformTarget" -ForegroundColor White
+Write-Host "Target Audience: $targetAudience" -ForegroundColor White
 Write-Host "Pubspec: Aggiornato" -ForegroundColor White
 Write-Host "Database: Aggiornato automaticamente" -ForegroundColor Green
 Write-Host "Critico: $(if ($isCritical) { 'SÌ' } else { 'NO' })" -ForegroundColor $(if ($isCritical) { "Red" } else { "Green" })
 Write-Host "Messaggio: $updateMessage" -ForegroundColor White
 Write-Host ""
-Write-Host "PROSSIMI PASSI:" -ForegroundColor Yellow
-Write-Host "1. Carica il file .aab su Google Play Console" -ForegroundColor White
-Write-Host "2. Compila le note di rilascio" -ForegroundColor White
-Write-Host "3. Pubblica la release" -ForegroundColor White
+
+if ($platformTarget -eq "android" -or $platformTarget -eq "both") {
+    Write-Host "ANDROID:" -ForegroundColor Yellow
+    Write-Host "AAB: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor White
+    Write-Host "1. Carica il file .aab su Google Play Console" -ForegroundColor White
+    Write-Host "2. Compila le note di rilascio" -ForegroundColor White
+    Write-Host "3. Pubblica la release" -ForegroundColor White
+}
+
+if ($platformTarget -eq "ios" -or $platformTarget -eq "both") {
+    Write-Host "iOS:" -ForegroundColor Yellow
+    Write-Host "1. Esegui: flutter build ios --release" -ForegroundColor White
+    Write-Host "2. Apri Xcode e fai Archive" -ForegroundColor White
+    Write-Host "3. Carica su App Store Connect" -ForegroundColor White
+}
+
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 

@@ -37,7 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 try {
-    // Ottieni le informazioni sulla versione dal database
+    // Ottieni parametri di targeting dalla richiesta
+    $platform = $_GET['platform'] ?? 'both';
+    $isTester = isset($_GET['is_tester']) ? filter_var($_GET['is_tester'], FILTER_VALIDATE_BOOLEAN) : false;
+    
+    // Determina target audience basato su is_tester
+    $targetAudience = $isTester ? 'test' : 'production';
+    
+    // Log per debug
+    error_log("Version check - Platform: $platform, IsTester: " . ($isTester ? 'true' : 'false') . ", TargetAudience: $targetAudience");
+    
+    // Ottieni le informazioni sulla versione dal database con targeting
     $stmt = $conn->prepare("
         SELECT 
             version_name,
@@ -47,13 +57,18 @@ try {
             update_message,
             min_required_version,
             release_notes,
-            release_date
+            release_date,
+            platform,
+            target_audience
         FROM app_versions 
         WHERE is_active = 1 
+        AND (platform = ? OR platform = 'both')
+        AND target_audience = ?
         ORDER BY version_code DESC 
         LIMIT 1
     ");
     
+    $stmt->bind_param('ss', $platform, $targetAudience);
     $stmt->execute();
     $result = $stmt->get_result();
     
@@ -79,7 +94,9 @@ try {
             'message' => $row['update_message'] ?? '',
             'min_required_version' => $row['min_required_version'],
             'release_notes' => $row['release_notes'] ?? '',
-            'release_date' => $row['release_date']
+            'release_date' => $row['release_date'],
+            'platform' => $row['platform'],
+            'target_audience' => $row['target_audience']
         ];
     }
     

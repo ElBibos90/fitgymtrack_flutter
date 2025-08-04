@@ -33,6 +33,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
       name: json['name'] as String?,
       roleId: (json['role_id'] as num).toInt(),
       roleName: json['role_name'] as String,
+      isTester: json['is_tester'] as bool?,
       trainer: json['trainer'] == null
           ? null
           : Trainer.fromJson(json['trainer'] as Map<String, dynamic>),
@@ -45,6 +46,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
       'name': instance.name,
       'role_id': instance.roleId,
       'role_name': instance.roleName,
+      'is_tester': instance.isTester,
       'trainer': instance.trainer,
     };
 

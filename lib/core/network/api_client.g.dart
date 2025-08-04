@@ -2056,9 +2056,13 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<dynamic> getAppVersion() async {
+  Future<dynamic> getAppVersion({String? platform, bool? isTester}) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'platform': platform,
+      r'is_tester': isTester,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
     final _options = _setStreamType<dynamic>(

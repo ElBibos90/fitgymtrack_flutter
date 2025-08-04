@@ -34,6 +34,8 @@ class User {
   final int roleId;
   @JsonKey(name: 'role_name')
   final String roleName;
+  @JsonKey(name: 'is_tester')
+  final bool? isTester;
   final Trainer? trainer;
 
   const User({
@@ -43,6 +45,7 @@ class User {
     this.name,
     required this.roleId,
     required this.roleName,
+    this.isTester,
     this.trainer,
   });
 
