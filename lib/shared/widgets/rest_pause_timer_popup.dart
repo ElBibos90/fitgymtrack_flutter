@@ -67,8 +67,36 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     _remainingSeconds = widget.initialSeconds;
     _audioPlayer = AudioPlayer();
     _audioSettings = getIt<AudioSettingsService>();
+    
+    // ✅ FIXED: Configura AudioContext una sola volta per tutto il timer
+    _configureAudioContext();
+    
     _initializeAnimations();
     _startTimer();
+  }
+
+  // ✅ FIXED: Configura AudioContext una sola volta
+  Future<void> _configureAudioContext() async {
+    try {
+      await _audioPlayer.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+      ));
+      print("🔊 [REST PAUSE AUDIO] AudioContext configured for ducking");
+    } catch (e) {
+      print("🔊 [REST PAUSE AUDIO] Error configuring AudioContext: $e");
+    }
   }
 
   @override
@@ -123,31 +151,14 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
         return; // Audio disabilitato
       }
 
-      // ✅ FIXED: Configura Audio Ducking
-      await _audioPlayer.setAudioContext(AudioContext(
-        android: AudioContextAndroid(
-          isSpeakerphoneOn: false,
-          stayAwake: false,
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.assistanceSonification,
-        ),
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-          options: {
-            AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.duckOthers,
-          },
-        ),
-      ));
-
-      // ✅ FIXED: Applica volume dalle impostazioni
-      final volume = _audioSettings.beepVolume / 100.0;
+      // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
+      final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
       await _audioPlayer.setVolume(volume);
 
-      //print("🔊 [REST-PAUSE AUDIO] Playing countdown beep (volume: $volume)");
+      print("🔊 [REST PAUSE AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      //print("🔊 [REST-PAUSE AUDIO] Error playing countdown beep: $e");
+      print("🔊 [REST PAUSE AUDIO] Error playing countdown beep: $e");
     }
   }
 
@@ -159,35 +170,23 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
           return; // Audio disabilitato
         }
 
-        //print("🔊 [REST-PAUSE AUDIO] Playing completion sound");
+        print("🔊 [REST PAUSE AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
-        // ✅ FIXED: Configura Audio Ducking
-        await _audioPlayer.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            isSpeakerphoneOn: false,
-            stayAwake: false,
-            contentType: AndroidContentType.sonification,
-            usageType: AndroidUsageType.assistanceSonification,
-          ),
-                  iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-          options: {
-            AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.duckOthers,
-          },
-        ),
-        ));
-
-        // ✅ FIXED: Applica volume dalle impostazioni
-        final volume = _audioSettings.beepVolume / 100.0;
+        // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
+        final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
         await _audioPlayer.setVolume(volume);
 
-        //print("🔊 [REST-PAUSE AUDIO] Playing completion sound");
+        // 🔧 FIX: Aspetta che l'audio finisca davvero
         await _audioPlayer.play(AssetSource('audio/timer_complete.mp3'));
+
+        // Piccolo delay extra per sicurezza
+        await Future.delayed(const Duration(milliseconds: 900));
+
+        print("🔊 [REST PAUSE AUDIO] Completion sound finished");
       }
     } catch (e) {
-      //print("🔊 [REST-PAUSE AUDIO] Error playing completion sound: $e");
+      print("🔊 [REST PAUSE AUDIO] Error playing completion sound: $e");
     }
   }
 

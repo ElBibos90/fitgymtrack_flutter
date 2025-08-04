@@ -80,17 +80,37 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     _remainingSeconds = widget.initialSeconds;
     _audioPlayer = AudioPlayer();
     _audioSettings = getIt<AudioSettingsService>();
+    
+    // ✅ FIXED: Configura AudioContext una sola volta per tutto il timer
+    _configureAudioContext();
+    
     _initializeAnimations();
-
-    // 🔧 FIX 3: Log info superset
-    if (widget.isInSuperset) {
-      //print("🔧 [SUPERSET TIMER] Recovery timer for superset exercise: ${widget.exerciseName}");
-      //print("🔧 [SUPERSET TIMER] Is last in superset: ${widget.isLastInSuperset}");
-      //print("🔧 [SUPERSET TIMER] Superset info: ${widget.supersetInfo}");
-    }
-
     if (widget.isActive) {
       _startTimer();
+    }
+  }
+
+  // ✅ FIXED: Configura AudioContext una sola volta
+  Future<void> _configureAudioContext() async {
+    try {
+      await _audioPlayer.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+      ));
+      print("🔊 [RECOVERY AUDIO] AudioContext configured for ducking");
+    } catch (e) {
+      print("🔊 [RECOVERY AUDIO] Error configuring AudioContext: $e");
     }
   }
 
@@ -159,31 +179,14 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         return; // Audio disabilitato
       }
 
-      // ✅ FIXED: Configura Audio Ducking
-      await _audioPlayer.setAudioContext(AudioContext(
-        android: AudioContextAndroid(
-          isSpeakerphoneOn: false,
-          stayAwake: false,
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.assistanceSonification,
-        ),
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-          options: {
-            AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.duckOthers,
-          },
-        ),
-      ));
-
-      // ✅ FIXED: Applica volume dalle impostazioni
-      final volume = _audioSettings.beepVolume / 100.0;
+      // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
+      final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
       await _audioPlayer.setVolume(volume);
 
-      //print("🔊 [RECOVERY AUDIO] Playing countdown beep (volume: $volume)");
+      print("🔊 [RECOVERY AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      //print("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
+      print("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
     }
   }
 
@@ -195,28 +198,11 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
           return; // Audio disabilitato
         }
 
-        //print("🔊 [RECOVERY AUDIO] Playing completion sound");
+        print("🔊 [RECOVERY AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
-        // ✅ FIXED: Configura Audio Ducking
-        await _audioPlayer.setAudioContext(AudioContext(
-          android: AudioContextAndroid(
-            isSpeakerphoneOn: false,
-            stayAwake: false,
-            contentType: AndroidContentType.sonification,
-            usageType: AndroidUsageType.assistanceSonification,
-          ),
-                  iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-          options: {
-            AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.duckOthers,
-          },
-        ),
-        ));
-
-        // ✅ FIXED: Applica volume dalle impostazioni
-        final volume = _audioSettings.beepVolume / 100.0;
+        // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
+        final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
         await _audioPlayer.setVolume(volume);
 
         // 🔧 FIX: Aspetta che l'audio finisca davvero
@@ -225,10 +211,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         // Piccolo delay extra per sicurezza
         await Future.delayed(const Duration(milliseconds: 900));
 
-        //print("🔊 [RECOVERY AUDIO] Completion sound finished");
+        print("🔊 [RECOVERY AUDIO] Completion sound finished");
       }
     } catch (e) {
-      //print("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
+      print("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
     }
   }
 
