@@ -45,11 +45,11 @@ class DependencyInjection {
     // 🎵 Audio Settings Service
     getIt.registerLazySingleton<AudioSettingsService>(() => AudioSettingsService());
 
-    getIt.registerLazySingleton(() => DioClient.getInstance(
+    getIt.registerLazySingleton<Dio>(() => DioClient.getInstance(
       sessionService: getIt<SessionService>(),
     ));
 
-    getIt.registerLazySingleton<ApiClient>(() => ApiClient(getIt()));
+    getIt.registerLazySingleton<ApiClient>(() => ApiClient(getIt<Dio>()));
 
     // ============================================================================
     // ROUTE OBSERVER
@@ -81,7 +81,7 @@ class DependencyInjection {
     getIt.registerLazySingleton<FeedbackRepository>(() {
       return FeedbackRepository(
         apiClient: getIt<ApiClient>(),
-        dio: getIt<Dio>(), // ✅ AGGIUNGI QUESTA RIGA
+        dio: getIt<Dio>(),
       );
     });
 

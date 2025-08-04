@@ -237,6 +237,7 @@ class AppUpdateService {
           final isTester = userData['is_tester'] == 1 || userData['is_tester'] == true;
           print('[CONSOLE] [app_update_service]👤 User tester status from API: $isTester');
           print('[CONSOLE] [app_update_service]👤 User role from API: ${userData['role_name']}');
+          print('[CONSOLE] [app_update_service]👤 User ID from API: ${userData['id']}');
           return isTester;
         }
       }
