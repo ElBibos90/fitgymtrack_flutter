@@ -101,6 +101,23 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
     }
   }
 
+  // 🔧 FIX: Method to restore audio session after timer completion
+  Future<void> _restoreAudioSession() async {
+    try {
+      // Force audio session to reset by playing a silent sound
+      await _audioPlayer.setVolume(0.0);
+      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
+      await Future.delayed(const Duration(milliseconds: 100));
+      await _audioPlayer.stop();
+      
+      // Reconfigure audio context to ensure proper restoration
+      await _configureAudioContext();
+      print("🔊 [ISOMETRIC AUDIO] Audio session restored");
+    } catch (e) {
+      print("🔊 [ISOMETRIC AUDIO] Error restoring audio session: $e");
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -211,6 +228,9 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
       // Play completion sound e aspetta che finisca
       await _playCompletionSound();
 
+      // 🔧 FIX: Restore audio session after completion
+      await _restoreAudioSession();
+
       // Callback di completamento
       widget.onIsometricComplete();
 
@@ -253,10 +273,12 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
             }
 
             // Haptic feedback più intenso negli ultimi secondi
-            if (_remainingSeconds <= 3) {
-              HapticFeedback.heavyImpact();
-            } else {
-              HapticFeedback.lightImpact();
+            if (_audioSettings.hapticFeedbackEnabled) {
+              if (_remainingSeconds <= 3) {
+                HapticFeedback.heavyImpact();
+              } else {
+                HapticFeedback.lightImpact();
+              }
             }
           }
         } else {
@@ -265,10 +287,12 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
           _pulseController.stop();
 
           // Haptic feedback finale - doppio impulso
-          HapticFeedback.heavyImpact();
-          Future.delayed(const Duration(milliseconds: 100), () {
+          if (_audioSettings.hapticFeedbackEnabled) {
             HapticFeedback.heavyImpact();
-          });
+            Future.delayed(const Duration(milliseconds: 100), () {
+              HapticFeedback.heavyImpact();
+            });
+          }
 
           // 🔧 FIX: Play audio e aspetta, poi callback e dismiss
           _playCompletionSoundAndFinish();

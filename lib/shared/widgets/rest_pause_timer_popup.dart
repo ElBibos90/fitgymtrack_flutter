@@ -99,6 +99,23 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     }
   }
 
+  // 🔧 FIX: Method to restore audio session after timer completion
+  Future<void> _restoreAudioSession() async {
+    try {
+      // Force audio session to reset by playing a silent sound
+      await _audioPlayer.setVolume(0.0);
+      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
+      await Future.delayed(const Duration(milliseconds: 100));
+      await _audioPlayer.stop();
+      
+      // Reconfigure audio context to ensure proper restoration
+      await _configureAudioContext();
+      print("🔊 [REST PAUSE AUDIO] Audio session restored");
+    } catch (e) {
+      print("🔊 [REST PAUSE AUDIO] Error restoring audio session: $e");
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -218,13 +235,17 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   void _handleTimerEvents() {
     // 🔊 Audio + Haptic feedback agli ultimi 3 secondi
     if (_remainingSeconds <= 3 && _remainingSeconds > 0) {
-      HapticFeedback.lightImpact();
+      if (_audioSettings.hapticFeedbackEnabled) {
+        HapticFeedback.lightImpact();
+      }
       _playCountdownBeep(); // ✅ FIXED: Aggiunto audio countdown
     }
 
     // Feedback a metà tempo
     if (_remainingSeconds == (widget.initialSeconds / 2).round()) {
-      HapticFeedback.mediumImpact();
+      if (_audioSettings.hapticFeedbackEnabled) {
+        HapticFeedback.mediumImpact();
+      }
     }
   }
 
@@ -240,8 +261,13 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     _pulseController.stop();
 
     // 🔊 Audio + Haptic feedback finale
-    HapticFeedback.heavyImpact();
+    if (_audioSettings.hapticFeedbackEnabled) {
+      HapticFeedback.heavyImpact();
+    }
     _playCompletionSound(); // ✅ FIXED: Aggiunto audio completion
+
+    // 🔧 FIX: Restore audio session after completion
+    _restoreAudioSession();
 
     // Auto-close dopo 1 secondo
     Future.delayed(const Duration(milliseconds: 1000), () {
