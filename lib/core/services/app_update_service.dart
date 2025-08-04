@@ -216,20 +216,32 @@ class AppUpdateService {
   /// 🔧 NUOVO: Controlla se l'utente corrente è un tester
   static Future<bool> _checkIfUserIsTester() async {
     try {
-      // Usa AuthRepository per ottenere informazioni utente
-      final authRepository = getIt<AuthRepository>();
-      final user = await authRepository.getCurrentUser();
+      // 🔧 TEMPORANEO: Usa direttamente l'API per ottenere dati freschi
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
       
-      print('[CONSOLE] [app_update_service]🔍 DEBUG: User data: ${user?.toJson()}');
+      if (token == null) {
+        print('[CONSOLE] [app_update_service]❌ No auth token found');
+        return false;
+      }
+
+      // Chiama direttamente l'API di verifica token
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.verifyToken('verify');
       
-      if (user != null) {
-        final isTester = user.isTester ?? false;
-        print('[CONSOLE] [app_update_service]👤 User tester status: $isTester');
-        print('[CONSOLE] [app_update_service]👤 User role: ${user.roleName}');
-        return isTester;
+      print('[CONSOLE] [app_update_service]🔍 DEBUG: API Response: $response');
+      
+      if (response is Map<String, dynamic> && response['valid'] == true) {
+        final userData = response['user'] as Map<String, dynamic>?;
+        if (userData != null) {
+          final isTester = userData['is_tester'] == 1 || userData['is_tester'] == true;
+          print('[CONSOLE] [app_update_service]👤 User tester status from API: $isTester');
+          print('[CONSOLE] [app_update_service]👤 User role from API: ${userData['role_name']}');
+          return isTester;
+        }
       }
       
-      print('[CONSOLE] [app_update_service]❌ No user found, assuming production user');
+      print('[CONSOLE] [app_update_service]❌ Could not get user data from API');
       return false;
     } catch (e) {
       print('[CONSOLE] [app_update_service]❌ Error checking user tester status: $e');
