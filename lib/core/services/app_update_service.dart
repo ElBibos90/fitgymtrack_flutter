@@ -16,6 +16,15 @@ class AppUpdateService {
   /// Controlla se ci sono aggiornamenti disponibili
   static Future<AppUpdateInfo?> checkForUpdates({bool forceCheck = false}) async {
     try {
+      // 🔧 NUOVO: Controlla prima se l'utente è autenticato
+      final sessionService = getIt<SessionService>();
+      final isAuthenticated = await sessionService.isAuthenticated();
+      
+      if (!isAuthenticated) {
+        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
+        return null;
+      }
+      
       // Controlla se è il momento di verificare gli aggiornamenti
       if (!forceCheck && !await _shouldCheckForUpdates()) {
         print('[CONSOLE] [app_update_service]⏰ Update check skipped (too recent)');
@@ -100,6 +109,15 @@ class AppUpdateService {
   static Future<AppUpdateInfo?> _checkForCriticalUpdate() async {
     try {
       print('[CONSOLE] [app_update_service]🚨 Checking for critical updates...');
+
+      // 🔧 NUOVO: Controlla prima se l'utente è autenticato
+      final sessionService = getIt<SessionService>();
+      final isAuthenticated = await sessionService.isAuthenticated();
+      
+      if (!isAuthenticated) {
+        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping critical update check');
+        return null;
+      }
 
       // Ottieni la versione corrente
       final packageInfo = await PackageInfo.fromPlatform();
@@ -217,13 +235,18 @@ class AppUpdateService {
   static Future<bool> _checkIfUserIsTester() async {
     try {
       // 🔧 TEMPORANEO: Usa direttamente l'API per ottenere dati freschi
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
+      final sessionService = getIt<SessionService>();
+      final token = await sessionService.getAuthToken();
+      
+      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token from SessionService: ${token != null ? "FOUND" : "NOT FOUND"}');
       
       if (token == null) {
         print('[CONSOLE] [app_update_service]❌ No auth token found');
         return false;
       }
+
+      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token length: ${token.length}');
+      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token preview: ${token.substring(0, 10)}...');
 
       // Chiama direttamente l'API di verifica token
       final apiClient = getIt<ApiClient>();

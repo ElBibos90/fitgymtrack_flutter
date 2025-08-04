@@ -6,6 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/utils/api_request_debouncer.dart';
+import '../../../../core/services/session_service.dart';
+import '../../../../core/di/dependency_injection.dart';
 import '../../../subscription/bloc/subscription_bloc.dart';
 import '../../../workouts/presentation/screens/workout_plans_screen.dart';
 import '../../../subscription/presentation/screens/subscription_screen.dart';
@@ -150,6 +152,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _checkForAppUpdates() async {
     try {
       print('[CONSOLE] [home_screen]🚀 Starting app update check...');
+      
+      // 🔧 NUOVO: Aspetta che l'utente sia autenticato
+      final sessionService = getIt<SessionService>();
+      int retryCount = 0;
+      const maxRetries = 10; // Massimo 5 secondi (10 * 500ms)
+      
+      while (retryCount < maxRetries) {
+        final isAuthenticated = await sessionService.isAuthenticated();
+        if (isAuthenticated) {
+          print('[CONSOLE] [home_screen]✅ User authenticated, proceeding with update check');
+          break;
+        }
+        
+        print('[CONSOLE] [home_screen]⏳ Waiting for authentication... (attempt ${retryCount + 1}/$maxRetries)');
+        await Future.delayed(const Duration(milliseconds: 500));
+        retryCount++;
+      }
+      
+      if (retryCount >= maxRetries) {
+        print('[CONSOLE] [home_screen]⚠️ Authentication timeout, skipping update check');
+        return;
+      }
+      
       final updateInfo = await AppUpdateService.checkForUpdates();
       print('[CONSOLE] [home_screen]📱 Update check result: ${updateInfo?.toString() ?? 'null'}');
       
