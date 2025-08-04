@@ -5,6 +5,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../../core/di/dependency_injection.dart';
+import '../../core/services/audio_settings_service.dart';
 
 /// Popup timer dedicato per mini-recupero REST-PAUSE
 /// Design differenziato dal timer normale con feedback specifici
@@ -43,6 +46,11 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   bool _isPaused = false;
   bool _isFinished = false;
 
+  // 🔊 Audio management
+  late AudioPlayer _audioPlayer;
+  late AudioSettingsService _audioSettings;
+  bool _hasPlayedCompletionSound = false;
+
   // ====== ANIMATION CONTROLLERS ======
   late AnimationController _pulseController;
   late AnimationController _progressController;
@@ -57,6 +65,8 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     //print('⚡ [REST-PAUSE TIMER] Starting timer: ${widget.initialSeconds}s');
 
     _remainingSeconds = widget.initialSeconds;
+    _audioPlayer = AudioPlayer();
+    _audioSettings = getIt<AudioSettingsService>();
     _initializeAnimations();
     _startTimer();
   }
@@ -64,6 +74,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   @override
   void dispose() {
     _timer?.cancel();
+    _audioPlayer.dispose();
     _pulseController.dispose();
     _progressController.dispose();
     _breathController.dispose();
@@ -104,6 +115,82 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     _breathController.repeat(reverse: true);
   }
 
+  // 🔊 Audio methods
+  Future<void> _playCountdownBeep() async {
+    try {
+      // ✅ FIXED: Controlla impostazioni audio
+      if (!_audioSettings.timerSoundsEnabled) {
+        return; // Audio disabilitato
+      }
+
+      // ✅ FIXED: Configura Audio Ducking
+      await _audioPlayer.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+      ));
+
+      // ✅ FIXED: Applica volume dalle impostazioni
+      final volume = _audioSettings.beepVolume / 100.0;
+      await _audioPlayer.setVolume(volume);
+
+      //print("🔊 [REST-PAUSE AUDIO] Playing countdown beep (volume: $volume)");
+      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
+    } catch (e) {
+      //print("🔊 [REST-PAUSE AUDIO] Error playing countdown beep: $e");
+    }
+  }
+
+  Future<void> _playCompletionSound() async {
+    try {
+      if (!_hasPlayedCompletionSound) {
+        // ✅ FIXED: Controlla impostazioni audio
+        if (!_audioSettings.timerSoundsEnabled) {
+          return; // Audio disabilitato
+        }
+
+        //print("🔊 [REST-PAUSE AUDIO] Playing completion sound");
+        _hasPlayedCompletionSound = true;
+
+        // ✅ FIXED: Configura Audio Ducking
+        await _audioPlayer.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: false,
+            stayAwake: false,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.assistanceSonification,
+          ),
+                  iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+        ));
+
+        // ✅ FIXED: Applica volume dalle impostazioni
+        final volume = _audioSettings.beepVolume / 100.0;
+        await _audioPlayer.setVolume(volume);
+
+        //print("🔊 [REST-PAUSE AUDIO] Playing completion sound");
+        await _audioPlayer.play(AssetSource('audio/timer_complete.mp3'));
+      }
+    } catch (e) {
+      //print("🔊 [REST-PAUSE AUDIO] Error playing completion sound: $e");
+    }
+  }
+
   // ====== TIMER LOGIC ======
 
   void _startTimer() {
@@ -130,9 +217,10 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   }
 
   void _handleTimerEvents() {
-    // Haptic feedback agli ultimi 3 secondi
+    // 🔊 Audio + Haptic feedback agli ultimi 3 secondi
     if (_remainingSeconds <= 3 && _remainingSeconds > 0) {
       HapticFeedback.lightImpact();
+      _playCountdownBeep(); // ✅ FIXED: Aggiunto audio countdown
     }
 
     // Feedback a metà tempo
@@ -152,8 +240,9 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
     _timer?.cancel();
     _pulseController.stop();
 
-    // Haptic feedback finale
+    // 🔊 Audio + Haptic feedback finale
     HapticFeedback.heavyImpact();
+    _playCompletionSound(); // ✅ FIXED: Aggiunto audio completion
 
     // Auto-close dopo 1 secondo
     Future.delayed(const Duration(milliseconds: 1000), () {

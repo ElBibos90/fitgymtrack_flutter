@@ -7,6 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
+import '../../core/di/dependency_injection.dart';
+import '../../core/services/audio_settings_service.dart';
 
 /// 🔥 Isometric Timer Popup - Timer per esercizi isometrici
 /// ✅ Mostra countdown per la tenuta isometrica
@@ -47,6 +49,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   // 🔊 Audio management
   late AudioPlayer _audioPlayer;
   bool _hasPlayedCompletionSound = false;
+  late AudioSettingsService _audioSettings;
 
   // Animation controllers
   late AnimationController _slideController;
@@ -63,6 +66,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
     super.initState();
     _remainingSeconds = widget.initialSeconds;
     _audioPlayer = AudioPlayer();
+    _audioSettings = getIt<AudioSettingsService>();
     _initializeAnimations();
     if (widget.isActive) {
       _startTimer();
@@ -129,7 +133,33 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   // 🔊 Audio methods
   Future<void> _playCountdownBeep() async {
     try {
-      //print("🔊 [ISOMETRIC AUDIO] Playing countdown beep");
+      // ✅ FIXED: Controlla impostazioni audio
+      if (!_audioSettings.timerSoundsEnabled) {
+        return; // Audio disabilitato
+      }
+
+      // ✅ FIXED: Configura Audio Ducking
+      await _audioPlayer.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+      ));
+
+      // ✅ FIXED: Applica volume dalle impostazioni
+      final volume = _audioSettings.beepVolume / 100.0;
+      await _audioPlayer.setVolume(volume);
+
+      //print("🔊 [ISOMETRIC AUDIO] Playing countdown beep (volume: $volume)");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
       //print("🔊 [ISOMETRIC AUDIO] Error playing countdown beep: $e");
@@ -139,8 +169,34 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
   Future<void> _playCompletionSound() async {
     try {
       if (!_hasPlayedCompletionSound) {
+        // ✅ FIXED: Controlla impostazioni audio
+        if (!_audioSettings.timerSoundsEnabled) {
+          return; // Audio disabilitato
+        }
+
         //print("🔊 [ISOMETRIC AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
+
+        // ✅ FIXED: Configura Audio Ducking
+        await _audioPlayer.setAudioContext(AudioContext(
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: false,
+            stayAwake: false,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.assistanceSonification,
+          ),
+                  iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.duckOthers,
+          },
+        ),
+        ));
+
+        // ✅ FIXED: Applica volume dalle impostazioni
+        final volume = _audioSettings.beepVolume / 100.0;
+        await _audioPlayer.setVolume(volume);
 
         // 🔧 FIX: Aspetta che l'audio finisca davvero
         await _audioPlayer.play(AssetSource('audio/timer_complete.mp3'));
