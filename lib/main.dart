@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/di/dependency_injection.dart';
+import 'core/services/audio_settings_service.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/api_request_debouncer.dart';
 import 'core/services/app_update_service.dart';
@@ -32,6 +33,9 @@ void main() async {
 
   // Inizializza dependency injection
   await DependencyInjection.init();
+
+  // 🎵 Inizializza servizio audio settings
+  await getIt<AudioSettingsService>().initialize();
 
   // 🔍 DEBUG: Verifica configurazione Stripe all'avvio
   StripeConfig.printTestingInfo();

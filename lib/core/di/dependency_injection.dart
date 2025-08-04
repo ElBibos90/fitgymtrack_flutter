@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter/widgets.dart';
 import '../services/session_service.dart';
+import '../services/audio_settings_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
 
@@ -40,6 +41,9 @@ class DependencyInjection {
 
     //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering core services...');
     getIt.registerLazySingleton<SessionService>(() => SessionService());
+
+    // 🎵 Audio Settings Service
+    getIt.registerLazySingleton<AudioSettingsService>(() => AudioSettingsService());
 
     getIt.registerLazySingleton(() => DioClient.getInstance(
       sessionService: getIt<SessionService>(),

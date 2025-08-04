@@ -1,14 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/di/dependency_injection.dart';
+import '../../../../features/auth/bloc/auth_bloc.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/legal_documents_screen.dart';
 import '../widgets/theme_selector.dart';
 import '../widgets/color_picker.dart';
+import '../widgets/audio_settings_widget.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _appVersion = 'Caricamento...';
+  String _buildNumber = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = packageInfo.version;
+        _buildNumber = packageInfo.buildNumber;
+      });
+    } catch (e) {
+      setState(() {
+        _appVersion = '1.0.20';
+        _buildNumber = '20';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +120,11 @@ class SettingsScreen extends StatelessWidget {
               ],
               isDarkMode,
             ),
+            
+            SizedBox(height: 24.h),
+            
+            // Sezione Audio
+            const AudioSettingsWidget(),
             
             SizedBox(height: 24.h),
             
@@ -166,7 +206,7 @@ class SettingsScreen extends StatelessWidget {
                 _buildSettingTile(
                   context,
                   'Versione',
-                  '1.0.0 (Build 1)',
+                  '$_appVersion (Build $_buildNumber)',
                   Icons.info_outline,
                   null, // Non cliccabile
                   isDarkMode,
@@ -307,17 +347,13 @@ class SettingsScreen extends StatelessWidget {
 
   // Navigation methods
   void _navigateToProfile(BuildContext context) {
-    // TODO: Implementare navigazione al profilo
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funzionalità in arrivo!')),
-    );
+    // ✅ FIXED: Naviga alla schermata profilo esistente
+    context.push('/profile');
   }
 
   void _navigateToSubscription(BuildContext context) {
-    // TODO: Implementare navigazione all'abbonamento
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funzionalità in arrivo!')),
-    );
+    // ✅ FIXED: Naviga alla schermata abbonamento esistente
+    context.push('/subscription');
   }
 
   void _navigateToNotifications(BuildContext context) {
@@ -415,26 +451,121 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _openHelp(BuildContext context) {
-    // TODO: Implementare apertura help
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Funzionalità in arrivo!')),
+    // ✅ FIXED: Mostra FAQ dialog con domande reali dell'app
+    _showFAQDialog(context);
+  }
+
+  // ✅ NEW: FAQ Dialog migliorato e funzionale
+  void _showFAQDialog(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.help_center, color: AppColors.indigo600, size: 24.sp),
+            SizedBox(width: 8.w),
+            const Text('Domande Frequenti'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildFAQItem(
+                  question: '🏋️ Come creo un allenamento?',
+                  answer: 'Vai alla tab "Allenamenti" e tocca il pulsante "+" per creare una nuova scheda personalizzata.',
+                ),
+                _buildFAQItem(
+                  question: '📊 Come funziona il tracking?',
+                  answer: 'Durante l\'allenamento, inserisci peso e ripetizioni per ogni serie. I dati vengono salvati automaticamente.',
+                ),
+                _buildFAQItem(
+                  question: '⏱️ Come funzionano i timer?',
+                  answer: 'I timer di pausa e isometrici hanno suoni configurabili. Vai in Impostazioni > Audio per personalizzarli.',
+                ),
+                _buildFAQItem(
+                  question: '💎 Cosa include Premium?',
+                  answer: 'Premium include allenamenti illimitati, statistiche avanzate e funzionalità esclusive.',
+                ),
+                _buildFAQItem(
+                  question: '📱 Posso usare l\'app offline?',
+                  answer: 'Sì! Gli allenamenti creati sono disponibili offline. I dati si sincronizzano quando torni online.',
+                ),
+                _buildFAQItem(
+                  question: '🔄 Come esporto i miei dati?',
+                  answer: 'Vai su Profilo > Impostazioni > Esporta Dati per scaricare la cronologia dei tuoi allenamenti.',
+                ),
+                _buildFAQItem(
+                  question: '❓ Altri problemi?',
+                  answer: 'Usa "Contattaci" nelle impostazioni per inviare feedback direttamente.',
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Chiudi'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _contactSupport(context);
+            },
+            child: const Text('Contattaci'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFAQItem({
+    required String question,
+    required String answer,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: isDarkMode ? Colors.grey[800]!.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.bold,
+              color: AppColors.indigo600,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            answer,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: isDarkMode ? Colors.white70 : Colors.grey[700],
+              height: 1.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void _contactSupport(BuildContext context) async {
-    final email = AppConfig.supportEmail;
-    final subject = 'Supporto FitGymTrack';
-    final body = 'Ciao, ho bisogno di aiuto con l\'app FitGymTrack...';
-    
-    final uri = Uri.parse('mailto:$email?subject=$subject&body=$body');
-    
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossibile aprire l\'email')),
-      );
-    }
+    // ✅ FIXED: Naviga alla schermata feedback esistente
+    context.push('/feedback');
   }
 
   void _rateApp(BuildContext context) async {
@@ -489,10 +620,8 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implementare logout
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logout effettuato')),
-              );
+              // ✅ FIXED: Implementare logout reale
+              _performLogout(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[600],
@@ -503,5 +632,22 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _performLogout(BuildContext context) {
+    // Esegue il logout tramite AuthBloc
+    final authBloc = getIt<AuthBloc>();
+    authBloc.logout();
+    
+    // Mostra messaggio di conferma
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Logout effettuato con successo'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
+    // Naviga alla schermata di login
+    context.go('/login');
   }
 } 

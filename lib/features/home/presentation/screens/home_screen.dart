@@ -364,6 +364,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       actions: [
         IconButton(
           icon: Icon(
+            Icons.settings,
+            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+          ),
+          onPressed: _handleSettingsNavigation,
+        ),
+        IconButton(
+          icon: Icon(
             Icons.logout,
             color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
           ),
@@ -433,6 +440,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     print('[CONSOLE] [home_screen]👤 Navigate to profile');
     // ✅ FIXED: Naviga alla ProfileScreen esistente
     context.push('/profile');
+  }
+
+  void _handleSettingsNavigation() {
+    print('[CONSOLE] [home_screen]⚙️ Navigate to settings');
+    context.push('/settings');
   }
 
   /// ✅ Navigation helpers (da codice esistente)
