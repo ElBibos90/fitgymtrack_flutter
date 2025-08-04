@@ -102,15 +102,28 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   // 🔧 FIX: Method to restore audio session after timer completion
   Future<void> _restoreAudioSession() async {
     try {
-      // Force audio session to reset by playing a silent sound
-      await _audioPlayer.setVolume(0.0);
-      await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
-      await Future.delayed(const Duration(milliseconds: 100));
-      await _audioPlayer.stop();
+      // 🔧 NEW APPROACH: Disable ducking explicitly by reconfiguring AudioContext
+      // without duckOthers option to allow music to restore
+      await _audioPlayer.setAudioContext(AudioContext(
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.assistanceSonification,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: {
+            AVAudioSessionOptions.mixWithOthers,
+            // 🔧 REMOVED: AVAudioSessionOptions.duckOthers to stop ducking
+          },
+        ),
+      ));
       
-      // Reconfigure audio context to ensure proper restoration
-      await _configureAudioContext();
-      print("🔊 [REST PAUSE AUDIO] Audio session restored");
+      // Force a brief pause to let the system process the audio context change
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      print("🔊 [REST PAUSE AUDIO] Audio session restored - ducking disabled");
     } catch (e) {
       print("🔊 [REST PAUSE AUDIO] Error restoring audio session: $e");
     }
