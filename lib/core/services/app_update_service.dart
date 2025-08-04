@@ -30,11 +30,11 @@ class AppUpdateService {
       if (!forceCheck && !await _shouldCheckForUpdates()) {
         print('[CONSOLE] [app_update_service]⏰ Update check skipped (too recent)');
         
-        // 🚨 NUOVO: Controlla SEMPRE se c'è un aggiornamento forzato
-        final criticalUpdate = await _checkForCriticalUpdate();
-        if (criticalUpdate != null) {
-          print('[CONSOLE] [app_update_service]🚨 CRITICAL UPDATE FOUND! Ignoring time interval');
-          return criticalUpdate;
+        // 🔧 FIX: Controlla SEMPRE se c'è un aggiornamento (non solo critico)
+        final update = await _checkForAnyUpdate();
+        if (update != null) {
+          print('[CONSOLE] [app_update_service]🚨 UPDATE FOUND! Ignoring time interval');
+          return update;
         }
         
         return null;
@@ -98,6 +98,77 @@ class AppUpdateService {
       }
 
       print('[CONSOLE] [app_update_service]⚠️ Invalid server response');
+      return null;
+
+    } catch (e) {
+      print('[CONSOLE] [app_update_service]❌ Update check failed: $e');
+      return null;
+    }
+  }
+
+  /// 🔧 NUOVO: Controlla se c'è qualsiasi aggiornamento (ignora intervallo tempo)
+  static Future<AppUpdateInfo?> _checkForAnyUpdate() async {
+    try {
+      print('[CONSOLE] [app_update_service]🔍 Checking for any updates...');
+
+      // 🔧 NUOVO: Controlla prima se l'utente è autenticato
+      final sessionService = getIt<SessionService>();
+      final isAuthenticated = await sessionService.isAuthenticated();
+      
+      if (!isAuthenticated) {
+        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
+        return null;
+      }
+
+      // Ottieni la versione corrente
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+      final currentBuild = packageInfo.buildNumber;
+
+      // 🔧 NUOVO: Ottieni informazioni utente per targeting
+      final isTestUser = await _checkIfUserIsTester();
+      final platform = Platform.isAndroid ? 'android' : 'ios';
+
+      // Controlla la versione sul server con targeting
+      final apiClient = getIt<ApiClient>();
+      final response = await apiClient.getAppVersion(
+        platform: platform,
+        isTester: isTestUser,
+      );
+      
+      if (response is Map<String, dynamic>) {
+        final serverVersion = response['version'] as String?;
+        final serverBuild = response['build_number'] as String?;
+        final updateRequired = response['update_required'] as bool? ?? false;
+        final updateMessage = response['message'] as String? ?? '';
+
+        if (serverVersion != null && serverBuild != null) {
+          print('[CONSOLE] [app_update_service]🔍 Server version: $serverVersion ($serverBuild), update_required: $updateRequired');
+          print('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
+          
+          // 🔧 FIX: Controlla se le versioni sono diverse
+          final hasUpdate = _compareVersions(currentVersion, serverVersion) < 0;
+          print('[CONSOLE] [app_update_service]🔍 Version comparison: current=$currentVersion vs server=$serverVersion, hasUpdate=$hasUpdate');
+          
+          // Se c'è un aggiornamento, ritornarlo (non solo se è critico)
+          if (hasUpdate) {
+            print('[CONSOLE] [app_update_service]✅ UPDATE DETECTED!');
+            return AppUpdateInfo(
+              currentVersion: currentVersion,
+              currentBuild: currentBuild,
+              serverVersion: serverVersion,
+              serverBuild: serverBuild,
+              updateRequired: updateRequired,
+              message: updateMessage,
+              hasUpdate: true,
+            );
+          } else {
+            print('[CONSOLE] [app_update_service]✅ No update needed (versions match)');
+          }
+        }
+      }
+
+      print('[CONSOLE] [app_update_service]✅ No updates found');
       return null;
 
     } catch (e) {
