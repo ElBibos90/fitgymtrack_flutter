@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:flutter/widgets.dart';
 import '../services/session_service.dart';
 import '../services/audio_settings_service.dart';
+import '../services/background_timer_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
 
@@ -44,6 +45,9 @@ class DependencyInjection {
 
     // 🎵 Audio Settings Service
     getIt.registerLazySingleton<AudioSettingsService>(() => AudioSettingsService());
+
+    // 🚀 Background Timer Service
+    getIt.registerLazySingleton<BackgroundTimerService>(() => BackgroundTimerService());
 
     getIt.registerLazySingleton<Dio>(() => DioClient.getInstance(
       sessionService: getIt<SessionService>(),

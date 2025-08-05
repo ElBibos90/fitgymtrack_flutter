@@ -2,6 +2,7 @@
 // 🚀 Recovery Timer come Popup - Non invasivo e elegante
 // ✅ IMPROVED: Better readability for timer text + Audio feedback
 // 🔧 FIX 3: SUPERSET - Non parte automaticamente durante superset/circuit
+// 🚀 BACKGROUND TIMER: Integrazione con BackgroundTimerWrapper
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,6 +11,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import '../../core/di/dependency_injection.dart';
 import '../../core/services/audio_settings_service.dart';
+import 'background_timer_wrapper.dart';
 
 /// 🚀 Recovery Timer Popup - Elegante e non invasivo
 /// ✅ Appare come overlay senza disturbare l'esercizio
@@ -357,16 +359,16 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     });
   }
 
-  Color _getTimerColor() {
+  Color _getTimerColor(int remainingSeconds) {
     // 🔧 FIX 3: Colore diverso per superset
     if (widget.isInSuperset) {
-      if (_remainingSeconds <= 3) return Colors.deepPurple.shade700;
-      if (_remainingSeconds <= 10) return Colors.deepPurple.shade500;
+      if (remainingSeconds <= 3) return Colors.deepPurple.shade700;
+      if (remainingSeconds <= 10) return Colors.deepPurple.shade500;
       return Colors.deepPurple;
     }
 
-    if (_remainingSeconds <= 3) return Colors.red;
-    if (_remainingSeconds <= 10) return Colors.orange;
+    if (remainingSeconds <= 3) return Colors.red;
+    if (remainingSeconds <= 10) return Colors.orange;
     return Colors.blue;
   }
 
@@ -392,8 +394,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   }
 
   // 🔧 FIX 3: Status message specifico per superset
-  Widget _buildStatusMessage() {
-    if (_isPaused) {
+  Widget _buildStatusMessage(bool isPaused, [int? remainingSeconds]) {
+    final seconds = remainingSeconds ?? _remainingSeconds;
+    
+    if (isPaused) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
@@ -411,27 +415,27 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       );
     }
 
-    if (_remainingSeconds <= 10 && !_isPaused) {
+    if (seconds <= 10 && !isPaused) {
       String message;
       if (widget.isInSuperset && !widget.isLastInSuperset) {
-        message = _remainingSeconds <= 3 ? '🔥 Prossimo esercizio!' : '⚡ Quasi pronto!';
+        message = seconds <= 3 ? '🔥 Prossimo esercizio!' : '⚡ Quasi pronto!';
       } else {
-        message = _remainingSeconds <= 3 ? '🔥 Ultimi secondi!' : '⚡ Quasi pronto!';
+        message = seconds <= 3 ? '🔥 Ultimi secondi!' : '⚡ Quasi pronto!';
       }
 
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
-          color: _getTimerColor().withValues(alpha:0.1),
+          color: _getTimerColor(seconds).withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12.r),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_remainingSeconds <= 3) ...[
+            if (seconds <= 3) ...[
               Icon(
                 Icons.volume_up,
-                color: _getTimerColor(),
+                color: _getTimerColor(seconds),
                 size: 14.sp,
               ),
               SizedBox(width: 4.w),
@@ -440,7 +444,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
               message,
               style: TextStyle(
                 fontSize: 12.sp,
-                color: _getTimerColor(),
+                color: _getTimerColor(seconds),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -450,7 +454,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
     }
 
     // 🔧 FIX 3: Info superset quando attivo
-    if (widget.isInSuperset && _remainingSeconds > 10) {
+    if (widget.isInSuperset && seconds > 10) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
         decoration: BoxDecoration(
@@ -477,202 +481,217 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
   Widget build(BuildContext context) {
     if (_isDismissed) return const SizedBox.shrink();
 
-    return Positioned(
-      bottom: 100.h, // Sopra la navigazione ma non troppo in alto
-      left: 20.w,
-      right: 20.w,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: ScaleTransition(
-          scale: _pulseAnimation,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha:0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-                border: Border.all(
-                  color: _getTimerColor().withValues(alpha:0.2),
-                  width: 2,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header con nome esercizio e dismiss
-                  Row(
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            // 🔧 FIX 3: Icona diversa per superset
-                            widget.isInSuperset ? Icons.link : Icons.timer,
-                            color: _getTimerColor(),
-                            size: 20.sp,
-                          ),
-                          // 🔊 Audio indicator negli ultimi 3 secondi
-                          if (_remainingSeconds <= 3 && !_isPaused) ...[
-                            SizedBox(width: 4.w),
-                            Icon(
-                              Icons.volume_up,
-                              color: _getTimerColor(),
-                              size: 16.sp,
-                            ),
-                          ],
-                        ],
-                      ),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          _getHeaderText(), // 🔧 FIX 3: Header dinamico
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _dismissPopup,
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.grey[500],
-                          size: 20.sp,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: BoxConstraints(
-                          minWidth: 24.w,
-                          minHeight: 24.w,
-                        ),
+    return BackgroundTimerWrapper(
+      initialSeconds: widget.initialSeconds,
+      isActive: widget.isActive,
+      type: 'recovery',
+      title: _getHeaderText(),
+      message: widget.isInSuperset 
+          ? 'Pausa tra esercizi del superset'
+          : 'Riposati e preparati per la prossima serie',
+      exerciseName: widget.exerciseName,
+      onTimerComplete: widget.onTimerComplete,
+      onTimerStopped: widget.onTimerStopped,
+      onTimerDismissed: widget.onTimerDismissed,
+      builder: (remainingSeconds, isPaused, pauseResume, skip) {
+        return Positioned(
+          bottom: 100.h, // Sopra la navigazione ma non troppo in alto
+          left: 20.w,
+          right: 20.w,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: ScaleTransition(
+              scale: _pulseAnimation,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: EdgeInsets.all(16.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha:0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
                     ],
+                    border: Border.all(
+                      color: _getTimerColor(remainingSeconds).withValues(alpha:0.2),
+                      width: 2,
+                    ),
                   ),
-
-                  SizedBox(height: 12.h),
-
-                  // 🆕 IMPROVED: Timer principale con layout separato
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Progress Circle (più piccolo)
-                      SizedBox(
-                        width: 50.w,
-                        height: 50.w,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Background circle
-                            CircularProgressIndicator(
-                              value: 1.0,
-                              strokeWidth: 3,
-                              backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.grey[200]!,
+                      // Header con nome esercizio e dismiss
+                      Row(
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                // 🔧 FIX 3: Icona diversa per superset
+                                widget.isInSuperset ? Icons.link : Icons.timer,
+                                color: _getTimerColor(remainingSeconds),
+                                size: 20.sp,
+                              ),
+                              // 🔊 Audio indicator negli ultimi 3 secondi
+                              if (remainingSeconds <= 3 && !isPaused) ...[
+                                SizedBox(width: 4.w),
+                                Icon(
+                                  Icons.volume_up,
+                                  color: _getTimerColor(remainingSeconds),
+                                  size: 16.sp,
+                                ),
+                              ],
+                            ],
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              _getHeaderText(), // 🔧 FIX 3: Header dinamico
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _dismissPopup,
+                            icon: Icon(
+                              Icons.close,
+                              color: Colors.grey[500],
+                              size: 20.sp,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(
+                              minWidth: 24.w,
+                              minHeight: 24.w,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 12.h),
+
+                      // 🆕 IMPROVED: Timer principale con layout separato
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Progress Circle (più piccolo)
+                          SizedBox(
+                            width: 50.w,
+                            height: 50.w,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Background circle
+                                CircularProgressIndicator(
+                                  value: 1.0,
+                                  strokeWidth: 3,
+                                  backgroundColor: Colors.grey[200],
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.grey[200]!,
+                                  ),
+                                ),
+                                // Progress circle
+                                AnimatedBuilder(
+                                  animation: _progressAnimation,
+                                  builder: (context, child) {
+                                    return CircularProgressIndicator(
+                                      value: _progressAnimation.value,
+                                      strokeWidth: 3,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        _getTimerColor(remainingSeconds),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(width: 20.w),
+
+                          // 🆕 Timer text separato (più leggibile)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                            decoration: BoxDecoration(
+                              color: _getTimerColor(remainingSeconds).withValues(alpha:0.1),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: _getTimerColor(remainingSeconds).withValues(alpha:0.3),
+                                width: 1,
                               ),
                             ),
-                            // Progress circle
-                            AnimatedBuilder(
-                              animation: _progressAnimation,
-                              builder: (context, child) {
-                                return CircularProgressIndicator(
-                                  value: _progressAnimation.value,
-                                  strokeWidth: 3,
-                                  backgroundColor: Colors.transparent,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    _getTimerColor(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      SizedBox(width: 20.w),
-
-                      // 🆕 Timer text separato (più leggibile)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: _getTimerColor().withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: _getTimerColor().withValues(alpha:0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          _formatTime(_remainingSeconds),
-                          style: TextStyle(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.bold,
-                            color: _getTimerColor(),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: 20.w),
-
-                      // Controls
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Pause/Play
-                          IconButton(
-                            onPressed: _pauseTimer,
-                            icon: Icon(
-                              _isPaused ? Icons.play_arrow : Icons.pause,
-                              color: _getTimerColor(),
-                              size: 20.sp,
-                            ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: _getTimerColor().withValues(alpha:0.1),
-                              padding: EdgeInsets.all(6.w),
-                              minimumSize: Size(32.w, 32.w),
+                            child: Text(
+                              _formatTime(remainingSeconds),
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                fontWeight: FontWeight.bold,
+                                color: _getTimerColor(remainingSeconds),
+                              ),
                             ),
                           ),
 
-                          SizedBox(width: 8.w),
+                          SizedBox(width: 20.w),
 
-                          // Skip
-                          IconButton(
-                            onPressed: _skipTimer,
-                            icon: Icon(
-                              Icons.skip_next,
-                              color: Colors.grey[600],
-                              size: 20.sp,
-                            ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.grey[100],
-                              padding: EdgeInsets.all(6.w),
-                              minimumSize: Size(32.w, 32.w),
-                            ),
+                          // Controls
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Pause/Play
+                              IconButton(
+                                onPressed: pauseResume,
+                                icon: Icon(
+                                  isPaused ? Icons.play_arrow : Icons.pause,
+                                  color: _getTimerColor(remainingSeconds),
+                                  size: 20.sp,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: _getTimerColor(remainingSeconds).withValues(alpha:0.1),
+                                  padding: EdgeInsets.all(6.w),
+                                  minimumSize: Size(32.w, 32.w),
+                                ),
+                              ),
+
+                              SizedBox(width: 8.w),
+
+                              // Skip
+                              IconButton(
+                                onPressed: skip,
+                                icon: Icon(
+                                  Icons.skip_next,
+                                  color: Colors.grey[600],
+                                  size: 20.sp,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.grey[100],
+                                  padding: EdgeInsets.all(6.w),
+                                  minimumSize: Size(32.w, 32.w),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+
+                      // 🔧 FIX 3: Status message dinamico
+                      SizedBox(height: 8.h),
+                      _buildStatusMessage(isPaused, remainingSeconds),
                     ],
                   ),
-
-                  // 🔧 FIX 3: Status message dinamico
-                  SizedBox(height: 8.h),
-                  _buildStatusMessage(),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
