@@ -45,7 +45,7 @@ class BackgroundTimerService {
 
   // Callbacks
   VoidCallback? _onTimerComplete;
-  VoidCallback? _onTimerTick;
+  void Function(int)? _onTimerTick;
 
   /// Inizializza il servizio
   Future<void> initialize() async {
@@ -121,7 +121,7 @@ class BackgroundTimerService {
     String? title,
     String? message,
     VoidCallback? onComplete,
-    VoidCallback? onTick,
+    void Function(int)? onTick,
   }) async {
     try {
       // Ferma timer precedente se attivo
