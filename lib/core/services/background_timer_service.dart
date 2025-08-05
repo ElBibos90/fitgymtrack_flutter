@@ -164,7 +164,7 @@ class BackgroundTimerService {
       final remaining = _timerDuration! - elapsed;
 
       // Callback tick
-      _onTick?.call(remaining);
+      _onTimerTick?.call(remaining);
 
       if (remaining <= 0) {
         // Timer completato
