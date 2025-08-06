@@ -53,17 +53,38 @@ Per implementazione Flutter - Specifiche Complete di Funzionalità
 - ✅ Notifiche locali per Android e iOS
 - ✅ Documentazione completa dell'implementazione
 
+## ✅ FASE 5: SEZIONE LEGALE - COMPLETATA
+- ✅ Privacy Policy completa con conformità GDPR
+- ✅ Terms of Service dettagliati per Google Play Store e Apple App Store
+- ✅ Integrazione in-app con LegalDocumentsScreen sincronizzato
+- ✅ Email standardizzate: fitgymtrack@gmail.com
+- ✅ Date aggiornate: 1 Agosto 2025
+- ✅ Disclaimers medici per app fitness
+- ✅ Collegamenti esterni rimossi dal footer in-app
+- ✅ Documentazione completa in LEGAL_COMPLIANCE.md
+
+## ✅ FASE 6: FAQ - COMPLETATA
+- ✅ FAQ dialog rapido nella home con 12 domande principali
+- ✅ Schermata FAQ dedicata con 25+ domande organizzate per categoria
+- ✅ Categorizzazione: Timer & Audio, Allenamenti, Progressi, Account & Dati, Tecnici
+- ✅ Integrazione router con rotta `/faq` protetta
+- ✅ Domande reali basate sulle funzionalità implementate
+- ✅ UI/UX professionale con ExpansionTile e filtro per categoria
+- ✅ Documentazione completa in FAQ_DOCUMENTATION.md
+
 ## 🚧 PROSSIMI STEP
 - ✅ **Timer in background**: Il timer della pausa non avanza quando l'app è in background
 - ⏳ **Sezioni "Funzionalità in arrivo"**: Notifiche, Aspetto, Lingua
-- ⏳ **Sezione Legale**: Analisi e correzione per renderla "perfetta"
-- ⏳ **FAQ**: Aggiornamento con domande reali dell'app
+- ✅ **Sezione Legale**: Analisi e correzione per renderla "perfetta"
+- ✅ **FAQ**: Aggiornamento con domande reali dell'app
 
 ## 🎯 PRIORITÀ IMMEDIATE
 1. **Eseguire database migration** per attivare il sistema
 2. **Test sistema versioning** con deploy di test
 3. ✅ **Timer in background** - Implementazione per pause timer
-4. **Completamento sezioni impostazioni** rimanenti
+4. ✅ **Sezione Legale** - Completata e definitiva
+5. ✅ **FAQ** - Completate con domande reali
+6. **Completamento sezioni impostazioni** rimanenti
 
 ---
 

@@ -103,7 +103,7 @@ class HelpSection extends StatelessWidget {
     );
   }
 
-  // 🔧 FIX: FAQ Dialog migliorato e funzionale
+  // 🔧 FIX: FAQ Dialog migliorato e funzionale con domande reali
   void _showFAQDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -123,28 +123,52 @@ class HelpSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildFAQItem(
-                  question: '🏋️ Come creo un allenamento?',
-                  answer: 'Vai alla tab "Allenamenti" e tocca il pulsante "+" per creare una nuova scheda personalizzata.',
+                  question: '🏋️ Come funziona il timer di recupero?',
+                  answer: 'Il timer si avvia automaticamente dopo ogni serie. Continua a funzionare anche quando l\'app è in background e ti notifica quando è completato. Puoi metterlo in pausa o saltarlo se necessario.',
                 ),
                 _buildFAQItem(
-                  question: '📊 Come funziona il tracking?',
-                  answer: 'Durante l\'allenamento, inserisci peso e ripetizioni per ogni serie. I dati vengono salvati automaticamente.',
+                  question: '🎵 Perché la musica si interrompe durante i timer?',
+                  answer: 'Abbiamo risolto questo problema! Ora i timer utilizzano l\'audio ducking che riduce temporaneamente il volume della musica invece di interromperla. Puoi disattivare i suoni timer nelle impostazioni audio.',
                 ),
                 _buildFAQItem(
-                  question: '💎 Cosa include Premium?',
-                  answer: 'Premium include allenamenti illimitati, statistiche avanzate e funzionalità esclusive.',
+                  question: '⏱️ Come funzionano i timer isometrici?',
+                  answer: 'I timer isometrici si attivano automaticamente per esercizi come plank o wall sit. Contano i secondi invece delle ripetizioni e completano automaticamente la serie quando finisce il tempo.',
                 ),
                 _buildFAQItem(
-                  question: '📱 Posso usare l\'app offline?',
-                  answer: 'Sì! Gli allenamenti creati sono disponibili offline. I dati si sincronizzano quando torni online.',
+                  question: '📊 Cosa sono i plateau e come funzionano?',
+                  answer: 'Il sistema rileva automaticamente quando stai usando gli stessi pesi/ripetizioni per diverse sessioni consecutive. Ti suggerisce come progredire: aumentare peso, ripetizioni o cambiare tecnica.',
                 ),
                 _buildFAQItem(
-                  question: '🔄 Come esporto i miei dati?',
-                  answer: 'Vai su Profilo > Impostazioni > Esporta Dati per scaricare la cronologia dei tuoi allenamenti.',
+                  question: '🔄 Come funzionano i superset e circuit?',
+                  answer: 'Gli esercizi vengono raggruppati automaticamente se hanno lo stesso tipo di set. I superset alternano esercizi, i circuit fanno round completi. Il timer di recupero si attiva solo alla fine del gruppo.',
                 ),
                 _buildFAQItem(
-                  question: '❓ Altri problemi?',
-                  answer: 'Usa il sistema Feedback integrato per contattarci direttamente dall\'app.',
+                  question: '💾 I miei dati si perdono se cambio telefono?',
+                  answer: 'No! I tuoi dati sono sincronizzati nel cloud. Basta fare login con lo stesso account su un nuovo dispositivo e tutti i tuoi allenamenti, progressi e impostazioni saranno disponibili.',
+                ),
+                _buildFAQItem(
+                  question: '🔢 Come funziona il calcolatore 1RM?',
+                  answer: 'Usa la formula di Brzycki per calcolare il tuo massimo teorico. Inserisci peso e ripetizioni di una serie recente e otterrai una stima del tuo 1RM. Utile per programmare gli allenamenti.',
+                ),
+                _buildFAQItem(
+                  question: '📱 L\'app funziona offline?',
+                  answer: 'Sì! Puoi creare allenamenti e registrare serie anche senza connessione. I dati si sincronizzano automaticamente quando torni online. Solo alcune funzionalità premium richiedono internet.',
+                ),
+                _buildFAQItem(
+                  question: '🎯 Come funziona il sistema di versioning?',
+                  answer: 'Gli utenti tester ricevono aggiornamenti più frequenti per testare nuove funzionalità. Gli utenti normali ricevono versioni stabili. Il sistema è automatico e trasparente.',
+                ),
+                _buildFAQItem(
+                  question: '🔧 Come posso personalizzare l\'esperienza audio?',
+                  answer: 'Vai su Impostazioni > Audio per controllare: suoni timer, vibrazione feedback, riduzione volume musica. Le impostazioni vengono salvate e applicate a tutti i timer.',
+                ),
+                _buildFAQItem(
+                  question: '📈 Come tracciare i progressi nel tempo?',
+                  answer: 'L\'app salva automaticamente ogni serie. Puoi vedere le statistiche nella sezione Progressi: peso massimo, volume totale, frequenza allenamenti e trend nel tempo.',
+                ),
+                _buildFAQItem(
+                  question: '❓ Non trovi la risposta?',
+                  answer: 'Usa il sistema Feedback integrato per contattarci direttamente dall\'app. Includi screenshot se possibile per aiutarci a risolvere il problema più velocemente.',
                 ),
               ],
             ),

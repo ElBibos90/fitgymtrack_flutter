@@ -24,6 +24,7 @@ import '../../features/payments/presentation/screens/stripe_payment_screen.dart'
 import '../../features/feedback/presentation/screens/feedback_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../shared/widgets/faq_screen.dart';
 import '../../shared/widgets/auth_wrapper.dart';
 import '../../features/workouts/presentation/screens/workout_details_screen.dart';
 
@@ -136,6 +137,17 @@ class AppRouter {
           builder: (context, state) {
             return AuthWrapper(
               authenticatedChild: const SettingsScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/faq',
+          name: 'faq',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const FAQScreen(),
               unauthenticatedChild: const LoginScreen(),
             );
           },

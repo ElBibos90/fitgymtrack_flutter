@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/config/app_config.dart';
 import '../../shared/theme/app_colors.dart';
 
@@ -127,7 +126,7 @@ class LegalDocumentsScreen extends StatelessWidget {
         _buildSection(
           context,
           '1. Informazioni Generali',
-          'FitGymTrack è un\'applicazione mobile per il tracking degli allenamenti fitness. Questa Privacy Policy spiega come raccogliamo, utilizziamo e proteggiamo le tue informazioni personali.',
+          'FitGymTrack è un\'applicazione mobile per il tracking degli allenamenti fitness. Questa Privacy Policy spiega come raccogliamo, utilizziamo e proteggiamo le tue informazioni personali in conformità con il GDPR (Regolamento UE 2016/679).',
           isDarkMode,
         ),
         
@@ -139,50 +138,75 @@ class LegalDocumentsScreen extends StatelessWidget {
           '• Dati di allenamento: Esercizi, serie, ripetizioni, pesi, date\n'
           '• Foto: Immagini degli esercizi (opzionale)\n'
           '• Dati di utilizzo: Come usi l\'app, funzionalità più utilizzate\n'
-          '• Dati tecnici: Versione app, sistema operativo, ID dispositivo',
+          '• Dati tecnici: Versione app, sistema operativo, ID dispositivo\n'
+          '• Dati di pagamento: Gestiti da Stripe, stato abbonamento',
           isDarkMode,
         ),
         
         _buildSection(
           context,
-          '3. Come Utilizziamo i Dati',
+          '3. Base Giuridica (GDPR)',
+          '• Consenso: Per marketing e comunicazioni promozionali\n'
+          '• Esecuzione del contratto: Per fornire i servizi dell\'app\n'
+          '• Interesse legittimo: Per migliorare l\'app e prevenire abusi\n'
+          '• Obbligo legale: Per rispettare le leggi applicabili',
+          isDarkMode,
+        ),
+        
+        _buildSection(
+          context,
+          '4. Come Utilizziamo i Dati',
           '• Creare e gestire il tuo account\n'
           '• Salvare e sincronizzare i tuoi allenamenti\n'
           '• Fornire statistiche e analytics personalizzate\n'
           '• Gestire abbonamenti e pagamenti\n'
-          '• Migliorare l\'app e risolvere problemi tecnici',
+          '• Migliorare l\'app e risolvere problemi tecnici\n'
+          '• Prevenire frodi e abusi',
           isDarkMode,
         ),
         
         _buildSection(
           context,
-          '4. Sicurezza dei Dati',
-          '• Crittografia dei dati in transito e a riposo\n'
-          '• Accesso limitato ai dati personali\n'
+          '5. Sicurezza dei Dati',
+          '• Crittografia AES-256 dei dati in transito e a riposo\n'
+          '• Accesso limitato ai dati personali con autenticazione multi-fattore\n'
+          '• Backup regolari e sicuri con crittografia\n'
           '• Monitoraggio continuo della sicurezza\n'
-          '• Backup regolari e sicuri\n'
-          '• I tuoi dati vengono conservati finché mantieni un account attivo',
+          '• I dati vengono eliminati entro 30 giorni dalla cancellazione account',
           isDarkMode,
         ),
         
         _buildSection(
           context,
-          '5. I Tuoi Diritti (GDPR)',
+          '6. I Tuoi Diritti (GDPR)',
           'Hai il diritto di:\n'
           '• Accesso: Vedere i dati che abbiamo su di te\n'
-          '• Rettifica: Correggere dati inesatti\n'
-          '• Cancellazione: Eliminare il tuo account e i dati\n'
-          '• Portabilità: Esportare i tuoi dati\n'
-          '• Opposizione: Opporti al trattamento dei dati',
+          '• Rettifica: Correggere dati inesatti o incompleti\n'
+          '• Cancellazione: Eliminare il tuo account e i dati ("diritto all\'oblio")\n'
+          '• Portabilità: Esportare i tuoi dati in formato leggibile\n'
+          '• Opposizione: Opporti al trattamento per marketing\n'
+          '• Limitazione: Limitare il trattamento in determinate circostanze\n'
+          '• Revoca del Consenso: Revocare il consenso in qualsiasi momento',
           isDarkMode,
         ),
         
         _buildSection(
           context,
-          '6. Contatti',
+          '7. Conservazione dei Dati',
+          '• Dati dell\'account: Finché mantieni un account attivo\n'
+          '• Dati di allenamento: Finché mantieni un account attivo\n'
+          '• Dati di pagamento: Come richiesto dalla legge fiscale (10 anni)\n'
+          '• Log di sicurezza: 12 mesi',
+          isDarkMode,
+        ),
+        
+        _buildSection(
+          context,
+          '8. Contatti',
           'Per domande su questa Privacy Policy:\n'
-          'Email: support@fitgymtrack.com\n'
-          'Website: https://fitgymtrack.com',
+          'Email: fitgymtrack@gmail.com\n'
+          'Website: https://fitgymtrack.com\n\n'
+          'Hai il diritto di presentare un reclamo all\'autorità di controllo per la protezione dei dati personali del tuo paese di residenza.',
           isDarkMode,
         ),
       ],
@@ -196,7 +220,7 @@ class LegalDocumentsScreen extends StatelessWidget {
         _buildSection(
           context,
           '1. Accettazione dei Termini',
-          'Utilizzando l\'app FitGymTrack, accetti di essere vincolato da questi Terms of Service. Se non accetti questi termini, non utilizzare l\'App.',
+          'Utilizzando l\'app FitGymTrack, accetti di essere vincolato da questi Terms of Service. Se non accetti questi termini, non utilizzare l\'App. L\'uso dell\'App costituisce accettazione di questi termini.',
           isDarkMode,
         ),
         
@@ -204,10 +228,12 @@ class LegalDocumentsScreen extends StatelessWidget {
           context,
           '2. Descrizione del Servizio',
           'FitGymTrack è un\'applicazione mobile che fornisce:\n'
-          '• Tracking degli allenamenti fitness\n'
-          '• Gestione di esercizi e schede di allenamento\n'
-          '• Statistiche e analytics personalizzate\n'
-          '• Funzionalità premium tramite abbonamento',
+          '• Tracking degli allenamenti fitness con statistiche avanzate\n'
+          '• Gestione di esercizi e schede di allenamento personalizzate\n'
+          '• Timer intelligenti per recupero e esercizi isometrici\n'
+          '• Analisi plateau e suggerimenti di progressione\n'
+          '• Funzionalità premium tramite abbonamento\n'
+          '• Sincronizzazione cloud dei dati di allenamento',
           isDarkMode,
         ),
         
@@ -215,9 +241,11 @@ class LegalDocumentsScreen extends StatelessWidget {
           context,
           '3. Registrazione e Account',
           '• Devi avere almeno 13 anni per creare un account\n'
-          '• Fornisci informazioni accurate e complete\n'
-          '• Sei responsabile della sicurezza del tuo account\n'
-          '• Non condividere le tue credenziali',
+          '• Fornisci informazioni accurate, complete e aggiornate\n'
+          '• Sei responsabile della sicurezza del tuo account e password\n'
+          '• Non condividere le tue credenziali con terzi\n'
+          '• Account inattivi per 12 mesi potrebbero essere sospesi\n'
+          '• Un solo account per persona fisica',
           isDarkMode,
         ),
         
@@ -227,41 +255,56 @@ class LegalDocumentsScreen extends StatelessWidget {
           'Puoi:\n'
           '• Utilizzare l\'App per i tuoi allenamenti personali\n'
           '• Creare e gestire le tue schede di allenamento\n'
-          '• Condividere i tuoi progressi (se consentito)\n\n'
+          '• Condividere i tuoi progressi (se esplicitamente consentito)\n'
+          '• Utilizzare le funzionalità premium con abbonamento valido\n\n'
           'Non puoi:\n'
-          '• Utilizzare l\'App per scopi illegali\n'
+          '• Utilizzare l\'App per scopi illegali o non autorizzati\n'
           '• Violare i diritti di proprietà intellettuale\n'
-          '• Interferire con il funzionamento dell\'App',
+          '• Interferire con il funzionamento dell\'App o dei server\n'
+          '• Tentare di accedere a dati di altri utenti',
           isDarkMode,
         ),
         
         _buildSection(
           context,
           '5. Abbonamenti e Pagamenti',
-          '• Alcune funzionalità richiedono un abbonamento\n'
-          '• I prezzi sono indicati nell\'App e possono cambiare\n'
-          '• Gli abbonamenti si rinnovano automaticamente\n'
-          '• Puoi cancellare l\'abbonamento in qualsiasi momento\n'
-          '• I pagamenti sono gestiti da Stripe',
+          '• Alcune funzionalità richiedono un abbonamento a pagamento\n'
+          '• I pagamenti sono gestiti da Stripe e soggetti ai loro termini\n'
+          '• I prezzi sono indicati nell\'App e possono cambiare con preavviso\n'
+          '• Gli abbonamenti si rinnovano automaticamente fino alla cancellazione\n'
+          '• Puoi cancellare l\'abbonamento in qualsiasi momento dalle impostazioni\n'
+          '• Non ci sono rimborsi per periodi già pagati, salvo dove richiesto dalla legge',
           isDarkMode,
         ),
         
         _buildSection(
           context,
           '6. Limitazione di Responsabilità',
-          '• L\'App è fornita "così com\'è"\n'
-          '• Non garantiamo che l\'App sia priva di errori\n'
+          '• L\'App è fornita "così com\'è" senza garanzie di alcun tipo\n'
+          '• Non garantiamo che l\'App sia priva di errori o interruzioni\n'
           '• Non garantiamo la disponibilità continua del servizio\n'
-          '• Non siamo responsabili per lesioni durante l\'allenamento',
+          '• Non siamo responsabili per danni indiretti o lesioni durante l\'allenamento\n'
+          '• La responsabilità totale è limitata all\'importo pagato per l\'abbonamento',
           isDarkMode,
         ),
         
         _buildSection(
           context,
-          '7. Contatti',
+          '7. Disclaimers Medici',
+          '• L\'App non fornisce consigli medici o diagnosi\n'
+          '• Consulta sempre un medico prima di iniziare un programma di allenamento\n'
+          '• Non siamo responsabili per lesioni o problemi di salute\n'
+          '• L\'App è uno strumento di supporto, non un sostituto della consulenza medica',
+          isDarkMode,
+        ),
+        
+        _buildSection(
+          context,
+          '8. Contatti',
           'Per domande sui Terms of Service:\n'
-          'Email: legal@fitgymtrack.com\n'
-          'Website: https://fitgymtrack.com',
+          'Email: fitgymtrack@gmail.com\n'
+          'Website: https://fitgymtrack.com\n\n'
+          'Questi termini sono regolati dalla legge italiana e le controversie saranno risolte nei tribunali italiani.',
           isDarkMode,
         ),
       ],
@@ -312,34 +355,7 @@ class LegalDocumentsScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Versione completa disponibile online',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildLinkButton(
-                context,
-                'Privacy Policy',
-                AppConfig.privacyPolicyUrl,
-                isDarkMode,
-              ),
-              _buildLinkButton(
-                context,
-                'Terms of Service',
-                AppConfig.termsOfServiceUrl,
-                isDarkMode,
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            'Ultimo aggiornamento: ${DateTime.now().year}',
+            'Ultimo aggiornamento: 1 Agosto 2025',
             style: TextStyle(
               fontSize: 12.sp,
               color: isDarkMode ? Colors.white60 : AppColors.textSecondary,
@@ -349,37 +365,4 @@ class LegalDocumentsScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildLinkButton(BuildContext context, String text, String url, bool isDarkMode) {
-    return ElevatedButton.icon(
-      onPressed: () => _launchUrl(url),
-      icon: Icon(
-        Icons.open_in_new,
-        size: 16.sp,
-        color: Colors.white,
-      ),
-      label: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12.sp,
-          color: Colors.white,
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isDarkMode ? Colors.blue[600] : Colors.blue[500],
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.r),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-} 
+}

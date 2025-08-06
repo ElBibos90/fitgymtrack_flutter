@@ -451,8 +451,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _openHelp(BuildContext context) {
-    // ✅ FIXED: Mostra FAQ dialog con domande reali dell'app
-    _showFAQDialog(context);
+    // ✅ FIXED: Naviga alla schermata FAQ dedicata
+    context.push('/faq');
   }
 
   // ✅ NEW: FAQ Dialog migliorato e funzionale

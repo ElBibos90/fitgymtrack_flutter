@@ -127,7 +127,13 @@ class AppConfig {
   static const String supportUrl = 'https://fitgymtrack.com/support';
   
   /// Email support (opzionale ma consigliato)
-  static const String supportEmail = 'support@fitgymtrack.com';
+  static const String supportEmail = 'fitgymtrack@gmail.com';
+  
+  /// Email privacy (GDPR compliance)
+  static const String privacyEmail = 'fitgymtrack@gmail.com';
+  
+  /// Email legale (Terms of Service)
+  static const String legalEmail = 'fitgymtrack@gmail.com';
   
   /// Nome sviluppatore per Google Play Store
   static const String developerName = 'FitGymTrack Team';

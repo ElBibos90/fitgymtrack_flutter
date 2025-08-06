@@ -14,7 +14,11 @@
     
     <!-- Support -->
     <string name="support_url">https://fitgymtrack.com/support</string>
-    <string name="support_email">support@fitgymtrack.com</string>
+    <string name="support_email">fitgymtrack@gmail.com</string>
+    
+    <!-- Privacy & Legal -->
+    <string name="privacy_email">fitgymtrack@gmail.com</string>
+    <string name="legal_email">fitgymtrack@gmail.com</string>
     
     <!-- Developer Info -->
     <string name="developer_name">FitGymTrack Team</string>
