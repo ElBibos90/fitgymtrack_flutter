@@ -1,8 +1,8 @@
-﻿name: fitgymtrack
+name: fitgymtrack
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
-version: 1.0.31+31
+version: 1.0.32+32
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -21,7 +21,7 @@ dependencies:
   path: ^1.8.3
 
 
-  # Ã°Å¸â€Â§ FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
+  # ðŸ”§ FIX 1: ALWAYS ON - WakeLock per mantenere schermo acceso durante allenamento
   wakelock_plus: ^1.2.5
 
   # State Management
@@ -56,24 +56,24 @@ dependencies:
   # Dependency Injection
   get_it: ^7.7.0
 
-  # Ã°Å¸Å¡â‚¬ RECOVERY TIMER DEPENDENCIES
+  # ðŸš€ RECOVERY TIMER DEPENDENCIES
   # Audio per feedback sonoro cross-platform
   audioplayers: ^6.0.0
 
-  # Ã°Å¸â€Â§ FIX: Vibrazione con package aggiornato + compatibile
+  # ðŸ”§ FIX: Vibrazione con package aggiornato + compatibile
   haptic_feedback: ^0.5.1+1  # Alternativa moderna al vibration package
 
-  # Ã°Å¸â€™Â³ STRIPE PAYMENT DEPENDENCIES
+  # ðŸ’³ STRIPE PAYMENT DEPENDENCIES
   # Stripe SDK principale per Flutter
   flutter_stripe: ^10.1.1
 
-  # 🚀 BACKGROUND TIMER DEPENDENCIES
+  # ?? BACKGROUND TIMER DEPENDENCIES
   # Notifiche locali per timer in background
   flutter_local_notifications: ^17.2.2
   # Timezone per gestione notifiche
   timezone: ^0.9.4
 
-  # Ã°Å¸â€â€” URL Launcher per link esterni (Privacy Policy, Terms of Service)
+  # ðŸ”— URL Launcher per link esterni (Privacy Policy, Terms of Service)
   url_launcher: ^6.2.5
   flutter_launcher_icons: ^0.14.4
 
@@ -81,7 +81,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  # Ã°Å¸Â§Âª TESTING DEPENDENCIES
+  # ðŸ§ª TESTING DEPENDENCIES
   integration_test:
     sdk: flutter
   bloc_test: ^9.1.6
@@ -92,17 +92,18 @@ dev_dependencies:
 
   flutter_lints: ^4.0.0
 
-  # Ã°Å¸â€ â€¢ BRANDING PACKAGES
+  # ðŸ†• BRANDING PACKAGES
   flutter_native_splash: ^2.3.2
 
 flutter:
   uses-material-design: true
 
-  # Ã°Å¸â€Å  AUDIO ASSETS per timer feedback
+  # ðŸ”Š AUDIO ASSETS per timer feedback
   assets:
     - assets/audio/
-    - assets/icon/        # Ã°Å¸â€ â€¢ Per le icone personalizzate
-    - assets/splash/      # Ã°Å¸â€ â€¢ Per lo splash screen
+    - assets/icon/        # ðŸ†• Per le icone personalizzate
+    - assets/splash/      # ðŸ†• Per lo splash screen
+
 
 
 
