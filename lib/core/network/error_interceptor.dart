@@ -22,9 +22,6 @@ class ErrorInterceptor extends Interceptor {
           case 401:
             errorMessage = 'Non autorizzato. Effettua nuovamente il login.';
             break;
-          case 403:
-            errorMessage = 'Accesso negato';
-            break;
           case 404:
             errorMessage = 'Risorsa non trovata';
             break;

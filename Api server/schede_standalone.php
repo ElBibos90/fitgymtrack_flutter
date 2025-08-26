@@ -207,7 +207,43 @@ switch ($method) {
                 debug_log("✅ Eliminati $affected_rows assignment dalla scheda");
                 $stmt->close();
                 
-                // 3. Elimina la scheda
+                // ✅ NUOVO: 3. Elimina tutte le serie completate degli allenamenti associati alla scheda
+                debug_log("Eliminazione serie completate degli allenamenti associati alla scheda");
+                $stmt = $conn->prepare("DELETE sc FROM serie_completate sc 
+                                       INNER JOIN allenamenti a ON sc.allenamento_id = a.id 
+                                       WHERE a.scheda_id = ?");
+                if (!$stmt) {
+                    debug_log("❌ ERRORE PREPARE serie_completate: " . $conn->error);
+                    throw new Exception("Errore nella preparazione query serie_completate: " . $conn->error);
+                }
+                $stmt->bind_param('i', $scheda_id);
+                $result = $stmt->execute();
+                if (!$result) {
+                    debug_log("❌ ERRORE EXECUTE serie_completate: " . $stmt->error);
+                    throw new Exception("Errore nell'eliminazione serie_completate: " . $stmt->error);
+                }
+                $affected_rows = $stmt->affected_rows;
+                debug_log("✅ Eliminate $affected_rows serie completate degli allenamenti associati alla scheda");
+                $stmt->close();
+                
+                // ✅ NUOVO: 4. Elimina tutti gli allenamenti associati alla scheda
+                debug_log("Eliminazione allenamenti associati alla scheda");
+                $stmt = $conn->prepare("DELETE FROM allenamenti WHERE scheda_id = ?");
+                if (!$stmt) {
+                    debug_log("❌ ERRORE PREPARE allenamenti: " . $conn->error);
+                    throw new Exception("Errore nella preparazione query allenamenti: " . $conn->error);
+                }
+                $stmt->bind_param('i', $scheda_id);
+                $result = $stmt->execute();
+                if (!$result) {
+                    debug_log("❌ ERRORE EXECUTE allenamenti: " . $stmt->error);
+                    throw new Exception("Errore nell'eliminazione allenamenti: " . $stmt->error);
+                }
+                $affected_rows = $stmt->affected_rows;
+                debug_log("✅ Eliminati $affected_rows allenamenti associati alla scheda");
+                $stmt->close();
+                
+                // 5. Elimina la scheda (ora è il passo 5 invece di 4)
                 debug_log("Eliminazione scheda principale");
                 $stmt = $conn->prepare("DELETE FROM schede WHERE id = ?");
                 if (!$stmt) {

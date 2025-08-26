@@ -191,6 +191,15 @@ class WorkoutRepository {
       final response = await _apiClient.updateWorkoutStandalone(requestJson, action: "update");
 
       if (response != null && response is Map<String, dynamic>) {
+        // ✅ CONTROLLO SUCCESS PRIMA DEL PARSING
+        final success = response['success'] as bool? ?? false;
+        
+        if (!success) {
+          // Se success è false, lancia un'eccezione con il messaggio di errore
+          final message = response['message'] as String? ?? 'Errore nell\'aggiornamento della scheda';
+          throw Exception(message);
+        }
+        
         return UpdateWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');
@@ -212,6 +221,15 @@ class WorkoutRepository {
       final response = await _apiClient.createWorkoutStandalone(requestJson);
 
       if (response != null && response is Map<String, dynamic>) {
+        // ✅ CONTROLLO SUCCESS PRIMA DEL PARSING
+        final success = response['success'] as bool? ?? false;
+        
+        if (!success) {
+          // Se success è false, lancia un'eccezione con il messaggio di errore
+          final message = response['message'] as String? ?? 'Errore nella creazione della scheda';
+          throw Exception(message);
+        }
+        
         return CreateWorkoutPlanResponse.fromJson(response);
       } else {
         throw Exception('Formato risposta non valido');

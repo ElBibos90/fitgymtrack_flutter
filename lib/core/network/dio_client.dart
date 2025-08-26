@@ -27,6 +27,10 @@ class DioClient {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+      // ✅ FIX: Accetta codici 403 come risposte valide per gestire limiti account free
+      validateStatus: (status) {
+        return status != null && status < 500; // Accetta tutti i codici < 500 (incluso 403)
+      },
     ));
 
     if (kDebugMode) {
