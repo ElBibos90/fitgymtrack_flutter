@@ -18,7 +18,7 @@ import 'recent_activity_section.dart';
 import 'donation_banner.dart';
 import 'help_section.dart';
 
-/// Dashboard principale - ✅ BACKWARDS COMPATIBLE con callback opzionali
+/// 🎨 MODERN DASHBOARD: Home Screen con layout ottimizzato e design migliorato
 class DashboardPage extends StatelessWidget {
   // 🔧 PARAMETRI OPZIONALI per backwards compatibility
   final VoidCallback? onNavigateToWorkouts;
@@ -35,6 +35,8 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         // Mostra loading se non è autenticato o in stato iniziale
@@ -47,54 +49,173 @@ class DashboardPage extends StatelessWidget {
           return const UnauthenticatedDashboard();
         }
 
-        // Dashboard normale per utenti autenticati
+        // 🎨 MODERN DASHBOARD per utenti autenticati
         return RefreshIndicator(
           onRefresh: () => _handleRefresh(context),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // Header con saluto e informazioni utente
+              // 🎨 HEADER SECTION con saluto e informazioni utente
               SliverToBoxAdapter(
-                child: GreetingSection(),
-              ),
-
-              // ✅ Quick Actions Grid con callback functions SE disponibili
-              SliverToBoxAdapter(
-                child: QuickActionsGrid(
-                  onNavigateToWorkouts: onNavigateToWorkouts,
-                  onNavigateToAchievements: onNavigateToAchievements,
-                  onNavigateToProfile: onNavigateToProfile,
+                child: Container(
+                  margin: EdgeInsets.only(
+                    left: 16.w, 
+                    right: 16.w, 
+                    top: 16.h, 
+                    bottom: 8.h
+                  ),
+                  child: GreetingSection(),
                 ),
               ),
 
-              // Sezione subscription/abbonamento
+              // 🎨 QUICK ACTIONS SECTION con miglior spacing
               SliverToBoxAdapter(
-                child: SubscriptionSection(),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: QuickActionsGrid(
+                    onNavigateToWorkouts: onNavigateToWorkouts,
+                    onNavigateToAchievements: onNavigateToAchievements,
+                    onNavigateToProfile: onNavigateToProfile,
+                  ),
+                ),
               ),
 
-              // Sezione attività recente
+              // 🎨 SUBSCRIPTION SECTION con card design
               SliverToBoxAdapter(
-                child: RecentActivitySection(),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: _buildSectionCard(
+                    context,
+                    child: SubscriptionSection(),
+                    title: 'Abbonamento',
+                    icon: Icons.card_membership_rounded,
+                  ),
+                ),
               ),
 
-              // Banner donazione
+              // 🎨 RECENT ACTIVITY SECTION con card design
               SliverToBoxAdapter(
-                child: DonationBanner(),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: _buildSectionCard(
+                    context,
+                    child: RecentActivitySection(),
+                    title: 'Attività Recenti',
+                    icon: Icons.history_rounded,
+                  ),
+                ),
               ),
 
-              // Sezione aiuto e supporto
+              // 🎨 DONATION BANNER con miglior styling
               SliverToBoxAdapter(
-                child: HelpSection(),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: DonationBanner(),
+                ),
               ),
 
-              // Spazio finale per padding
+              // 🎨 HELP SECTION con card design
               SliverToBoxAdapter(
-                child: SizedBox(height: 100.h),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: _buildSectionCard(
+                    context,
+                    child: HelpSection(),
+                    title: 'Aiuto e Supporto',
+                    icon: Icons.help_outline_rounded,
+                  ),
+                ),
+              ),
+
+              // 🎨 Spazio finale ottimizzato
+              SliverToBoxAdapter(
+                child: SizedBox(height: 120.h),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  /// 🎨 BUILDS SECTION CARD: Crea una card moderna per ogni sezione
+  Widget _buildSectionCard(
+    BuildContext context, {
+    required Widget child,
+    required String title,
+    required IconData icon,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDarkMode 
+            ? AppColors.surfaceDark.withValues(alpha: 0.8)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: isDarkMode 
+              ? AppColors.border.withValues(alpha: 0.2)
+              : AppColors.border.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🎨 SECTION HEADER
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+            decoration: BoxDecoration(
+              color: isDarkMode 
+                  ? AppColors.indigo600.withValues(alpha: 0.1)
+                  : AppColors.indigo50.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.r),
+                topRight: Radius.circular(16.r),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.indigo600.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20.sp,
+                    color: AppColors.indigo600,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // 🎨 SECTION CONTENT
+          Container(
+            padding: EdgeInsets.all(20.w),
+            child: child,
+          ),
+        ],
+      ),
     );
   }
 
@@ -120,50 +241,135 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-/// ✅ Dashboard per utenti non autenticati - NON MODIFICATA
+/// ✅ Dashboard per utenti non autenticati - MIGLIORATA
 class UnauthenticatedDashboard extends StatelessWidget {
   const UnauthenticatedDashboard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.fitness_center,
-              size: 64.sp,
-              color: AppColors.indigo600,
-            ),
-            SizedBox(height: 24.h),
-            Text(
-              'Benvenuto in FitGymTrack!',
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDarkMode
+              ? [
+                  AppColors.indigo600.withValues(alpha: 0.1),
+                  AppColors.surfaceDark,
+                ]
+              : [
+                  AppColors.indigo50.withValues(alpha: 0.3),
+                  Colors.white,
+                ],
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 🎨 MODERN ICON CONTAINER
+              Container(
+                width: 120.w,
+                height: 120.w,
+                                 decoration: BoxDecoration(
+                   gradient: LinearGradient(
+                     colors: [
+                       AppColors.indigo600,
+                       AppColors.indigo700,
+                     ],
+                   ),
+                   borderRadius: BorderRadius.circular(60.r),
+                   boxShadow: [
+                     BoxShadow(
+                       color: AppColors.indigo600.withValues(alpha: 0.3),
+                       blurRadius: 20,
+                       offset: const Offset(0, 8),
+                     ),
+                   ],
+                 ),
+                child: Icon(
+                  Icons.fitness_center_rounded,
+                  size: 60.sp,
+                  color: Colors.white,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 12.h),
-            Text(
-              'Accedi per iniziare il tuo percorso di allenamento',
-              style: TextStyle(
-                fontSize: 16.sp,
-                color: Colors.grey[600],
+              
+              SizedBox(height: 32.h),
+              
+              // 🎨 MODERN TITLE
+              Text(
+                'Benvenuto in FitGymTrack!',
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 32.h),
-            ElevatedButton(
-              onPressed: () {
-                // Naviga al login
-                Navigator.of(context).pushReplacementNamed('/login');
-              },
-              child: const Text('Accedi'),
-            ),
-          ],
+              
+              SizedBox(height: 16.h),
+              
+              // 🎨 MODERN SUBTITLE
+              Text(
+                'Accedi per iniziare il tuo percorso di allenamento e raggiungere i tuoi obiettivi fitness',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: isDarkMode 
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: 40.h),
+              
+              // 🎨 MODERN BUTTON
+              Container(
+                width: double.infinity,
+                height: 56.h,
+                                 decoration: BoxDecoration(
+                   gradient: LinearGradient(
+                     colors: [
+                       AppColors.indigo600,
+                       AppColors.indigo700,
+                     ],
+                   ),
+                   borderRadius: BorderRadius.circular(16.r),
+                   boxShadow: [
+                     BoxShadow(
+                       color: AppColors.indigo600.withValues(alpha: 0.3),
+                       blurRadius: 12,
+                       offset: const Offset(0, 4),
+                     ),
+                   ],
+                 ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16.r),
+                    onTap: () {
+                      Navigator.of(context).pushReplacementNamed('/login');
+                    },
+                    child: Center(
+                      child: Text(
+                        'Accedi Ora',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
