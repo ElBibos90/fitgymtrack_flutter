@@ -52,8 +52,8 @@ if ($newVersion -match '^(\d+\.\d+\.\d+)\+(\d+)$') {
 
 # Richiedi se aggiornare la versione nel database
 Write-Host "`nIMPORTANTE: Aggiornare la versione nel database?" -ForegroundColor Yellow
-Write-Host "   - SÌ: Gli utenti riceveranno prompt di aggiornamento" -ForegroundColor Gray
-Write-Host "   - NO: La versione rimane quella precedente nel database" -ForegroundColor Gray
+Write-Host "   - SÌ: Gli utenti riceveranno prompt di aggiornamento (is_active = 1)" -ForegroundColor Gray
+Write-Host "   - NO: La versione viene inserita ma non attiva (is_active = 0)" -ForegroundColor Gray
 Write-Host "   (Consigliato: NO se la nuova versione non è ancora negli store)" -ForegroundColor Cyan
 $updateDatabase = Read-Host "Aggiornare versione nel database? (s/N)"
 $updateDatabase = $updateDatabase.ToLower()
@@ -83,7 +83,7 @@ $audienceChoice = Read-Host "Scelta (1/2)"
 
 switch ($audienceChoice) {
     "1" { $targetAudience = "production" }
-    "2" { $targetAudience = "tester" }
+    "2" { $targetAudience = "test" }
     default { 
         Write-Host "Scelta non valida, uso Production" -ForegroundColor Yellow
         $targetAudience = "production"
@@ -103,7 +103,7 @@ Write-Host "   Versione: $currentVersion+$currentBuild -> $newVersion+$newBuild"
 Write-Host "   Piattaforma: $platformTarget" -ForegroundColor White
 Write-Host "   Target: $targetAudience" -ForegroundColor White
 Write-Host "   Critico: $(if ($isCritical) { 'SÌ' } else { 'NO' })" -ForegroundColor White
-Write-Host "   Aggiorna DB: $(if ($updateDatabase -eq 's') { 'SÌ' } else { 'NO' })" -ForegroundColor White
+Write-Host "   Aggiorna DB: $(if ($updateDatabase -eq 's') { 'SÌ (attiva)' } else { 'SÌ (inattiva)' })" -ForegroundColor White
 if ($updateMessage) {
     Write-Host "   Messaggio: $updateMessage" -ForegroundColor White
 }
@@ -120,11 +120,10 @@ $newPubspecContent = $pubspecContent -replace "version:\s*$currentVersion\+$curr
 $newPubspecContent | Set-Content "pubspec.yaml"
 Write-Host "   pubspec.yaml aggiornato: $newVersion+$newBuild" -ForegroundColor Green
 
-# STEP 2: Calcola version code e aggiorna database (solo se richiesto)
-if ($updateDatabase -eq 's') {
-    Write-Host "`nSTEP 2: Aggiornamento database..." -ForegroundColor Yellow
-    
-    $versionCode = [int]($newVersion -replace '\.', '') * 1000 + [int]$newBuild
+# STEP 2: Calcola version code e aggiorna database
+Write-Host "`nSTEP 2: Aggiornamento database..." -ForegroundColor Yellow
+
+$versionCode = [int]($newVersion -replace '\.', '') * 1000 + [int]$newBuild
     
     # Verifica Python
     $path = Get-Command python -ErrorAction SilentlyContinue
@@ -151,10 +150,11 @@ import sys
 try:
     # Configurazione database
     config = {
-        'host': 'localhost',
-        'user': 'root',
-        'password': 'root',
-        'database': 'fitgymtrack'
+        'host': '138.68.80.170',
+        'port': 3306,
+        'user': 'ElBibo',
+        'password': 'Groot00',
+        'database': 'Workout'
     }
     
     # Connessione
@@ -162,20 +162,22 @@ try:
     cursor = connection.cursor()
     
     print('Disattivazione versioni precedenti...')
-    # Disattiva SOLO le versioni dello stesso target_audience
-    cursor.execute("UPDATE app_versions SET is_active = 0 WHERE target_audience = %s", ('$targetAudience',))
+    # Disattiva SOLO le versioni dello stesso target_audience SE la nuova versione deve essere attiva
+    if updateDatabaseActive:
+        cursor.execute("UPDATE app_versions SET is_active = 0 WHERE target_audience = %s", (targetAudience,))
     
     print('Inserimento nuova versione...')
-    version_name = '$newVersion'
-    build_number = $newBuild
-    version_code = $versionCode
-    is_critical = $(if ($isCritical) { 'True' } else { 'False' })
+    version_name = newVersion
+    build_number = newBuild
+    version_code = versionCode
+    is_critical = isCritical
+    is_active = updateDatabaseActive
     
     cursor.execute("""
         INSERT INTO app_versions
         (version_name, build_number, version_code, is_active, update_required, update_message, release_date, min_required_version, platform, target_audience)
-        VALUES (%s, %s, %s, 1, %s, %s, NOW(), '1.0.0', %s, %s)
-    """, (version_name, build_number, version_code, is_critical, '$updateMessage', '$platformTarget', '$targetAudience'))
+        VALUES (%s, %s, %s, %s, %s, %s, NOW(), '1.0.0', %s, %s)
+    """, (version_name, build_number, version_code, is_active, is_critical, updateMessage, platformTarget, targetAudience))
     
     connection.commit()
     print(f'SUCCESSO: Database aggiornato con {version_name}+{build_number} (code: {version_code})')
@@ -189,35 +191,39 @@ finally:
 "@
         
         # Sostituisci variabili nello script Python
-        $pythonScript = $pythonScript -replace '\$newVersion', $newVersion
-        $pythonScript = $pythonScript -replace '\$newBuild', $newBuild
-        $pythonScript = $pythonScript -replace '\$versionCode', $versionCode
-        $pythonScript = $pythonScript -replace '\$isCritical', $(if ($isCritical) { 'True' } else { 'False' })
-        $pythonScript = $pythonScript -replace '\$updateMessage', $updateMessage
-        $pythonScript = $pythonScript -replace '\$platformTarget', $platformTarget
-        $pythonScript = $pythonScript -replace '\$targetAudience', $targetAudience
+        $updateDatabaseActive = if ($updateDatabase -eq 's') { 'True' } else { 'False' }
+        $pythonScript = $pythonScript -replace 'newVersion', "'$newVersion'"
+        $pythonScript = $pythonScript -replace 'newBuild', $newBuild
+        $pythonScript = $pythonScript -replace 'versionCode', $versionCode
+        $pythonScript = $pythonScript -replace 'isCritical', $(if ($isCritical) { 'True' } else { 'False' })
+        $pythonScript = $pythonScript -replace 'updateDatabaseActive', $updateDatabaseActive
+        $pythonScript = $pythonScript -replace 'updateMessage', "'$updateMessage'"
+        $pythonScript = $pythonScript -replace 'platformTarget', "'$platformTarget'"
+        $pythonScript = $pythonScript -replace 'targetAudience', "'$targetAudience'"
         
         # Salva e esegui script Python
         $pythonScript | Out-File -FilePath "temp_db_update.py" -Encoding UTF8
         & $path "temp_db_update.py"
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "   Database aggiornato con successo" -ForegroundColor Green
+            if ($updateDatabase -eq 's') {
+                Write-Host "   Database aggiornato con successo (versione attiva)" -ForegroundColor Green
+            } else {
+                Write-Host "   Database aggiornato con successo (versione inattiva)" -ForegroundColor Green
+            }
         } else {
             Write-Host "   ERRORE nell'aggiornamento database" -ForegroundColor Red
             Write-Host "   Eseguire manualmente:" -ForegroundColor Yellow
-            Write-Host "   1. UPDATE app_versions SET is_active = 0;" -ForegroundColor Gray
-            Write-Host "   2. INSERT INTO app_versions (version_name, build_number, version_code, is_active, update_required, update_message, release_date, min_required_version) VALUES ('$newVersion', $newBuild, $versionCode, 1, $(if ($isCritical) { 1 } else { 0 }), '$updateMessage', NOW(), '1.0.0');" -ForegroundColor Gray
+            $isActiveValue = if ($updateDatabase -eq 's') { 1 } else { 0 }
+            Write-Host "   Database: Workout (138.68.80.170:3306)" -ForegroundColor Gray
+            Write-Host "   User: ElBibo" -ForegroundColor Gray
+            Write-Host "   1. UPDATE app_versions SET is_active = 0 WHERE target_audience = '$targetAudience';" -ForegroundColor Gray
+            Write-Host "   2. INSERT INTO app_versions (version_name, build_number, version_code, is_active, update_required, update_message, release_date, min_required_version, platform, target_audience) VALUES ('$newVersion', $newBuild, $versionCode, $isActiveValue, $(if ($isCritical) { 1 } else { 0 }), '$updateMessage', NOW(), '1.0.0', '$platformTarget', '$targetAudience');" -ForegroundColor Gray
         }
         
         # Pulisci file temporaneo
         Remove-Item "temp_db_update.py" -ErrorAction SilentlyContinue
     }
-} else {
-    Write-Host "`nSTEP 2: Aggiornamento database SKIPPATO" -ForegroundColor Yellow
-    Write-Host "   La versione nel database rimane quella precedente" -ForegroundColor Gray
-    Write-Host "   Gli utenti non riceveranno prompt di aggiornamento" -ForegroundColor Gray
-}
 
 # STEP 3: Pulizia build precedente
 Write-Host "`nSTEP 3: Pulizia build precedente..." -ForegroundColor Yellow
@@ -239,27 +245,14 @@ if ($LASTEXITCODE -eq 0) {
     exit 1
 }
 
-# STEP 5: Compilazione
-if ($platformTarget -eq "android" -or $platformTarget -eq "both") {
-    Write-Host "`nSTEP 5: Compilazione AAB per Android..." -ForegroundColor Yellow
-    flutter build appbundle --release
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "   AAB generato: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor Green
-    } else {
-        Write-Host "   ERRORE nella compilazione Android" -ForegroundColor Red
-        exit 1
-    }
-}
-
-if ($platformTarget -eq "ios" -or $platformTarget -eq "both") {
-    Write-Host "`nSTEP 5: Compilazione IPA per iOS..." -ForegroundColor Yellow
-    flutter build ipa --release
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "   IPA generato: build/ios/ipa/" -ForegroundColor Green
-    } else {
-        Write-Host "   ERRORE nella compilazione iOS" -ForegroundColor Red
-        exit 1
-    }
+# STEP 5: Compilazione AAB per Android
+Write-Host "`nSTEP 5: Compilazione AAB per Android..." -ForegroundColor Yellow
+flutter build appbundle --release
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "   AAB generato: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor Green
+} else {
+    Write-Host "   ERRORE nella compilazione Android" -ForegroundColor Red
+    exit 1
 }
 
 # Riepilogo finale
@@ -268,19 +261,17 @@ Write-Host "Versione: $newVersion+$newBuild" -ForegroundColor White
 Write-Host "Piattaforma: $platformTarget" -ForegroundColor White
 Write-Host "Target: $targetAudience" -ForegroundColor White
 if ($updateDatabase -eq 's') {
-    Write-Host "Database: AGGIORNATO" -ForegroundColor Green
+    Write-Host "Database: AGGIORNATO (versione attiva)" -ForegroundColor Green
 } else {
-    Write-Host "Database: NON AGGIORNATO" -ForegroundColor Yellow
-    Write-Host "   Ricordati di aggiornare il database quando pubblichi negli store!" -ForegroundColor Cyan
+    Write-Host "Database: AGGIORNATO (versione inattiva)" -ForegroundColor Green
+    Write-Host "   Ricordati di attivare la versione quando pubblichi negli store!" -ForegroundColor Cyan
 }
 
 Write-Host "`nProssimi passi:" -ForegroundColor Yellow
-if ($platformTarget -eq "android" -or $platformTarget -eq "both") {
-    Write-Host "   Android: Carica AAB su Google Play Console" -ForegroundColor White
-}
-if ($platformTarget -eq "ios" -or $platformTarget -eq "both") {
-    Write-Host "   iOS: Carica IPA su App Store Connect" -ForegroundColor White
+Write-Host "   Android: Carica AAB su Google Play Console" -ForegroundColor White
+if ($platformTarget -eq "both") {
+    Write-Host "   iOS: Carica IPA su App Store Connect (quando disponibile)" -ForegroundColor White
 }
 if ($updateDatabase -ne 's') {
-    Write-Host "   Database: Aggiorna versione quando pubblichi negli store" -ForegroundColor Cyan
+    Write-Host "   Database: Attiva la versione quando pubblichi negli store (UPDATE app_versions SET is_active = 1 WHERE version_name = '$newVersion' AND build_number = $newBuild)" -ForegroundColor Cyan
 } 
