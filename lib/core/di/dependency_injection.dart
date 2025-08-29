@@ -2,6 +2,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/session_service.dart';
 import '../services/audio_settings_service.dart';
 import '../services/background_timer_service.dart';
@@ -14,6 +15,7 @@ import '../../features/auth/bloc/auth_bloc.dart';
 
 // Workout features
 import '../../features/workouts/repository/workout_repository.dart';
+import '../../features/workouts/services/workout_offline_service.dart';
 import '../../features/workouts/bloc/workout_bloc.dart';
 import '../../features/workouts/bloc/active_workout_bloc.dart';
 import '../../features/workouts/bloc/workout_history_bloc.dart';
@@ -107,10 +109,19 @@ class DependencyInjection {
       );
     });
 
+    // 🚀 NUOVO: Registra il servizio offline (sincrono)
+    getIt.registerLazySingleton<WorkoutOfflineService>(() {
+      return WorkoutOfflineService(
+        repository: getIt<WorkoutRepository>(),
+        prefs: null, // Sarà inizializzato quando necessario
+      );
+    });
+
     getIt.registerLazySingleton<ActiveWorkoutBloc>(() {
       //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ActiveWorkoutBloc instance...');
       return ActiveWorkoutBloc(
         workoutRepository: getIt<WorkoutRepository>(),
+        offlineService: getIt<WorkoutOfflineService>(),
       );
     });
 

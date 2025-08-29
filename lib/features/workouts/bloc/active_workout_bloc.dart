@@ -4,9 +4,12 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 import '../repository/workout_repository.dart';
+import '../services/workout_offline_service.dart';
 import '../models/active_workout_models.dart';
 import '../models/workout_plan_models.dart';
+import '../models/workout_history_models.dart' as workout_models;
 import '../../stats/models/user_stats_models.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutBloc'}) {
@@ -175,6 +178,30 @@ class UpdateExerciseValues extends ActiveWorkoutEvent {
   List<Object> get props => [exerciseId, weight, reps];
 }
 
+/// 🚀 NUOVO: Evento per sincronizzare dati offline
+class SyncOfflineData extends ActiveWorkoutEvent {
+  const SyncOfflineData();
+
+  @override
+  List<Object> get props => [];
+}
+
+/// 🚀 NUOVO: Evento per ripristinare allenamento offline
+class RestoreOfflineWorkout extends ActiveWorkoutEvent {
+  const RestoreOfflineWorkout();
+
+  @override
+  List<Object> get props => [];
+}
+
+/// 🚀 NUOVO: Evento per salvare stato offline
+class SaveOfflineState extends ActiveWorkoutEvent {
+  const SaveOfflineState();
+
+  @override
+  List<Object> get props => [];
+}
+
 // ============================================================================
 // ACTIVE WORKOUT STATES (invariati)
 // ============================================================================
@@ -331,6 +358,30 @@ class ActiveWorkoutError extends ActiveWorkoutState {
   List<Object?> get props => [message, exception];
 }
 
+/// 🚀 NUOVO: Stato per sincronizzazione offline
+class OfflineSyncInProgress extends ActiveWorkoutState {
+  final String message;
+  final int pendingCount;
+
+  const OfflineSyncInProgress({
+    required this.message,
+    required this.pendingCount,
+  });
+
+  @override
+  List<Object> get props => [message, pendingCount];
+}
+
+/// 🚀 NUOVO: Stato per ripristino offline
+class OfflineRestoreInProgress extends ActiveWorkoutState {
+  final String message;
+
+  const OfflineRestoreInProgress({required this.message});
+
+  @override
+  List<Object> get props => [message];
+}
+
 // ============================================================================
 // 🆕 NUOVO: DATA CLASSES PER GESTIRE VALORI ESERCIZI E STORICO
 // ============================================================================
@@ -427,6 +478,7 @@ class _SeriesValuesKey {
 
 class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   final WorkoutRepository _workoutRepository;
+  final WorkoutOfflineService _offlineService;
 
   // 🔧 FIX: Memorizza i dati storici degli esercizi organizzati meglio
   final Map<int, HistoricExerciseData> _historicWorkoutData = {};
@@ -440,9 +492,15 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   // 🆕 FIX: Memorizza l'ID dell'allenamento corrente per escluderlo dalla ricerca storica
   int? _currentWorkoutId;
 
-  ActiveWorkoutBloc({required WorkoutRepository workoutRepository})
-      : _workoutRepository = workoutRepository,
-        super(const ActiveWorkoutInitial()) {
+  // 🚀 NUOVO: Flag per tracciare se siamo in modalità offline
+  bool _isOfflineMode = false;
+
+  ActiveWorkoutBloc({
+    required WorkoutRepository workoutRepository,
+    required WorkoutOfflineService offlineService,
+  }) : _workoutRepository = workoutRepository,
+       _offlineService = offlineService,
+       super(const ActiveWorkoutInitial()) {
 
     _log('🏗️ [INIT] ActiveWorkoutBloc constructor called');
 
@@ -459,6 +517,9 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     on<AddLocalSeries>(_onAddLocalSeries);
     on<RemoveLocalSeries>(_onRemoveLocalSeries);
     on<UpdateExerciseValues>(_onUpdateExerciseValues); // 🆕 NUOVO
+    on<SyncOfflineData>(_onSyncOfflineData); // 🚀 NUOVO
+    on<RestoreOfflineWorkout>(_onRestoreOfflineWorkout); // 🚀 NUOVO
+    on<SaveOfflineState>(_onSaveOfflineState); // 🚀 NUOVO
 
     _log('✅ [INIT] ActiveWorkoutBloc event handlers registered');
   }
@@ -640,10 +701,10 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       // STEP 1: Carica tutti gli allenamenti dell'utente
       final workoutHistoryResult = await _workoutRepository.getWorkoutHistory(userId);
 
-      List<WorkoutHistory>? allWorkouts;
+      List<workout_models.WorkoutHistory>? allWorkouts;
       workoutHistoryResult.fold(
         onSuccess: (workouts) {
-          allWorkouts = workouts;
+          allWorkouts = workouts.cast<workout_models.WorkoutHistory>();
         },
         onFailure: (exception, message) {
           _log('⚠️ [HISTORY] Error loading workout history: $message');
@@ -692,7 +753,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       _log('📚 [HISTORY] Processing ${sameSchemaWorkouts.length} candidate workouts for history data');
 
       // 🔧 FIX: STEP 3: Prova con gli allenamenti in ordine finché non trova uno con serie
-      WorkoutHistory? workoutWithSeries;
+      workout_models.WorkoutHistory? workoutWithSeries;
       List<CompletedSeriesData>? series;
 
       for (int i = 0; i < sameSchemaWorkouts.length && i < 3; i++) { // Prova max 3 allenamenti
@@ -1118,7 +1179,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     }
   }
 
-  /// 🚀 FIX: Handler per salvare una serie completata - NON CAMBIARE STATO
+  /// 🚀 FIX: Handler per salvare una serie completata - CON GESTIONE OFFLINE
   Future<void> _onSaveCompletedSeries(
       SaveCompletedSeries event,
       Emitter<ActiveWorkoutState> emit,
@@ -1126,6 +1187,36 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     _log('💾 [BLOC] SaveCompletedSeries received - Workout: ${event.allenamentoId}, Series: ${event.serie.length}');
 
     try {
+      // 🚀 NUOVO: Verifica connessione prima del salvataggio
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity != ConnectivityResult.none;
+
+      if (!isOnline) {
+        _log('📡 [OFFLINE] No internet connection, saving series offline');
+        _isOfflineMode = true;
+        
+        // Salva le serie offline
+        for (final series in event.serie) {
+          await _offlineService.queueSeriesForSync(series, event.allenamentoId);
+        }
+        
+        // Salva anche lo stato corrente offline
+        if (state is WorkoutSessionActive) {
+          await _offlineService.saveOfflineWorkout(state as WorkoutSessionActive);
+        }
+        
+        _log('✅ [OFFLINE] Series saved offline successfully');
+        return; // Non emettere errori, l'utente può continuare
+      }
+
+      // 🚀 NUOVO: Tenta sincronizzazione offline prima del salvataggio
+      if (_isOfflineMode) {
+        _log('🔄 [OFFLINE] Syncing offline data before new save');
+        await _offlineService.syncPendingData();
+        _isOfflineMode = false;
+      }
+
+      // Salvataggio online normale
       final result = await _workoutRepository.saveCompletedSeries(
         event.allenamentoId,
         event.serie,
@@ -1144,18 +1235,32 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         },
         onFailure: (exception, message) {
           _log('❌ [BLOC] Error saving completed series: $message');
-          emit(ActiveWorkoutError(
-            message: message ?? 'Errore nel salvataggio della serie',
-            exception: exception,
-          ));
+          
+          // 🚀 NUOVO: Se il salvataggio online fallisce, salva offline
+          _log('📡 [OFFLINE] Online save failed, saving offline');
+          _isOfflineMode = true;
+          
+          for (final series in event.serie) {
+            _offlineService.queueSeriesForSync(series, event.allenamentoId);
+          }
+          
+          // Non emettere errore, l'utente può continuare
+          _log('✅ [OFFLINE] Series queued for offline sync');
         },
       );
     } catch (e) {
       _log('💥 [BLOC] Exception in SaveCompletedSeries: $e');
-      emit(ActiveWorkoutError(
-        message: 'Errore critico nel salvataggio: $e',
-        exception: e is Exception ? e : Exception(e.toString()),
-      ));
+      
+      // 🚀 NUOVO: In caso di eccezione, salva offline
+      _log('📡 [OFFLINE] Exception occurred, saving offline');
+      _isOfflineMode = true;
+      
+      for (final series in event.serie) {
+        _offlineService.queueSeriesForSync(series, event.allenamentoId);
+      }
+      
+      // Non emettere errore critico, l'utente può continuare
+      _log('✅ [OFFLINE] Series queued for offline sync after exception');
     }
   }
 
@@ -1422,4 +1527,191 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
   void resetState() {
     add(const ResetActiveWorkoutState());
   }
+
+  // ============================================================================
+  // 🚀 NUOVO: OFFLINE METHODS
+  // ============================================================================
+
+  /// Ottiene statistiche sui dati offline
+  Future<Map<String, dynamic>> getOfflineStats() async {
+    try {
+      return await _offlineService.getOfflineStats();
+    } catch (e) {
+      _log('❌ [OFFLINE] Error getting offline stats: $e');
+      return {
+        'pending_series_count': 0,
+        'has_offline_workout': false,
+        'last_sync': null,
+      };
+    }
+  }
+
+  /// Ripristina l'allenamento offline se disponibile
+  void restoreOfflineWorkout() {
+    add(const RestoreOfflineWorkout());
+  }
+
+  /// Salva lo stato corrente offline
+  void saveOfflineState() {
+    add(const SaveOfflineState());
+  }
+
+  /// Sincronizza i dati offline
+  void syncOfflineData() {
+    add(const SyncOfflineData());
+  }
+
+  // ============================================================================
+  // 🚀 NUOVO: OFFLINE HANDLERS
+  // ============================================================================
+
+  /// Handler per sincronizzare dati offline
+  Future<void> _onSyncOfflineData(
+    SyncOfflineData event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    _log('🔄 [EVENT] SyncOfflineData received');
+
+    try {
+      // Verifica se ci sono dati pendenti
+      final hasPending = await _offlineService.hasPendingData();
+      if (!hasPending) {
+        _log('✅ [OFFLINE] No pending data to sync');
+        return;
+      }
+
+      // Ottieni statistiche per il messaggio
+      final stats = await _offlineService.getOfflineStats();
+      final pendingCount = stats['pending_series_count'] as int;
+
+      emit(OfflineSyncInProgress(
+        message: 'Sincronizzazione in corso...',
+        pendingCount: pendingCount,
+      ));
+
+      // Esegui sincronizzazione
+      final success = await _offlineService.syncPendingData();
+
+      if (success) {
+        _log('✅ [OFFLINE] Sync completed successfully');
+        // Ritorna allo stato precedente se eravamo in un allenamento attivo
+        if (state is! WorkoutSessionActive) {
+          emit(const ActiveWorkoutInitial());
+        }
+      } else {
+        _log('❌ [OFFLINE] Sync failed');
+        emit(const ActiveWorkoutError(
+          message: 'Sincronizzazione fallita. Riprova più tardi.',
+        ));
+      }
+    } catch (e) {
+      _log('💥 [OFFLINE] Exception in sync: $e');
+      emit(ActiveWorkoutError(
+        message: 'Errore durante la sincronizzazione: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
+  }
+
+  /// Handler per ripristinare allenamento offline
+  Future<void> _onRestoreOfflineWorkout(
+    RestoreOfflineWorkout event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    _log('📱 [EVENT] RestoreOfflineWorkout received');
+
+    try {
+      emit(const OfflineRestoreInProgress(message: 'Ripristino allenamento...'));
+
+      final offlineData = await _offlineService.loadOfflineWorkout();
+      if (offlineData == null) {
+        _log('⚠️ [OFFLINE] No offline workout to restore');
+        emit(const ActiveWorkoutInitial());
+        return;
+      }
+
+             // Ricostruisci lo stato dell'allenamento
+       final allenamentoId = offlineData['allenamento_id'] as int;
+       final schedaId = offlineData['scheda_id'] as int;
+       final startTime = DateTime.parse(offlineData['start_time']);
+       final elapsedTimeMinutes = offlineData['elapsed_time'] as int;
+
+              // Carica esercizi dalla scheda
+        final exercisesResult = await _workoutRepository.getWorkoutExercises(schedaId);
+      List<WorkoutExercise> exercises = [];
+      
+      exercisesResult.fold(
+        onSuccess: (exercisesList) => exercises = exercisesList,
+        onFailure: (exception, message) {
+          _log('❌ [OFFLINE] Error loading exercises: $message');
+          emit(ActiveWorkoutError(
+            message: 'Errore nel caricamento degli esercizi: $message',
+            exception: exception,
+          ));
+          return;
+        },
+      );
+
+      // Ricostruisci le serie completate
+      final completedSeriesData = offlineData['completed_series'] as Map<String, dynamic>;
+      final Map<int, List<CompletedSeriesData>> completedSeries = {};
+      
+      for (final entry in completedSeriesData.entries) {
+        final exerciseId = int.parse(entry.key);
+        final seriesList = (entry.value as List<dynamic>)
+            .map((s) => CompletedSeriesData.fromJson(s as Map<String, dynamic>))
+            .toList();
+        completedSeries[exerciseId] = seriesList;
+      }
+
+      // Crea l'allenamento attivo
+      final activeWorkout = ActiveWorkout(
+        id: allenamentoId,
+        schedaId: schedaId,
+        dataAllenamento: startTime.toIso8601String(),
+        durataTotale: null,
+        userId: 1, // TODO: Get actual userId from session or offline data
+      );
+
+             // Emetti lo stato ripristinato
+       emit(WorkoutSessionActive(
+         activeWorkout: activeWorkout,
+         exercises: exercises,
+         completedSeries: completedSeries,
+         elapsedTime: Duration(minutes: elapsedTimeMinutes),
+         startTime: startTime,
+       ));
+
+      _log('✅ [OFFLINE] Workout restored successfully');
+    } catch (e) {
+      _log('💥 [OFFLINE] Exception in restore: $e');
+      emit(ActiveWorkoutError(
+        message: 'Errore nel ripristino dell\'allenamento: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
+  }
+
+  /// Handler per salvare stato offline
+  Future<void> _onSaveOfflineState(
+    SaveOfflineState event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    _log('💾 [EVENT] SaveOfflineState received');
+
+    try {
+      if (state is WorkoutSessionActive) {
+        final activeState = state as WorkoutSessionActive;
+        await _offlineService.saveOfflineWorkout(activeState);
+        _log('✅ [OFFLINE] State saved offline');
+      } else {
+        _log('⚠️ [OFFLINE] No active workout to save');
+      }
+    } catch (e) {
+      _log('❌ [OFFLINE] Error saving offline state: $e');
+    }
+  }
+
+  /// Verifica se siamo in modalità offline
+  bool get isOfflineMode => _isOfflineMode;
 }

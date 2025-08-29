@@ -31,6 +31,8 @@ import '../../../../shared/widgets/exercise_selection_dialog.dart';
 import '../../../exercises/models/exercises_response.dart';
 import '../../../exercises/services/image_service.dart';
 import '../../../../core/config/app_config.dart';
+import '../widgets/offline_status_widget.dart';
+import '../../services/connectivity_service.dart';
 
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
@@ -65,6 +67,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // BLoC references
   late ActiveWorkoutBloc _activeWorkoutBloc;
   late PlateauBloc _plateauBloc; // 🎯 PLATEAU BLOC
+  
+  // 🚀 NUOVO: Servizio di connettività
+  ConnectivityService? _connectivityService;
 
   // Timer management
   Timer? _workoutTimer;
@@ -142,6 +147,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
     _plateauBloc = context.read<PlateauBloc>(); // 🎯 INITIALIZE PLATEAU BLOC
+    
+    // 🚀 NUOVO: Inizializza servizio di connettività
+    _connectivityService = ConnectivityService(workoutBloc: _activeWorkoutBloc);
+    
     _initializeAnimations();
     _initializeWorkout();
   }
@@ -195,6 +204,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _rotationIndicatorController.dispose(); // 🚀 NUOVO: Dispose del controller di rotazione
     _pageController.dispose();
     _stopRecoveryTimer();
+    
+    // 🚀 NUOVO: Dispose del servizio di connettività
+    _connectivityService?.dispose();
+    
     super.dispose();
   }
 
@@ -242,6 +255,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       setState(() {
         _currentStatus = "Ripristinando allenamento...";
       });
+      // 🚀 NUOVO: Prova a ripristinare allenamento offline
+      _tryRestoreOfflineWorkout();
+    }
+  }
+
+  // 🚀 NUOVO: Ripristina allenamento offline se disponibile
+  Future<void> _tryRestoreOfflineWorkout() async {
+    try {
+      final stats = await _activeWorkoutBloc.getOfflineStats();
+      final hasOfflineWorkout = stats['has_offline_workout'] == true;
+      
+      if (hasOfflineWorkout) {
+        print('[CONSOLE] [active_workout_screen] 📱 Found offline workout, attempting restore...');
+        _activeWorkoutBloc.restoreOfflineWorkout();
+      }
+    } catch (e) {
+      print('[CONSOLE] [active_workout_screen] ❌ Error checking offline workout: $e');
     }
   }
 
@@ -1287,6 +1317,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       requestId,
     );
 
+    // 🚀 NUOVO: Salva stato offline dopo ogni serie
+    _activeWorkoutBloc.saveOfflineState();
+
     // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
     _invalidateCacheForExercise(exerciseId);
 
@@ -1777,6 +1810,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return Stack(
       children: [
         _buildMainContent(state),
+
+        // 🚀 NUOVO: Widget per stato offline
+        const Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: OfflineStatusWidget(),
+        ),
 
         if (_isRecoveryTimerActive)
           RecoveryTimerPopup(
