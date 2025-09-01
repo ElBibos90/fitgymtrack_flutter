@@ -174,6 +174,22 @@ class WorkoutOfflineService {
         await _syncPendingSeries(pendingSeries);
       }
 
+      // 🔧 FIX: Non rimuovere l'allenamento offline se è ancora attivo
+      // Questo evita il loop infinito di caricamento
+      final offlineWorkout = await loadOfflineWorkout();
+      if (offlineWorkout != null) {
+        final startTime = DateTime.parse(offlineWorkout['start_time']);
+        final isExpired = DateTime.now().difference(startTime).inHours > 24;
+        
+        // Rimuovi solo se scaduto o se l'allenamento è stato completato
+        if (isExpired) {
+          await clearOfflineWorkout();
+          print('[CONSOLE] [offline_service] 🧹 Offline workout expired and cleared');
+        } else {
+          print('[CONSOLE] [offline_service] ✅ Offline workout still active, keeping for restore');
+        }
+      }
+
       // Aggiorna timestamp ultima sincronizzazione
       await _updateLastSyncTime();
       
@@ -291,5 +307,154 @@ class WorkoutOfflineService {
       'has_offline_workout': offlineWorkout != null,
       'last_sync': _prefs!.getString(_syncStatusKey),
     };
+  }
+
+  /// Sincronizza tutti i dati offline disponibili
+  Future<void> syncOfflineData() async {
+    try {
+      print('[CONSOLE] [offline_service] 🔄 Starting offline data sync...');
+      
+      // Verifica connettività
+      final connectivity = Connectivity();
+      final results = await connectivity.checkConnectivity();
+      final isConnected = results.isNotEmpty && results.first != ConnectivityResult.none;
+      
+      if (!isConnected) {
+        print('[CONSOLE] [offline_service] ❌ No internet connection available');
+        return;
+      }
+
+      // Sincronizza serie in coda
+      final pendingSeries = await getPendingSeries();
+      if (pendingSeries.isNotEmpty) {
+        await _syncPendingSeries(pendingSeries);
+      }
+      
+      // 🌐 NUOVO: Sincronizza completamenti offline
+      await _syncOfflineCompletions();
+      
+      // Aggiorna timestamp sincronizzazione
+      await _updateLastSyncTime();
+      
+      print('[CONSOLE] [offline_service] ✅ Offline data sync completed');
+    } catch (e) {
+      print('[CONSOLE] [offline_service] ❌ Error during offline sync: $e');
+    }
+  }
+
+  // ============================================================================
+  // 🌐 GESTIONE COMPLETAMENTO OFFLINE
+  // ============================================================================
+
+  static const String _offlineCompletionsKey = 'offline_completions_queue';
+
+  /// Salva un allenamento per completamento offline
+  Future<void> saveOfflineWorkoutForCompletion(
+    int allenamentoId,
+    int durataTotale,
+    String? note,
+  ) async {
+    try {
+      await _ensurePrefsInitialized();
+      
+      final completionData = {
+        'allenamento_id': allenamentoId,
+        'durata_totale': durataTotale,
+        'note': note,
+        'timestamp': DateTime.now().toIso8601String(),
+        'retry_count': 0,
+      };
+
+      final pendingCompletions = await getOfflineCompletions();
+      pendingCompletions.add(completionData);
+      
+      await _saveOfflineCompletions(pendingCompletions);
+      
+      print('[CONSOLE] [offline_service] 💾 Workout queued for offline completion: $allenamentoId');
+    } catch (e) {
+      print('[CONSOLE] [offline_service] ❌ Error saving offline completion: $e');
+    }
+  }
+
+  /// Ottiene i completamenti offline in attesa
+  Future<List<Map<String, dynamic>>> getOfflineCompletions() async {
+    try {
+      await _ensurePrefsInitialized();
+      final completionsData = _prefs!.getString(_offlineCompletionsKey);
+      if (completionsData == null) return [];
+      
+      final List<dynamic> raw = jsonDecode(completionsData);
+      return raw.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('[CONSOLE] [offline_service] ❌ Error getting offline completions: $e');
+      return [];
+    }
+  }
+
+  /// Salva i completamenti offline
+  Future<void> _saveOfflineCompletions(List<Map<String, dynamic>> completions) async {
+    await _ensurePrefsInitialized();
+    await _prefs!.setString(_offlineCompletionsKey, jsonEncode(completions));
+  }
+
+  /// Sincronizza i completamenti offline
+  Future<void> _syncOfflineCompletions() async {
+    try {
+      final pendingCompletions = await getOfflineCompletions();
+      if (pendingCompletions.isEmpty) return;
+
+      print('[CONSOLE] [offline_service] 🔄 Syncing ${pendingCompletions.length} offline completions...');
+
+      final List<Map<String, dynamic>> failedCompletions = [];
+
+      for (final completionData in pendingCompletions) {
+        try {
+          final allenamentoId = completionData['allenamento_id'] as int;
+          final durataTotale = completionData['durata_totale'] as int;
+          final note = completionData['note'] as String?;
+          final retryCount = completionData['retry_count'] as int;
+
+          // Limita i tentativi a 3
+          if (retryCount >= 3) {
+            print('[CONSOLE] [offline_service] ⚠️ Max retries reached for completion: $allenamentoId');
+            continue;
+          }
+
+          // Tenta il completamento
+          final result = await _repository.completeWorkout(
+            allenamentoId,
+            durataTotale,
+            note: note,
+          );
+
+          result.fold(
+            onSuccess: (_) {
+              print('[CONSOLE] [offline_service] ✅ Workout completion synced: $allenamentoId');
+            },
+            onFailure: (exception, message) {
+              // Incrementa contatore tentativi
+              completionData['retry_count'] = retryCount + 1;
+              failedCompletions.add(completionData);
+              print('[CONSOLE] [offline_service] ❌ Workout completion sync failed: $allenamentoId - $message');
+            },
+          );
+        } catch (e) {
+          print('[CONSOLE] [offline_service] ❌ Error processing completion: $e');
+          failedCompletions.add(completionData);
+        }
+      }
+
+      // Salva i completamenti falliti per retry successivo
+      if (failedCompletions.isNotEmpty) {
+        await _saveOfflineCompletions(failedCompletions);
+        print('[CONSOLE] [offline_service] ⏳ ${failedCompletions.length} completions queued for retry');
+      } else {
+        // Rimuovi tutti i completamenti se sincronizzati con successo
+        await _saveOfflineCompletions([]);
+        print('[CONSOLE] [offline_service] ✅ All offline completions synced successfully');
+      }
+    } catch (e) {
+      print('[CONSOLE] [offline_service] ❌ Error syncing offline completions: $e');
+    }
   }
 }

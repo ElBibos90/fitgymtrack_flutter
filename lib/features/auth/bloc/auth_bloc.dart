@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../repository/auth_repository.dart';
 import '../models/login_response.dart';
+import '../../../core/services/global_connectivity_service.dart';
+import '../../../core/di/dependency_injection.dart';
+import '../../workouts/bloc/active_workout_bloc.dart';
 
 // ============================================================================
 // AUTH EVENTS
@@ -78,6 +82,32 @@ class AuthStatusChecked extends AuthEvent {
 
 class AuthStateReset extends AuthEvent {
   const AuthStateReset();
+}
+
+class PendingWorkoutDetected extends AuthEvent {
+  final Map<String, dynamic> pendingWorkout;
+  
+  const PendingWorkoutDetected({required this.pendingWorkout});
+  
+  @override
+  List<Object> get props => [pendingWorkout];
+}
+
+class RestorePendingWorkoutRequested extends AuthEvent {
+  final Map<String, dynamic> pendingWorkout;
+  
+  const RestorePendingWorkoutRequested({required this.pendingWorkout});
+  
+  @override
+  List<Object> get props => [pendingWorkout];
+}
+
+class DismissPendingWorkoutRequested extends AuthEvent {
+  const DismissPendingWorkoutRequested();
+}
+
+class WorkoutCompleted extends AuthEvent {
+  const WorkoutCompleted();
 }
 
 // ============================================================================
@@ -169,12 +199,33 @@ class AuthError extends AuthState {
   List<Object> get props => [message];
 }
 
+class PendingWorkoutPrompt extends AuthState {
+  final Map<String, dynamic> pendingWorkout;
+  final String message;
+
+  const PendingWorkoutPrompt({
+    required this.pendingWorkout,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [pendingWorkout, message];
+}
+
+
+
+
+
 // ============================================================================
 // AUTH BLOC
 // ============================================================================
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
+  
+  // 🔧 FIX: Flag per prevenire chiamate multiple per lo stesso allenamento pending
+  bool _isProcessingPendingWorkout = false;
+  int? _lastPendingWorkoutId;
 
   AuthBloc({required AuthRepository authRepository})
       : _authRepository = authRepository,
@@ -187,7 +238,139 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogoutRequested>(_onLogoutRequested);
     on<AuthStatusChecked>(_onStatusChecked);
     on<AuthStateReset>(_onStateReset);
+    on<PendingWorkoutDetected>(_onPendingWorkoutDetected);
+    on<RestorePendingWorkoutRequested>(_onRestorePendingWorkoutRequested);
+    on<DismissPendingWorkoutRequested>(_onDismissPendingWorkoutRequested);
+    on<WorkoutCompleted>(_onWorkoutCompleted);
+    on<CheckPendingWorkoutAuth>(_onCheckPendingWorkout);
   }
+
+  /// 🌐 NUOVO: Handler per quando viene rilevato un allenamento in sospeso
+  Future<void> _onPendingWorkoutDetected(
+    PendingWorkoutDetected event,
+    Emitter<AuthState> emit,
+  ) async {
+    final workoutId = event.pendingWorkout['allenamento_id'] as int;
+    
+    // 🔧 FIX: Prevenisci chiamate multiple per lo stesso allenamento
+    if (_isProcessingPendingWorkout && _lastPendingWorkoutId == workoutId) {
+      print('[CONSOLE] [auth_bloc] ⚠️ Already processing pending workout $workoutId, skipping duplicate call');
+      return;
+    }
+    
+    print('[CONSOLE] [auth_bloc] 📱 Emitting PendingWorkoutPrompt for workout: $workoutId');
+    
+    // 🔧 FIX: Reset del flag precedente e marca come in elaborazione
+    _isProcessingPendingWorkout = false;
+    _lastPendingWorkoutId = null;
+    
+    // 🔧 FIX: Marca come in elaborazione
+    _isProcessingPendingWorkout = true;
+    _lastPendingWorkoutId = workoutId;
+    
+    emit(PendingWorkoutPrompt(
+      pendingWorkout: event.pendingWorkout,
+      message: 'Hai un allenamento in sospeso. Vuoi riprenderlo?',
+    ));
+  }
+
+  /// 🌐 NUOVO: Handler per ripristinare l'allenamento in sospeso
+  Future<void> _onRestorePendingWorkoutRequested(
+    RestorePendingWorkoutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('[CONSOLE] [auth_bloc] 🔄 Restoring pending workout...');
+    
+    try {
+      final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
+      // 🔧 FIX: Usa RestorePendingWorkout invece di RestoreOfflineWorkout
+      // Questo evita conflitti con la logica degli allenamenti offline
+      activeWorkoutBloc.add(RestorePendingWorkout(event.pendingWorkout));
+      
+      // Non cambiare lo stato, lascia che l'AuthWrapper gestisca la navigazione
+      // Lo stato rimane quello corrente (autenticato)
+    } catch (e) {
+      print('[CONSOLE] [auth_bloc] ❌ Error restoring pending workout: $e');
+      emit(AuthError(message: 'Errore nel ripristino dell\'allenamento: $e'));
+    }
+  }
+
+  /// 🌐 NUOVO: Handler per ignorare l'allenamento in sospeso
+  Future<void> _onDismissPendingWorkoutRequested(
+    DismissPendingWorkoutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('[CONSOLE] [auth_bloc] ❌ Dismissing pending workout...');
+    
+    // 🔧 FIX: Reset del flag per permettere nuovi controlli
+    _isProcessingPendingWorkout = false;
+    _lastPendingWorkoutId = null;
+    
+    // 🔧 FIX: Emetti AuthInitial per tornare allo stato normale
+    // Questo rimuove PendingWorkoutPrompt e permette all'utente di continuare
+    emit(const AuthInitial());
+  }
+
+  /// 🌐 NUOVO: Handler per quando un allenamento viene completato
+  Future<void> _onWorkoutCompleted(
+    WorkoutCompleted event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('[CONSOLE] [auth_bloc] ✅ Workout completed, clearing PendingWorkoutPrompt state...');
+    
+    // 🔧 FIX: Reset del flag per permettere nuovi controlli
+    _isProcessingPendingWorkout = false;
+    _lastPendingWorkoutId = null;
+    
+    // 🔧 FIX: Emetti AuthInitial per tornare allo stato normale
+    // Questo rimuove PendingWorkoutPrompt e permette all'utente di continuare
+    emit(const AuthInitial());
+  }
+
+  /// 🌐 NUOVO: Handler per controllare allenamenti in sospeso
+  Future<void> _onCheckPendingWorkout(
+    CheckPendingWorkoutAuth event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('[CONSOLE] [auth_bloc] 🔍 Checking pending workout for user: ${event.userId}');
+    
+    try {
+      final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
+      
+      // Aggiungi listener temporaneo per gestire lo stato PendingWorkoutFound
+      StreamSubscription? subscription;
+      subscription = activeWorkoutBloc.stream.listen((state) {
+        if (state is PendingWorkoutFound) {
+          print('[CONSOLE] [auth_bloc] 📱 Pending workout found: ${state.pendingWorkout['allenamento_id']}');
+          // Emetti evento per mostrare il prompt all'utente
+          add(PendingWorkoutDetected(pendingWorkout: state.pendingWorkout));
+          // Cancella il listener dopo averlo usato
+          subscription?.cancel();
+        }
+      });
+      
+      // Controlla se ci sono allenamenti in sospeso
+      activeWorkoutBloc.add(CheckPendingWorkout(event.userId));
+      
+      print('[CONSOLE] [auth_bloc] ✅ Pending workout check initiated');
+    } catch (e) {
+      print('[CONSOLE] [auth_bloc] ❌ Error checking pending workouts: $e');
+    }
+  }
+
+  /// 🌐 Sincronizza i dati offline dopo un login riuscito
+  Future<void> _syncOfflineDataAfterLogin() async {
+    try {
+      print('[CONSOLE] [auth_bloc] 🌐 Syncing offline data after successful login...');
+      final globalConnectivity = getIt<GlobalConnectivityService>();
+      await globalConnectivity.forceSync();
+      print('[CONSOLE] [auth_bloc] ✅ Offline data sync completed after login');
+    } catch (e) {
+      print('[CONSOLE] [auth_bloc] ❌ Error syncing offline data after login: $e');
+    }
+  }
+
+
 
   Future<void> _onLoginRequested(
       AuthLoginRequested event,
@@ -200,6 +383,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     result.fold(
       onSuccess: (response) {
         if (response.token != null && response.user != null) {
+          // 🌐 Sincronizza dati offline dopo login riuscito
+          _syncOfflineDataAfterLogin();
+          
           emit(AuthLoginSuccess(
             user: response.user!,
             token: response.token!,
@@ -449,6 +635,24 @@ class RegisterBloc extends Bloc<AuthEvent, AuthState> {
   void resetState() {
     add(const AuthStateReset());
   }
+}
+
+/// 🌐 NUOVO: Estensione per AuthBloc con metodo checkPendingWorkout
+extension AuthBlocExtension on AuthBloc {
+  void checkPendingWorkout(int userId) {
+    print('[CONSOLE] [auth_bloc] 🔍 Public check for pending workouts for user: $userId');
+    add(CheckPendingWorkoutAuth(userId));
+  }
+}
+
+/// 🌐 NUOVO: Evento per controllare allenamenti in sospeso
+class CheckPendingWorkoutAuth extends AuthEvent {
+  final int userId;
+  
+  const CheckPendingWorkoutAuth(this.userId);
+  
+  @override
+  List<Object> get props => [userId];
 }
 
 class PasswordResetBloc extends Bloc<AuthEvent, AuthState> {

@@ -11,6 +11,7 @@ class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _wasOffline = false;
+  bool _isSyncing = false; // 🔧 FIX: Aggiunto flag per evitare sincronizzazioni multiple
 
   ConnectivityService({required ActiveWorkoutBloc workoutBloc})
       : _workoutBloc = workoutBloc {
@@ -48,6 +49,14 @@ class ConnectivityService {
   /// Sincronizza i dati offline
   Future<void> _syncOfflineData() async {
     try {
+      // 🔧 FIX: Evita sincronizzazioni multiple simultanee
+      if (_isSyncing) {
+        print('[CONSOLE] [connectivity_service] ⏳ Sync already in progress, skipping...');
+        return;
+      }
+
+      _isSyncing = true;
+
       // Verifica se ci sono dati da sincronizzare
       final stats = await _workoutBloc.getOfflineStats();
       final hasPendingData = stats['pending_series_count'] != null && 
@@ -61,6 +70,11 @@ class ConnectivityService {
       }
     } catch (e) {
       print('[CONSOLE] [connectivity_service] ❌ Error syncing offline data: $e');
+    } finally {
+      // 🔧 FIX: Reset flag dopo un delay per permettere retry se necessario
+      Future.delayed(const Duration(seconds: 5), () {
+        _isSyncing = false;
+      });
     }
   }
 

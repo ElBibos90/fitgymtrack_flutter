@@ -10,6 +10,8 @@ import '../models/workout_plan_models.dart';
 import '../models/workout_history_models.dart' as workout_models;
 import '../../stats/models/user_stats_models.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../../core/di/dependency_injection.dart';
+import '../../auth/bloc/auth_bloc.dart';
 
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutBloc'}) {
@@ -202,6 +204,25 @@ class SaveOfflineState extends ActiveWorkoutEvent {
   List<Object> get props => [];
 }
 
+/// 🌐 NUOVO: Evento per controllare allenamenti in sospeso
+class CheckPendingWorkout extends ActiveWorkoutEvent {
+  final int userId;
+  const CheckPendingWorkout(this.userId);
+
+  @override
+  List<Object> get props => [userId];
+}
+
+/// 🌐 NUOVO: Evento per ripristinare un allenamento in sospeso dal database
+class RestorePendingWorkout extends ActiveWorkoutEvent {
+  final Map<String, dynamic> pendingWorkout;
+  
+  const RestorePendingWorkout(this.pendingWorkout);
+  
+  @override
+  List<Object> get props => [pendingWorkout];
+}
+
 // ============================================================================
 // ACTIVE WORKOUT STATES (invariati)
 // ============================================================================
@@ -334,6 +355,22 @@ class WorkoutSessionCompleted extends ActiveWorkoutState {
   List<Object> get props => [response, totalDuration, message];
 }
 
+/// 🌐 NUOVO: Stato per completamento offline
+class WorkoutSessionCompletedOffline extends ActiveWorkoutState {
+  final int allenamentoId;
+  final Duration totalDuration;
+  final String message;
+
+  const WorkoutSessionCompletedOffline({
+    required this.allenamentoId,
+    required this.totalDuration,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [allenamentoId, totalDuration, message];
+}
+
 /// Stato con allenamento annullato
 class WorkoutSessionCancelled extends ActiveWorkoutState {
   final String message;
@@ -380,6 +417,20 @@ class OfflineRestoreInProgress extends ActiveWorkoutState {
 
   @override
   List<Object> get props => [message];
+}
+
+/// 🌐 NUOVO: Stato per allenamento in sospeso trovato
+class PendingWorkoutFound extends ActiveWorkoutState {
+  final Map<String, dynamic> pendingWorkout;
+  final String message;
+
+  const PendingWorkoutFound({
+    required this.pendingWorkout,
+    required this.message,
+  });
+
+  @override
+  List<Object> get props => [pendingWorkout, message];
 }
 
 // ============================================================================
@@ -520,6 +571,8 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     on<SyncOfflineData>(_onSyncOfflineData); // 🚀 NUOVO
     on<RestoreOfflineWorkout>(_onRestoreOfflineWorkout); // 🚀 NUOVO
     on<SaveOfflineState>(_onSaveOfflineState); // 🚀 NUOVO
+    on<CheckPendingWorkout>(_onCheckPendingWorkout); // 🌐 NUOVO
+    on<RestorePendingWorkout>(_onRestorePendingWorkout); // 🌐 NUOVO
 
     _log('✅ [INIT] ActiveWorkoutBloc event handlers registered');
   }
@@ -1264,7 +1317,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     }
   }
 
-  /// Handler per completare l'allenamento
+  /// Handler per completare l'allenamento - CON GESTIONE OFFLINE
   Future<void> _onCompleteWorkoutSession(
       CompleteWorkoutSession event,
       Emitter<ActiveWorkoutState> emit,
@@ -1273,30 +1326,119 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
 
     _log('🏁 [EVENT] Completing workout session: ${event.allenamentoId}');
 
-    final result = await _workoutRepository.completeWorkout(
-      event.allenamentoId,
-      event.durataTotale,
-      note: event.note,
-    );
+    try {
+      // 🌐 NUOVO: Verifica connessione prima del completamento
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
-    result.fold(
-      onSuccess: (response) {
-        _log('✅ [API] Successfully completed workout session');
-
-        emit(WorkoutSessionCompleted(
-          response: response,
+      if (!isOnline) {
+        _log('📡 [OFFLINE] No internet connection, completing workout offline');
+        
+        // Salva l'allenamento offline per completamento futuro
+        await _offlineService.saveOfflineWorkoutForCompletion(
+          event.allenamentoId,
+          event.durataTotale,
+          event.note,
+        );
+        
+        // Emetti stato di completamento offline
+        emit(WorkoutSessionCompletedOffline(
+          allenamentoId: event.allenamentoId,
           totalDuration: Duration(minutes: event.durataTotale),
-          message: response.message,
+          message: 'Allenamento completato offline. Verrà sincronizzato quando tornerai online.',
         ));
-      },
-      onFailure: (exception, message) {
-        _log('❌ [ERROR] Error completing workout session: $message');
-        emit(ActiveWorkoutError(
-          message: message ?? 'Errore nel completamento dell\'allenamento',
-          exception: exception,
-        ));
-      },
-    );
+        
+        _log('✅ [OFFLINE] Workout marked for offline completion');
+        return;
+      }
+
+      // Prova completamento online
+      final result = await _workoutRepository.completeWorkout(
+        event.allenamentoId,
+        event.durataTotale,
+        note: event.note,
+      );
+
+      result.fold(
+        onSuccess: (response) {
+          _log('✅ [API] Successfully completed workout session');
+
+          emit(WorkoutSessionCompleted(
+            response: response,
+            totalDuration: Duration(minutes: event.durataTotale),
+            message: response.message,
+          ));
+          
+          // 🔧 FIX: Notifica all'AuthBloc che l'allenamento è stato completato
+          // Questo rimuove lo stato PendingWorkoutPrompt e evita che il dialogo riappara
+          try {
+            final authBloc = getIt<AuthBloc>();
+            authBloc.add(const WorkoutCompleted());
+            _log('✅ [AUTH] Notified AuthBloc that workout is completed');
+          } catch (e) {
+            _log('❌ [AUTH] Error notifying AuthBloc: $e');
+          }
+        },
+        onFailure: (exception, message) {
+          _log('❌ [ERROR] Error completing workout session: $message');
+          
+          // 🌐 NUOVO: Se fallisce online, salva offline
+          if (message?.contains('Connessione internet non disponibile') == true) {
+            _log('📡 [OFFLINE] API failed, saving workout for offline completion');
+            
+            _offlineService.saveOfflineWorkoutForCompletion(
+              event.allenamentoId,
+              event.durataTotale,
+              event.note,
+            );
+            
+            emit(WorkoutSessionCompletedOffline(
+              allenamentoId: event.allenamentoId,
+              totalDuration: Duration(minutes: event.durataTotale),
+              message: 'Allenamento completato offline. Verrà sincronizzato quando tornerai online.',
+            ));
+            
+            // 🔧 FIX: Notifica all'AuthBloc che l'allenamento è stato completato offline
+            try {
+              final authBloc = getIt<AuthBloc>();
+              authBloc.add(const WorkoutCompleted());
+              _log('✅ [AUTH] Notified AuthBloc that offline workout is completed');
+            } catch (e) {
+              _log('❌ [AUTH] Error notifying AuthBloc: $e');
+            }
+          } else {
+            emit(ActiveWorkoutError(
+              message: message ?? 'Errore nel completamento dell\'allenamento',
+              exception: exception,
+            ));
+          }
+        },
+      );
+    } catch (e) {
+      _log('💥 [EXCEPTION] Exception in CompleteWorkoutSession: $e');
+      
+      // In caso di eccezione, salva offline
+      await _offlineService.saveOfflineWorkoutForCompletion(
+        event.allenamentoId,
+        event.durataTotale,
+        event.note,
+      );
+      
+      emit(WorkoutSessionCompletedOffline(
+        allenamentoId: event.allenamentoId,
+        totalDuration: Duration(minutes: event.durataTotale),
+        message: 'Allenamento completato offline. Verrà sincronizzato quando tornerai online.',
+      ));
+      
+      // 🔧 FIX: Notifica all'AuthBloc che l'allenamento è stato completato offline (exception case)
+      try {
+        final authBloc = getIt<AuthBloc>();
+        authBloc.add(const WorkoutCompleted());
+        _log('✅ [AUTH] Notified AuthBloc that offline workout is completed (exception case)');
+      } catch (e) {
+        _log('❌ [AUTH] Error notifying AuthBloc: $e');
+      }
+    }
   }
 
   /// Handler per annullare l'allenamento
@@ -1577,6 +1719,10 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final hasPending = await _offlineService.hasPendingData();
       if (!hasPending) {
         _log('✅ [OFFLINE] No pending data to sync');
+        // 🔧 FIX: Non emettere ActiveWorkoutInitial se siamo già in un allenamento attivo
+        if (state is! WorkoutSessionActive) {
+          emit(const ActiveWorkoutInitial());
+        }
         return;
       }
 
@@ -1589,14 +1735,27 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         pendingCount: pendingCount,
       ));
 
-      // Esegui sincronizzazione
-      final success = await _offlineService.syncPendingData();
+      // 🔧 FIX: Aggiungi timeout per evitare blocchi infiniti
+      final success = await _offlineService.syncPendingData().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          _log('⏰ [OFFLINE] Sync timeout after 30 seconds');
+          return false;
+        },
+      );
 
       if (success) {
         _log('✅ [OFFLINE] Sync completed successfully');
-        // Ritorna allo stato precedente se eravamo in un allenamento attivo
+        // 🔧 FIX CRITICO: Dopo la sincronizzazione, NON ripristinare automaticamente l'allenamento offline
+        // Questo evita conflitti con la logica degli allenamenti in sospeso
+        // L'allenamento offline rimane disponibile per il ripristino manuale o automatico
+        _log('✅ [OFFLINE] Sync completed - offline workout remains available for restore');
+        
+        // 🔧 FIX: Emetti ActiveWorkoutInitial solo se non siamo già in un allenamento attivo
         if (state is! WorkoutSessionActive) {
           emit(const ActiveWorkoutInitial());
+        } else {
+          _log('✅ [OFFLINE] Keeping current workout session active after sync');
         }
       } else {
         _log('❌ [OFFLINE] Sync failed');
@@ -1621,6 +1780,12 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     _log('📱 [EVENT] RestoreOfflineWorkout received');
 
     try {
+      // 🔧 FIX: Verifica se siamo già in un allenamento attivo
+      if (state is WorkoutSessionActive) {
+        _log('⚠️ [OFFLINE] Already in active workout session, skipping restore');
+        return;
+      }
+
       emit(const OfflineRestoreInProgress(message: 'Ripristino allenamento...'));
 
       final offlineData = await _offlineService.loadOfflineWorkout();
@@ -1630,14 +1795,16 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         return;
       }
 
-             // Ricostruisci lo stato dell'allenamento
-       final allenamentoId = offlineData['allenamento_id'] as int;
-       final schedaId = offlineData['scheda_id'] as int;
-       final startTime = DateTime.parse(offlineData['start_time']);
-       final elapsedTimeMinutes = offlineData['elapsed_time'] as int;
+      _log('📱 [OFFLINE] Found offline workout: ${offlineData['allenamento_id']}');
 
-              // Carica esercizi dalla scheda
-        final exercisesResult = await _workoutRepository.getWorkoutExercises(schedaId);
+                   // Ricostruisci lo stato dell'allenamento
+      final allenamentoId = offlineData['allenamento_id'] as int;
+      final schedaId = offlineData['scheda_id'] as int;
+      final startTime = DateTime.parse(offlineData['start_time']);
+      final elapsedTimeMinutes = offlineData['elapsed_time'] as int;
+
+      // Carica esercizi dalla scheda
+      final exercisesResult = await _workoutRepository.getWorkoutExercises(schedaId);
       List<WorkoutExercise> exercises = [];
       
       exercisesResult.fold(
@@ -1673,18 +1840,117 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         userId: 1, // TODO: Get actual userId from session or offline data
       );
 
-             // Emetti lo stato ripristinato
-       emit(WorkoutSessionActive(
-         activeWorkout: activeWorkout,
-         exercises: exercises,
-         completedSeries: completedSeries,
-         elapsedTime: Duration(minutes: elapsedTimeMinutes),
-         startTime: startTime,
-       ));
+                   // Emetti lo stato ripristinato
+      emit(WorkoutSessionActive(
+        activeWorkout: activeWorkout,
+        exercises: exercises,
+        completedSeries: completedSeries,
+        elapsedTime: Duration(minutes: elapsedTimeMinutes),
+        startTime: startTime,
+      ));
 
       _log('✅ [OFFLINE] Workout restored successfully');
     } catch (e) {
       _log('💥 [OFFLINE] Exception in restore: $e');
+      emit(ActiveWorkoutError(
+        message: 'Errore nel ripristino dell\'allenamento: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
+    }
+  }
+
+  /// 🌐 NUOVO: Handler per ripristinare un allenamento in sospeso dal database
+  Future<void> _onRestorePendingWorkout(
+    RestorePendingWorkout event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    print('[CONSOLE] [active_workout_bloc] 🌐 [EVENT] RestorePendingWorkout received for workout: ${event.pendingWorkout['allenamento_id']}');
+    _log('🌐 [EVENT] RestorePendingWorkout received for workout: ${event.pendingWorkout['allenamento_id']}');
+
+    try {
+      print('[CONSOLE] [active_workout_bloc] 🔄 Emitting OfflineRestoreInProgress...');
+      emit(const OfflineRestoreInProgress(message: 'Ripristino allenamento in sospeso dal database...'));
+
+      final pendingWorkout = event.pendingWorkout;
+      final allenamentoId = pendingWorkout['allenamento_id'] as int;
+      final schedaId = pendingWorkout['scheda_id'] as int;
+      final dataAllenamento = DateTime.parse(pendingWorkout['data_allenamento']);
+
+      print('[CONSOLE] [active_workout_bloc] 🌐 [PENDING] Restoring workout: $allenamentoId, scheda: $schedaId');
+      _log('🌐 [PENDING] Restoring workout: $allenamentoId, scheda: $schedaId');
+
+      // Carica esercizi dalla scheda
+      print('[CONSOLE] [active_workout_bloc] 📡 Loading exercises for scheda: $schedaId');
+      final exercisesResult = await _workoutRepository.getWorkoutExercises(schedaId);
+      List<WorkoutExercise> exercises = [];
+      
+      exercisesResult.fold(
+        onSuccess: (exercisesList) {
+          exercises = exercisesList;
+          print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${exercises.length} exercises');
+        },
+        onFailure: (exception, message) {
+          print('[CONSOLE] [active_workout_bloc] ❌ Error loading exercises: $message');
+          _log('❌ [PENDING] Error loading exercises: $message');
+          emit(ActiveWorkoutError(
+            message: 'Errore nel caricamento degli esercizi: $message',
+            exception: exception,
+          ));
+          return;
+        },
+      );
+
+      // Carica le serie completate dal database
+      print('[CONSOLE] [active_workout_bloc] 📡 Loading completed series for workout: $allenamentoId');
+      final completedSeriesResult = await _workoutRepository.getCompletedSeries(allenamentoId);
+      Map<int, List<CompletedSeriesData>> completedSeries = {};
+      
+      completedSeriesResult.fold(
+        onSuccess: (seriesList) {
+          // Converti la lista in una mappa raggruppata per scheda_esercizio_id
+          for (final series in seriesList) {
+            if (!completedSeries.containsKey(series.schedaEsercizioId)) {
+              completedSeries[series.schedaEsercizioId] = [];
+            }
+            completedSeries[series.schedaEsercizioId]!.add(series);
+          }
+          print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${seriesList.length} completed series');
+        },
+        onFailure: (exception, message) {
+          print('[CONSOLE] [active_workout_bloc] ⚠️ Error loading completed series: $message');
+          _log('⚠️ [PENDING] Error loading completed series: $message');
+          // Non bloccare il ripristino se non riesce a caricare le serie
+          completedSeries = {};
+        },
+      );
+
+      // Crea l'allenamento attivo
+      final activeWorkout = ActiveWorkout(
+        id: allenamentoId,
+        schedaId: schedaId,
+        dataAllenamento: dataAllenamento.toIso8601String(),
+        durataTotale: null,
+        userId: pendingWorkout['user_id'] as int,
+      );
+
+      // Calcola il tempo trascorso
+      final elapsedTime = DateTime.now().difference(dataAllenamento);
+
+      print('[CONSOLE] [active_workout_bloc] 🎯 Emitting WorkoutSessionActive...');
+      // Emetti lo stato ripristinato
+      emit(WorkoutSessionActive(
+        activeWorkout: activeWorkout,
+        exercises: exercises,
+        completedSeries: completedSeries,
+        elapsedTime: elapsedTime,
+        startTime: dataAllenamento,
+      ));
+
+      print('[CONSOLE] [active_workout_bloc] ✅ [PENDING] Workout restored successfully from database');
+      _log('✅ [PENDING] Workout restored successfully from database');
+    } catch (e) {
+      print('[CONSOLE] [active_workout_bloc] 💥 Exception in restore: $e');
+      _log('💥 [PENDING] Exception in restore: $e');
       emit(ActiveWorkoutError(
         message: 'Errore nel ripristino dell\'allenamento: $e',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -1709,6 +1975,46 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       }
     } catch (e) {
       _log('❌ [OFFLINE] Error saving offline state: $e');
+    }
+  }
+
+  /// 🌐 NUOVO: Handler per controllare allenamenti in sospeso
+  Future<void> _onCheckPendingWorkout(
+    CheckPendingWorkout event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    _log('🔍 [EVENT] CheckPendingWorkout received for user: ${event.userId}');
+
+    try {
+      final result = await _workoutRepository.checkPendingWorkout(event.userId);
+
+      result.fold(
+        onSuccess: (pendingWorkout) {
+          if (pendingWorkout != null) {
+            _log('✅ [PENDING] Found pending workout: ${pendingWorkout['allenamento_id']}');
+            emit(PendingWorkoutFound(
+              pendingWorkout: pendingWorkout,
+              message: 'Hai un allenamento in sospeso. Vuoi riprenderlo?',
+            ));
+          } else {
+            _log('ℹ️ [PENDING] No pending workouts found');
+            emit(const ActiveWorkoutInitial());
+          }
+        },
+        onFailure: (exception, message) {
+          _log('❌ [PENDING] Error checking pending workouts: $message');
+          emit(ActiveWorkoutError(
+            message: 'Errore nel controllo degli allenamenti in sospeso: $message',
+            exception: exception,
+          ));
+        },
+      );
+    } catch (e) {
+      _log('💥 [PENDING] Exception in check pending workout: $e');
+      emit(ActiveWorkoutError(
+        message: 'Errore nel controllo degli allenamenti in sospeso: $e',
+        exception: e is Exception ? e : Exception(e.toString()),
+      ));
     }
   }
 

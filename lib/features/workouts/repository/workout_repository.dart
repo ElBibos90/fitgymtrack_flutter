@@ -11,24 +11,50 @@ import '../models/series_request_models.dart';
 import '../models/workout_response_types.dart';
 import '../../stats/models/user_stats_models.dart';
 import 'package:dio/dio.dart'; // ✅ NUOVO: Per gestire DELETE manualmente
+import 'package:connectivity_plus/connectivity_plus.dart'; // 🌐 NUOVO: Per verifica connessione
+import '../services/workout_schede_cache_service.dart';
+import '../../../core/di/dependency_injection.dart';
 
 class WorkoutRepository {
   final ApiClient _apiClient;
   final Dio _dio; // ✅ NUOVO: Riferimento diretto a Dio
+  late final WorkoutSchedeCacheService _schedeCache; // 🌐 NUOVO: Cache servizio
 
   WorkoutRepository({required ApiClient apiClient, required Dio dio})
       : _apiClient = apiClient,
-        _dio = dio; // ✅ NUOVO: Inizializza Dio
+        _dio = dio { // ✅ NUOVO: Inizializza Dio
+    // 🌐 NUOVO: Inizializza cache servizio
+    _schedeCache = getIt<WorkoutSchedeCacheService>();
+  }
 
   // ============================================================================
   // METODI ESISTENTI (invariati)
   // ============================================================================
 
   Future<Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) async {
-    // ... metodo invariato ...
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting workout plans for user: $userId');
+      print('[CONSOLE] [workout_repository] Getting workout plans for user: $userId');
 
+      // 🌐 NUOVO: Verifica connessione prima di tentare l'API
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
+
+      if (!isOnline) {
+        print('[CONSOLE] [workout_repository] 📡 No internet connection, trying cache...');
+        
+        // Prova a caricare dal cache
+        final cachedSchede = await _schedeCache.getCachedSchede();
+        if (cachedSchede != null && cachedSchede.isNotEmpty) {
+          print('[CONSOLE] [workout_repository] ✅ Loaded ${cachedSchede.length} schede from cache (offline mode)');
+          // 🌐 NUOVO: In modalità offline, restituisci le schede senza esercizi per evitare errori
+          return cachedSchede;
+        } else {
+          print('[CONSOLE] [workout_repository] ❌ No cached schede available');
+          throw Exception('Connessione internet non disponibile e nessuna scheda in cache');
+        }
+      }
+
+      // Caricamento online normale
       final response = await _apiClient.getWorkouts(userId);
 
       if (response != null && response is Map<String, dynamic>) {
@@ -76,6 +102,14 @@ class WorkoutRepository {
             //print('[CONSOLE] [workout_repository]Plan "${plan.nome}": ${plan.esercizi.length} exercises');
           }
 
+          // 🌐 NUOVO: Salva nel cache per uso futuro offline
+          try {
+            await _schedeCache.cacheSchede(completeWorkoutPlans);
+            print('[CONSOLE] [workout_repository] 💾 Schede cached for offline use');
+          } catch (e) {
+            print('[CONSOLE] [workout_repository] ⚠️ Error caching schede: $e');
+          }
+
           return completeWorkoutPlans;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento delle schede');
@@ -88,7 +122,16 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      //print(' [workout_repository]Getting exercises for workout: $schedaId');
+      print('[CONSOLE] [workout_repository] Getting exercises for workout: $schedaId');
+
+      // 🌐 NUOVO: Verifica connessione prima di tentare l'API
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
+
+      if (!isOnline) {
+        print('[CONSOLE] [workout_repository] 📡 No internet connection for exercises, cannot load');
+        throw Exception('Connessione internet non disponibile per caricare gli esercizi');
+      }
 
       final response = await _apiClient.getWorkoutExercises(schedaId);
 
@@ -270,7 +313,16 @@ class WorkoutRepository {
 
   Future<Result<StartWorkoutResponse>> startWorkout(int userId, int schedaId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Starting workout for user: $userId, scheda: $schedaId');
+      print('[CONSOLE] [workout_repository] Starting workout for user: $userId, scheda: $schedaId');
+
+      // 🌐 NUOVO: Verifica connessione prima di avviare l'allenamento
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
+
+      if (!isOnline) {
+        print('[CONSOLE] [workout_repository] 📡 No internet connection, cannot start workout online');
+        throw Exception('Connessione internet non disponibile. Non è possibile avviare un nuovo allenamento offline.');
+      }
 
       final sessionId = 'session_${DateTime.now().millisecondsSinceEpoch}_${userId}_$schedaId';
 
@@ -341,6 +393,46 @@ class WorkoutRepository {
     });
   }
 
+  /// 🌐 NUOVO: Controlla se ci sono allenamenti in sospeso per l'utente
+  Future<Result<Map<String, dynamic>?>> checkPendingWorkout(int userId) async {
+    return await Result.tryCallAsync(() async {
+      print('[CONSOLE] [workout_repository] Checking for pending workouts for user: $userId');
+
+      // 🌐 NUOVO: Verifica connessione prima di controllare il database
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
+
+      if (!isOnline) {
+        print('[CONSOLE] [workout_repository] 📡 No internet connection, cannot check pending workouts');
+        return null; // Non possiamo controllare offline
+      }
+
+      final response = await _apiClient.checkPendingWorkout(userId);
+
+      if (response != null && response is Map<String, dynamic>) {
+        final success = response['success'] as bool? ?? false;
+
+        if (success) {
+          final hasPending = response['has_pending'] as bool? ?? false;
+          if (hasPending) {
+            final pendingData = response['pending_workout'] as Map<String, dynamic>?;
+            print('[CONSOLE] [workout_repository] ✅ Found pending workout: ${pendingData?['allenamento_id']}');
+            return pendingData;
+          } else {
+            print('[CONSOLE] [workout_repository] ℹ️ No pending workouts found');
+            return null;
+          }
+        } else {
+          print('[CONSOLE] [workout_repository] ❌ Error checking pending workouts: ${response['message']}');
+          return null;
+        }
+      } else {
+        print('[CONSOLE] [workout_repository] ❌ Invalid response format');
+        return null;
+      }
+    });
+  }
+
   Future<Result<CompleteWorkoutResponse>> completeWorkout(
       int allenamentoId,
       int durataTotale, {
@@ -348,6 +440,15 @@ class WorkoutRepository {
       }) async {
     return await Result.tryCallAsync(() async {
       //print('[CONSOLE] [workout_repository]Completing workout: $allenamentoId, duration: $durataTotale');
+
+      // 🌐 NUOVO: Verifica connessione prima del completamento
+      final connectivity = await Connectivity().checkConnectivity();
+      final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
+
+      if (!isOnline) {
+        print('[CONSOLE] [workout_repository] 📡 Offline mode: Cannot complete workout online');
+        throw Exception('Connessione internet non disponibile. L\'allenamento verrà completato quando tornerai online.');
+      }
 
       final request = CompleteWorkoutRequest(
         allenamentoId: allenamentoId,

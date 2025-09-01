@@ -325,6 +325,9 @@ abstract class ApiClient {
   @POST("/start_active_workout_standalone.php")
   Future<dynamic> startWorkout(@Body() Map<String, dynamic> request);
 
+  @GET("/check_pending_workout.php")
+  Future<dynamic> checkPendingWorkout(@Query("user_id") int userId);
+
   @POST("/complete_allenamento_standalone.php")
   Future<dynamic> completeWorkout(@Body() Map<String, dynamic> request);
 

@@ -8,12 +8,15 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/utils/api_request_debouncer.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
+import 'dart:async';
+import 'package:get_it/get_it.dart';
 import '../../../subscription/bloc/subscription_bloc.dart';
 import '../../../workouts/presentation/screens/workout_plans_screen.dart';
 import '../../../subscription/presentation/screens/subscription_screen.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
+import '../../../workouts/bloc/active_workout_bloc.dart';
 import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/stats_screen.dart';
 import '../../../../core/services/app_update_service.dart';
@@ -139,6 +142,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isInitialDataLoaded = true;
       print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
 
+      // 🌐 NUOVO: Controlla allenamenti in sospeso dopo che tutto è caricato
+      _checkPendingWorkout(userId);
+
       // 🔧 NUOVO: Controllo aggiornamenti dopo l'inizializzazione
       _checkForAppUpdates();
 
@@ -146,6 +152,90 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       print('[CONSOLE] [home_screen]❌ Initialization error: $e');
       // Non bloccare l'app per errori di inizializzazione
     }
+  }
+
+  /// 🌐 NUOVO: Controlla allenamenti in sospeso
+  void _checkPendingWorkout(int userId) {
+    try {
+      print('[CONSOLE] [home_screen]🔍 Checking for pending workouts for user: $userId');
+      
+      // Ottieni il Bloc di autenticazione
+      final authBloc = context.read<AuthBloc>();
+      
+      // Controlla se ci sono allenamenti in sospeso
+      authBloc.checkPendingWorkout(userId);
+      
+      print('[CONSOLE] [home_screen]✅ Pending workout check initiated');
+    } catch (e) {
+      print('[CONSOLE] [home_screen]❌ Error checking pending workouts: $e');
+    }
+  }
+
+  /// 🌐 NUOVO: Avvia l'allenamento in sospeso
+  void _startPendingWorkout(Map<String, dynamic> pendingWorkout) {
+    try {
+      print('[CONSOLE] [home_screen] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
+      
+      // Ottieni il Bloc degli allenamenti attivi
+      final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
+      print('[CONSOLE] [home_screen] 🔍 ActiveWorkoutBloc obtained: ${activeWorkoutBloc.hashCode}');
+      
+      // Aggiungi listener per aspettare che l'allenamento sia ripristinato
+      StreamSubscription? subscription;
+      subscription = activeWorkoutBloc.stream.listen((state) {
+        if (state is WorkoutSessionActive) {
+          print('[CONSOLE] [home_screen] ✅ Workout session active, navigating to active workout screen');
+          // Naviga alla schermata dell'allenamento attivo con il schedaId corretto
+          final schedaId = state.activeWorkout.schedaId;
+          context.go('/workouts/$schedaId/start');
+          // Cancella il listener
+          subscription?.cancel();
+        } else if (state is ActiveWorkoutError) {
+          print('[CONSOLE] [home_screen] ❌ Error restoring workout: ${state.message}');
+          // Cancella il listener
+          subscription?.cancel();
+        }
+      });
+      
+      // Avvia l'allenamento in sospeso dal database
+      print('[CONSOLE] [home_screen] 📤 Dispatching RestorePendingWorkout event...');
+      activeWorkoutBloc.add(RestorePendingWorkout(pendingWorkout));
+      
+      print('[CONSOLE] [home_screen] ✅ Pending workout started successfully');
+    } catch (e) {
+      print('[CONSOLE] [home_screen] ❌ Error starting pending workout: $e');
+    }
+  }
+
+  /// 🌐 NUOVO: Mostra dialog per allenamento in sospeso
+  void _showPendingWorkoutDialog(BuildContext context, PendingWorkoutPrompt state) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Allenamento in Sospeso'),
+          content: Text(state.message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<AuthBloc>().add(const DismissPendingWorkoutRequested());
+              },
+              child: const Text('Ignora'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Avvia direttamente l'allenamento in sospeso
+                _startPendingWorkout(state.pendingWorkout);
+              },
+              child: const Text('Riprendi'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// 🔧 NUOVO: Controllo aggiornamenti dell'app
@@ -327,6 +417,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if ((state is AuthAuthenticated || state is AuthLoginSuccess) && !_isInitialDataLoaded) {
           // Re-inizializza se auth cambia
           _initializeSequentially();
+        } else if (state is PendingWorkoutPrompt) {
+          print('[CONSOLE] [home_screen] 📱 Showing pending workout prompt for workout: ${state.pendingWorkout['allenamento_id']}');
+          _showPendingWorkoutDialog(context, state);
         }
       },
       child: Scaffold(

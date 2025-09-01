@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wakelock_plus/wakelock_plus.dart'; // 🔧 FIX 1: ALWAYS ON
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 // Core imports
@@ -203,7 +204,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _completeButtonController.dispose();
     _rotationIndicatorController.dispose(); // 🚀 NUOVO: Dispose del controller di rotazione
     _pageController.dispose();
-    _stopRecoveryTimer();
+    
+    // 🔧 FIX: Ferma timer di recupero solo se il widget è ancora montato
+    if (mounted) {
+      _stopRecoveryTimer();
+    }
     
     // 🚀 NUOVO: Dispose del servizio di connettività
     _connectivityService?.dispose();
@@ -255,8 +260,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       setState(() {
         _currentStatus = "Ripristinando allenamento...";
       });
-      // 🚀 NUOVO: Prova a ripristinare allenamento offline
-      _tryRestoreOfflineWorkout();
+      // 🚀 NUOVO: Prova a ripristinare allenamento offline SOLO se non siamo già in un allenamento
+      if (currentState is! OfflineRestoreInProgress && 
+          currentState is! OfflineSyncInProgress) {
+        _tryRestoreOfflineWorkout();
+      }
     }
   }
 
@@ -737,17 +745,33 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
 
       _activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
-      _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
+      
+      // 🆕 NUOVO: Controlla se c'è già un allenamento attivo
+      final currentState = _activeWorkoutBloc.state;
+      if (currentState is WorkoutSessionActive) {
+        print('[CONSOLE] [active_workout_screen] ✅ Found existing active workout, using it');
+        // Usa l'allenamento esistente invece di avviarne uno nuovo
+        setState(() {
+          _isInitialized = true;
+          _currentStatus = "Allenamento ripristinato";
+        });
+        _slideController.forward();
+      } else {
+        print('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
+        // Avvia un nuovo allenamento solo se non ce n'è già uno attivo
+        _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
+      }
 
       // 🔧 FIX 1: ALWAYS ON - Enable wakelock when workout starts
       await _enableWakeLock();
 
-      setState(() {
-        _isInitialized = true;
-        _currentStatus = "Allenamento avviato";
-      });
-
-      _slideController.forward();
+      if (currentState is! WorkoutSessionActive) {
+        setState(() {
+          _isInitialized = true;
+          _currentStatus = "Allenamento avviato";
+        });
+        _slideController.forward();
+      }
 
     } catch (e) {
       //print("🚀 [SINGLE EXERCISE + ALL FIXES] Error initializing: $e");
@@ -1043,11 +1067,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _stopRecoveryTimer() {
     //print("⏹️ [RECOVERY POPUP] Recovery timer stopped");
 
-    setState(() {
-      _isRecoveryTimerActive = false;
-      _recoverySeconds = 0;
-      _currentRecoveryExerciseName = null;
-    });
+    // 🔧 FIX: Controlla se il widget è ancora montato prima di chiamare setState
+    if (mounted) {
+      setState(() {
+        _isRecoveryTimerActive = false;
+        _recoverySeconds = 0;
+        _currentRecoveryExerciseName = null;
+      });
+    }
   }
 
   void _onRecoveryTimerComplete() {
@@ -1599,6 +1626,50 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Pulisce cache a fine allenamento
       _clearCache();
+
+      // 🆕 NUOVO: Naviga alla home dopo il completamento
+      CustomSnackbar.show(
+        context,
+        message: "✅ Allenamento completato con successo!",
+        isSuccess: true,
+        duration: const Duration(seconds: 2),
+      );
+
+      // Naviga alla dashboard dopo un breve delay usando GoRouter
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          context.go('/dashboard');
+        }
+      });
+    }
+
+    // 🌐 NUOVO: Gestione completamento offline
+    if (state is WorkoutSessionCompletedOffline) {
+      print("🌐 [OFFLINE] Workout completed offline");
+      _stopWorkoutTimer();
+      _stopRecoveryTimer();
+      _completeButtonController.stop();
+
+      // 🔧 FIX 1: ALWAYS ON - Disable wakelock on completion
+      _disableWakeLock();
+
+      // 🔧 PERFORMANCE FIX: Pulisce cache a fine allenamento
+      _clearCache();
+
+      // Mostra messaggio di completamento offline
+      CustomSnackbar.show(
+        context,
+        message: "✅ ${state.message}",
+        isSuccess: true,
+        duration: const Duration(seconds: 4),
+      );
+
+      // Naviga alla home dopo un breve delay
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
     }
 
     if (state is WorkoutSessionCancelled) {
@@ -1862,6 +1933,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return _buildLoadingContent();
     }
 
+    // 🔧 FIX: Gestione stati offline per evitare schermata bloccata in caricamento
+    if (state is OfflineSyncInProgress) {
+      return _buildOfflineSyncContent(state);
+    }
+
+    if (state is OfflineRestoreInProgress) {
+      return _buildOfflineRestoreContent(state);
+    }
+
     if (state is WorkoutSessionActive) {
       return _buildActiveContent(state);
     }
@@ -1891,6 +1971,65 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           SizedBox(height: 16.h),
           Text(
             'Caricamento allenamento...',
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: colorScheme.onBackground,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔧 FIX: Metodi per gestire stati offline e evitare schermata bloccata
+  Widget _buildOfflineSyncContent(OfflineSyncInProgress state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: colorScheme.primary,
+            strokeWidth: 3,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            state.message,
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: colorScheme.onBackground,
+            ),
+          ),
+          if (state.pendingCount > 0) ...[
+            SizedBox(height: 8.h),
+            Text(
+              'Serie in attesa: ${state.pendingCount}',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineRestoreContent(OfflineRestoreInProgress state) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: colorScheme.primary,
+            strokeWidth: 3,
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            state.message,
             style: TextStyle(
               fontSize: 16.sp,
               color: colorScheme.onBackground,

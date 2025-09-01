@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/session_service.dart';
 import '../services/audio_settings_service.dart';
 import '../services/background_timer_service.dart';
+import '../services/global_connectivity_service.dart';
+import '../../features/workouts/services/workout_schede_cache_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
 
@@ -50,6 +52,12 @@ class DependencyInjection {
 
     // 🚀 Background Timer Service
     getIt.registerLazySingleton<BackgroundTimerService>(() => BackgroundTimerService());
+
+    // 🌐 Global Connectivity Service
+    getIt.registerLazySingleton<GlobalConnectivityService>(() => GlobalConnectivityService());
+
+    // 📋 Workout Schede Cache Service
+    getIt.registerLazySingleton<WorkoutSchedeCacheService>(() => WorkoutSchedeCacheService());
 
     getIt.registerLazySingleton<Dio>(() => DioClient.getInstance(
       sessionService: getIt<SessionService>(),

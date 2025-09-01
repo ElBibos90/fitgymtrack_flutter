@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'core/di/dependency_injection.dart';
 import 'core/services/audio_settings_service.dart';
 import 'core/services/background_timer_service.dart';
+import 'core/services/global_connectivity_service.dart';
 import 'core/router/app_router.dart';
 import 'core/utils/api_request_debouncer.dart';
 import 'core/services/app_update_service.dart';
@@ -40,6 +41,9 @@ void main() async {
 
   // 🚀 Inizializza servizio background timer
   await getIt<BackgroundTimerService>().initialize();
+
+  // 🌐 Inizializza servizio connettività globale
+  getIt<GlobalConnectivityService>().initialize();
 
   // 🔍 DEBUG: Verifica configurazione Stripe all'avvio
   StripeConfig.printTestingInfo();
