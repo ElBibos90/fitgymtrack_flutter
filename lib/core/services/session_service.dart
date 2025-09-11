@@ -46,7 +46,22 @@ class SessionService {
       final apiClient = getIt<ApiClient>();
       final response = await apiClient.verifyToken('verify');
       
-      print('[CONSOLE] [session_service]✅ Token validation successful');
+      // 🔧 FIX: Controlla il contenuto della risposta
+      if (response is Map<String, dynamic>) {
+        if (response.containsKey('error')) {
+          print('[CONSOLE] [session_service]❌ Token validation failed: ${response['error']}');
+          await clearSession();
+          return false;
+        }
+        
+        // Se non c'è errore, il token è valido
+        print('[CONSOLE] [session_service]✅ Token validation successful');
+        await _saveLastValidationTime();
+        return true;
+      }
+      
+      // Se la risposta non è un Map, considera il token valido
+      print('[CONSOLE] [session_service]✅ Token validation successful (non-map response)');
       await _saveLastValidationTime();
       return true;
       

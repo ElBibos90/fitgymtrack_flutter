@@ -228,10 +228,8 @@ class DashboardPage extends StatelessWidget {
     if (authBloc.state is AuthAuthenticated) {
       final authState = authBloc.state as AuthAuthenticated;
 
-      // Ricarica subscription
-      context.read<SubscriptionBloc>().add(
-        const LoadSubscriptionEvent(checkExpired: true),
-      );
+      // 🔧 FIX: Rimosso caricamento ridondante subscription
+      // La subscription viene già caricata nella home screen
 
       // Ricarica workout history
       context.read<WorkoutHistoryBloc>().add(

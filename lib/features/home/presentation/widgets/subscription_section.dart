@@ -98,8 +98,21 @@ class SubscriptionSection extends StatelessWidget {
             color: isDarkMode ? AppColors.surfaceDark : Colors.white,
             borderRadius: BorderRadius.circular(12.r),
           ),
-          child: const Center(
-            child: CircularProgressIndicator(),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                SizedBox(height: 8.h),
+                Text(
+                  'Caricamento abbonamento...',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

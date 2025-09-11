@@ -1,6 +1,7 @@
 // lib/features/subscription/bloc/subscription_bloc.dart - VERSIONE OTTIMIZZATA
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:dio/dio.dart';
 
 import '../repository/subscription_repository.dart';
 import '../models/subscription_models.dart';
@@ -293,6 +294,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         },
         onFailure: (exception, message) {
           print('[CONSOLE] [subscription_bloc]❌ Error loading subscription: $message');
+          
+          // 🔧 FIX: Se l'errore è 401 (token scaduto), non mostrare errore subscription
+          // L'AuthInterceptor dovrebbe già aver gestito il logout
+          if (exception is DioException && exception.response?.statusCode == 401) {
+            print('[CONSOLE] [subscription_bloc]🔐 Token expired (401), subscription will be retried after re-auth');
+            // Non emettere errore, la subscription verrà ricaricata dopo il re-login
+            return;
+          }
+          
           emit(SubscriptionError(
             message: message ?? 'Errore nel caricamento dell\'abbonamento',
             exception: exception,

@@ -162,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     _animationController = AnimationController(
-      duration: const Duration(seconds: 1), // 🚀 REDUCED da 2s a 1s
+      duration: const Duration(milliseconds: 800), // 🚀 REDUCED da 1s a 800ms
       vsync: this,
     );
 
@@ -183,19 +183,13 @@ class _SplashScreenState extends State<SplashScreen>
   /// 🚀 PERFORMANCE: Preload solo dati critici durante splash
   void _preloadCriticalData() async {
     try {
-      // Solo se user è già autenticato, preload subscription
-      final authBloc = context.read<AuthBloc>();
-      if (authBloc.state is AuthAuthenticated) {
-        // Preload subscription in background (non blocca la UI)
-        Future.microtask(() {
-          context.read<SubscriptionBloc>().add(
-            const LoadSubscriptionEvent(checkExpired: false), // No check expired nello splash
-          );
-        });
-      }
-
+      // 🔧 FIX: Rimosso caricamento subscription dal splash
+      // La subscription verrà caricata nella home screen DOPO la validazione del token
+      print('[CONSOLE] [splash_screen]✅ Splash screen preload completed (no subscription loading)');
+      
       // 🔧 RIMOSSO: Controllo aggiornamenti spostato nella home screen
     } catch (e) {
+      print('[CONSOLE] [splash_screen]❌ Splash preload error: $e');
       // Non bloccare l'app per errori di preload
     }
   }

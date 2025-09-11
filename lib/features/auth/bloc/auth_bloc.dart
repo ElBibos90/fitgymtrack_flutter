@@ -507,21 +507,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
 
     try {
-      final isAuthenticated = await _authRepository.isAuthenticated();
+      print('[CONSOLE] [auth_bloc]🔍 Checking authentication status...');
+      
+      // 🔧 FIX: Prima controlla se c'è un token salvato
+      final hasToken = await _authRepository.sessionService.isAuthenticated();
+      if (!hasToken) {
+        print('[CONSOLE] [auth_bloc]❌ No token found, user not authenticated');
+        emit(const AuthUnauthenticated());
+        return;
+      }
 
-      if (isAuthenticated) {
+      // 🔧 FIX: Valida il token con il server (sempre, per sicurezza)
+      print('[CONSOLE] [auth_bloc]🌐 Validating token with server...');
+      final isValid = await _authRepository.sessionService.validateTokenWithServer();
+      
+      if (isValid) {
+        // Token valido, recupera i dati utente
         final user = await _authRepository.getCurrentUser();
         final token = await _authRepository.sessionService.getAuthToken();
 
         if (user != null && token != null) {
+          print('[CONSOLE] [auth_bloc]✅ Token valid, user authenticated: ${user.username}');
           emit(AuthAuthenticated(user: user, token: token));
         } else {
+          print('[CONSOLE] [auth_bloc]❌ User data missing, clearing session');
+          await _authRepository.sessionService.clearSession();
           emit(const AuthUnauthenticated());
         }
       } else {
+        // Token scaduto o invalido, pulisci la sessione
+        print('[CONSOLE] [auth_bloc]❌ Token invalid/expired, clearing session');
+        await _authRepository.sessionService.clearSession();
         emit(const AuthUnauthenticated());
       }
     } catch (e) {
+      print('[CONSOLE] [auth_bloc]❌ Authentication check failed: $e');
+      // In caso di errore, pulisci la sessione per sicurezza
+      try {
+        await _authRepository.sessionService.clearSession();
+      } catch (clearError) {
+        print('[CONSOLE] [auth_bloc]❌ Error clearing session: $clearError');
+      }
       emit(const AuthUnauthenticated());
     }
   }

@@ -279,16 +279,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 🚀 PERFORMANCE: Carica subscription con debouncing
+  /// 🚀 PERFORMANCE: Carica subscription con debouncing DOPO validazione token
   Future<void> _loadSubscriptionWithDebouncing() async {
     if (_isSubscriptionLoaded) return;
 
     try {
       print('[CONSOLE] [home_screen]💳 Loading subscription with debouncing...');
 
+      // 🔧 FIX: Verifica che l'utente sia autenticato prima di caricare subscription
+      final authState = context.read<AuthBloc>().state;
+      if (authState is! AuthAuthenticated && authState is! AuthLoginSuccess) {
+        print('[CONSOLE] [home_screen]❌ User not authenticated, skipping subscription load');
+        return;
+      }
+
       await ApiRequestDebouncer.debounceRequest<void>(
         key: 'subscription_check_expired',
         request: () async {
+          print('[CONSOLE] [home_screen]🌐 Loading subscription (token already validated)...');
           context.read<SubscriptionBloc>().add(
             const LoadSubscriptionEvent(checkExpired: true),
           );
