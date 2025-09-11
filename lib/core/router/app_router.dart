@@ -28,6 +28,7 @@ import '../../shared/widgets/faq_screen.dart';
 import '../../shared/widgets/auth_wrapper.dart';
 import '../../features/workouts/presentation/screens/workout_details_screen.dart';
 import '../../features/workouts/presentation/screens/workout_history_screen.dart';
+import '../../features/workouts/presentation/screens/workout_plan_details_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -270,6 +271,30 @@ class AppRouter {
                 workoutId: workoutId,
                 workoutName: 'Dettagli Allenamento',
                 workoutDate: DateTime.now(),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/workouts/plan/:planId',
+          name: 'workout-plan-details',
+          builder: (context, state) {
+            final planId = int.tryParse(state.pathParameters['planId'] ?? '');
+            final planName = state.uri.queryParameters['name'] ?? 'Dettagli Scheda';
+            
+            if (planId == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('ID scheda non valido'),
+                ),
+              );
+            }
+            return AuthWrapper(
+              authenticatedChild: WorkoutPlanDetailsScreen(
+                workoutPlanId: planId,
+                workoutPlanName: planName,
               ),
               unauthenticatedChild: const LoginScreen(),
             );

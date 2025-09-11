@@ -1,6 +1,7 @@
 // lib/features/workouts/models/workout_plan_models.dart
 // 🚀 FASE 3: Aggiornamento request classes per comunicazione REST-PAUSE con backend
 import 'package:json_annotation/json_annotation.dart';
+import '../../../core/config/app_config.dart';
 
 part 'workout_plan_models.g.dart';
 
@@ -171,6 +172,19 @@ class WorkoutExercise {
 
   // 🚀 FASE 1: Nuova proprietà calcolata per REST-PAUSE (backward compatible)
   bool get isRestPause => isRestPauseInt > 0;
+
+  /// URL completo per l'immagine GIF
+  String? get imageUrl {
+    if (immagineNome != null && immagineNome!.isNotEmpty) {
+      // Rimuovi eventuali slash finali da baseUrl per evitare doppi slash
+      String baseUrl = AppConfig.baseUrl;
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
+      }
+      return '$baseUrl/serve_image.php?filename=$immagineNome';
+    }
+    return null;
+  }
 
   /// Metodo di copia sicuro con conversioni Boolean -> Int
   /// 🚀 FASE 2: Aggiunto supporto REST-PAUSE con parametri opzionali

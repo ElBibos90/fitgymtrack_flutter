@@ -493,7 +493,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
   // ============================================================================
 
   void _showWorkoutDetails(workoutPlan) {
-    context.push('/workouts/${workoutPlan.id}');
+    context.push('/workouts/plan/${workoutPlan.id}?name=${Uri.encodeComponent(workoutPlan.nome)}');
   }
 
   void _startWorkout(workoutPlan) {
