@@ -268,3 +268,5 @@ import '../../core/di/dependency_injection.dart';
 - ✅ **Gestione Stati Avanzata** per evitare login page inappropriata
 - ✅ **Integrazione Perfetta** con ActiveWorkoutBloc
 - ✅ **UX Migliorata** senza schermate di login in background
+
+

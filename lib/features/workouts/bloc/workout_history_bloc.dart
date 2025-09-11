@@ -5,7 +5,6 @@ import 'package:equatable/equatable.dart';
 
 import '../repository/workout_repository.dart';
 import '../models/active_workout_models.dart';
-import '../models/series_request_models.dart';
 import '../../stats/models/user_stats_models.dart';
 
 // ============================================================================
@@ -293,20 +292,23 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento dettagli serie...'));
 
-    ////print('[CONSOLE] [workout_history_bloc]Loading series details for workout: ${event.allenamentoId}');
+    print('[DEBUG] [workout_history_bloc] Loading series details for workout: ${event.allenamentoId}');
+    print('[DEBUG] [workout_history_bloc] BLoC instance: ${this.hashCode}');
 
     final result = await _workoutRepository.getWorkoutSeriesDetail(event.allenamentoId);
 
     result.fold(
       onSuccess: (seriesDetails) {
-        ////print('[CONSOLE] [workout_history_bloc]Successfully loaded ${seriesDetails.length} series details');
+        print('[DEBUG] [workout_history_bloc] Successfully loaded ${seriesDetails.length} series details');
+        print('[DEBUG] [workout_history_bloc] About to emit WorkoutSeriesDetailLoaded');
         emit(WorkoutSeriesDetailLoaded(
           seriesDetails: seriesDetails,
           allenamentoId: event.allenamentoId,
         ));
+        print('[DEBUG] [workout_history_bloc] Emitted WorkoutSeriesDetailLoaded');
       },
       onFailure: (exception, message) {
-        ////print('[CONSOLE] [workout_history_bloc]Error loading series details: $message');
+        print('[DEBUG] [workout_history_bloc] Error loading series details: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento dei dettagli delle serie',
           exception: exception,

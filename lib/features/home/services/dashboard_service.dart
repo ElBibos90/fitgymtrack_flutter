@@ -24,6 +24,13 @@ class DashboardService {
         onTap: onNavigateToWorkouts ?? () => _navigateToWorkouts(context), // 🔧 FIX: Usa callback se disponibile
       ),
       QuickAction(
+        id: 'workout_history',
+        icon: Icons.history_rounded,
+        title: 'Storico\nAllenamenti',
+        color: const Color(0xFF4299E1), // Blu
+        onTap: () => _navigateToWorkoutHistory(context),
+      ),
+      QuickAction(
         id: 'calculate_1rm',
         icon: Icons.calculate_rounded,
         title: 'Calcola\n1RM',
@@ -36,13 +43,6 @@ class DashboardService {
         title: 'Achievement',
         color: const Color(0xFFED8936), // Arancione
         onTap: onNavigateToAchievements ?? () => _navigateToAchievements(context), // 🔧 FIX: Usa callback se disponibile
-      ),
-      QuickAction(
-        id: 'profile',
-        icon: Icons.person_rounded,
-        title: 'Profilo',
-        color: const Color(0xFF9F7AEA), // Viola
-        onTap: onNavigateToProfile ?? () => _navigateToProfile(context), // 🔧 FIX: Usa callback se disponibile
       ),
     ];
   }
@@ -96,6 +96,11 @@ class DashboardService {
     print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
     print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToProfile callback instead');
     context.push('/profile');
+  }
+
+  /// Navigazione allo storico allenamenti
+  static void _navigateToWorkoutHistory(BuildContext context) {
+    context.go('/workouts/history');
   }
 
   // ============================================================================

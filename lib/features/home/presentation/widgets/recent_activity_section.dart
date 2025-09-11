@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_shimmer_widgets.dart';
 import '../../../../shared/widgets/error_handling_widgets.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
-import '../../../stats/models/user_stats_models.dart';
 
 /// 🔧 FIX: Sezione attività recente con gestione migliorata degli errori
 class RecentActivitySection extends StatefulWidget {
@@ -40,13 +40,30 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
       children: [
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Text(
-            'Attività Recente',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Attività Recente',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => context.go('/workouts/history'),
+                child: Text(
+                  'Vedi tutto',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.indigo600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 12.h),
@@ -303,7 +320,6 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
   Widget _buildWorkoutCard(dynamic workout) {
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
-      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8.r),
@@ -311,38 +327,58 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
           color: Colors.grey.withValues(alpha: 0.2),
         ),
       ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.fitness_center,
-            color: AppColors.indigo600,
-            size: 20.sp,
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8.r),
+          onTap: () => _navigateToWorkoutDetails(workout),
+          child: Padding(
+            padding: EdgeInsets.all(12.w),
+            child: Row(
               children: [
-                Text(
-                  workout.schedaNome ?? 'Allenamento',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
+                Icon(
+                  Icons.fitness_center,
+                  color: AppColors.indigo600,
+                  size: 20.sp,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        workout.schedaNome ?? 'Allenamento',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        _formatDate(workout.dataAllenamento),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  _formatDate(workout.dataAllenamento),
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: Colors.grey[600],
-                  ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14.sp,
+                  color: Colors.grey[400],
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  /// Naviga ai dettagli dell'allenamento
+  void _navigateToWorkoutDetails(dynamic workout) {
+    context.go('/workouts/details/${workout.id}');
   }
 
   /// Formatta la data in formato user-friendly

@@ -27,6 +27,7 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../shared/widgets/faq_screen.dart';
 import '../../shared/widgets/auth_wrapper.dart';
 import '../../features/workouts/presentation/screens/workout_details_screen.dart';
+import '../../features/workouts/presentation/screens/workout_history_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -253,19 +254,23 @@ class AppRouter {
         ),
 
         GoRoute(
-          path: '/workouts/:id',
+          path: '/workouts/details/:workoutId',
           name: 'workout-details',
           builder: (context, state) {
-            final workoutId = int.tryParse(state.pathParameters['id'] ?? '');
+            final workoutId = int.tryParse(state.pathParameters['workoutId'] ?? '');
             if (workoutId == null) {
               return const Scaffold(
                 body: Center(
-                  child: Text('ID scheda non valido'),
+                  child: Text('ID allenamento non valido'),
                 ),
               );
             }
             return AuthWrapper(
-              authenticatedChild: WorkoutDetailsScreen(workoutId: workoutId),
+              authenticatedChild: WorkoutDetailsScreen(
+                workoutId: workoutId,
+                workoutName: 'Dettagli Allenamento',
+                workoutDate: DateTime.now(),
+              ),
               unauthenticatedChild: const LoginScreen(),
             );
           },
@@ -296,6 +301,22 @@ class AppRouter {
             );
           },
         ),
+
+        // ============================================================================
+        // WORKOUT HISTORY ROUTES
+        // ============================================================================
+
+        GoRoute(
+          path: '/workouts/history',
+          name: 'workout-history',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const WorkoutHistoryScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
 
         // ============================================================================
         // SUCCESS/ERROR PAGES

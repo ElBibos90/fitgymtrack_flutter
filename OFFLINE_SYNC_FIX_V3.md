@@ -189,3 +189,5 @@ Widget _buildMainContent(ActiveWorkoutState state) {
 3. **Scelta Utente** → Riprendi (usa `RestorePendingWorkout`) o Ignora
 4. **Nessun Conflitto** → Le due logiche funzionano indipendentemente
 5. **Stato Consistente** → L'app mantiene sempre lo stato corretto
+
+

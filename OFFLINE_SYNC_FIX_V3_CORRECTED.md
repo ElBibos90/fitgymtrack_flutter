@@ -228,3 +228,5 @@ Widget _buildMainContent(ActiveWorkoutState state) {
 - ✅ **Semplificato il flusso** per gli allenamenti in sospeso
 - ✅ **Mantenuta la separazione** tra allenamenti offline e allenamenti in sospeso
 - ✅ **Risolti tutti gli errori** di compilazione
+
+

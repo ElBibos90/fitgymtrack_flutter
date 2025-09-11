@@ -482,6 +482,7 @@ class WorkoutRepository {
 
         if (success) {
           final allenamenti = response['allenamenti'] as List<dynamic>? ?? [];
+          
           final workoutHistory = allenamenti
               .cast<Map<String, dynamic>>()
               .map((json) => WorkoutHistory.fromMap(json))
@@ -502,19 +503,38 @@ class WorkoutRepository {
     return await Result.tryCallAsync(() async {
       //print('[CONSOLE] [workout_repository]Getting series details for workout: $allenamentoId');
 
-      final response = await _apiClient.getWorkoutSeriesDetail(allenamentoId);
+      // Aggiungiamo un timeout personalizzato per evitare caricamenti infiniti
+      final response = await _apiClient.getWorkoutSeriesDetail(allenamentoId)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              throw Exception('Timeout: La richiesta ha impiegato troppo tempo');
+            },
+          );
+
+      print('[DEBUG] [workout_repository] Response: $response');
 
       if (response != null && response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
 
         if (success) {
           final serieList = response['serie'] as List<dynamic>? ?? [];
+          print('[DEBUG] [workout_repository] Serie list: $serieList');
+          
           final seriesDetails = serieList
               .cast<Map<String, dynamic>>()
-              .map((json) => CompletedSeriesData.fromJson(json))
+              .map((json) {
+                try {
+                  return CompletedSeriesData.fromJson(json);
+                } catch (e) {
+                  print('[DEBUG] [workout_repository] Error parsing series data: $e');
+                  print('[DEBUG] [workout_repository] JSON: $json');
+                  rethrow;
+                }
+              })
               .toList();
 
-          //print('[CONSOLE] [workout_repository]Successfully loaded ${seriesDetails.length} series details');
+          print('[DEBUG] [workout_repository] Successfully loaded ${seriesDetails.length} series details');
           return seriesDetails;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');

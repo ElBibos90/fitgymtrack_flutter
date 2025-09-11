@@ -155,3 +155,5 @@ if (currentState is! OfflineRestoreInProgress &&
 - **Priorità**: 🔴 ALTA (Risolve blocco schermata critico)
 - **Versione Precedente**: V1 (Risolto loop infinito)
 - **Versione Corrente**: V2 (Risolto blocco schermata)
+
+

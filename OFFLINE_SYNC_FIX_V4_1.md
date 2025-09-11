@@ -245,3 +245,5 @@ void dispose() {
 - ✅ **Gestione Stato Perfetta** del flag `_isDialogShown`
 - ✅ **Lifecycle Completo** con inizializzazione e pulizia
 - ✅ **Integrazione Perfetta** tra chiusura dialogo e navigazione
+
+
