@@ -20,6 +20,7 @@ import 'shared/theme/app_theme.dart';
 import 'shared/theme/app_colors.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
+import 'features/stats/bloc/stats_bloc.dart';
 import 'core/config/app_config.dart';
 import 'features/payments/services/stripe_service.dart';
 import 'core/config/stripe_config.dart';
@@ -94,6 +95,9 @@ class FitGymTrackApp extends StatelessWidget {
         
         // 👤 LAZY: ProfileBloc - Profilo utente
         BlocProvider<ProfileBloc>(create: (context) => getIt<ProfileBloc>()),
+        
+        // 📊 LAZY: StatsBloc - Statistiche utente
+        BlocProvider<StatsBloc>(create: (context) => getIt<StatsBloc>()),
       ],
       child: MaterialApp.router(
         title: 'FitGymTrack',

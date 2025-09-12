@@ -31,6 +31,10 @@ import '../../features/feedback/repository/feedback_repository.dart';
 import '../../features/profile/repository/profile_repository.dart';
 import '../../features/profile/bloc/profile_bloc.dart';
 
+// Stats feature
+import '../../features/stats/repository/stats_repository.dart';
+import '../../features/stats/bloc/stats_bloc.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -104,6 +108,11 @@ class DependencyInjection {
       apiClient: getIt<ApiClient>(),
     ));
 
+    // Stats Repository
+    getIt.registerLazySingleton<StatsRepository>(() => StatsRepository(
+      getIt<ApiClient>(),
+    ));
+
     // ============================================================================
     // WORKOUT BLOCS (SINGLETONS)
     // ============================================================================
@@ -144,6 +153,13 @@ class DependencyInjection {
       //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ProfileBloc instance...');
       return ProfileBloc(
         repository: getIt<ProfileRepository>(),
+      );
+    });
+
+    getIt.registerLazySingleton<StatsBloc>(() {
+      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating StatsBloc instance...');
+      return StatsBloc(
+        getIt<StatsRepository>(),
       );
     });
 

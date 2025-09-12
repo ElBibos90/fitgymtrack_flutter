@@ -188,12 +188,14 @@ class ProgressTrend {
   final int workouts;
   final int durationMinutes;
   final double weightKg;
+  final double value; // Per i grafici
 
   ProgressTrend({
     required this.date,
     required this.workouts,
     required this.durationMinutes,
     required this.weightKg,
+    required this.value,
   });
 
   factory ProgressTrend.fromJson(Map<String, dynamic> json) {
@@ -202,6 +204,7 @@ class ProgressTrend {
       workouts: _parseToInt(json['workout_count']),
       durationMinutes: _parseToInt(json['total_duration']),
       weightKg: _parseToDouble(json['total_volume']),
+      value: _parseToDouble(json['value']) ?? _parseToDouble(json['total_volume']) ?? 0.0,
     );
   }
 }
@@ -315,6 +318,7 @@ class PeriodStats {
   final int totalSeries;
   final double totalWeightKg;
   final double averageDuration;
+  final double? averageDurationMinutes;
   final String? mostActiveDay;
 
   // ✅ AGGIUNTE: Proprietà premium richieste dal widget
@@ -333,6 +337,7 @@ class PeriodStats {
     required this.totalSeries,
     required this.totalWeightKg,
     required this.averageDuration,
+    this.averageDurationMinutes,
     this.mostActiveDay,
     this.weeklyDistribution,
     this.muscleGroupsInPeriod,
@@ -371,6 +376,7 @@ class PeriodStats {
       totalSeries: _parseToInt(json['total_series']),
       totalWeightKg: _parseToDouble(json['total_weight_kg']),
       averageDuration: _parseToDouble(json['average_duration']),
+      averageDurationMinutes: _parseToDouble(json['average_duration_minutes']),
       mostActiveDay: json['most_active_day'],
       weeklyDistribution: json['weekly_distribution'] != null
           ? (json['weekly_distribution'] as List)

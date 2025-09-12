@@ -205,7 +205,16 @@ class _StatsScreenState extends State<StatsScreen> {
           if (isPremium)
             _buildPremiumStatsSection(context, userStats, periodStats)
           else
-            const PremiumUpgradeBanner(),
+            PremiumUpgradeBanner(
+              onUpgrade: () {
+                // TODO: Implementare navigazione a schermata upgrade
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Funzionalità di upgrade in arrivo!'),
+                  ),
+                );
+              },
+            ),
 
           SizedBox(height: 80.h), // Spazio extra per la bottom navigation
         ],

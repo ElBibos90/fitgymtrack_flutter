@@ -2,100 +2,141 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../shared/theme/app_colors.dart';
+import 'package:lottie/lottie.dart';
 
+import '../../../../shared/theme/stats_theme.dart';
+import 'premium_upgrade_flow.dart';
+
+/// 💎 Premium Upgrade Banner - Banner per Upgrade Premium
 class PremiumUpgradeBanner extends StatelessWidget {
-  const PremiumUpgradeBanner({super.key});
+  final VoidCallback onUpgrade;
+  final String? title;
+  final String? description;
+  final List<String>? features;
+
+  const PremiumUpgradeBanner({
+    super.key,
+    required this.onUpgrade,
+    this.title,
+    this.description,
+    this.features,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      padding: EdgeInsets.all(20.w),
+      width: double.infinity,
+      padding: EdgeInsets.all(StatsTheme.space5),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.indigo600.withValues(alpha: 0.1),
-            AppColors.green600.withValues(alpha: 0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.indigo600.withValues(alpha: 0.3)),
+        gradient: StatsTheme.premiumGradient,
+        borderRadius: BorderRadius.circular(StatsTheme.radius3),
+        boxShadow: [
+          BoxShadow(
+            color: StatsTheme.warningOrange.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.diamond,
-            color: AppColors.indigo600,
-            size: 48.sp,
-          ),
-          SizedBox(height: 12.h),
-
-          Text(
-            'Sblocca Statistiche Premium',
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          SizedBox(height: 8.h),
-
-          Text(
-            'Accedi a grafici avanzati, analisi dettagliate e confronti temporali',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Lista benefici
-          Column(
+          // Header con icona premium
+          Row(
             children: [
-              _buildBenefitRow('📊 Grafici interattivi e trend'),
-              _buildBenefitRow('🎯 Analisi per gruppo muscolare'),
-              _buildBenefitRow('📈 Confronti temporali dettagliati'),
-              _buildBenefitRow('🏆 Top esercizi per volume'),
-              _buildBenefitRow('📅 Distribuzione settimanale'),
+              Container(
+                padding: EdgeInsets.all(StatsTheme.space2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(StatsTheme.radius2),
+                ),
+                child: Icon(
+                  Icons.diamond,
+                  color: Colors.white,
+                  size: 24.sp,
+                ),
+              ),
+              SizedBox(width: StatsTheme.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title ?? 'Sblocca Statistiche Premium',
+                      style: StatsTheme.h4.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      description ?? 'Accedi ad analisi avanzate e insights personalizzati',
+                      style: StatsTheme.body2.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-
-          SizedBox(height: 20.h),
-
+          
+          SizedBox(height: StatsTheme.space4),
+          
+          // Features list
+          if (features != null) ...[
+            ...features!.map((feature) => Padding(
+              padding: EdgeInsets.only(bottom: StatsTheme.space2),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 16.sp,
+                  ),
+                  SizedBox(width: StatsTheme.space2),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: StatsTheme.body2.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            SizedBox(height: StatsTheme.space4),
+          ],
+          
+          // Upgrade button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                // TODO: Navigate to subscription screen
-                // Navigator.pushNamed(context, '/subscription');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Navigazione alla pagina abbonamenti'),
-                  ),
-                );
-              },
+              onPressed: () => PremiumUpgradeFlow.navigateToUpgrade(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.indigo600,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16.h),
+                backgroundColor: Colors.white,
+                foregroundColor: StatsTheme.warningOrange,
+                elevation: 0,
+                padding: EdgeInsets.symmetric(vertical: StatsTheme.space3),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(StatsTheme.radius2),
                 ),
               ),
-              child: Text(
-                'Diventa Premium',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star,
+                    size: 20.sp,
+                  ),
+                  SizedBox(width: StatsTheme.space2),
+                  Text(
+                    'Upgrade a Premium',
+                    style: StatsTheme.button.copyWith(
+                      color: StatsTheme.warningOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -103,22 +144,156 @@ class PremiumUpgradeBanner extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildBenefitRow(String text) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
+/// 🎯 Compact Premium Banner - Versione Compatta
+class CompactPremiumBanner extends StatelessWidget {
+  final VoidCallback onUpgrade;
+  final String? message;
+
+  const CompactPremiumBanner({
+    super.key,
+    required this.onUpgrade,
+    this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(StatsTheme.space4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            StatsTheme.primaryBlue.withValues(alpha: 0.1),
+            StatsTheme.warningOrange.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(StatsTheme.radius3),
+        border: Border.all(
+          color: StatsTheme.warningOrange.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
-          SizedBox(width: 8.w),
+          Icon(
+            Icons.lock,
+            color: StatsTheme.warningOrange,
+            size: 20.sp,
+          ),
+          SizedBox(width: StatsTheme.space3),
           Expanded(
             child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: AppColors.textSecondary,
+              message ?? 'Sblocca questa funzionalità con Premium',
+              style: StatsTheme.body2.copyWith(
+                color: StatsTheme.getTextPrimary(context),
               ),
             ),
           ),
+          TextButton(
+            onPressed: onUpgrade,
+            child: Text(
+              'Upgrade',
+              style: StatsTheme.button.copyWith(
+                color: StatsTheme.warningOrange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 🎨 Premium Feature Card - Card per Funzionalità Premium
+class PremiumFeatureCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final String icon;
+  final VoidCallback onUpgrade;
+  final bool isLocked;
+
+  const PremiumFeatureCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.onUpgrade,
+    this.isLocked = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(StatsTheme.space4),
+      decoration: BoxDecoration(
+        color: StatsTheme.getCardBackground(context),
+        borderRadius: BorderRadius.circular(StatsTheme.radius3),
+        border: Border.all(
+          color: StatsTheme.getBorderColor(context),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                icon,
+                style: TextStyle(fontSize: 24.sp),
+              ),
+              SizedBox(width: StatsTheme.space3),
+              Expanded(
+                child: Text(
+                  title,
+                  style: StatsTheme.h5.copyWith(
+                    color: StatsTheme.getTextPrimary(context),
+                  ),
+                ),
+              ),
+              if (isLocked)
+                Icon(
+                  Icons.lock,
+                  color: StatsTheme.warningOrange,
+                  size: 16.sp,
+                ),
+            ],
+          ),
+          SizedBox(height: StatsTheme.space2),
+          Text(
+            description,
+            style: StatsTheme.body2.copyWith(
+              color: StatsTheme.getTextSecondary(context),
+            ),
+          ),
+          if (isLocked) ...[
+            SizedBox(height: StatsTheme.space3),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => PremiumUpgradeFlow.navigateToUpgrade(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: StatsTheme.warningOrange,
+                  side: BorderSide(color: StatsTheme.warningOrange),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(StatsTheme.radius2),
+                  ),
+                ),
+                child: Text(
+                  'Sblocca con Premium',
+                  style: StatsTheme.caption.copyWith(
+                    color: StatsTheme.warningOrange,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

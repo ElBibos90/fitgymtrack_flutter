@@ -18,7 +18,7 @@ import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../../workouts/bloc/active_workout_bloc.dart';
 import '../widgets/dashboard_page.dart';
-import '../../../stats/presentation/screens/stats_screen.dart';
+import '../../../stats/presentation/screens/freemium_stats_dashboard.dart';
 import '../../../../core/services/app_update_service.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onNavigateToProfile: _handleProfileNavigation,
     ),
         () => WorkoutPlansScreen(controller: _workoutController),
-        () => const StatsScreen(),
+        () => const FreemiumStatsDashboard(),
         () => const SubscriptionScreen(),
   ];
 

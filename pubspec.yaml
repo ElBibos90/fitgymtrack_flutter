@@ -2,7 +2,7 @@ name: fitgymtrack
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
-version: 1.0.39+39
+version: 1.0.40+40
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -46,12 +46,19 @@ dependencies:
   # Date & Time
   intl: ^0.20.2
 
+  # Charts & Visualizations
+  fl_chart: ^0.65.0
+
+  # Animations
+  lottie: ^2.7.0
+  flutter_staggered_animations: ^1.1.1
+
+  # Data processing
+  collection: ^1.17.0
+
   # Device & Platform
   device_info_plus: ^10.1.0
   package_info_plus: ^8.0.0
-
-  # Charts (per stats)
-  fl_chart: ^0.68.0
 
   # Dependency Injection
   get_it: ^7.7.0
@@ -103,6 +110,7 @@ flutter:
     - assets/audio/
     - assets/icon/        # ðŸ†• Per le icone personalizzate
     - assets/splash/      # ðŸ†• Per lo splash screen
+
 
 
 
