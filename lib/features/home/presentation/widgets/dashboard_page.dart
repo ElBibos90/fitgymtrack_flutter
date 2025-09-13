@@ -73,6 +73,9 @@ class DashboardPage extends StatelessWidget {
                 child: Container(
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   child: QuickActionsGrid(
+                    showSecondaryActions: true, // ✅ Mostra anche i template
+                    crossAxisCount: 3, // ✅ 3 colonne invece di 2
+                    childAspectRatio: 0.9, // ✅ Più compatto per 3 colonne
                     onNavigateToWorkouts: onNavigateToWorkouts,
                     onNavigateToAchievements: onNavigateToAchievements,
                     onNavigateToProfile: onNavigateToProfile,

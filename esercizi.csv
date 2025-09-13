@@ -1,0 +1,119 @@
+id,nome,descrizione,immagine_url,immagine_nome,gruppo_muscolare,attrezzatura,is_isometric,equipment_type_id,status,created_by_user_id
+136,"Plank (sec)","Esercizio isometrico fondamentale per il core. Mantieni la posizione di plank con il corpo dritto.",NULL,plank_core.gif,Core,NULL,1,NULL,approved,NULL
+137,"Side Plank (sec)","Esercizio isometrico per gli obliqui. Mantieni la posizione di plank laterale con il corpo dritto.",NULL,side_plank_core.gif,Core,NULL,1,NULL,approved,NULL
+138,"Dead Bug","Esercizio per il core. Sdraiati, estendi alternativamente braccia e gambe opposte mantenendo la schiena piatta.",NULL,dead_bug_core.gif,Core,NULL,0,NULL,approved,NULL
+139,"Bird Dog","Esercizio per il core. In quadrupedia, estendi braccio e gamba opposti mantenendo l'equilibrio.",NULL,bird_dog.gif,Core,NULL,0,NULL,approved,NULL
+140,"Pallof Press","Esercizio anti-rotazione per il core. Ai cavi, spingi il manubrio in avanti resistendo alla rotazione.",NULL,pallof_press.gif,Core,NULL,0,NULL,approved,NULL
+141,Woodchopper,"Esercizio per il core. Ai cavi, ruota il busto portando il cavo da un lato all'altro.",NULL,woodchopper.gif,Core,NULL,0,NULL,approved,NULL
+142,"Russian Twist","Esercizio per gli obliqui. Seduto, ruota il busto da un lato all'altro mantenendo le gambe sollevate.",NULL,russian_twist_core.gif,Core,NULL,0,NULL,approved,NULL
+143,"Cable Rotation","Esercizio per il core. Ai cavi, ruota il busto contro la resistenza del cavo.",NULL,cable_rotation.gif,Core,NULL,0,NULL,approved,NULL
+144,"Ab Wheel Rollout","Esercizio avanzato per il core. In ginocchio, rotola la ruota in avanti e poi torna alla posizione iniziale.",NULL,ab_wheel_core.gif,Core,NULL,0,NULL,approved,NULL
+145,"Hollow Hold (sec)","Esercizio isometrico per il core. Sdraiati, solleva gambe e spalle dal pavimento mantenendo la posizione.",NULL,hollow_hold.gif,Core,NULL,1,NULL,approved,NULL
+146,"Panca Piana con Bilanciere","Esercizio fondamentale per il petto. Sdraiati su una panca piana, afferra il bilanciere con presa leggermente più larga delle spalle e abbassalo verso il petto, poi spingi verso l'alto.",NULL,panca_piana_bilanciere.gif,Petto,NULL,0,NULL,approved,NULL
+147,"Panca Inclinata con Bilanciere","Variante della panca piana con panca inclinata a 30-45 gradi per concentrare il lavoro sulla parte superiore del petto.",NULL,panca_inclinata_bilanciere.gif,Petto,NULL,0,NULL,approved,NULL
+148,"Panca Declinata con Bilanciere","Variante della panca piana con panca declinata per concentrare il lavoro sulla parte inferiore del petto.",NULL,panca_declinata_bilanciere.gif,Petto,NULL,0,NULL,approved,NULL
+149,"Croci con Manubri","Esercizio di isolamento per il petto. Sdraiati su panca, tieni i manubri sopra il petto e abbassali lateralmente in un movimento ad arco.",NULL,croci_manubri.gif,Petto,NULL,0,NULL,approved,NULL
+150,"Dip alle Parallele","Esercizio a corpo libero per petto e tricipiti. Sollevati sulle parallele e abbassa il corpo piegando i gomiti, poi risali.",NULL,dip_parallele.gif,Petto,NULL,0,NULL,approved,NULL
+151,Push-up,"Esercizio a corpo libero fondamentale. In posizione plank, abbassa il corpo piegando i gomiti e poi risali.",NULL,push_up.gif,Petto,NULL,0,NULL,approved,NULL
+152,"Panca Piana con Manubri","Variante della panca piana usando manubri invece del bilanciere per maggiore libertà di movimento.",NULL,panca_piana_manubri.gif,Petto,NULL,0,NULL,approved,NULL
+153,"Croci ai Cavi","Esercizio di isolamento usando i cavi. In piedi, tira i cavi verso il centro del petto in un movimento ad arco.",NULL,croci_cavi.gif,Petto,NULL,0,NULL,approved,NULL
+154,"Chest Press Machine","Esercizio su macchina per il petto. Siediti e spingi le leve in avanti, poi controlla il ritorno.",NULL,chest_press_machine.gif,Petto,NULL,0,NULL,approved,NULL
+155,"Pec Deck","Macchina per croci che isola il lavoro del petto. Siediti e porta le braccia verso il centro.",NULL,pec_deck.gif,Petto,NULL,0,NULL,approved,NULL
+156,"Stacco da Terra","Esercizio fondamentale per schiena e gambe. In piedi, afferra il bilanciere e sollevalo mantenendo la schiena dritta.",NULL,stacco_terra.gif,Schiena,NULL,0,NULL,approved,NULL
+157,"Rematore con Bilanciere","Esercizio per la schiena. Piegato in avanti, tira il bilanciere verso l'addome mantenendo i gomiti vicini al corpo.",NULL,rematore_bilanciere.gif,Schiena,NULL,0,NULL,approved,NULL
+158,"Trazioni alla Sbarra","Esercizio a corpo libero per la schiena. Appeso alla sbarra, tira il corpo verso l'alto fino a toccare la sbarra con il petto.",NULL,trazioni_sbarra.gif,Schiena,NULL,0,NULL,approved,NULL
+159,"Lat Machine","Esercizio su macchina per la schiena. Siediti e tira la barra verso il petto, mantenendo i gomiti vicini al corpo.",NULL,lat_machine.gif,Schiena,NULL,0,NULL,approved,NULL
+160,"Rematore con Manubri","Variante del rematore usando un manubrio. Appoggia una mano su una panca e tira il manubrio verso l'anca.",NULL,rematore_manubri.gif,Schiena,NULL,0,NULL,approved,NULL
+161,"Pulley Basso","Esercizio ai cavi per la schiena. Siediti e tira la barra verso l'addome, mantenendo la schiena dritta.",NULL,pulley_basso.gif,Schiena,NULL,0,NULL,approved,NULL
+162,"Pullover con Manubrio","Esercizio per la schiena. Sdraiati su panca, tieni il manubrio sopra il petto e abbassalo dietro la testa.",NULL,pullover_manubrio.gif,Schiena,NULL,0,NULL,approved,NULL
+163,"Rematore T-Bar","Esercizio su macchina T-Bar. Piegato in avanti, tira la barra verso il petto.",NULL,rematore_tbar.gif,Schiena,NULL,0,NULL,approved,NULL
+164,"Face Pull","Esercizio per i trapezi e deltoidi posteriori. Ai cavi, tira la corda verso il viso separando le braccia.",NULL,face_pull.gif,Schiena,NULL,0,NULL,approved,NULL
+165,"Good Morning","Esercizio per la schiena bassa. Con bilanciere sulle spalle, piega il busto in avanti mantenendo la schiena dritta.",NULL,good_morning.gif,Schiena,NULL,0,NULL,approved,NULL
+166,"Military Press","Esercizio fondamentale per le spalle. In piedi, solleva il bilanciere sopra la testa partendo dalle spalle.",NULL,military_press.gif,Spalle,NULL,0,NULL,approved,NULL
+167,"Alzate Laterali con Manubri","Esercizio di isolamento per i deltoidi laterali. In piedi, solleva i manubri lateralmente fino all'altezza delle spalle.",NULL,alzate_laterali_manubri.gif,Spalle,NULL,0,NULL,approved,NULL
+168,"Alzate Frontali con Bilanciere","Esercizio per i deltoidi anteriori. In piedi, solleva il bilanciere davanti al corpo fino all'altezza delle spalle.",NULL,alzate_frontali_bilanciere.gif,Spalle,NULL,0,NULL,approved,NULL
+169,"Arnold Press","Variante della military press con rotazione. Partendo con i manubri davanti al petto, ruota e solleva sopra la testa.",NULL,arnold_press.gif,Spalle,NULL,0,NULL,approved,NULL
+170,"Alzate Posteriori","Esercizio per i deltoidi posteriori. Piegato in avanti, solleva i manubri lateralmente e all'indietro.",NULL,alzate_posteriori.gif,Spalle,NULL,0,NULL,approved,NULL
+171,"Upright Row","Esercizio per trapezi e deltoidi. In piedi, tira il bilanciere verso l'alto mantenendolo vicino al corpo.",NULL,upright_row.gif,Spalle,NULL,0,NULL,approved,NULL
+172,"Shrug con Bilanciere","Esercizio per i trapezi. In piedi, solleva le spalle verso le orecchie mantenendo le braccia dritte.",NULL,shrug_bilanciere.gif,Spalle,NULL,0,NULL,approved,NULL
+173,"Lateral Raise Machine","Esercizio su macchina per le alzate laterali. Siediti e solleva le leve lateralmente.",NULL,lateral_raise_machine.gif,Spalle,NULL,0,NULL,approved,NULL
+174,"Front Raise ai Cavi","Esercizio ai cavi per le alzate frontali. In piedi, tira il cavo verso l'alto davanti al corpo.",NULL,front_raise_cavi.gif,Spalle,NULL,0,NULL,approved,NULL
+175,"Rear Delt Fly","Esercizio per i deltoidi posteriori. Su panca inclinata, solleva i manubri lateralmente e all'indietro.",NULL,rear_delt_fly.gif,Spalle,NULL,0,NULL,approved,NULL
+176,"Curl con Bilanciere","Esercizio fondamentale per i bicipiti. In piedi, solleva il bilanciere verso le spalle piegando solo i gomiti.",NULL,curl_bilanciere.gif,Bicipiti,NULL,0,NULL,approved,NULL
+177,"Curl con Manubri","Variante del curl usando manubri. In piedi, solleva i manubri verso le spalle alternando le braccia.",NULL,curl_manubri.gif,Bicipiti,NULL,0,NULL,approved,NULL
+178,"Curl Martello","Variante del curl con presa neutra. Tieni i manubri con i palmi rivolti l'uno verso l'altro durante il movimento.",NULL,curl_martello.gif,Bicipiti,NULL,0,NULL,approved,NULL
+179,"Curl Concentrato","Esercizio di isolamento. Siediti, appoggia il gomito sulla coscia e solleva il manubrio verso la spalla.",NULL,curl_concentrato.gif,Bicipiti,NULL,0,NULL,approved,NULL
+180,"Curl su Panca Scott","Esercizio su panca Scott per isolare i bicipiti. Siediti e appoggia le braccia sulla panca durante il curl.",NULL,curl_panca_scott.gif,Bicipiti,NULL,0,NULL,approved,NULL
+181,"Curl ai Cavi","Esercizio ai cavi per i bicipiti. In piedi, tira la barra verso le spalle usando i cavi.",NULL,curl_cavi.gif,Bicipiti,NULL,0,NULL,approved,NULL
+182,"Curl Inverso","Variante del curl con presa prona. Tieni il bilanciere con i palmi rivolti verso il basso.",NULL,curl_inverso.gif,Bicipiti,NULL,0,NULL,approved,NULL
+183,"Curl con Corda","Esercizio ai cavi usando la corda. In piedi, tira la corda verso le spalle separando le estremità.",NULL,curl_corda.gif,Bicipiti,NULL,0,NULL,approved,NULL
+184,"Preacher Curl","Esercizio su panca preacher. Siediti e appoggia le braccia sulla panca inclinata durante il curl.",NULL,preacher_curl.gif,Bicipiti,NULL,0,NULL,approved,NULL
+185,"Curl Zottman","Esercizio avanzato. Solleva il manubrio con presa supina, poi abbassalo con presa prona.",NULL,curl_zottman.gif,Bicipiti,NULL,0,NULL,approved,NULL
+186,"French Press","Esercizio fondamentale per i tricipiti. Sdraiati, tieni il bilanciere sopra la testa e abbassalo dietro la testa.",NULL,french_press.gif,Tricipiti,NULL,0,NULL,approved,NULL
+187,"Pushdown ai Cavi","Esercizio ai cavi per i tricipiti. In piedi, spingi la barra verso il basso mantenendo i gomiti fermi.",NULL,pushdown_cavi.gif,Tricipiti,NULL,0,NULL,approved,NULL
+188,"Dip alle Parallele","Esercizio a corpo libero per tricipiti e petto. Sollevati sulle parallele e abbassa il corpo piegando i gomiti.",NULL,dip_parallele_tricipiti.gif,Tricipiti,NULL,0,NULL,approved,NULL
+189,"Kick-back con Manubrio","Esercizio di isolamento. Piegato in avanti, estendi il braccio all'indietro mantenendo il gomito fermo.",NULL,kickback_manubrio.gif,Tricipiti,NULL,0,NULL,approved,NULL
+190,"Overhead Extension","Esercizio per i tricipiti. In piedi, tieni il manubrio sopra la testa e abbassalo dietro la testa.",NULL,overhead_extension.gif,Tricipiti,NULL,0,NULL,approved,NULL
+191,"Skull Crusher","Variante della french press. Sdraiati, abbassa il bilanciere verso la fronte piegando solo i gomiti.",NULL,skull_crusher.gif,Tricipiti,NULL,0,NULL,approved,NULL
+192,"Diamond Push-up","Variante del push-up. Metti le mani a forma di diamante sotto il petto per concentrare il lavoro sui tricipiti.",NULL,diamond_pushup.gif,Tricipiti,NULL,0,NULL,approved,NULL
+193,"Tricep Extension Machine","Esercizio su macchina per i tricipiti. Siediti e spingi le leve verso il basso.",NULL,tricep_extension_machine.gif,Tricipiti,NULL,0,NULL,approved,NULL
+194,"Rope Pushdown","Esercizio ai cavi con corda. In piedi, spingi la corda verso il basso separando le estremità.",NULL,rope_pushdown.gif,Tricipiti,NULL,0,NULL,approved,NULL
+195,"Close Grip Bench Press","Variante della panca piana con presa stretta. Usa una presa più stretta per concentrare il lavoro sui tricipiti.",NULL,close_grip_bench.gif,Tricipiti,NULL,0,NULL,approved,NULL
+196,"Squat con Bilanciere","Esercizio fondamentale per le gambe. Con bilanciere sulle spalle, abbassa il corpo come per sederti, poi risali.",NULL,squat_bilanciere.gif,Gambe,NULL,0,NULL,approved,NULL
+197,"Leg Press","Esercizio su macchina per le gambe. Siediti e spingi la piattaforma con le gambe, poi controlla il ritorno.",NULL,leg_press.gif,Gambe,NULL,0,NULL,approved,NULL
+198,"Leg Extension","Esercizio di isolamento per i quadricipiti. Siediti e estendi le gambe contro la resistenza della macchina.",NULL,leg_extension.gif,Gambe,NULL,0,NULL,approved,NULL
+199,"Leg Curl","Esercizio di isolamento per i femorali. Sdraiati e piega le gambe contro la resistenza della macchina.",NULL,leg_curl.gif,Gambe,NULL,0,NULL,approved,NULL
+200,"Affondi con Manubri","Esercizio per le gambe. In piedi, fai un passo avanti e abbassa il corpo piegando entrambe le gambe.",NULL,affondi_manubri.gif,Gambe,NULL,0,NULL,approved,NULL
+201,"Calf Raise in Piedi","Esercizio per i polpacci. In piedi, solleva i talloni dal pavimento contraendo i polpacci.",NULL,calf_raise_piedi.gif,Gambe,NULL,0,NULL,approved,NULL
+202,"Hack Squat","Esercizio su macchina per le gambe. Siediti sulla macchina e spingi la piattaforma con le gambe.",NULL,hack_squat.gif,Gambe,NULL,0,NULL,approved,NULL
+203,"Bulgarian Split Squat","Esercizio avanzato per le gambe. Con un piede su una panca dietro, abbassa il corpo piegando la gamba anteriore.",NULL,bulgarian_split_squat.gif,Gambe,NULL,0,NULL,approved,NULL
+204,"Romanian Deadlift","Esercizio per i femorali. Con bilanciere in mano, piega il busto in avanti mantenendo le gambe quasi dritte.",NULL,romanian_deadlift.gif,Gambe,NULL,0,NULL,approved,NULL
+205,"Calf Raise Seduto","Esercizio per i polpacci. Seduto, appoggia i pesi sulle ginocchia e solleva i talloni.",NULL,calf_raise_seduto.gif,Gambe,NULL,0,NULL,approved,NULL
+206,Crunch,"Esercizio fondamentale per gli addominali. Sdraiati, solleva le spalle dal pavimento contraendo gli addominali.",NULL,crunch.gif,Addominali,NULL,0,NULL,approved,NULL
+207,"Plank (sec)","Esercizio isometrico per il core. Mantieni la posizione di plank con il corpo dritto e gli addominali contratti.",NULL,plank.gif,Addominali,NULL,1,NULL,approved,NULL
+208,"Leg Raise","Esercizio per gli addominali bassi. Sdraiati, solleva le gambe verso l'alto mantenendole dritte.",NULL,leg_raise.gif,Addominali,NULL,0,NULL,approved,NULL
+209,"Russian Twist","Esercizio per gli obliqui. Seduto, ruota il busto da un lato all'altro mantenendo le gambe sollevate.",NULL,russian_twist.gif,Addominali,NULL,0,NULL,approved,NULL
+210,"Mountain Climber","Esercizio dinamico per il core. In posizione plank, porta alternativamente le ginocchia verso il petto.",NULL,mountain_climber.gif,Addominali,NULL,1,NULL,approved,NULL
+211,"Side Plank (sec)","Esercizio isometrico per gli obliqui. Mantieni la posizione di plank laterale con il corpo dritto.",NULL,side_plank.gif,Addominali,NULL,1,NULL,approved,NULL
+212,"Bicycle Crunch","Esercizio per gli addominali. Sdraiati, simula il movimento della bicicletta con gambe e braccia.",NULL,bicycle_crunch.gif,Addominali,NULL,0,NULL,approved,NULL
+213,"Ab Wheel Rollout","Esercizio avanzato per il core. In ginocchio, rotola la ruota in avanti e poi torna alla posizione iniziale.",NULL,ab_wheel_rollout.gif,Addominali,NULL,0,NULL,approved,NULL
+214,"Hanging Leg Raise","Esercizio avanzato per gli addominali. Appeso alla sbarra, solleva le gambe verso l'alto.",NULL,hanging_leg_raise.gif,Addominali,NULL,0,NULL,approved,NULL
+215,"Dead Bug","Esercizio per il core. Sdraiati, estendi alternativamente braccia e gambe opposte mantenendo la schiena piatta.",NULL,dead_bug.gif,Addominali,NULL,0,NULL,approved,NULL
+216,"Wrist Curl","Esercizio per gli avambracci. Seduto, appoggia gli avambracci sulle cosce e solleva il bilanciere piegando i polsi.",NULL,wrist_curl.gif,Avambracci,NULL,0,NULL,approved,NULL
+217,"Reverse Wrist Curl","Esercizio per gli avambracci. Seduto, appoggia gli avambracci sulle cosce e solleva il bilanciere con presa prona.",NULL,reverse_wrist_curl.gif,Avambracci,NULL,0,NULL,approved,NULL
+218,"Farmer's Walk","Esercizio funzionale per gli avambracci. Cammina tenendo manubri pesanti ai lati del corpo.",NULL,farmers_walk.gif,Avambracci,NULL,0,NULL,approved,NULL
+219,"Plate Pinch (sec)","Esercizio per la presa. Tieni due dischi insieme con le dita e mantieni la presa.",NULL,plate_pinch.gif,Avambracci,NULL,1,NULL,approved,NULL
+220,"Towel Hang (sec)","Esercizio per la presa. Appeso alla sbarra avvolta in un asciugamano, mantieni la presa.",NULL,towel_hang.gif,Avambracci,NULL,1,NULL,approved,NULL
+221,Corsa,"Attività cardio fondamentale. Corri a ritmo costante per migliorare la resistenza cardiovascolare.",NULL,corsa.gif,Cardio,NULL,0,NULL,approved,NULL
+222,Cyclette,"Attività cardio a basso impatto. Pedala su una cyclette per migliorare la resistenza.",NULL,cyclette.gif,Cardio,NULL,0,NULL,approved,NULL
+223,Ellittica,"Attività cardio completa. Usa l'ellittica per un allenamento cardio a basso impatto.",NULL,ellittica.gif,Cardio,NULL,0,NULL,approved,NULL
+224,"Jumping Jack","Esercizio cardio dinamico. Salta aprendo e chiudendo gambe e braccia simultaneamente.",NULL,jumping_jack.gif,Cardio,NULL,0,NULL,approved,NULL
+225,Burpee,"Esercizio cardio completo. Combina squat, push-up e salto in un unico movimento fluido.",NULL,burpee.gif,Cardio,NULL,0,NULL,approved,NULL
+226,"Mountain Climber","Esercizio cardio dinamico. In posizione plank, porta alternativamente le ginocchia verso il petto.",NULL,mountain_climber_cardio.gif,Cardio,NULL,1,NULL,approved,NULL
+227,"High Knees","Esercizio cardio. Corri sul posto sollevando le ginocchia verso il petto.",NULL,high_knees.gif,Cardio,NULL,0,NULL,approved,NULL
+228,"Butt Kicks","Esercizio cardio. Corri sul posto toccando i glutei con i talloni.",NULL,butt_kicks.gif,Cardio,NULL,0,NULL,approved,NULL
+229,"Jump Rope","Attività cardio con corda. Salta la corda per un allenamento cardio efficace.",NULL,jump_rope.gif,Cardio,NULL,0,NULL,approved,NULL
+230,"Rowing Machine","Attività cardio completa. Usa il vogatore per un allenamento cardio e di forza.",NULL,rowing_machine.gif,Cardio,NULL,0,NULL,approved,NULL
+241,"Croci Panca Inclinata",,,croci_panca_incl_man.gif,Petto,"Manubri, Panca",0,NULL,approved,19
+242,"Australian pull up Orizzontale (Anelli)",,,australian_orizz.gif,Schiena,"Sbarra, Anelli",0,NULL,approved,19
+243,"Australian Pull up Verticali (Bilanciere/Sbarra)",,,australian_vert.gif,Schiena,"Sbarra/ Bilanciere",0,NULL,approved,19
+244,"Panca stretta (Tricipiti)",,,bilancere_presa_stretta.gif,Tricipiti,"Panca, Bilanciere",0,NULL,approved,19
+245,"Stacchi Rumeni",,,stacchi_rumeni.gif,Gambe,Bilanciere,0,NULL,approved,19
+246,"Panca Inclinata con Manubri",,,incline_bench_press.gif,Petto,Manubri,0,NULL,approved,17
+247,"Plank in movimento",,,plank.gif,Core,"corpo libero",1,NULL,approved,17
+248,"Push-up Wide",,,push-up-wide.gif,Petto,"Corpo libero",0,NULL,approved,17
+249,"Pike Push-up",,,pike-push-up.gif,Petto,"Corpo libero",0,NULL,approved,17
+250,"Squat Corpo libero",,,sumo-squat.gif,Gambe,"Corpo libero",0,NULL,approved,17
+251,"Jump Squat",,,squat-jump.gif,Gambe,"Corpo libero",0,NULL,approved,17
+252,"Wall sit (sec)",,NULL,NULL,Glutei,"Corpo libero",1,NULL,approved,17
+253,"Push-up (sec)",NULL,,push_up.gif,Glutei,"Corpo libero",1,NULL,approved,17
+254,"Pike Push-up (sec)",NULL,,pike-push-up.gif,Glutei,"Corpo libero",1,NULL,approved,17
+255,"Diamond Push-up (sec)",NULL,,diamond_pushup.gif,Glutei,"Corpo libero",1,NULL,approved,17
+256,"Squat Corpo libero (sec)",NULL,,sumo-squat.gif,Gambe,"Corpo libero",1,NULL,approved,17
+257,"Jump Squat (sec)",NULL,,squat-jump.gif,Gambe,"Corpo libero",1,NULL,approved,17
+258,"Lunges (sec)",NULL,,affondi_manubri.gif,Gambe,"Corpo libero",1,NULL,approved,17
+259,"Push-Down Laterale con cavo (Violino)",,,push-down-lateral-cable.gif,Tricipiti,Cavo,0,NULL,approved,19
+260,"Step up ",,,step-up.gif,Glutei,"step, manubri",0,NULL,approved,20
+261,"Hip Thrust",,,hip-thrusts.gif,Glutei,,0,NULL,approved,20
+262,"Standing Side Leg Raise",,,standing-side-leg-raise.gif,Gambe,"Corpo libero, elastici",0,NULL,approved,20
+263,"Arch Hold","Hollow body al contrario",NULL,NULL,Schiena,,1,NULL,pending_review,19

@@ -29,6 +29,8 @@ import '../../shared/widgets/auth_wrapper.dart';
 import '../../features/workouts/presentation/screens/workout_details_screen.dart';
 import '../../features/workouts/presentation/screens/workout_history_screen.dart';
 import '../../features/workouts/presentation/screens/workout_plan_details_screen.dart';
+import '../../features/templates/presentation/screens/templates_screen.dart';
+import '../../features/templates/presentation/screens/template_details_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -150,6 +152,41 @@ class AppRouter {
           builder: (context, state) {
             return AuthWrapper(
               authenticatedChild: const FAQScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // TEMPLATE ROUTES
+        // ============================================================================
+
+        GoRoute(
+          path: '/templates',
+          name: 'templates',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const TemplatesScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/template-details/:templateId',
+          name: 'template-details',
+          builder: (context, state) {
+            final templateId = int.tryParse(state.pathParameters['templateId'] ?? '');
+            if (templateId == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('ID template non valido'),
+                ),
+              );
+            }
+
+            return AuthWrapper(
+              authenticatedChild: TemplateDetailsScreen(templateId: templateId),
               unauthenticatedChild: const LoginScreen(),
             );
           },

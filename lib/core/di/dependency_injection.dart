@@ -35,6 +35,10 @@ import '../../features/profile/bloc/profile_bloc.dart';
 import '../../features/stats/repository/stats_repository.dart';
 import '../../features/stats/bloc/stats_bloc.dart';
 
+// Template features
+import '../../features/templates/services/template_service.dart';
+import '../../features/templates/bloc/template_bloc.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -212,6 +216,26 @@ class DependencyInjection {
       //print('[CONSOLE] [dependency_injection]✅ [DI] Stripe services registered successfully!');
     } catch (e) {
       //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Stripe services: $e');
+      rethrow;
+    }
+
+    // ============================================================================
+    // 📋 TEMPLATE SERVICES
+    // ============================================================================
+
+    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering Template services...');
+    try {
+      // Template Service
+      getIt.registerLazySingleton<TemplateService>(() => TemplateService());
+      
+      // Template Bloc
+      getIt.registerFactory<TemplateBloc>(() => TemplateBloc(
+        templateService: getIt<TemplateService>(),
+      ));
+      
+      //print('[CONSOLE] [dependency_injection]✅ [DI] Template services registered successfully!');
+    } catch (e) {
+      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Template services: $e');
       rethrow;
     }
 

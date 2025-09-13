@@ -205,8 +205,14 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
         title: 'Mie Schede',
         actions: [
           IconButton(
+            icon: const Icon(Icons.fitness_center_rounded),
+            onPressed: () => context.push('/templates'),
+            tooltip: 'Template Schede',
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => context.push('/workouts/create'),
+            tooltip: 'Crea Scheda',
           ),
         ],
       ),
@@ -432,18 +438,38 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppConfig.spacingXL.h),
-          ElevatedButton.icon(
-            onPressed: () => context.push('/workouts/create'),
-            icon: const Icon(Icons.add),
-            label: const Text('Crea Scheda'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.indigo600,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: AppConfig.spacingL.w,
-                vertical: AppConfig.spacingM.h,
+          // Pulsanti per creare schede
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => context.push('/workouts/create'),
+                icon: const Icon(Icons.add),
+                label: const Text('Crea Scheda'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.indigo600,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppConfig.spacingL.w,
+                    vertical: AppConfig.spacingM.h,
+                  ),
+                ),
               ),
-            ),
+              SizedBox(width: AppConfig.spacingM.w),
+              ElevatedButton.icon(
+                onPressed: () => context.push('/templates'),
+                icon: const Icon(Icons.fitness_center_rounded),
+                label: const Text('Template Schede'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.purple600,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppConfig.spacingL.w,
+                    vertical: AppConfig.spacingM.h,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

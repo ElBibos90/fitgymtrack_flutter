@@ -51,6 +51,14 @@ class DashboardService {
   static List<QuickAction> getSecondaryActions(BuildContext context) {
     return [
       QuickAction(
+        id: 'templates',
+        icon: Icons.fitness_center_rounded,
+        title: 'Template\nSchede',
+        color: const Color(0xFF667EEA), // Viola
+        onTap: () => _navigateToTemplates(context),
+        isEnabled: true, // ✅ NUOVO: Template schede disponibili
+      ),
+      QuickAction(
         id: 'body_measurements',
         icon: Icons.straighten_rounded,
         title: 'Misure\nCorporee',
@@ -96,6 +104,11 @@ class DashboardService {
     print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
     print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToProfile callback instead');
     context.push('/profile');
+  }
+
+  /// ✅ NUOVO: Naviga alla schermata Template
+  static void _navigateToTemplates(BuildContext context) {
+    context.push('/templates');
   }
 
   /// Navigazione allo storico allenamenti

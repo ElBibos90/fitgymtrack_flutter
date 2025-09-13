@@ -110,7 +110,7 @@ class QuickActionCard extends StatelessWidget {
       onTap: action.isEnabled ? action.onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.all(12.w), // ✅ Ridotto da 16.w a 12.w
         decoration: BoxDecoration(
           color: _getBackgroundColor(),
           borderRadius: BorderRadius.circular(16.r),
@@ -130,18 +130,18 @@ class QuickActionCard extends StatelessWidget {
           children: [
             // Icona con background colorato
             Container(
-              width: 44.w,
-              height: 44.w,
+              width: 36.w, // ✅ Ridotto da 44.w a 36.w
+              height: 36.w, // ✅ Ridotto da 44.w a 36.w
               decoration: BoxDecoration(
                 color: action.color.withValues(alpha: action.isEnabled ? 0.1 : 0.05),
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(10.r), // ✅ Ridotto da 12.r a 10.r
               ),
               child: Icon(
                 action.icon,
                 color: action.isEnabled
                     ? action.color
                     : action.color.withValues(alpha: 0.4),
-                size: 24.sp,
+                size: 20.sp, // ✅ Ridotto da 24.sp a 20.sp
               ),
             ),
 
