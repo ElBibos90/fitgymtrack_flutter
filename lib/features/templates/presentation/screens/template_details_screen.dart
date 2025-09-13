@@ -44,6 +44,9 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
             isSuccess: true,
           );
           
+          // Ricarica i dettagli del template per aggiornare il conteggio utilizzi
+          context.read<TemplateBloc>().add(LoadTemplateDetails(widget.templateId));
+          
           // Naviga alla dashboard e cambia tab
           _navigateToWorkoutsTab();
         },

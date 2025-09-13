@@ -314,6 +314,15 @@ try {
             $logStmt->bind_param('ii', $userId, $templateId);
             $logStmt->execute();
             
+            // Incrementa manualmente il conteggio utilizzi del template
+            $updateUsageStmt = $conn->prepare("
+                UPDATE workout_templates 
+                SET usage_count = usage_count + 1 
+                WHERE id = ?
+            ");
+            $updateUsageStmt->bind_param('i', $templateId);
+            $updateUsageStmt->execute();
+            
             // Commit transazione
             $conn->commit();
             
