@@ -52,3 +52,4 @@ DELIMITER ;
 -- Nel file create_workout_from_template.php, dopo la creazione:
 -- $stmt = $pdo->prepare("CALL UpdateTemplateUsageCount(?)");
 -- $stmt->execute([$template_id]);
+

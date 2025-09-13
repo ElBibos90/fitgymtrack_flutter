@@ -1,11 +1,11 @@
 // lib/features/templates/services/template_service.dart
 import 'package:dio/dio.dart';
-import '../../../core/network/dio_client.dart';
+import '../../../core/di/dependency_injection.dart';
 import '../models/template_models.dart';
 
 /// Servizio per gestire le operazioni sui template di allenamento
 class TemplateService {
-  final Dio _dio = DioClient.getInstance();
+  final Dio _dio = getIt<Dio>();
 
   /// Ottiene la lista dei template con filtri opzionali
   Future<TemplatesResponse> getTemplates({
@@ -81,13 +81,32 @@ class TemplateService {
     CreateWorkoutFromTemplateRequest request,
   ) async {
     try {
+      print('🔍 TemplateService.createWorkoutFromTemplate: Starting with request: ${request.toJson()}');
+      
       final response = await _dio.post(
         '/create_workout_from_template.php',
         data: request.toJson(),
       );
 
-      return CreateWorkoutFromTemplateResponse.fromJson(response.data);
+      print('🔍 TemplateService.createWorkoutFromTemplate: API Response status: ${response.statusCode}');
+      print('🔍 TemplateService.createWorkoutFromTemplate: API Response data: ${response.data}');
+
+      // Controlla se la risposta contiene un errore
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        if (data.containsKey('error')) {
+          print('❌ TemplateService.createWorkoutFromTemplate: API returned error: ${data['error']}');
+          throw Exception('Errore del server: ${data['error']}');
+        }
+      }
+
+      final result = CreateWorkoutFromTemplateResponse.fromJson(response.data);
+      print('🔍 TemplateService.createWorkoutFromTemplate: Parsed response successfully');
+      
+      return result;
     } catch (e) {
+      print('❌ TemplateService.createWorkoutFromTemplate ERROR: $e');
+      print('❌ TemplateService.createWorkoutFromTemplate ERROR stack: ${e.toString()}');
       throw Exception('Errore nella creazione della scheda: $e');
     }
   }

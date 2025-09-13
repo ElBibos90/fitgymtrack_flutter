@@ -23,7 +23,9 @@ import '../../../../core/services/app_update_service.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int? initialTab;
+  
+  const HomeScreen({super.key, this.initialTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -93,8 +95,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _initializeSequentially();
+        _checkForTabParameter();
       }
     });
+  }
+
+  /// Controlla se c'è un parametro tab iniziale
+  void _checkForTabParameter() {
+    if (widget.initialTab != null) {
+      final tabIndex = widget.initialTab!;
+      if (tabIndex >= 0 && tabIndex < _navItems.length) {
+        // Aspetta un frame per permettere alla UI di inizializzarsi
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _onTabTapped(tabIndex);
+          }
+        });
+      }
+    }
   }
 
   @override

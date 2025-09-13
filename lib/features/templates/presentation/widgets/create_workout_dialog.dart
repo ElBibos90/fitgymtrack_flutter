@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
+import '../../../../core/services/session_service.dart';
 import '../../bloc/template_bloc.dart';
 import '../../models/template_models.dart';
 
@@ -25,6 +26,7 @@ class CreateWorkoutDialog extends StatefulWidget {
 class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final SessionService _sessionService = SessionService();
   bool _isCreating = false;
 
   @override
@@ -88,7 +90,7 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        color: isDarkMode ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -124,7 +126,7 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                       style: TextStyle(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: isDarkMode ? Colors.white70 : AppColors.textPrimary,
                       ),
                     ),
                     SizedBox(height: 8.h),
@@ -141,7 +143,7 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                       '${widget.template.exercises?.length ?? 0} esercizi • ${widget.template.estimatedDurationFormatted} • ${widget.template.difficultyLevelFormatted}',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: AppColors.textSecondary,
+                        color: isDarkMode ? Colors.white60 : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -156,7 +158,7 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               
@@ -167,15 +169,35 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Nome scheda *',
+                  labelStyle: TextStyle(
+                    color: isDarkMode ? Colors.white70 : AppColors.textPrimary,
+                  ),
                   hintText: 'Inserisci il nome della scheda',
+                  hintStyle: TextStyle(
+                    color: isDarkMode ? Colors.white60 : AppColors.textSecondary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.borderColor),
                   ),
-                  prefixIcon: const Icon(Icons.edit),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                  filled: true,
+                  fillColor: isDarkMode ? AppColors.surfaceDark : Colors.white,
+                  prefixIcon: Icon(
+                    Icons.edit,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
                 ),
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.textPrimary,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               
@@ -187,15 +209,35 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Descrizione (opzionale)',
+                  labelStyle: TextStyle(
+                    color: isDarkMode ? Colors.white70 : AppColors.textPrimary,
+                  ),
                   hintText: 'Aggiungi una descrizione alla tua scheda',
+                  hintStyle: TextStyle(
+                    color: isDarkMode ? Colors.white60 : AppColors.textSecondary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.borderColor),
                   ),
-                  prefixIcon: const Icon(Icons.description),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                  filled: true,
+                  fillColor: isDarkMode ? AppColors.surfaceDark : Colors.white,
+                  prefixIcon: Icon(
+                    Icons.description,
+                    color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+                  ),
                 ),
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.textPrimary,
+                  color: isDarkMode ? Colors.white : AppColors.textPrimary,
                 ),
               ),
               
@@ -215,7 +257,7 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
                         'Annulla',
                         style: TextStyle(
                           fontSize: 14.sp,
-                          color: AppColors.textSecondary,
+                          color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -258,8 +300,19 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
     );
   }
 
-  void _createWorkout() {
+  void _createWorkout() async {
     if (_nameController.text.trim().isEmpty) return;
+
+    // Verifica se l'utente è autenticato
+    final isAuthenticated = await _sessionService.isAuthenticated();
+    if (!isAuthenticated) {
+      CustomSnackbar.show(
+        context,
+        message: 'Devi essere loggato per creare una scheda',
+        isSuccess: false,
+      );
+      return;
+    }
 
     setState(() {
       _isCreating = true;

@@ -10,7 +10,6 @@ import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../bloc/template_bloc.dart';
 import '../../models/template_models.dart';
 import '../widgets/template_card.dart';
-import '../widgets/template_filters.dart';
 import '../widgets/template_search_bar.dart';
 
 class TemplatesScreen extends StatefulWidget {
@@ -362,17 +361,11 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   }
 
   void _showFiltersDialog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => TemplateFilters(
-        selectedCategoryId: _selectedCategoryId,
-        selectedDifficulty: _selectedDifficulty,
-        selectedGoal: _selectedGoal,
-        featuredOnly: _featuredOnly,
-        onApplyFilters: _applyFilters,
-        onClearFilters: _clearFilters,
+    // TODO: Implementare i filtri quando necessario
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Filtri temporaneamente non disponibili'),
+        duration: Duration(seconds: 2),
       ),
     );
   }

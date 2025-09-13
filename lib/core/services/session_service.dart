@@ -30,7 +30,12 @@ class SessionService {
 
   Future<bool> isAuthenticated() async {
     final token = await getAuthToken();
-    return token != null && token.isNotEmpty;
+    final isAuth = token != null && token.isNotEmpty;
+    print('🔍 SessionService.isAuthenticated: Token presente=${token != null}, Token non vuoto=${token?.isNotEmpty ?? false}, Risultato=$isAuth');
+    if (token != null && token.isNotEmpty) {
+      print('🔍 SessionService.isAuthenticated: Token=${token.substring(0, 10)}...');
+    }
+    return isAuth;
   }
 
   /// 🔧 NUOVO: Valida il token con il server

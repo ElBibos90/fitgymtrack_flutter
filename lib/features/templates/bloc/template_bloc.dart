@@ -367,12 +367,20 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     Emitter<TemplateState> emit,
   ) async {
     try {
+      print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Starting with event: $event');
+      print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Current state: ${state.runtimeType}');
+      
       emit(CreatingWorkoutFromTemplate());
+      print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted CreatingWorkoutFromTemplate');
 
       final response = await _templateService.createWorkoutFromTemplate(event.request);
+      print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Service call completed successfully');
 
       emit(WorkoutCreatedFromTemplate(response));
+      print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted WorkoutCreatedFromTemplate');
     } catch (e) {
+      print('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR: $e');
+      print('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nella creazione della scheda: $e'));
     }
   }

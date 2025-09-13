@@ -13,8 +13,13 @@ class AuthInterceptor extends Interceptor {
       ) async {
     final token = await _sessionService.getAuthToken();
 
+    print('🔍 AuthInterceptor.onRequest: URL=${options.uri}');
+    print('🔍 AuthInterceptor.onRequest: Token presente=${token != null && token.isNotEmpty}');
     if (token != null && token.isNotEmpty) {
+      print('🔍 AuthInterceptor.onRequest: Token inviato=Bearer ${token.substring(0, 10)}...');
       options.headers['Authorization'] = 'Bearer $token';
+    } else {
+      print('❌ AuthInterceptor.onRequest: NESSUN TOKEN DISPONIBILE!');
     }
 
     handler.next(options);

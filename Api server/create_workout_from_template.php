@@ -25,9 +25,49 @@ function debug_log($message, $data = null) {
 
 // Funzione per verificare se l'utente ha accesso ai template premium
 function hasPremiumAccess($userId) {
-    // Per ora, restituiamo sempre false per evitare errori
-    // TODO: Implementare controllo sottoscrizione quando necessario
-    return false;
+    global $conn;
+    
+    // Verifica se l'utente ha un abbonamento Premium attivo
+    $stmt = $conn->prepare("
+        SELECT sp.name, sp.price
+        FROM users u
+        JOIN subscription_plans sp ON u.current_plan_id = sp.id
+        WHERE u.id = ? AND u.current_plan_id IS NOT NULL
+    ");
+    
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $plan = $result->fetch_assoc();
+        // Un piano è Premium se il nome non è 'Free' o se il prezzo è > 0
+        return $plan['name'] !== 'Free' || $plan['price'] > 0;
+    }
+    
+    // Fallback: verifica tramite subscription attiva
+    $stmt = $conn->prepare("
+        SELECT sp.name, sp.price
+        FROM user_subscriptions us
+        JOIN subscription_plans sp ON us.plan_id = sp.id
+        WHERE us.user_id = ? 
+        AND us.status = 'active' 
+        AND (us.end_date IS NULL OR us.end_date > NOW())
+        ORDER BY us.created_at DESC 
+        LIMIT 1
+    ");
+    
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $subscription = $result->fetch_assoc();
+        // Un piano è Premium se il nome non è 'Free' o se il prezzo è > 0
+        return $subscription['name'] !== 'Free' || $subscription['price'] > 0;
+    }
+    
+    return false; // Default: utente free
 }
 
 // Funzione per calcolare il peso iniziale basato sul livello utente
@@ -89,14 +129,12 @@ debug_log("Richiesta ricevuta: $method");
 try {
     if ($method === 'POST') {
         // Verifica autenticazione
-        $authResult = verifyToken($_SERVER['HTTP_AUTHORIZATION'] ?? '');
-        if (!$authResult['success']) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Token non valido']);
+        $userData = authMiddleware($conn);
+        if (!$userData) {
             exit();
         }
         
-        $userId = $authResult['user_id'];
+        $userId = $userData['user_id'];
         $hasPremium = hasPremiumAccess($userId);
         
         $input = json_decode(file_get_contents('php://input'), true);
@@ -196,8 +234,8 @@ try {
         try {
             // Crea la scheda
             $createSchedaStmt = $conn->prepare("
-                INSERT INTO schede (nome, descrizione, created_at) 
-                VALUES (?, ?, NOW())
+                INSERT INTO schede (nome, descrizione, data_creazione, active) 
+                VALUES (?, ?, NOW(), 1)
             ");
             $createSchedaStmt->bind_param('ss', $workoutName, $workoutDescription);
             $createSchedaStmt->execute();
@@ -205,7 +243,7 @@ try {
             
             // Crea l'associazione utente-scheda
             $assignStmt = $conn->prepare("
-                INSERT INTO user_workout_assignments (user_id, scheda_id, active, assigned_at) 
+                INSERT INTO user_workout_assignments (user_id, scheda_id, active, assigned_date) 
                 VALUES (?, ?, 1, NOW())
             ");
             $assignStmt->bind_param('ii', $userId, $schedaId);

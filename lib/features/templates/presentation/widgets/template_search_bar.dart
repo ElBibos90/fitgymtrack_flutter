@@ -106,3 +106,4 @@ class _TemplateSearchBarState extends State<TemplateSearchBar> {
     );
   }
 }
+

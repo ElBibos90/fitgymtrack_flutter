@@ -43,11 +43,20 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
             message: 'Scheda creata con successo!',
             isSuccess: true,
           );
-          // Naviga alla scheda creata o alla lista workout
-          context.go('/workouts');
+          
+          // Naviga alla dashboard e cambia tab
+          _navigateToWorkoutsTab();
         },
       ),
     );
+  }
+
+  void _navigateToWorkoutsTab() {
+    // Chiudi il dialog
+    Navigator.of(context).pop();
+    
+    // Naviga alla dashboard con parametro per cambiare tab
+    context.go('/dashboard?tab=1');
   }
 
   @override

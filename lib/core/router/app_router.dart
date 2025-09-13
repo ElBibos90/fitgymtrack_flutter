@@ -106,8 +106,14 @@ class AppRouter {
           path: '/dashboard',
           name: 'dashboard',
           builder: (context, state) {
+            // Estrai il parametro tab dalla query string
+            final tabParam = state.uri.queryParameters['tab'];
+            final tabIndex = tabParam != null ? int.tryParse(tabParam) : null;
+            
             return AuthWrapper(
-              authenticatedChild: const HomeScreen(),
+              authenticatedChild: HomeScreen(
+                initialTab: tabIndex,
+              ),
               unauthenticatedChild: const LoginScreen(),
             );
           },
