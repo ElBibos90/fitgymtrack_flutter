@@ -8,6 +8,7 @@ import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../core/services/session_service.dart';
 import '../../bloc/template_bloc.dart';
 import '../../models/template_models.dart';
+import '../../../workouts/bloc/workout_bloc.dart';
 
 class CreateWorkoutDialog extends StatefulWidget {
   final WorkoutTemplate template;
@@ -48,8 +49,17 @@ class _CreateWorkoutDialogState extends State<CreateWorkoutDialog> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return BlocListener<TemplateBloc, TemplateState>(
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is WorkoutCreatedFromTemplate) {
+          // ✅ Refresh automatico delle schede dopo creazione da template
+          final userId = await _sessionService.getCurrentUserId();
+          if (userId != null) {
+            context.read<WorkoutBloc>().add(RefreshWorkoutPlansAfterOperation(
+              userId: userId,
+              operation: 'create_from_template',
+            ));
+          }
+          
           widget.onWorkoutCreated(state.response);
           Navigator.of(context).pop();
         } else if (state is TemplateError) {
