@@ -132,7 +132,9 @@ class TemplateService {
     String? review,
   }) async {
     try {
-      await _dio.post(
+      print('🔍 TemplateService.submitTemplateRating: Starting with templateId=$templateId, rating=$rating');
+      
+      final response = await _dio.post(
         '/template_ratings.php',
         data: {
           'template_id': templateId,
@@ -140,7 +142,27 @@ class TemplateService {
           'review': review,
         },
       );
+
+      print('🔍 TemplateService.submitTemplateRating: API Response status: ${response.statusCode}');
+      print('🔍 TemplateService.submitTemplateRating: API Response data: ${response.data}');
+
+      // Controlla se la risposta contiene un errore
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        if (data.containsKey('error')) {
+          print('❌ TemplateService.submitTemplateRating: API returned error: ${data['error']}');
+          throw Exception('Errore del server: ${data['error']}');
+        }
+        if (data.containsKey('success') && data['success'] == false) {
+          print('❌ TemplateService.submitTemplateRating: API returned success=false');
+          throw Exception('Errore del server: ${data['message'] ?? 'Operazione fallita'}');
+        }
+      }
+
+      print('🔍 TemplateService.submitTemplateRating: Rating submitted successfully');
     } catch (e) {
+      print('❌ TemplateService.submitTemplateRating ERROR: $e');
+      print('❌ TemplateService.submitTemplateRating ERROR stack: ${e.toString()}');
       throw Exception('Errore nell\'invio della valutazione: $e');
     }
   }

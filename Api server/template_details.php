@@ -71,6 +71,24 @@ try {
     
     $template = $result->fetch_assoc();
     
+    // 🔧 FIX: Query separata per le statistiche di rating
+    $statsQuery = "
+        SELECT 
+            COALESCE(AVG(rating), 0) as rating_average,
+            COUNT(*) as rating_count
+        FROM user_template_ratings 
+        WHERE template_id = ?
+    ";
+    $statsStmt = $conn->prepare($statsQuery);
+    $statsStmt->bind_param('i', $templateId);
+    $statsStmt->execute();
+    $statsResult = $statsStmt->get_result();
+    $stats = $statsResult->fetch_assoc();
+    
+    // Aggiorna le statistiche nel template
+    $template['rating_average'] = number_format($stats['rating_average'], 2);
+    $template['rating_count'] = intval($stats['rating_count']);
+    
     // Query per ottenere gli esercizi del template
     $exercisesQuery = "
         SELECT 

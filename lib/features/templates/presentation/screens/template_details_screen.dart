@@ -1,5 +1,6 @@
 // lib/features/templates/presentation/screens/template_details_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../../bloc/template_bloc.dart';
 import '../../models/template_models.dart';
 import '../widgets/template_exercise_card.dart';
 import '../widgets/template_rating_widget.dart';
+import '../widgets/template_rating_stats_widget.dart';
 import '../widgets/create_workout_dialog.dart';
 
 class TemplateDetailsScreen extends StatefulWidget {
@@ -26,6 +28,8 @@ class TemplateDetailsScreen extends StatefulWidget {
 }
 
 class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
+  final GlobalKey<TemplateRatingWidgetState> _ratingWidgetKey = GlobalKey<TemplateRatingWidgetState>();
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +76,14 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
         title: const Text('Dettagli Template'),
         backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 🔧 FIX: Ricarica la lista template quando si torna indietro
+            context.read<TemplateBloc>().add(const RefreshTemplatesList());
+            Navigator.of(context).pop();
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
@@ -96,6 +108,13 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
               isSuccess: true,
             );
             context.go('/workouts');
+          } else if (state is TemplateRated) {
+            // 🔧 FIX: Mostra feedback per valutazione inviata
+            CustomSnackbar.show(
+              context,
+              message: state.response.message,
+              isSuccess: true,
+            );
           }
         },
         builder: (context, state) {
@@ -129,8 +148,14 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
                   
                   SizedBox(height: 16.h),
                   
+                  // Statistiche template
+                  _buildRatingStatsSection(template),
+                  
+                  SizedBox(height: 16.h),
+                  
                   // Rating e recensioni
                   _buildRatingSection(template),
+                  
                   
                   SizedBox(height: 100.h), // Spazio per il pulsante fisso
                 ],
@@ -450,6 +475,16 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
     );
   }
 
+  Widget _buildRatingStatsSection(WorkoutTemplate template) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16.w),
+      child: TemplateRatingStatsWidget(
+        template: template,
+        showDetails: true,
+      ),
+    );
+  }
+
   Widget _buildRatingSection(WorkoutTemplate template) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
@@ -459,7 +494,7 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Valutazioni',
+            'Valuta questo template',
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
@@ -468,6 +503,7 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
           ),
           SizedBox(height: 12.h),
           TemplateRatingWidget(
+            key: _ratingWidgetKey,
             template: template,
             onRatingSubmitted: (rating, review) {
               context.read<TemplateBloc>().add(RateTemplate(
@@ -477,6 +513,10 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
                   review: review,
                 ),
               ));
+            },
+            onRatingSuccess: () {
+              // 🔧 FIX: Resetta lo stato di loading del widget
+              _ratingWidgetKey.currentState?.resetLoadingState();
             },
           ),
         ],

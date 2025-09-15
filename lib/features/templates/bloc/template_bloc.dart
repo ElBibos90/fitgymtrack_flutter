@@ -139,6 +139,38 @@ class SearchTemplates extends TemplateEvent {
 /// Evento per resettare lo stato
 class ResetTemplateState extends TemplateEvent {}
 
+/// Evento per ricaricare la lista template (utile dopo valutazioni)
+class RefreshTemplatesList extends TemplateEvent {
+  final int? categoryId;
+  final String? difficulty;
+  final String? goal;
+  final bool? featured;
+  final String? search;
+  final int limit;
+  final int offset;
+
+  const RefreshTemplatesList({
+    this.categoryId,
+    this.difficulty,
+    this.goal,
+    this.featured,
+    this.search,
+    this.limit = 20,
+    this.offset = 0,
+  });
+
+  @override
+  List<Object?> get props => [
+        categoryId,
+        difficulty,
+        goal,
+        featured,
+        search,
+        limit,
+        offset,
+      ];
+}
+
 // ============================================================================
 // STATES
 // ============================================================================
@@ -266,6 +298,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     on<LoadPopularTemplates>(_onLoadPopularTemplates);
     on<LoadBeginnerTemplates>(_onLoadBeginnerTemplates);
     on<SearchTemplates>(_onSearchTemplates);
+    on<RefreshTemplatesList>(_onRefreshTemplatesList);
     on<ResetTemplateState>(_onResetTemplateState);
   }
 
@@ -398,13 +431,36 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         review: event.request.review,
       );
 
-      emit(TemplateRated(TemplateRatingResponse(
-        success: true,
-        message: 'Valutazione inviata con successo',
-        rating: event.request.rating,
-        review: event.request.review,
-      )));
+      // 🔧 FIX: Ricarica i dettagli del template per aggiornare rating e recensioni
+      try {
+        final templateDetails = await _templateService.getTemplateDetails(event.request.templateId);
+        
+        // 🔧 FIX: Emetti prima il successo, poi aggiorna i dettagli
+        emit(TemplateRated(TemplateRatingResponse(
+          success: true,
+          message: 'Valutazione inviata con successo',
+          rating: event.request.rating,
+          review: event.request.review,
+        )));
+        
+        // 🔧 FIX: Aggiorna anche lo stato con i dettagli aggiornati
+        emit(TemplateDetailsLoaded(
+          template: templateDetails.template,
+          userPremium: templateDetails.userPremium,
+        ));
+      } catch (detailsError) {
+        // 🔧 FIX: Se il ricaricamento dei dettagli fallisce, emetti comunque il successo
+        print('⚠️ TemplateBloc._onRateTemplate: Errore nel ricaricamento dettagli: $detailsError');
+        emit(TemplateRated(TemplateRatingResponse(
+          success: true,
+          message: 'Valutazione inviata con successo',
+          rating: event.request.rating,
+          review: event.request.review,
+        )));
+      }
     } catch (e) {
+      print('❌ TemplateBloc._onRateTemplate ERROR: $e');
+      print('❌ TemplateBloc._onRateTemplate ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nella valutazione: $e'));
     }
   }
@@ -483,6 +539,39 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
       ));
     } catch (e) {
       emit(TemplateError('Errore nella ricerca: $e'));
+    }
+  }
+
+  Future<void> _onRefreshTemplatesList(
+    RefreshTemplatesList event,
+    Emitter<TemplateState> emit,
+  ) async {
+    try {
+      print('🔍 TemplateBloc._onRefreshTemplatesList: Starting refresh');
+      
+      emit(TemplateLoading());
+
+      final response = await _templateService.getTemplates(
+        categoryId: event.categoryId,
+        difficulty: event.difficulty,
+        goal: event.goal,
+        featured: event.featured,
+        search: event.search,
+        limit: event.limit,
+        offset: event.offset,
+      );
+      
+      print('🔍 TemplateBloc._onRefreshTemplatesList: Service returned ${response.templates.length} templates');
+
+      emit(TemplatesLoaded(
+        templates: response.templates,
+        pagination: response.pagination,
+        userPremium: response.userPremium,
+        hasMore: response.pagination.hasMore,
+      ));
+    } catch (e) {
+      print('❌ TemplateBloc._onRefreshTemplatesList ERROR: $e');
+      emit(TemplateError('Errore nel ricaricamento dei template: $e'));
     }
   }
 

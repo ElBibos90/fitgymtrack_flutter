@@ -8,21 +8,32 @@ import '../../models/template_models.dart';
 class TemplateRatingWidget extends StatefulWidget {
   final WorkoutTemplate template;
   final Function(int rating, String? review) onRatingSubmitted;
+  final VoidCallback? onRatingSuccess; // 🔧 FIX: Callback per successo
 
   const TemplateRatingWidget({
     super.key,
     required this.template,
     required this.onRatingSubmitted,
+    this.onRatingSuccess, // 🔧 FIX: Callback opzionale
   });
 
   @override
-  State<TemplateRatingWidget> createState() => _TemplateRatingWidgetState();
+  State<TemplateRatingWidget> createState() => TemplateRatingWidgetState();
 }
 
-class _TemplateRatingWidgetState extends State<TemplateRatingWidget> {
+class TemplateRatingWidgetState extends State<TemplateRatingWidget> {
   int _selectedRating = 0;
   final TextEditingController _reviewController = TextEditingController();
   bool _isSubmitting = false;
+
+  /// 🔧 FIX: Metodo pubblico per resettare lo stato di loading
+  void resetLoadingState() {
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -318,15 +329,15 @@ class _TemplateRatingWidgetState extends State<TemplateRatingWidget> {
       _isSubmitting = true;
     });
 
+    // 🔧 FIX: Invia la valutazione
     widget.onRatingSubmitted(_selectedRating, _reviewController.text.trim().isEmpty ? null : _reviewController.text.trim());
 
-    // Reset loading state dopo un breve delay
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
-    });
+    // 🔧 FIX: Chiama il callback per notificare il successo
+    if (widget.onRatingSuccess != null) {
+      // Aspetta un po' per permettere al BLoC di processare
+      Future.delayed(const Duration(milliseconds: 500), () {
+        widget.onRatingSuccess!();
+      });
+    }
   }
 }

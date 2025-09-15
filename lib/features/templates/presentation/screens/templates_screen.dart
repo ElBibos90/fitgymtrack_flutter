@@ -169,17 +169,26 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
           print('🔍 TemplatesScreen.BlocConsumer.builder: Building with state: ${state.runtimeType}');
           
           if (state is TemplateLoading) {
-            print('🔍 TemplatesScreen.BlocConsumer.builder: Showing loading overlay');
-            return const LoadingOverlay(
-              isLoading: true,
-              child: SizedBox.shrink(),
-            );
+            // 🔧 FIX: Mostra loading solo se non abbiamo template memorizzati (caricamento iniziale)
+            if (_cachedTemplates.isEmpty) {
+              print('🔍 TemplatesScreen.BlocConsumer.builder: Showing loading overlay (initial load)');
+              return const LoadingOverlay(
+                isLoading: true,
+                child: SizedBox.shrink(),
+              );
+            } else {
+              print('🔍 TemplatesScreen.BlocConsumer.builder: Refresh in background (keeping cached templates)');
+              // Non mostrare loading overlay durante il refresh, mantieni i template esistenti
+            }
           }
 
           // Mostra i template se abbiamo TemplatesLoaded o se abbiamo template memorizzati
           if (state is TemplatesLoaded || _cachedTemplates.isNotEmpty) {
             final templates = state is TemplatesLoaded ? state.templates : _cachedTemplates;
             final userPremium = state is TemplatesLoaded ? state.userPremium : _cachedUserPremium;
+            
+            // 🔧 FIX: Se siamo in loading ma abbiamo template memorizzati, mostra quelli
+            final isLoading = state is TemplateLoading && _cachedTemplates.isNotEmpty;
             
             return RefreshIndicator(
               onRefresh: () async {
@@ -211,7 +220,9 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                   Expanded(
                     child: templates.isEmpty
                         ? _buildEmptyState()
-                        : ListView.builder(
+                        : Stack(
+                            children: [
+                              ListView.builder(
                             controller: _scrollController,
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
                             itemCount: templates.length + (_isLoadingMore ? 1 : 0),
@@ -235,6 +246,24 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                                 ),
                               );
                             },
+                          ),
+                              // 🔧 FIX: Indicatore di refresh discreto
+                              if (isLoading)
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    height: 3.h,
+                                    child: LinearProgressIndicator(
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                   ),
                 ],

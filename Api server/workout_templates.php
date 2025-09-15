@@ -107,6 +107,24 @@ try {
             
             $templates = [];
             while ($row = $result->fetch_assoc()) {
+                // 🔧 FIX: Aggiorna le statistiche in tempo reale
+                $statsQuery = "
+                    SELECT 
+                        COALESCE(AVG(rating), 0) as rating_average,
+                        COUNT(*) as rating_count
+                    FROM user_template_ratings 
+                    WHERE template_id = ?
+                ";
+                $statsStmt = $conn->prepare($statsQuery);
+                $statsStmt->bind_param('i', $row['id']);
+                $statsStmt->execute();
+                $statsResult = $statsStmt->get_result();
+                $stats = $statsResult->fetch_assoc();
+                
+                // Aggiorna le statistiche nel template
+                $row['rating_average'] = number_format($stats['rating_average'], 2);
+                $row['rating_count'] = intval($stats['rating_count']);
+                
                 $templates[] = $row;
             }
             
