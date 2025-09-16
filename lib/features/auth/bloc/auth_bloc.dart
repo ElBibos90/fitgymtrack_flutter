@@ -386,6 +386,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // 🌐 Sincronizza dati offline dopo login riuscito
           _syncOfflineDataAfterLogin();
           
+          // 🔧 FIX: Controlla workout pending automaticamente dopo login
+          Future.delayed(const Duration(milliseconds: 500), () {
+            add(CheckPendingWorkoutAuth(response.user!.id));
+          });
+          
           emit(AuthLoginSuccess(
             user: response.user!,
             token: response.token!,
@@ -528,6 +533,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (user != null && token != null) {
           print('[CONSOLE] [auth_bloc]✅ Token valid, user authenticated: ${user.username}');
+          
+          // 🔧 FIX: Controlla workout pending anche per token già validi
+          Future.delayed(const Duration(milliseconds: 500), () {
+            add(CheckPendingWorkoutAuth(user.id));
+          });
+          
           emit(AuthAuthenticated(user: user, token: token));
         } else {
           print('[CONSOLE] [auth_bloc]❌ User data missing, clearing session');

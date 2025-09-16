@@ -16,6 +16,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../auth/bloc/auth_bloc.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -35,8 +36,8 @@ class _StatsScreenState extends State<StatsScreen> {
     final repository = StatsRepository(apiClient);
     _statsBloc = StatsBloc(repository);
 
-    // Carica le statistiche iniziali
-    _statsBloc.add(const LoadInitialStats());
+    // 🔧 FIX: NON caricare automaticamente - aspetta che l'utente sia autenticato
+    // Le statistiche verranno caricate quando l'utente naviga nella tab stats
   }
 
   @override
@@ -47,7 +48,17 @@ class _StatsScreenState extends State<StatsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
+        // 🔧 FIX: Carica statistiche solo quando l'utente è autenticato
+        if ((authState is AuthAuthenticated || authState is AuthLoginSuccess)) {
+          final currentStatsState = _statsBloc.state;
+          if (currentStatsState is StatsInitial) {
+            _statsBloc.add(const LoadInitialStats());
+          }
+        }
+      },
+      child: BlocProvider.value(
       value: _statsBloc,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -88,7 +99,8 @@ class _StatsScreenState extends State<StatsScreen> {
           },
         ),
       ),
-    );
+    ),
+    ); // Chiusura BlocListener
   }
 
   Widget _buildBody(BuildContext context, StatsState state) {

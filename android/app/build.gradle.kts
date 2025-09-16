@@ -33,7 +33,7 @@ android {
         applicationId = "com.fitgymtracker"
         
         // 💳 STRIPE FIX: minSdk 21 richiesto da Stripe
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

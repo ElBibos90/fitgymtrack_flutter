@@ -161,11 +161,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isInitialDataLoaded = true;
       print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
 
-      // 🌐 NUOVO: Controlla allenamenti in sospeso dopo che tutto è caricato
-      _checkPendingWorkout(userId);
-
-      // 🔧 NUOVO: Controllo aggiornamenti dopo l'inizializzazione
-      _checkForAppUpdates();
+      // 🔧 NUOVO: Controllo aggiornamenti in background (non bloccante)
+      _scheduleBackgroundUpdateCheck();
 
     } catch (e) {
       print('[CONSOLE] [home_screen]❌ Initialization error: $e');
@@ -173,22 +170,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  /// 🌐 NUOVO: Controlla allenamenti in sospeso
-  void _checkPendingWorkout(int userId) {
-    try {
-      print('[CONSOLE] [home_screen]🔍 Checking for pending workouts for user: $userId');
-      
-      // Ottieni il Bloc di autenticazione
-      final authBloc = context.read<AuthBloc>();
-      
-      // Controlla se ci sono allenamenti in sospeso
-      authBloc.checkPendingWorkout(userId);
-      
-      print('[CONSOLE] [home_screen]✅ Pending workout check initiated');
-    } catch (e) {
-      print('[CONSOLE] [home_screen]❌ Error checking pending workouts: $e');
-    }
-  }
+  /// 🔧 RIMOSSO: Controllo workout pending duplicato
+  /// Il controllo viene fatto automaticamente dall'AuthBloc dopo il login
 
   /// 🌐 NUOVO: Avvia l'allenamento in sospeso
   void _startPendingWorkout(Map<String, dynamic> pendingWorkout) {
@@ -257,45 +240,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 🔧 NUOVO: Controllo aggiornamenti dell'app
-  void _checkForAppUpdates() async {
-    try {
-      print('[CONSOLE] [home_screen]🚀 Starting app update check...');
+  /// 🔧 OTTIMIZZATO: Programma controllo aggiornamenti in background
+  void _scheduleBackgroundUpdateCheck() {
+    // 🔧 FIX: Esegui dopo 3 secondi in background, non bloccante
+    Timer(const Duration(seconds: 3), () async {
+      if (!mounted) return;
       
-      // 🔧 NUOVO: Aspetta che l'utente sia autenticato
-      final sessionService = getIt<SessionService>();
-      int retryCount = 0;
-      const maxRetries = 10; // Massimo 5 secondi (10 * 500ms)
-      
-      while (retryCount < maxRetries) {
-        final isAuthenticated = await sessionService.isAuthenticated();
-        if (isAuthenticated) {
-          print('[CONSOLE] [home_screen]✅ User authenticated, proceeding with update check');
-          break;
-        }
+      try {
+        print('[CONSOLE] [home_screen]🔄 Background update check started...');
         
-        print('[CONSOLE] [home_screen]⏳ Waiting for authentication... (attempt ${retryCount + 1}/$maxRetries)');
-        await Future.delayed(const Duration(milliseconds: 500));
-        retryCount++;
+        final updateInfo = await AppUpdateService.checkForUpdates();
+        
+        if (updateInfo != null && mounted) {
+          print('[CONSOLE] [home_screen]📱 Update available in background');
+          AppUpdateService.showUpdateDialog(context, updateInfo);
+        } else {
+          print('[CONSOLE] [home_screen]ℹ️ No update available (background check)');
+        }
+      } catch (e) {
+        print('[CONSOLE] [home_screen]❌ Background update check error: $e');
       }
-      
-      if (retryCount >= maxRetries) {
-        print('[CONSOLE] [home_screen]⚠️ Authentication timeout, skipping update check');
-        return;
-      }
-      
-      final updateInfo = await AppUpdateService.checkForUpdates();
-      print('[CONSOLE] [home_screen]📱 Update check result: ${updateInfo?.toString() ?? 'null'}');
-      
-      if (updateInfo != null && mounted) {
-        print('[CONSOLE] [home_screen]✅ Update available, showing dialog...');
-        AppUpdateService.showUpdateDialog(context, updateInfo);
-      } else {
-        print('[CONSOLE] [home_screen]ℹ️ No update available');
-      }
-    } catch (e) {
-      print('[CONSOLE] [home_screen]❌ Update check error: $e');
-    }
+    });
   }
 
   /// 🚀 PERFORMANCE: Carica subscription con debouncing DOPO validazione token

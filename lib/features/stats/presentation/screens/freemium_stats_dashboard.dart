@@ -19,6 +19,7 @@ import '../widgets/premium_upgrade_flow.dart';
 import '../../models/stats_models.dart';
 import '../../models/simple_stats_models.dart';
 import '../../bloc/stats_bloc.dart';
+import '../../../auth/bloc/auth_bloc.dart';
 
 /// 🎯 Freemium Stats Dashboard - Dashboard con Statistiche Differenziate
 class FreemiumStatsDashboard extends StatefulWidget {
@@ -32,13 +33,23 @@ class _FreemiumStatsDashboardState extends State<FreemiumStatsDashboard> {
   @override
   void initState() {
     super.initState();
-    // Carica le statistiche iniziali
-    context.read<StatsBloc>().add(LoadInitialStats());
+    // 🔧 FIX: NON caricare automaticamente - aspetta che l'utente sia autenticato
+    // Le statistiche verranno caricate quando necessario dal dashboard
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
+        // 🔧 FIX: Carica statistiche solo quando l'utente è autenticato
+        if ((authState is AuthAuthenticated || authState is AuthLoginSuccess)) {
+          final currentStatsState = context.read<StatsBloc>().state;
+          if (currentStatsState is StatsInitial) {
+            context.read<StatsBloc>().add(const LoadInitialStats());
+          }
+        }
+      },
+      child: Scaffold(
       backgroundColor: StatsTheme.getPageBackground(context),
       appBar: CustomAppBar(
         title: 'Le Mie Statistiche',
@@ -64,7 +75,8 @@ class _FreemiumStatsDashboardState extends State<FreemiumStatsDashboard> {
           return _buildInitialState();
         },
       ),
-    );
+    ),
+    ); // Chiusura BlocListener
   }
 
   /// 🔄 Loading State
