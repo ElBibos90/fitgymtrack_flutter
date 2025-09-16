@@ -24,6 +24,7 @@ class DashboardPage extends StatelessWidget {
   final VoidCallback? onNavigateToWorkouts;
   final VoidCallback? onNavigateToAchievements;
   final VoidCallback? onNavigateToProfile;
+  final VoidCallback? onNavigateToSubscription;
 
   const DashboardPage({
     super.key,
@@ -31,6 +32,7 @@ class DashboardPage extends StatelessWidget {
     this.onNavigateToWorkouts,
     this.onNavigateToAchievements,
     this.onNavigateToProfile,
+    this.onNavigateToSubscription,
   });
 
   @override
@@ -89,7 +91,9 @@ class DashboardPage extends StatelessWidget {
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   child: _buildSectionCard(
                     context,
-                    child: SubscriptionSection(),
+                    child: SubscriptionSection(
+                      onNavigateToSubscription: onNavigateToSubscription,
+                    ),
                     title: 'Abbonamento',
                     icon: Icons.card_membership_rounded,
                   ),

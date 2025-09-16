@@ -57,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onNavigateToWorkouts: () => _onTabTapped(1),
       onNavigateToAchievements: _handleAchievementsNavigation,
       onNavigateToProfile: _handleProfileNavigation,
+      onNavigateToSubscription: () => _onTabTapped(3), // Tab 3 = Abbonamento
     ),
         () => WorkoutPlansScreen(controller: _workoutController),
         () => const FreemiumStatsDashboard(),

@@ -151,7 +151,7 @@ function getUserSubscription($userId) {
         FROM user_subscriptions us
         JOIN subscription_plans sp ON us.plan_id = sp.id
         WHERE us.user_id = ? AND us.status = 'active' AND DATE(us.end_date) >= CURDATE()
-        ORDER BY us.end_date DESC 
+        ORDER BY sp.price DESC, us.created_at DESC 
         LIMIT 1
     ");
     

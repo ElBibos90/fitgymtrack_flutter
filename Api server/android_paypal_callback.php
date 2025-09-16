@@ -234,6 +234,16 @@ if ($order['type'] === 'subscription') {
         FILE_APPEND
     );
 
+				// Prima disattiva tutte le subscription attive precedenti
+				$cancelStmt = $conn->prepare("
+					UPDATE user_subscriptions 
+					SET status = 'expired', updated_at = NOW() 
+					WHERE user_id = ? AND status = 'active'
+				");
+				$cancelStmt->bind_param('i', $order['user_id']);
+				$cancelStmt->execute();
+				$cancelStmt->close();
+
 				// Crea il nuovo abbonamento
 				$insertStmt = $conn->prepare("
 					INSERT INTO user_subscriptions 

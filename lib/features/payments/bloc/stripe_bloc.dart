@@ -436,7 +436,6 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       ProcessPaymentEvent event,
       Emitter<StripeState> emit,
       ) async {
-    print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Processing payment...');
     emit(StripePaymentLoading(
       paymentType: event.paymentType,
       message: 'Elaborazione pagamento...',
@@ -454,15 +453,8 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
 
       if (result.isSuccess) {
-        // ✅ SUCCESSO: Result è success significa che Payment Sheet è completato con successo
         final paymentOption = result.data;
-
-        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment Sheet completed successfully!');
-        print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment option data: $paymentOption');
-
         final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
-
-        print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Payment successful - extracted PI ID: $paymentIntentId');
 
         // 🚀 CRITICAL FIX: Chiama backend per confermare e sincronizzare DB
         print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
@@ -474,9 +466,6 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
           );
 
           if (confirmResult.isSuccess) {
-            print('[CONSOLE] [stripe_bloc]✅ [STRIPE BLOC] Backend confirmation successful - database updated!');
-
-            // Emetti successo solo DOPO conferma backend
             emit(StripePaymentSuccess(
               paymentIntentId: paymentIntentId,
               paymentType: event.paymentType,

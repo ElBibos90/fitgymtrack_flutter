@@ -1,5 +1,6 @@
 // lib/features/subscription/presentation/screens/subscription_screen.dart - 🔧 FIX OVERLAY LOADING
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,6 +33,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // 🔧 FIX: Stati separati per gestire overlay e cleanup
   bool _justCompletedPayment = false;
   bool _isPaymentProcessing = false; // Nuovo flag per gestire overlay
+  StreamSubscription? _stripeSubscription;
 
   @override
   void initState() {
@@ -41,7 +43,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
     
     // 🔧 FIX: Ascolta aggiornamenti del bloc Stripe per ricaricare subscription
-    context.read<StripeBloc>().stream.listen((stripeState) {
+    _stripeSubscription = context.read<StripeBloc>().stream.listen((stripeState) {
+      if (!mounted) return; // Evita aggiornamenti se il widget è smontato
+      
       if (stripeState is StripePaymentSuccess && stripeState.paymentType == 'subscription') {
         print('[CONSOLE][DEBUG] SubscriptionScreen: Payment success, reloading subscription');
         // Ricarica subscription dopo pagamento riuscito
@@ -49,6 +53,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           checkExpired: false,
           forceRefresh: true,
         ));
+        
+        // 🔧 FIX: Forza un rebuild della schermata per assicurarsi che tutto sia aggiornato
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            setState(() {
+              _justCompletedPayment = true;
+              _isPaymentProcessing = false;
+            });
+            
+            // 🔧 FIX: Assicurati che siamo ancora nella tab corretta dopo il pagamento
+            // Questo dovrebbe prevenire la sparizione dei tab
+            final routerState = GoRouterState.of(context);
+            if (routerState.uri.path != '/dashboard') {
+              context.go('/dashboard?tab=3'); // Tab 3 = Abbonamento
+            }
+          }
+        });
       }
     });
   }
@@ -56,16 +77,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print('[CONSOLE][DEBUG] SubscriptionScreen didChangeDependencies');
     setState(() {
-      print('[CONSOLE][DEBUG] Forzo _isPaymentProcessing = false in didChangeDependencies');
       _isPaymentProcessing = false;
     });
   }
 
   @override
+  void dispose() {
+    // 🔧 FIX: Cancella la subscription per evitare errori di widget unmounted
+    _stripeSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    print('[CONSOLE][DEBUG] SubscriptionScreen build, _isPaymentProcessing=$_isPaymentProcessing');
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -147,35 +172,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // ============================================================================
 
   void _handleStripeStateChanges(BuildContext context, StripeState state) {
-    print('[CONSOLE][DEBUG] SubscriptionScreen _handleStripeStateChanges: ${state.runtimeType}');
-    
     if (state is StripePaymentLoading) {
-      // 🔧 FIX: Attiva overlay quando inizia il processing
-      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = true');
       setState(() {
         _isPaymentProcessing = true;
       });
+      
     } else if (state is StripePaymentReady) {
-      // 🔧 FIX: Avvia automaticamente il Payment Sheet per subscription
-      print('[CONSOLE][DEBUG] SubscriptionScreen: Payment Ready - opening Payment Sheet');
       _presentPaymentSheet(context, state);
       
     } else if (state is StripePaymentSuccess) {
-      // 🔧 FIX: Rimuovi overlay quando il pagamento va a buon fine
-      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = false (SUCCESS)');
       setState(() {
         _isPaymentProcessing = false;
         _justCompletedPayment = true;
-      });
-      
-      // Forza un ulteriore reset dopo 500ms per sicurezza
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          print('[CONSOLE][DEBUG] SubscriptionScreen: Forcing _isPaymentProcessing = false after 500ms');
-          setState(() {
-            _isPaymentProcessing = false;
-          });
-        }
       });
       
       // Mostra messaggio di successo
@@ -198,13 +206,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       );
     } else if (state is StripeErrorState) {
-      // 🔧 FIX: Rimuovi overlay in caso di errore
-      print('[CONSOLE][DEBUG] SubscriptionScreen: Setting _isPaymentProcessing = false (ERROR)');
       setState(() {
         _isPaymentProcessing = false;
       });
       
-      // Mostra messaggio di errore
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -232,15 +237,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
     try {
-      // Avvia immediatamente il processing del pagamento
       context.read<StripeBloc>().add(ProcessPaymentEvent(
         clientSecret: state.paymentIntent.clientSecret,
         paymentType: state.paymentType,
       ));
     } catch (e) {
-      print('[CONSOLE][subscription_screen]❌ [SUBSCRIPTION] Error presenting payment sheet: $e');
-
-      // 🔧 FIX: Cleanup in caso di errore
       setState(() {
         _isPaymentProcessing = false;
       });

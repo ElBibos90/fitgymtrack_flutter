@@ -105,3 +105,4 @@ Il backend deve supportare:
 - Le statistiche vengono calcolate lato server e visualizzate in tempo reale
 - Il feedback utente è immediato e informativo
 - La gestione degli errori è robusta e fornisce informazioni utili per il debugging
+

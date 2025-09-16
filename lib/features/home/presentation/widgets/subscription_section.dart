@@ -9,7 +9,12 @@ import '../../../subscription/bloc/subscription_bloc.dart';
 
 /// Sezione status abbonamento nella dashboard
 class SubscriptionSection extends StatelessWidget {
-  const SubscriptionSection({super.key});
+  final VoidCallback? onNavigateToSubscription;
+  
+  const SubscriptionSection({
+    super.key,
+    this.onNavigateToSubscription,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +125,11 @@ class SubscriptionSection extends StatelessWidget {
   }
 
   void _navigateToSubscription(BuildContext context) {
-    // Per ora usa GoRouter, in futuro integreremo con bottom navigation
-    context.go('/subscription'    );
+    // 🔧 FIX: Usa callback se disponibile, altrimenti fallback a router
+    if (onNavigateToSubscription != null) {
+      onNavigateToSubscription!(); // Usa callback per cambiare tab direttamente
+    } else {
+      context.go('/dashboard?tab=3'); // Fallback a router
+    }
   }
 }

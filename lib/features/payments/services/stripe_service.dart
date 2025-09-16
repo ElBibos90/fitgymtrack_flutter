@@ -377,10 +377,6 @@ class StripeService {
         try {
           final result = await Stripe.instance.presentPaymentSheet();
 
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment Sheet completed successfully');
-          //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Payment result type: ${result.runtimeType}');
-          //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Payment result: $result');
-
           // 🔧 FIX: Il completamento senza eccezioni è SEMPRE un successo
           // Non importa se il result è null, questo è normale per i pagamenti riusciti
           return result;

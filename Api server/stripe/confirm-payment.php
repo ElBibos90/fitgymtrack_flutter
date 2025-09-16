@@ -442,13 +442,26 @@ $user_id = $user['id'];
             stripe_debug_log("Updated user {$user_id} current_plan_id to 2");
             
             // 2. Marca come expired le subscription precedenti
+            stripe_debug_log("BEFORE UPDATE: Checking active subscriptions for user {$user_id}");
+            $checkStmt = $pdo->prepare("SELECT id, plan_id, status FROM user_subscriptions WHERE user_id = ? AND status = 'active'");
+            $checkStmt->execute([$user_id]);
+            $activeSubscriptions = $checkStmt->fetchAll();
+            stripe_debug_log("Active subscriptions before update: " . json_encode($activeSubscriptions));
+            
             $stmt = $pdo->prepare("
                 UPDATE user_subscriptions 
                 SET status = 'expired', updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ? AND status = 'active'
             ");
             $stmt->execute([$user_id]);
-            stripe_debug_log("Expired old subscriptions, rows affected: " . $stmt->rowCount());
+            $rowsAffected = $stmt->rowCount();
+            stripe_debug_log("Expired old subscriptions, rows affected: {$rowsAffected}");
+            
+            // Verifica dopo l'update
+            $checkAfterStmt = $pdo->prepare("SELECT id, plan_id, status FROM user_subscriptions WHERE user_id = ?");
+            $checkAfterStmt->execute([$user_id]);
+            $allSubscriptionsAfter = $checkAfterStmt->fetchAll();
+            stripe_debug_log("All subscriptions after update: " . json_encode($allSubscriptionsAfter));
             
             // 🆕 ENHANCED: Cerca stripe_subscription_id con metodi multipli
             $stripe_subscription_id = null;
@@ -602,7 +615,8 @@ $user_id = $user['id'];
             $stmt = $pdo->prepare("
                 UPDATE user_subscriptions 
                 SET status = 'expired'
-                WHERE user_id = ? AND status = 'active' AND stripe_subscription_id != ?
+                WHERE user_id = ? AND status = 'active' 
+                AND (stripe_subscription_id != ? OR stripe_subscription_id IS NULL)
             ");
             $stmt->execute([$user_id, $stripe_subscription_id]);
             stripe_debug_log("SYNC: Expired old subscriptions, rows affected: " . $stmt->rowCount());
