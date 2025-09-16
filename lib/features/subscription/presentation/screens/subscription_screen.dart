@@ -185,6 +185,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         _isPaymentProcessing = false;
         _justCompletedPayment = true;
       });
+
       
       // Mostra messaggio di successo
       ScaffoldMessenger.of(context).showSnackBar(

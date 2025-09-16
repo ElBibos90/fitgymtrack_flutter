@@ -146,7 +146,7 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     
     // 🔧 FIX: Core library desugaring per Java 8+ API su Android API < 26
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     
     // 💳 STRIPE: Dipendenze per WebView (usato da Payment Sheet)
     implementation("androidx.webkit:webkit:1.8.0")
