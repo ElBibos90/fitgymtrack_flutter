@@ -38,6 +38,24 @@
 # 🔧 FIX: React Native Stripe SDK warnings (flutter_stripe uses some RN code)
 -dontwarn com.reactnativestripesdk.**
 
+# 🔧 FIX: BouncyCastle missing classes (used by Stripe for cryptography)
+-dontwarn org.bouncycastle.**
+-keep class org.bouncycastle.** { *; }
+
+# 🔧 FIX: Specific BouncyCastle classes missing from R8 error
+-dontwarn org.bouncycastle.asn1.ASN1Encodable
+-dontwarn org.bouncycastle.asn1.pkcs.PrivateKeyInfo
+-dontwarn org.bouncycastle.asn1.x509.AlgorithmIdentifier
+-dontwarn org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+-dontwarn org.bouncycastle.cert.X509CertificateHolder
+-dontwarn org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
+-dontwarn org.bouncycastle.openssl.PEMKeyPair
+-dontwarn org.bouncycastle.openssl.PEMParser
+-dontwarn org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+
+# 🔧 FIX: NimbusDS JOSE classes that use BouncyCastle
+-dontwarn com.nimbusds.jose.jwk.**
+
 # ============================================================================
 # FLUTTER SPECIFIC RULES
 # ============================================================================

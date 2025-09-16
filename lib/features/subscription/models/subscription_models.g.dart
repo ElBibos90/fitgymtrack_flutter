@@ -31,6 +31,13 @@ Subscription _$SubscriptionFromJson(Map<String, dynamic> json) => Subscription(
       endDate: json['end_date'] as String?,
       daysRemaining: (json['days_remaining'] as num?)?.toInt(),
       computedStatus: json['computed_status'] as String?,
+      stripeSubscriptionId: json['stripe_subscription_id'] as String?,
+      paymentType: json['payment_type'] as String?,
+      autoRenew:
+          json['auto_renew'] == null ? true : _parseBool(json['auto_renew']),
+      cancelAtPeriodEnd: json['cancel_at_period_end'] == null
+          ? false
+          : _parseBool(json['cancel_at_period_end']),
     );
 
 Map<String, dynamic> _$SubscriptionToJson(Subscription instance) =>
@@ -52,6 +59,10 @@ Map<String, dynamic> _$SubscriptionToJson(Subscription instance) =>
       'end_date': instance.endDate,
       'days_remaining': instance.daysRemaining,
       'computed_status': instance.computedStatus,
+      'stripe_subscription_id': instance.stripeSubscriptionId,
+      'payment_type': instance.paymentType,
+      'auto_renew': _boolToInt(instance.autoRenew),
+      'cancel_at_period_end': _boolToInt(instance.cancelAtPeriodEnd),
     };
 
 SubscriptionPlan _$SubscriptionPlanFromJson(Map<String, dynamic> json) =>

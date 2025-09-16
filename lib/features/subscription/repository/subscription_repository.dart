@@ -31,26 +31,8 @@ class SubscriptionRepository {
       if (data['success'] == true && data['data']?['subscription'] != null) {
         final subscriptionData = data['data']['subscription'];
 
-        // 🔧 FIX: Usa le funzioni helper per parsing robusto
-        final subscription = Subscription(
-          id: subscriptionData['id'],
-          userId: subscriptionData['user_id'],
-          planId: subscriptionData['plan_id'],
-          planName: subscriptionData['plan_name'] ?? 'Free',
-          status: subscriptionData['status'] ?? 'active',
-          price: _parseDouble(subscriptionData['price']), // 🔧 FIX: Parsing robusto
-          maxWorkouts: subscriptionData['max_workouts'],
-          maxCustomExercises: subscriptionData['max_custom_exercises'],
-          currentCount: _parseInt(subscriptionData['current_count']), // 🔧 FIX: Parsing robusto
-          currentCustomExercises: _parseInt(subscriptionData['current_custom_exercises']), // 🔧 FIX: Parsing robusto
-          advancedStats: _convertToBool(subscriptionData['advanced_stats']),
-          cloudBackup: _convertToBool(subscriptionData['cloud_backup']),
-          noAds: _convertToBool(subscriptionData['no_ads']),
-          startDate: subscriptionData['start_date'],
-          endDate: subscriptionData['end_date'],
-          daysRemaining: subscriptionData['days_remaining'],
-          computedStatus: subscriptionData['computed_status'],
-        );
+        // 🔧 FIX: Usa il parsing JSON automatico invece di costruzione manuale
+        final subscription = Subscription.fromJson(subscriptionData);
 
         /*print(
           'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}'

@@ -38,6 +38,14 @@ class Subscription {
   final int? daysRemaining;
   @JsonKey(name: 'computed_status')
   final String? computedStatus;
+  @JsonKey(name: 'stripe_subscription_id')
+  final String? stripeSubscriptionId;
+  @JsonKey(name: 'payment_type')
+  final String? paymentType;
+  @JsonKey(name: 'auto_renew', fromJson: _parseBool, toJson: _boolToInt)
+  final bool autoRenew;
+  @JsonKey(name: 'cancel_at_period_end', fromJson: _parseBool, toJson: _boolToInt)
+  final bool cancelAtPeriodEnd;
 
   const Subscription({
     this.id,
@@ -57,6 +65,10 @@ class Subscription {
     this.endDate,
     this.daysRemaining,
     this.computedStatus,
+    this.stripeSubscriptionId,
+    this.paymentType,
+    this.autoRenew = true,
+    this.cancelAtPeriodEnd = false,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) =>
@@ -78,6 +90,15 @@ class Subscription {
     if (price <= 0) return 'Gratuito';
     return '€${price.toStringAsFixed(2)}/mese';
   }
+
+  /// Indica se l'abbonamento è ricorrente (si rinnova automaticamente)
+  bool get isRecurring => paymentType == 'recurring' && autoRenew && !cancelAtPeriodEnd;
+
+  /// Indica se l'abbonamento è programmato per cancellarsi a fine periodo
+  bool get willCancelAtPeriodEnd => cancelAtPeriodEnd;
+
+  /// Indica se l'abbonamento può essere cancellato (solo Stripe e attivo)
+  bool get canBeCancelled => stripeSubscriptionId != null && isPremium && !isExpired && !cancelAtPeriodEnd;
 
   /// Progresso schede di allenamento (0.0 - 1.0)
   double get workoutsProgress {
@@ -122,6 +143,10 @@ class Subscription {
     String? endDate,
     int? daysRemaining,
     String? computedStatus,
+    String? stripeSubscriptionId,
+    String? paymentType,
+    bool? autoRenew,
+    bool? cancelAtPeriodEnd,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -141,6 +166,10 @@ class Subscription {
       endDate: endDate ?? this.endDate,
       daysRemaining: daysRemaining ?? this.daysRemaining,
       computedStatus: computedStatus ?? this.computedStatus,
+      stripeSubscriptionId: stripeSubscriptionId ?? this.stripeSubscriptionId,
+      paymentType: paymentType ?? this.paymentType,
+      autoRenew: autoRenew ?? this.autoRenew,
+      cancelAtPeriodEnd: cancelAtPeriodEnd ?? this.cancelAtPeriodEnd,
     );
   }
 }

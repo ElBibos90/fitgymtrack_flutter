@@ -16,7 +16,7 @@ import '../../models/subscription_models.dart';
 import '../widgets/subscription_widgets.dart';
 
 // Feature imports - payments
-import '../../../payments/bloc/stripe_bloc.dart';
+import '../../../payments/bloc/stripe_bloc.dart' as stripe_bloc;
 import '../../../payments/models/stripe_models.dart';
 import '../../../../core/config/stripe_config.dart';
 
@@ -43,10 +43,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(checkExpired: false));
     
     // 🔧 FIX: Ascolta aggiornamenti del bloc Stripe per ricaricare subscription
-    _stripeSubscription = context.read<StripeBloc>().stream.listen((stripeState) {
+    _stripeSubscription = context.read<stripe_bloc.StripeBloc>().stream.listen((stripeState) {
       if (!mounted) return; // Evita aggiornamenti se il widget è smontato
       
-      if (stripeState is StripePaymentSuccess && stripeState.paymentType == 'subscription') {
+      if (stripeState is stripe_bloc.StripePaymentSuccess && stripeState.paymentType == 'subscription') {
         print('[CONSOLE][DEBUG] SubscriptionScreen: Payment success, reloading subscription');
         // Ricarica subscription dopo pagamento riuscito
         context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(
@@ -95,7 +95,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     return Scaffold(
       backgroundColor: isDarkMode ? AppColors.backgroundDark : AppColors.backgroundLight,
-      body: BlocConsumer<StripeBloc, StripeState>(
+      body: BlocConsumer<stripe_bloc.StripeBloc, stripe_bloc.StripeState>(
         listener: (context, state) {
           _handleStripeStateChanges(context, state);
         },
@@ -128,7 +128,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // 🔧 FIX: Payment Loading Overlay gestito correttamente
-                    if (_isPaymentProcessing && stripeState is StripePaymentLoading)
+                    if (_isPaymentProcessing && stripeState is stripe_bloc.StripePaymentLoading)
                       _buildPaymentLoadingOverlay(stripeState, isDarkMode),
 
                     // 🚀 Payment Success Banner se abbiamo appena completato un pagamento
@@ -171,16 +171,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // 🔧 FIX: STRIPE STATE MANAGEMENT - Gestione corretta degli stati
   // ============================================================================
 
-  void _handleStripeStateChanges(BuildContext context, StripeState state) {
-    if (state is StripePaymentLoading) {
+  void _handleStripeStateChanges(BuildContext context, stripe_bloc.StripeState state) {
+    if (state is stripe_bloc.StripePaymentLoading) {
       setState(() {
         _isPaymentProcessing = true;
       });
       
-    } else if (state is StripePaymentReady) {
+    } else if (state is stripe_bloc.StripePaymentReady) {
       _presentPaymentSheet(context, state);
       
-    } else if (state is StripePaymentSuccess) {
+    } else if (state is stripe_bloc.StripePaymentSuccess) {
       setState(() {
         _isPaymentProcessing = false;
         _justCompletedPayment = true;
@@ -206,7 +206,62 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           duration: Duration(seconds: 3),
         ),
       );
-    } else if (state is StripeErrorState) {
+    } else if (state is stripe_bloc.StripeOperationSuccess) {
+      // 🆕 NUOVO: Gestisci operazioni di successo (cancellazione, riattivazione)
+      if (state.operation == 'cancel_subscription') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.message,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        
+        // Ricarica la subscription per aggiornare lo stato
+        context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(
+          checkExpired: false,
+          forceRefresh: true,
+        ));
+        
+      } else if (state.operation == 'reactivate_subscription') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.message,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        
+        // Ricarica la subscription per aggiornare lo stato
+        context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(
+          checkExpired: false,
+          forceRefresh: true,
+        ));
+      }
+      
+    } else if (state is stripe_bloc.StripeErrorState) {
       setState(() {
         _isPaymentProcessing = false;
       });
@@ -236,9 +291,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // PAYMENT SHEET PRESENTATION
   // ============================================================================
 
-  Future<void> _presentPaymentSheet(BuildContext context, StripePaymentReady state) async {
+  Future<void> _presentPaymentSheet(BuildContext context, stripe_bloc.StripePaymentReady state) async {
     try {
-      context.read<StripeBloc>().add(ProcessPaymentEvent(
+      context.read<stripe_bloc.StripeBloc>().add(stripe_bloc.ProcessPaymentEvent(
         clientSecret: state.paymentIntent.clientSecret,
         paymentType: state.paymentType,
       ));
@@ -268,7 +323,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ? StripeConfig.recurringPlan 
         : StripeConfig.onetimePlan;
 
-    context.read<StripeBloc>().add(CreateSubscriptionPaymentEvent(
+    context.read<stripe_bloc.StripeBloc>().add(stripe_bloc.CreateSubscriptionPaymentEvent(
       priceId: plan.stripePriceId,
       metadata: {
         'source': 'subscription_screen',
@@ -322,7 +377,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // ============================================================================
 
   /// 🔧 FIX: Payment Loading Overlay con cleanup corretto
-  Widget _buildPaymentLoadingOverlay(StripePaymentLoading state, bool isDarkMode) {
+  Widget _buildPaymentLoadingOverlay(stripe_bloc.StripePaymentLoading state, bool isDarkMode) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
@@ -582,7 +637,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   /// 🚀 Available Plans Section
-  Widget _buildAvailablePlansSection(SubscriptionState subscriptionState, StripeState stripeState, bool isDarkMode) {
+  Widget _buildAvailablePlansSection(SubscriptionState subscriptionState, stripe_bloc.StripeState stripeState, bool isDarkMode) {
     final isCurrentlyPremium = subscriptionState is SubscriptionLoaded &&
         subscriptionState.subscription.isPremium && !subscriptionState.subscription.isExpired;
 
@@ -610,8 +665,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   /// Widget personalizzato per il piano Premium
-  Widget _buildPremiumPlanCard(StripeState stripeState, bool isDarkMode) {
-    final isLoading = stripeState is StripePaymentLoading;
+  Widget _buildPremiumPlanCard(stripe_bloc.StripeState stripeState, bool isDarkMode) {
+    final isLoading = stripeState is stripe_bloc.StripePaymentLoading;
 
     return Container(
       width: double.infinity,
@@ -733,6 +788,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   /// 🚀 Premium User Message
   Widget _buildPremiumUserMessage(bool isDarkMode) {
+    return BlocBuilder<SubscriptionBloc, SubscriptionState>(
+      builder: (context, subscriptionState) {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -768,11 +825,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
+              
+              // 🆕 NUOVO: Mostra informazioni sull'abbonamento
+              if (subscriptionState is SubscriptionLoaded) ...[
           SizedBox(height: 16.h),
-          ElevatedButton.icon(
+                _buildSubscriptionStatusCard(subscriptionState.subscription, isDarkMode),
+              ],
+              
+              SizedBox(height: 16.h),
+              
+              // Pulsanti azione
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
             onPressed: () => context.push('/payment/donation'),
             icon: Icon(Icons.favorite, color: Colors.red.shade400),
-            label: Text('Fai una donazione'),
+                      label: Text('Donazione'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
               foregroundColor: Colors.purple.shade600,
@@ -780,10 +849,329 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 borderRadius: BorderRadius.circular(12.r),
               ),
             ),
+                    ),
+                  ),
+                  
+                  // 🆕 NUOVO: Pulsante gestisci abbonamento
+                  if (subscriptionState is SubscriptionLoaded && subscriptionState.subscription.canBeCancelled) ...[
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showManageSubscriptionDialog(context, subscriptionState.subscription),
+                        icon: Icon(Icons.settings, color: Colors.white),
+                        label: Text('Gestisci'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
           ),
         ],
       ),
+        );
+      },
     );
+  }
+
+  /// 🆕 NUOVO: Card con stato dell'abbonamento
+  Widget _buildSubscriptionStatusCard(Subscription subscription, bool isDarkMode) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          // Tipo di abbonamento
+          Row(
+            children: [
+              Icon(
+                subscription.isRecurring ? Icons.refresh : Icons.schedule,
+                color: Colors.white,
+                size: 16.sp,
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                subscription.isRecurring ? 'Abbonamento ricorrente' : 'Abbonamento una tantum',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          
+          // Stato cancellazione
+          if (subscription.willCancelAtPeriodEnd) ...[
+            SizedBox(height: 6.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: Colors.orange.shade300,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  'Si cancellerà il ${_formatDate(subscription.endDate!)}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.orange.shade300,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          
+          // Data di scadenza
+          if (subscription.endDate != null && !subscription.willCancelAtPeriodEnd) ...[
+            SizedBox(height: 6.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  size: 16.sp,
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  subscription.isRecurring 
+                    ? 'Prossimo rinnovo: ${_formatDate(subscription.endDate!)}'
+                    : 'Scade il: ${_formatDate(subscription.endDate!)}',
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 🆕 NUOVO: Dialog per gestire l'abbonamento
+  void _showManageSubscriptionDialog(BuildContext context, Subscription subscription) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Gestisci Abbonamento'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Piano: ${subscription.planName}'),
+              SizedBox(height: 8.h),
+              Text('Prezzo: ${subscription.formattedPrice}'),
+              SizedBox(height: 8.h),
+              
+              if (subscription.willCancelAtPeriodEnd) ...[
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info, color: Colors.orange.shade600, size: 18.sp),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Cancellazione programmata',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade800,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        'Il tuo abbonamento si cancellerà automaticamente il ${_formatDate(subscription.endDate!)}. Potrai continuare a utilizzare le funzionalità Premium fino a quella data.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Puoi cancellare il tuo abbonamento in qualsiasi momento. Se scegli la cancellazione a fine periodo, continuerai ad avere accesso alle funzionalità Premium fino alla data di scadenza.',
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Chiudi'),
+            ),
+            
+            if (subscription.willCancelAtPeriodEnd) ...[
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _reactivateSubscription(context, subscription);
+                },
+                child: Text('Riattiva Rinnovo'),
+              ),
+            ] else if (subscription.canBeCancelled) ...[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _showCancelSubscriptionDialog(context, subscription);
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: Text('Cancella Abbonamento'),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// 🆕 NUOVO: Dialog per confermare la cancellazione
+  void _showCancelSubscriptionDialog(BuildContext context, Subscription subscription) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red),
+              SizedBox(width: 8.w),
+              Text('Cancella Abbonamento'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sei sicuro di voler cancellare il tuo abbonamento Premium?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                'Scegli quando vuoi che la cancellazione abbia effetto:',
+              ),
+              SizedBox(height: 12.h),
+              
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.recommend, color: Colors.green.shade600, size: 18.sp),
+                        SizedBox(width: 8.w),
+                        Text(
+                          'Consigliato: A fine periodo',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      'Continuerai ad avere accesso Premium fino al ${_formatDate(subscription.endDate!)}. Dopo quella data tornerai al piano gratuito.',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('Annulla'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _cancelSubscription(context, subscription, immediately: true);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Cancella Subito'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _cancelSubscription(context, subscription, immediately: false);
+              },
+              child: Text('Cancella a Fine Periodo'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 🆕 NUOVO: Cancella l'abbonamento
+  void _cancelSubscription(BuildContext context, Subscription subscription, {required bool immediately}) {
+    if (subscription.stripeSubscriptionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore: ID abbonamento non trovato'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    context.read<stripe_bloc.StripeBloc>().add(stripe_bloc.CancelSubscriptionEvent(
+      subscriptionId: subscription.stripeSubscriptionId!,
+      immediately: immediately,
+    ));
+  }
+
+  /// 🆕 NUOVO: Riattiva l'abbonamento
+  void _reactivateSubscription(BuildContext context, Subscription subscription) {
+    if (subscription.stripeSubscriptionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Errore: ID abbonamento non trovato'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    context.read<stripe_bloc.StripeBloc>().add(stripe_bloc.ReactivateSubscriptionEvent(
+      subscriptionId: subscription.stripeSubscriptionId!,
+    ));
   }
 
   /// 💡 Features Comparison

@@ -147,9 +147,14 @@ function getUserSubscription($userId) {
                CASE 
                    WHEN DATE(us.end_date) < CURDATE() THEN 'expired'
                    ELSE us.status 
-               END as computed_status
+               END as computed_status,
+               us.stripe_subscription_id,
+               us.payment_type,
+               us.auto_renew,
+               COALESCE(ss.cancel_at_period_end, 0) as cancel_at_period_end
         FROM user_subscriptions us
         JOIN subscription_plans sp ON us.plan_id = sp.id
+        LEFT JOIN stripe_subscriptions ss ON us.stripe_subscription_id = ss.stripe_subscription_id
         WHERE us.user_id = ? AND us.status = 'active' AND DATE(us.end_date) >= CURDATE()
         ORDER BY sp.price DESC, us.created_at DESC 
         LIMIT 1
@@ -164,6 +169,13 @@ function getUserSubscription($userId) {
         
         // Log della subscription trovata
         error_log("✅ Subscription ATTIVA trovata: Piano={$subscription['plan_name']}, Prezzo={$subscription['price']}, Giorni rimanenti={$subscription['days_remaining']}, Scadenza={$subscription['end_date']}");
+        
+        // 🔧 DEBUG: Log dei campi Stripe
+        error_log("🔍 STRIPE FIELDS DEBUG:");
+        error_log("   - payment_type: " . ($subscription['payment_type'] ?? 'NULL'));
+        error_log("   - auto_renew: " . ($subscription['auto_renew'] ?? 'NULL'));
+        error_log("   - cancel_at_period_end: " . ($subscription['cancel_at_period_end'] ?? 'NULL'));
+        error_log("   - stripe_subscription_id: " . ($subscription['stripe_subscription_id'] ?? 'NULL'));
         
         // Aggiungiamo i conteggi attuali
         // Conteggio schede
