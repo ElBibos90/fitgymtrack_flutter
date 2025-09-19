@@ -215,9 +215,9 @@ class _WorkoutPlanDetailsScreenState extends State<WorkoutPlanDetailsScreen> {
               SizedBox(width: AppConfig.spacingS.w),
               if (exercise.ripetizioni != null)
                 _buildInfoChip(
-                  icon: Icons.fitness_center,
-                  label: '${exercise.ripetizioni} rip',
-                  color: AppColors.green600,
+                  icon: exercise.isIsometric ? Icons.timer : Icons.fitness_center,
+                  label: exercise.isIsometric ? '${exercise.ripetizioni}s' : '${exercise.ripetizioni} rip',
+                  color: exercise.isIsometric ? Colors.deepPurple : AppColors.green600,
                 ),
               if (exercise.peso != null && exercise.peso! > 0) ...[
                 SizedBox(width: AppConfig.spacingS.w),

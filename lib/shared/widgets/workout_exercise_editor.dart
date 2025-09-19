@@ -375,9 +375,9 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               SizedBox(width: 12.w),
               Expanded(
                 child: _buildInfoTile(
-                  'Ripetizioni',
+                  widget.exercise.isIsometric ? 'Secondi' : 'Ripetizioni',
                   widget.exercise.ripetizioni.toString(),
-                  Icons.fitness_center,
+                  widget.exercise.isIsometric ? Icons.timer : Icons.fitness_center,
                   colorScheme,
                 ),
               ),
@@ -442,7 +442,7 @@ class _WorkoutExerciseEditorState extends State<WorkoutExerciseEditor> {
               Expanded(
                 child: _buildTextField(
                   controller: _repsController,
-                  label: 'Ripetizioni',
+                  label: _isIsometric ? 'Secondi' : 'Ripetizioni',
                   keyboardType: TextInputType.number,
                   colorScheme: colorScheme,
                 ),

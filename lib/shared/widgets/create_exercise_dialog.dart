@@ -7,10 +7,11 @@ import '../../core/config/app_config.dart';
 import '../../core/di/dependency_injection.dart';
 import '../../core/network/api_client.dart';
 import '../../features/exercises/models/exercises_response.dart';
-import '../../features/exercises/services/image_service.dart';
+// RIMOSSA: import image_service e image_selection_dialog - non più necessari
+// import '../../features/exercises/services/image_service.dart';
+// import 'image_selection_dialog.dart';
 import 'custom_text_field.dart';
 import 'custom_snackbar.dart';
-import 'image_selection_dialog.dart';
 
 class CreateExerciseDialog extends StatefulWidget {
   final int currentUserId;
@@ -37,8 +38,9 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   String? _selectedMuscleGroup;
   bool _isIsometric = false;
   bool _isLoading = false;
-  String? _selectedImageName;
-  bool _showImageSelectionDialog = false;
+  // RIMOSSA: gestione immagine - sarà gestita dall'admin
+  // String? _selectedImageName;
+  // bool _showImageSelectionDialog = false;
 
   // Lista dei gruppi muscolari predefiniti
   final List<String> _muscleGroups = [
@@ -125,22 +127,7 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       ),
     ),
 
-        // Dialog per selezione immagini
-        if (_showImageSelectionDialog)
-          ImageSelectionDialog(
-            currentImageName: _selectedImageName,
-            onImageSelected: (imageName) {
-              setState(() {
-                _selectedImageName = imageName;
-                _showImageSelectionDialog = false;
-              });
-            },
-            onDismiss: () {
-              setState(() {
-                _showImageSelectionDialog = false;
-              });
-            },
-          ),
+        // RIMOSSA: Dialog per selezione immagini - gestita dall'admin
       ],
     );
   }
@@ -290,8 +277,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
             SizedBox(height: 16.h),
 
-            // Selezione immagine
-            _buildImageSelectionSection(context),
+            // RIMOSSA: Selezione immagine - sarà gestita dall'admin
+            // _buildImageSelectionSection(context),
 
             SizedBox(height: 16.h),
 
@@ -375,92 +362,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
     );
   }
 
-  Widget _buildImageSelectionSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Immagine Esercizio',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        
-        // Preview immagine selezionata
-        if (_selectedImageName != null) ...[
-          Container(
-            width: double.infinity,
-            height: 120.h,
-            decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
-              borderRadius: BorderRadius.circular(AppConfig.radiusM),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppConfig.radiusM),
-              child: ImageService.buildGifImage(
-                imageUrl: ImageService.getImageUrl(_selectedImageName),
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-        ],
-
-        // Pulsante per selezionare immagine
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _showImageSelectionDialog = true;
-              });
-            },
-            icon: Icon(
-              _selectedImageName != null ? Icons.edit : Icons.add_photo_alternate,
-              size: 20.sp,
-            ),
-            label: Text(
-              _selectedImageName != null ? 'Cambia Immagine' : 'Seleziona Immagine',
-              style: TextStyle(fontSize: 16.sp),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.5)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppConfig.radiusM),
-              ),
-            ),
-          ),
-        ),
-
-        if (_selectedImageName != null) ...[
-          SizedBox(height: 8.h),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _selectedImageName = null;
-                });
-              },
-              icon: Icon(Icons.delete, size: 16.sp, color: Colors.red),
-              label: Text(
-                'Rimuovi Immagine',
-                style: TextStyle(color: Colors.red, fontSize: 14.sp),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+  // RIMOSSA: Sezione per selezione immagine - sarà gestita dall'admin
+  // Widget _buildImageSelectionSection(BuildContext context) { ... }
 
   Widget _buildFooter(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -558,7 +461,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
             : _equipmentController.text.trim(),
         'is_isometric': _isIsometric, // ✅ FIX: Boolean, non int
         'status': 'pending_review', // ✅ Esercizio solo per l'utente
-        'immagine_nome': _selectedImageName, // ✅ Aggiungi immagine selezionata
+        // RIMOSSA: immagine sarà gestita dall'admin
+        // 'immagine_nome': _selectedImageName,
       };
 
       // Rimuovi campi null
@@ -587,7 +491,8 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
             descrizione: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
-            immagineNome: _selectedImageName, // ✅ Aggiungi immagine selezionata
+            // RIMOSSA: immagine sarà gestita dall'admin
+            immagineNome: null,
             isIsometric: _isIsometric,
             serieDefault: 3,
             ripetizioniDefault: _isIsometric ? 0 : 10,

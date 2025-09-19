@@ -20,12 +20,16 @@ class GreetingSection extends StatelessWidget {
 
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        // Determina il nome utente
+        // Determina il nome utente - priorità al nome reale, poi username, poi email
         String userName = 'Utente';
         if (authState is AuthAuthenticated) {
-          userName = authState.user.username.isNotEmpty
-              ? authState.user.username
-              : (authState.user.email?.split('@').first ?? 'Utente');
+          if (authState.user.name != null && authState.user.name!.isNotEmpty) {
+            userName = authState.user.name!;
+          } else if (authState.user.username.isNotEmpty) {
+            userName = authState.user.username;
+          } else {
+            userName = authState.user.email?.split('@').first ?? 'Utente';
+          }
         }
 
         return Container(
@@ -268,9 +272,13 @@ class CompactGreetingSection extends StatelessWidget {
       builder: (context, authState) {
         String userName = 'Utente';
         if (authState is AuthAuthenticated) {
-          userName = authState.user.username.isNotEmpty
-              ? authState.user.username.split(' ').first // Solo primo nome
-              : (authState.user.email?.split('@').first ?? 'Utente');
+          if (authState.user.name != null && authState.user.name!.isNotEmpty) {
+            userName = authState.user.name!.split(' ').first; // Solo primo nome
+          } else if (authState.user.username.isNotEmpty) {
+            userName = authState.user.username.split(' ').first; // Solo primo nome
+          } else {
+            userName = authState.user.email?.split('@').first ?? 'Utente';
+          }
         }
 
         return Container(
