@@ -3,11 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/widgets/ui_animations.dart';
 import '../../../../shared/services/data_integration_service.dart';
 import '../../../auth/bloc/auth_bloc.dart';
-import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../services/dashboard_service.dart';
 
 /// Sezione di saluto personalizzato nella dashboard
@@ -16,20 +13,26 @@ class GreetingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         // Determina il nome utente - priorità al nome reale, poi username, poi email
         String userName = 'Utente';
-        if (authState is AuthAuthenticated) {
-          if (authState.user.name != null && authState.user.name!.isNotEmpty) {
-            userName = authState.user.name!;
-          } else if (authState.user.username.isNotEmpty) {
-            userName = authState.user.username;
+        bool isLoading = false;
+        
+        if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
+          // Usa lo stesso utente per entrambi gli stati
+          final user = authState is AuthAuthenticated ? authState.user : (authState as AuthLoginSuccess).user;
+          
+          if (user.name != null && user.name!.isNotEmpty) {
+            userName = user.name!;
+          } else if (user.username.isNotEmpty) {
+            userName = user.username;
           } else {
-            userName = authState.user.email?.split('@').first ?? 'Utente';
+            userName = user.email?.split('@').first ?? 'Utente';
           }
+        } else if (authState is AuthLoading) {
+          // Durante il caricamento, mostra un indicatore di loading invece di "Utente"
+          isLoading = true;
         }
 
         return Container(
@@ -57,7 +60,9 @@ class GreetingSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${DashboardService.getGreeting()}, $userName! 👋',
+                          isLoading 
+                            ? '${DashboardService.getGreeting()}... 👋'
+                            : '${DashboardService.getGreeting()}, $userName! 👋',
                           style: TextStyle(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
@@ -169,7 +174,6 @@ class GreetingSection extends StatelessWidget {
         // Calcola dati dashboard solo quando necessario
         final dashboardData = DataIntegrationService.calculateDashboardData(context);
         final workoutStreak = DataIntegrationService.calculateWorkoutStreak(context);
-        final totalMinutes = DataIntegrationService.getTotalWorkoutMinutes(context);
 
         return Row(
           children: [
@@ -271,14 +275,22 @@ class CompactGreetingSection extends StatelessWidget {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         String userName = 'Utente';
-        if (authState is AuthAuthenticated) {
-          if (authState.user.name != null && authState.user.name!.isNotEmpty) {
-            userName = authState.user.name!.split(' ').first; // Solo primo nome
-          } else if (authState.user.username.isNotEmpty) {
-            userName = authState.user.username.split(' ').first; // Solo primo nome
+        bool isLoading = false;
+        
+        if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
+          // Usa lo stesso utente per entrambi gli stati
+          final user = authState is AuthAuthenticated ? authState.user : (authState as AuthLoginSuccess).user;
+          
+          if (user.name != null && user.name!.isNotEmpty) {
+            userName = user.name!.split(' ').first; // Solo primo nome
+          } else if (user.username.isNotEmpty) {
+            userName = user.username.split(' ').first; // Solo primo nome
           } else {
-            userName = authState.user.email?.split('@').first ?? 'Utente';
+            userName = user.email?.split('@').first ?? 'Utente';
           }
+        } else if (authState is AuthLoading) {
+          // Durante il caricamento, mostra un indicatore di loading
+          isLoading = true;
         }
 
         return Container(
@@ -301,7 +313,9 @@ class CompactGreetingSection extends StatelessWidget {
               SizedBox(width: 8.w),
               Expanded(
                 child: Text(
-                  '${DashboardService.getGreeting()}, $userName!',
+                  isLoading 
+                    ? '${DashboardService.getGreeting()}...'
+                    : '${DashboardService.getGreeting()}, $userName!',
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
