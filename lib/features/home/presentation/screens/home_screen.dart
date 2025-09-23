@@ -533,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _handleLogout() {
     context.read<AuthBloc>().add(const AuthLogoutRequested());
-    ApiRequestDebouncer.clearAllCache(); // Pulisci cache al logout
+    // 🧹 Cache cleanup ora gestito automaticamente da SessionService.clearSession()
   }
 
   void _handleAchievementsNavigation() {

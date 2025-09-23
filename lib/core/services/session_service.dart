@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../features/auth/models/login_response.dart';
 import '../network/api_client.dart';
 import '../di/dependency_injection.dart';
+import 'cache_cleanup_service.dart';
 
 class SessionService {
   static const String _tokenKey = 'auth_token';
@@ -159,11 +160,19 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
+    print('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
+    
+    // 1. Pulisci sessioni e token
     await Future.wait([
       _secureStorage.delete(key: _tokenKey),
       clearUserData(),
       _clearLastValidationTime(),
     ]);
+    
+    // 2. 🧹 NUOVO: Pulisci cache non essenziali (mantiene solo schede e offline)
+    await CacheCleanupService.clearNonEssentialCaches();
+    
+    print('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
   }
 
   Future<void> clearUserData() async {

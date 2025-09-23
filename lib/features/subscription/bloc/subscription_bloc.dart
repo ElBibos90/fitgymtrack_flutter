@@ -7,6 +7,8 @@ import '../repository/subscription_repository.dart';
 import '../models/subscription_models.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/utils/api_request_debouncer.dart';
+import '../../../core/services/session_service.dart';
+import '../../../core/di/dependency_injection.dart';
 
 // ============================================================================
 // EVENTS (mantenuti da codice esistente + aggiunti refresh event)
@@ -77,6 +79,10 @@ class RefreshSubscriptionEvent extends SubscriptionEvent {
 
 class CancelSubscriptionEvent extends SubscriptionEvent {
   const CancelSubscriptionEvent();
+}
+
+class ResetSubscriptionBlocEvent extends SubscriptionEvent {
+  const ResetSubscriptionBlocEvent();
 }
 
 // ============================================================================
@@ -228,6 +234,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<DismissLimitNotificationEvent>(_onDismissLimitNotification);
     on<RefreshSubscriptionEvent>(_onRefreshSubscription);
     on<CancelSubscriptionEvent>(_onCancelSubscription);
+    on<ResetSubscriptionBlocEvent>(_onResetSubscriptionBloc);
   }
 
   // ============================================================================
@@ -241,6 +248,21 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       ) async {
     try {
       print('[CONSOLE] [subscription_bloc]💳 Loading subscription...');
+
+      // 🧹 NUOVO: Controlla se l'utente è autenticato prima di usare la cache
+      try {
+        final sessionService = getIt<SessionService>();
+        final isAuthenticated = await sessionService.isAuthenticated();
+        
+        if (!isAuthenticated) {
+          print('[CONSOLE] [subscription_bloc]❌ User not authenticated, clearing cache and skipping load');
+          _invalidateCache();
+          emit(const SubscriptionInitial());
+          return;
+        }
+      } catch (e) {
+        print('[CONSOLE] [subscription_bloc]⚠️ Error checking authentication: $e');
+      }
 
       // 🚀 PERFORMANCE: Controlla cache se non è force refresh
       if (!event.forceRefresh && _isSubscriptionCacheValid()) {
@@ -698,6 +720,26 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     _lastPlansUpdate = null;
     ApiRequestDebouncer.clearCache('subscription');
     print('[CONSOLE] [subscription_bloc]🗑️ Cache invalidated');
+  }
+
+  /// 🧹 NUOVO: Reset completo del bloc (per logout)
+  Future<void> _onResetSubscriptionBloc(
+      ResetSubscriptionBlocEvent event,
+      Emitter<SubscriptionState> emit,
+      ) async {
+    print('[CONSOLE] [subscription_bloc]🧹 Resetting subscription bloc...');
+    
+    // Pulisci cache interna
+    _invalidateCache();
+    
+    // Reset flag di caricamento
+    _isLoadingSubscription = false;
+    _isLoadingPlans = false;
+    
+    // Emetti stato iniziale
+    emit(const SubscriptionInitial());
+    
+    print('[CONSOLE] [subscription_bloc]✅ Subscription bloc reset completed');
   }
 
   @override

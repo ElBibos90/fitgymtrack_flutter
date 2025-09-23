@@ -61,6 +61,16 @@ class DataIntegrationService {
       context.read<WorkoutHistoryBloc>().add(const ResetWorkoutHistoryState());
     }
 
+    // 🧹 NUOVO: Reset subscription bloc per evitare cache contamination
+    if (context.mounted) {
+      try {
+        context.read<SubscriptionBloc>().add(const ResetSubscriptionBlocEvent());
+        print('[CONSOLE] [data_integration_service] ✅ Subscription bloc reset');
+      } catch (e) {
+        print('[CONSOLE] [data_integration_service] ⚠️ Error resetting subscription bloc: $e');
+      }
+    }
+
     print('[CONSOLE] [data_integration_service] ✅ User data cleared');
   }
 
