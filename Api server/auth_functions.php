@@ -113,11 +113,31 @@ function hasAccessToUser($userData, $targetUserId, $conn) {
         return true;
     }
     
-    // Il trainer ha accesso solo ai suoi utenti
+    // Il trainer ha accesso ai clienti della sua palestra
     if (hasRole($userData, 'trainer')) {
-        // Verifica se l'utente target è assegnato a questo trainer
-        $stmt = $conn->prepare("SELECT id FROM users WHERE id = ? AND (trainer_id = ? OR id = ?)");
-        $stmt->bind_param("iii", $targetUserId, $userData['user_id'], $userData['user_id']);
+        // Verifica se l'utente target appartiene alla stessa palestra del trainer
+        $stmt = $conn->prepare("
+            SELECT u1.id 
+            FROM users u1 
+            JOIN users u2 ON u1.gym_id = u2.gym_id
+            WHERE u1.id = ? AND u2.id = ? AND u1.gym_id IS NOT NULL
+        ");
+        $stmt->bind_param("ii", $targetUserId, $userData['user_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        return $result->num_rows > 0;
+    }
+    
+    // Il gestore palestra ha accesso ai membri della sua palestra
+    if (hasRole($userData, 'gym')) {
+        // Verifica se l'utente target appartiene alla palestra del gestore
+        $stmt = $conn->prepare("
+            SELECT u1.id 
+            FROM users u1 
+            JOIN users u2 ON u1.gym_id = u2.gym_id
+            WHERE u1.id = ? AND u2.id = ? AND u1.gym_id IS NOT NULL
+        ");
+        $stmt->bind_param("ii", $targetUserId, $userData['user_id']);
         $stmt->execute();
         $result = $stmt->get_result();
         return $result->num_rows > 0;

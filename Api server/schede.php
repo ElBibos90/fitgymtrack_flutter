@@ -140,14 +140,15 @@ switch($method) {
             if(isset($_GET['id'])) {
                 $id = $_GET['id'];
                 
-                // Se l'utente è un trainer, verifica che abbia accesso a questa scheda
+                // Se l'utente è un trainer, verifica che abbia accesso a questa scheda (sistema palestre)
                 if ($isTrainer) {
                     $checkAccess = $conn->prepare("
                         SELECT s.id 
                         FROM schede s
                         JOIN user_workout_assignments uwa ON s.id = uwa.scheda_id
                         JOIN users u ON uwa.user_id = u.id
-                        WHERE s.id = ? AND u.trainer_id = ?
+                        JOIN users trainer ON u.gym_id = trainer.gym_id
+                        WHERE s.id = ? AND trainer.id = ? AND trainer.gym_id IS NOT NULL
                     ");
                     $checkAccess->bind_param("ii", $id, $userId);
                     $checkAccess->execute();
@@ -185,7 +186,7 @@ switch($method) {
                 if($scheda) {
                     // Usa prepared statement anche per gli esercizi
                     $stmt = $conn->prepare("
-                        SELECT se.*, e.nome, e.descrizione, e.gruppo_muscolare, e.attrezzatura, e.immagine_url,
+                        SELECT se.*, e.nome, e.descrizione, e.gruppo_muscolare, e.attrezzatura, e.immagine_url, e.immagine_nome,
                             se.serie, se.ripetizioni, se.peso, se.note, se.tempo_recupero, 
                             se.set_type, se.linked_to_previous, e.is_isometric
                         FROM scheda_esercizi se
@@ -263,7 +264,7 @@ switch($method) {
                     
                     // Ottiene gli esercizi per ogni scheda
                     $esercizi_result = $conn->prepare("
-                        SELECT se.*, e.nome, e.descrizione, e.gruppo_muscolare, e.attrezzatura,
+                        SELECT se.*, e.nome, e.descrizione, e.gruppo_muscolare, e.attrezzatura, e.immagine_url, e.immagine_nome,
                                se.serie, se.ripetizioni, se.peso, se.note, se.tempo_recupero,
                                se.set_type, se.linked_to_previous, e.is_isometric
                         FROM scheda_esercizi se
@@ -830,7 +831,7 @@ switch($method) {
             $id = $_GET['id'];
             //debugLog("Richiesta eliminazione scheda", ["id" => $id]);
             
-            // Verifica dei permessi
+            // Verifica dei permessi (sistema palestre)
             if ($isTrainer) {
                 // Verifica che il trainer abbia accesso a questa scheda
                 $checkAccess = $conn->prepare("
@@ -838,7 +839,8 @@ switch($method) {
                     FROM schede s
                     JOIN user_workout_assignments uwa ON s.id = uwa.scheda_id
                     JOIN users u ON uwa.user_id = u.id
-                    WHERE s.id = ? AND u.trainer_id = ?
+                    JOIN users trainer ON u.gym_id = trainer.gym_id
+                    WHERE s.id = ? AND trainer.id = ? AND trainer.gym_id IS NOT NULL
                 ");
                 $checkAccess->bind_param("ii", $id, $userId);
                 $checkAccess->execute();

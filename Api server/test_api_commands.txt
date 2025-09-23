@@ -1,0 +1,85 @@
+============================================================================
+COMANDI PER TESTARE LE API PALESTRE
+Esegui questi comandi dal terminale o da Postman
+============================================================================
+
+1. TEST AUTENTICAZIONE ADMIN
+curl -X POST http://138.68.80.170/api/auth.php?action=login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin_username","password":"admin_password"}'
+
+# Salva il token ricevuto per i prossimi comandi
+
+2. TEST LISTA PALESTRE (come admin)
+curl -X GET http://138.68.80.170/api/gyms.php \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+3. TEST CREAZIONE PALESTRA
+curl -X POST http://138.68.80.170/api/gyms.php \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "name": "Palestra API Test",
+    "email": "apitest@palestra.com",
+    "phone": "+39 333 123 4567",
+    "address": "Via Test 456, Roma",
+    "create_owner": true,
+    "owner_username": "palestra_api",
+    "owner_password": "password123",
+    "owner_email": "owner@apitest.com",
+    "owner_name": "Gestore API Test",
+    "max_users": 30,
+    "max_trainers": 3
+  }'
+
+4. TEST STATISTICHE PALESTRA
+curl -X GET "http://138.68.80.170/api/gyms.php?action=stats&gym_id=1" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+5. TEST MEMBRI PALESTRA
+curl -X GET "http://138.68.80.170/api/gyms.php?action=members&gym_id=1" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+6. TEST CREAZIONE MEMBRO PALESTRA
+curl -X POST http://138.68.80.170/api/gym_members.php \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer GYM_OWNER_TOKEN" \
+  -d '{
+    "username": "nuovo_membro",
+    "password": "password123",
+    "email": "membro@test.com",
+    "name": "Nuovo Membro",
+    "role_in_gym": "member"
+  }'
+
+7. TEST AGGIORNAMENTO STATISTICHE MANUALE
+curl -X POST http://138.68.80.170/api/update_gym_stats.php \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"gym_id": 1}'
+
+============================================================================
+FRONTEND TEST - Accedi alla webapp
+============================================================================
+
+1. Avvia il server di sviluppo:
+   npm start
+
+2. Accedi come admin:
+   - Vai su http://localhost:3000/login
+   - Inserisci credenziali admin
+
+3. Naviga su "Gestione Palestre":
+   - Menu admin -> Gestione Palestre
+   - Dovrebbe mostrare l'interfaccia per creare palestre
+
+4. Crea una palestra di test:
+   - Clicca "Nuova Palestra"
+   - Compila il form
+   - Salva
+
+5. Visualizza palestra creata:
+   - Dovrebbe apparire nella lista
+   - Clicca "Visualizza" per vedere dettagli
+
+============================================================================

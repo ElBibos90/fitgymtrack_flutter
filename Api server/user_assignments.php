@@ -140,21 +140,25 @@ switch($method) {
                 
                 error_log("Ruoli - Admin: " . ($isAdmin ? 'Sì' : 'No') . ", Trainer: " . ($isTrainer ? 'Sì' : 'No'));
         
-                // Verifica se l'utente può assegnare la scheda
-                $accessStmt = $conn->prepare("
-                    SELECT u.id 
-                    FROM users u
-                    WHERE u.id = ? AND (u.trainer_id = ? OR u.id = ?)
-                ");
-                $accessStmt->bind_param("iii", $data['user_id'], $userData['user_id'], $userData['user_id']);
-                $accessStmt->execute();
-                $accessResult = $accessStmt->get_result();
-        
-                if ($accessResult->num_rows === 0 && !$isAdmin) {
-                    error_log("Utente non autorizzato ad assegnare schede");
-                    http_response_code(403);
-                    echo json_encode(['error' => 'Non autorizzato ad assegnare schede']);
-                    return;
+                // Verifica se l'utente può assegnare la scheda (sistema palestre)
+                if (!$isAdmin) {
+                    // Per trainer e gym: verifica che il cliente appartenga alla stessa palestra
+                    $accessStmt = $conn->prepare("
+                        SELECT u1.id 
+                        FROM users u1 
+                        JOIN users u2 ON u1.gym_id = u2.gym_id
+                        WHERE u1.id = ? AND u2.id = ? AND u1.gym_id IS NOT NULL
+                    ");
+                    $accessStmt->bind_param("ii", $data['user_id'], $userData['user_id']);
+                    $accessStmt->execute();
+                    $accessResult = $accessStmt->get_result();
+            
+                    if ($accessResult->num_rows === 0) {
+                        error_log("Trainer non autorizzato ad assegnare schede a questo cliente");
+                        http_response_code(403);
+                        echo json_encode(['error' => 'Non autorizzato ad assegnare schede a questo cliente']);
+                        return;
+                    }
                 }
         
                 // Verifica esistenza utente e scheda
