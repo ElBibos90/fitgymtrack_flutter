@@ -7,16 +7,21 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_shimmer_widgets.dart';
 import '../../../../shared/widgets/error_handling_widgets.dart';
 import '../../../auth/bloc/auth_bloc.dart';
+import '../../../auth/models/login_response.dart';
 import '../../../subscription/bloc/subscription_bloc.dart';
+import '../../../subscription/bloc/gym_subscription_bloc.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../../stats/models/user_stats_models.dart';
 import '../../services/dashboard_service.dart';
+import '../../../../core/services/user_role_service.dart';
 import 'quick_actions_grid.dart';
 import 'greeting_section.dart';
 import 'subscription_section.dart';
 import 'recent_activity_section.dart';
 import 'donation_banner.dart';
+import '../../../../features/subscription/presentation/widgets/gym_subscription_section.dart';
 import 'help_section.dart';
+import '../../../../core/di/dependency_injection.dart';
 
 /// 🎨 MODERN DASHBOARD: Home Screen con layout ottimizzato e design migliorato
 class DashboardPage extends StatelessWidget {
@@ -52,6 +57,14 @@ class DashboardPage extends StatelessWidget {
         }
 
         // 🎨 MODERN DASHBOARD per utenti autenticati
+        // 🎯 NUOVO: Estrai utente per controllo ruoli
+        User? currentUser;
+        if (authState is AuthAuthenticated) {
+          currentUser = authState.user;
+        } else if (authState is AuthLoginSuccess) {
+          currentUser = authState.user;
+        }
+        
         return RefreshIndicator(
           onRefresh: () => _handleRefresh(context),
           child: CustomScrollView(
@@ -78,6 +91,7 @@ class DashboardPage extends StatelessWidget {
                     showSecondaryActions: true, // ✅ Mostra anche i template
                     crossAxisCount: 3, // ✅ 3 colonne invece di 2
                     childAspectRatio: 0.9, // ✅ Più compatto per 3 colonne
+                    user: currentUser, // 🎯 NUOVO: Passa utente per controllo ruoli
                     onNavigateToWorkouts: onNavigateToWorkouts,
                     onNavigateToAchievements: onNavigateToAchievements,
                     onNavigateToProfile: onNavigateToProfile,
@@ -91,9 +105,16 @@ class DashboardPage extends StatelessWidget {
                   margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   child: _buildSectionCard(
                     context,
-                    child: SubscriptionSection(
-                      onNavigateToSubscription: onNavigateToSubscription,
-                    ),
+                    child: UserRoleService.canSeeSubscriptionTab(currentUser)
+                        ? SubscriptionSection(
+                            onNavigateToSubscription: onNavigateToSubscription,
+                          )
+                        : BlocProvider(
+                            create: (context) => getIt<GymSubscriptionBloc>(),
+                            child: GymSubscriptionSection(
+                              userId: currentUser?.id ?? 0,
+                            ),
+                          ),
                     title: 'Abbonamento',
                     icon: Icons.card_membership_rounded,
                   ),
@@ -113,13 +134,14 @@ class DashboardPage extends StatelessWidget {
                 ),
               ),
 
-              // 🎨 DONATION BANNER con miglior styling
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  child: DonationBanner(),
+              // 🎨 DONATION BANNER con miglior styling (solo per utenti standalone)
+              if (UserRoleService.canSeeDonationBanner(currentUser))
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    child: DonationBanner(),
+                  ),
                 ),
-              ),
 
               // 🎨 HELP SECTION con card design
               SliverToBoxAdapter(

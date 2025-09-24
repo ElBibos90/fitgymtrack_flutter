@@ -15,6 +15,7 @@ class WorkoutPlanCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onStartWorkout;
   final BuildContext parentContext;
+  final bool canManageSchede;
 
   const WorkoutPlanCard({
     super.key,
@@ -24,6 +25,7 @@ class WorkoutPlanCard extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onStartWorkout,
+    this.canManageSchede = true,
   });
 
   @override
@@ -66,29 +68,30 @@ class WorkoutPlanCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Menu actions
-              PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuAction(context, value),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, size: 20, color: AppColors.error),
-                        const SizedBox(width: 8),
-                        const Text('Elimina',
-                            style: TextStyle(color: AppColors.error)),
-                      ],
+              // Menu actions (solo se l'utente può gestire le schede)
+              if (canManageSchede)
+                PopupMenuButton<String>(
+                  onSelected: (value) => _handleMenuAction(context, value),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete, size: 20, color: AppColors.error),
+                          const SizedBox(width: 8),
+                          const Text('Elimina',
+                              style: TextStyle(color: AppColors.error)),
+                        ],
+                      ),
                     ),
+                  ],
+                  child: Icon(
+                    Icons.more_vert,
+                    color: colorScheme.onSurface
+                        .withValues(alpha: 0.6), // ✅ DINAMICO!
+                    size: 24.sp,
                   ),
-                ],
-                child: Icon(
-                  Icons.more_vert,
-                  color: colorScheme.onSurface
-                      .withValues(alpha: 0.6), // ✅ DINAMICO!
-                  size: 24.sp,
                 ),
-              ),
             ],
           ),
 
@@ -153,24 +156,26 @@ class WorkoutPlanCard extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 12.w),
-              OutlinedButton(
-                onPressed: onEdit,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor:
-                      isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                  side: BorderSide(
-                      color: isDark
-                          ? const Color(0xFF90CAF9)
-                          : AppColors.indigo600),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              if (canManageSchede) ...[
+                SizedBox(width: 12.w),
+                OutlinedButton(
+                  onPressed: onEdit,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor:
+                        isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                    side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF90CAF9)
+                            : AppColors.indigo600),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
+                    ),
+                    padding:
+                        EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                   ),
-                  padding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                  child: const Icon(Icons.edit, size: 20),
                 ),
-                child: const Icon(Icons.edit, size: 20),
-              ),
+              ],
             ],
           ),
         ],

@@ -1,7 +1,9 @@
 // lib/features/subscription/di/subscription_dependency_injection.dart
 import 'package:get_it/get_it.dart';
 import '../repository/subscription_repository.dart';
+import '../repository/gym_subscription_repository.dart';
 import '../bloc/subscription_bloc.dart';
+import '../bloc/gym_subscription_bloc.dart';
 import '../../../core/network/api_client.dart';
 import 'package:dio/dio.dart';
 
@@ -32,11 +34,27 @@ class SubscriptionDependencyInjection {
       );
     });
 
-    // BLoC
+    // Gym Subscription Repository
+    getIt.registerLazySingleton<GymSubscriptionRepository>(() {
+      //print('[CONSOLE] [subscription_dependency_injection]🏗️ [DI] Creating REAL GymSubscriptionRepository instance...');
+      return GymSubscriptionRepository(
+        apiClient: getIt<ApiClient>(),
+        dio: getIt<Dio>(),
+      );
+    });
+
+    // BLoCs
     getIt.registerFactory<SubscriptionBloc>(() {
       //print('[CONSOLE] [subscription_dependency_injection]🏗️ [DI] Creating SubscriptionBloc instance...');
       return SubscriptionBloc(
         repository: getIt<SubscriptionRepository>(),
+      );
+    });
+
+    getIt.registerFactory<GymSubscriptionBloc>(() {
+      //print('[CONSOLE] [subscription_dependency_injection]🏗️ [DI] Creating GymSubscriptionBloc instance...');
+      return GymSubscriptionBloc(
+        repository: getIt<GymSubscriptionRepository>(),
       );
     });
 

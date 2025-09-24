@@ -14,12 +14,14 @@ import '../../../subscription/bloc/subscription_bloc.dart';
 import '../../../workouts/presentation/screens/workout_plans_screen.dart';
 import '../../../subscription/presentation/screens/subscription_screen.dart';
 import '../../../auth/bloc/auth_bloc.dart';
+import '../../../auth/models/login_response.dart';
 import '../../../workouts/bloc/workout_blocs.dart';
 import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../../workouts/bloc/active_workout_bloc.dart';
 import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/freemium_stats_dashboard.dart';
 import '../../../../core/services/app_update_service.dart';
+import '../../../../core/services/user_role_service.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -51,40 +53,64 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     3: false, // Subscription
   };
 
-  // ✅ Lista delle pagine con lazy initialization
-  late final List<Widget Function()> _pageBuilders = [
-        () => DashboardPage(
-      onNavigateToWorkouts: () => _onTabTapped(1),
-      onNavigateToAchievements: _handleAchievementsNavigation,
-      onNavigateToProfile: _handleProfileNavigation,
-      onNavigateToSubscription: () => _onTabTapped(3), // Tab 3 = Abbonamento
-    ),
-        () => WorkoutPlansScreen(controller: _workoutController),
-        () => const FreemiumStatsDashboard(),
-        () => const SubscriptionScreen(),
-  ];
-
   // Cache delle pagine per evitare ricostruzioni
   final Map<int, Widget> _cachedPages = {};
 
-  final List<BottomNavigationBarItem> _navItems = [
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.dashboard_rounded),
-      label: 'Dashboard',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.fitness_center_rounded),
-      label: 'Allenamenti',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.analytics_rounded),
-      label: 'Statistiche',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.card_membership_rounded),
-      label: 'Abbonamento',
-    ),
-  ];
+  /// 🎯 NUOVO: Lista delle pagine dinamica basata sul ruolo utente
+  List<Widget Function()> _getPageBuilders(User? user) {
+    final pages = [
+      () => DashboardPage(
+        onNavigateToWorkouts: () => _onTabTapped(1),
+        onNavigateToAchievements: _handleAchievementsNavigation,
+        onNavigateToProfile: _handleProfileNavigation,
+        onNavigateToSubscription: () {
+          // 🎯 NUOVO: Controlla se il tab abbonamento è disponibile
+          if (UserRoleService.canSeeSubscriptionTab(user)) {
+            _onTabTapped(3); // Tab 3 = Abbonamento
+          } else {
+            print('[CONSOLE] [home_screen]❌ Subscription tab not available for user role');
+          }
+        },
+      ),
+      () => WorkoutPlansScreen(controller: _workoutController),
+      () => const FreemiumStatsDashboard(),
+    ];
+    
+    // Aggiungi tab abbonamento solo per utenti standalone
+    if (UserRoleService.canSeeSubscriptionTab(user)) {
+      pages.add(() => const SubscriptionScreen());
+    }
+    
+    return pages;
+  }
+
+  /// 🎯 NUOVO: Lista dei tab dinamica basata sul ruolo utente
+  List<BottomNavigationBarItem> _getNavItems(User? user) {
+    final items = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.dashboard_rounded),
+        label: 'Dashboard',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.fitness_center_rounded),
+        label: 'Allenamenti',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.analytics_rounded),
+        label: 'Statistiche',
+      ),
+    ];
+    
+    // Aggiungi tab abbonamento solo per utenti standalone
+    if (UserRoleService.canSeeSubscriptionTab(user)) {
+      items.add(const BottomNavigationBarItem(
+        icon: Icon(Icons.card_membership_rounded),
+        label: 'Abbonamento',
+      ));
+    }
+    
+    return items;
+  }
 
   @override
   void initState() {
@@ -105,7 +131,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _checkForTabParameter() {
     if (widget.initialTab != null) {
       final tabIndex = widget.initialTab!;
-      if (tabIndex >= 0 && tabIndex < _navItems.length) {
+      
+      // 🎯 NUOVO: Ottieni utente per controllo ruoli
+      final authState = context.read<AuthBloc>().state;
+      User? currentUser;
+      if (authState is AuthAuthenticated) {
+        currentUser = authState.user;
+      } else if (authState is AuthLoginSuccess) {
+        currentUser = authState.user;
+      }
+      
+      final navItems = _getNavItems(currentUser);
+      if (tabIndex >= 0 && tabIndex < navItems.length) {
         // Aspetta un frame per permettere alla UI di inizializzarsi
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -377,6 +414,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     print('[CONSOLE] [home_screen]🎯 Tab tapped: $index');
 
+    // 🎯 NUOVO: Controlla se il tab è valido per l'utente corrente
+    final authState = context.read<AuthBloc>().state;
+    User? currentUser;
+    if (authState is AuthAuthenticated) {
+      currentUser = authState.user;
+    } else if (authState is AuthLoginSuccess) {
+      currentUser = authState.user;
+    }
+    
+    final pageBuilders = _getPageBuilders(currentUser);
+    if (index >= pageBuilders.length) {
+      print('[CONSOLE] [home_screen]❌ Tab $index not available for user role');
+      return;
+    }
+
     // Inizializza tab se necessario
     _initializeTabIfNeeded(index);
 
@@ -389,17 +441,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   /// Ottieni page per index con lazy loading
-  Widget _getPageForIndex(int index) {
+  Widget _getPageForIndex(int index, User? user) {
     // Usa cache se disponibile
     if (_cachedPages.containsKey(index)) {
       return _cachedPages[index]!;
     }
 
     // Crea page e mettila in cache
-    final page = _pageBuilders[index]();
-    _cachedPages[index] = page;
-
-    return page;
+    final pageBuilders = _getPageBuilders(user);
+    if (index < pageBuilders.length) {
+      final page = pageBuilders[index]();
+      _cachedPages[index] = page;
+      return page;
+    }
+    
+    // Fallback se l'indice non è valido
+    return const Center(child: Text('Pagina non trovata'));
   }
 
   @override
@@ -414,18 +471,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _showPendingWorkoutDialog(context, state);
         }
       },
-      child: Scaffold(
-        appBar: _buildAppBar(context),
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: List.generate(
-            _pageBuilders.length,
-                (index) => _getPageForIndex(index),
-          ),
-        ),
-        bottomNavigationBar: _buildBottomNavigation(
-          Theme.of(context).brightness == Brightness.dark,
-        ),
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          // 🎯 NUOVO: Estrai utente per controllo ruoli
+          User? currentUser;
+          if (authState is AuthAuthenticated) {
+            currentUser = authState.user;
+          } else if (authState is AuthLoginSuccess) {
+            currentUser = authState.user;
+          }
+          
+          final pageBuilders = _getPageBuilders(currentUser);
+          final navItems = _getNavItems(currentUser);
+          
+          return Scaffold(
+            appBar: _buildAppBar(context),
+            body: IndexedStack(
+              index: _selectedIndex,
+              children: List.generate(
+                pageBuilders.length,
+                (index) => _getPageForIndex(index, currentUser),
+              ),
+            ),
+            bottomNavigationBar: _buildBottomNavigation(
+              Theme.of(context).brightness == Brightness.dark,
+              navItems: navItems,
+            ),
+          );
+        },
       ),
     );
   }
@@ -490,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildBottomNavigation(bool isDarkMode) {
+  Widget _buildBottomNavigation(bool isDarkMode, {required List<BottomNavigationBarItem> navItems}) {
     return Container(
       decoration: BoxDecoration(
         color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -512,7 +585,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         unselectedItemColor: isDarkMode ? Colors.white54 : AppColors.textSecondary,
         selectedFontSize: 12.sp,
         unselectedFontSize: 12.sp,
-        items: _navItems,
+        items: navItems,
       ),
     );
   }

@@ -11,11 +11,14 @@ import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
+import '../../../../core/services/user_role_service.dart';
 import '../../../../core/di/dependency_injection.dart';
+import '../../../auth/models/login_response.dart';
 
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
 import '../widgets/workout_widgets.dart';
+import '../../../auth/bloc/auth_bloc.dart';
 
 /// 🚀 NUOVO: Interfaccia per tab con lazy loading
 abstract class LazyLoadableTab {
@@ -200,23 +203,28 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Mie Schede',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.fitness_center_rounded),
-            onPressed: () => context.push('/templates'),
-            tooltip: 'Template Schede',
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final currentUser = authState is AuthAuthenticated ? authState.user : null;
+        final canManageSchede = UserRoleService.canSeeQuickActions(currentUser);
+        
+        return Scaffold(
+          appBar: CustomAppBar(
+            title: 'Mie Schede',
+            actions: canManageSchede ? [
+              IconButton(
+                icon: const Icon(Icons.fitness_center_rounded),
+                onPressed: () => context.push('/templates'),
+                tooltip: 'Template Schede',
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => context.push('/workouts/create'),
+                tooltip: 'Crea Scheda',
+              ),
+            ] : null,
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/workouts/create'),
-            tooltip: 'Crea Scheda',
-          ),
-        ],
-      ),
-      body: BlocConsumer<WorkoutBloc, WorkoutState>(
+          body: BlocConsumer<WorkoutBloc, WorkoutState>(
         listener: (context, state) {
           // ✅ Gestione feedback per le operazioni
           if (state is WorkoutPlanDeleted) {
@@ -240,22 +248,24 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
             message: state is WorkoutLoadingWithMessage ? state.message : null,
             child: RefreshIndicator(
               onRefresh: _refreshWorkoutPlans,
-              child: _buildContent(state),
+              child: _buildContent(state, canManageSchede),
             ),
           );
         },
       ),
+        );
+      },
     );
   }
 
-  Widget _buildContent(WorkoutState state) {
+  Widget _buildContent(WorkoutState state, bool canManageSchede) {
     // 🚀 NUOVO: Se non abbiamo ancora caricato i dati e la tab non è visibile, mostra loading
     if (!_hasLoadedData && !_isTabVisible) {
       return _buildInitialState();
     }
 
     if (state is WorkoutPlansLoaded) {
-      return _buildWorkoutPlansList(state);
+      return _buildWorkoutPlansList(state, canManageSchede);
     } else if (state is WorkoutError) {
       return _buildErrorState(state);
     } else if (state is WorkoutInitial && !_hasLoadedData) {
@@ -316,9 +326,9 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
     );
   }
 
-  Widget _buildWorkoutPlansList(WorkoutPlansLoaded state) {
+  Widget _buildWorkoutPlansList(WorkoutPlansLoaded state, bool canManageSchede) {
     if (state.workoutPlans.isEmpty) {
-      return _buildEmptyPlansState();
+      return _buildEmptyPlansState(canManageSchede);
     }
 
     return ListView.builder(
@@ -330,14 +340,15 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
         return WorkoutPlanCard(
           workoutPlan: workoutPlan,
           parentContext: context,
+          canManageSchede: canManageSchede,
           onTap: () {
             Future.microtask(() => _showWorkoutDetails(workoutPlan));
           },
-          onEdit: () {
+          onEdit: canManageSchede ? () {
             Future.microtask(
                 () => context.push('/workouts/edit/${workoutPlan.id}'));
-          },
-          onDelete: () async {
+          } : null,
+          onDelete: canManageSchede ? () async {
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
@@ -400,7 +411,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
             if (confirmed == true) {
               _deleteWorkout(workoutPlan.id);
             }
-          },
+          } : null,
           onStartWorkout: () {
             Future.microtask(() => _startWorkout(workoutPlan));
           },
@@ -409,7 +420,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
     );
   }
 
-  Widget _buildEmptyPlansState() {
+  Widget _buildEmptyPlansState(bool canManageSchede) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -438,39 +449,40 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppConfig.spacingXL.h),
-          // Pulsanti per creare schede
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () => context.push('/workouts/create'),
-                icon: const Icon(Icons.add),
-                label: const Text('Crea Scheda'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.indigo600,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppConfig.spacingL.w,
-                    vertical: AppConfig.spacingM.h,
+          // Pulsanti per creare schede (solo per utenti standalone)
+          if (canManageSchede)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/workouts/create'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Crea Scheda'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.indigo600,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppConfig.spacingL.w,
+                      vertical: AppConfig.spacingM.h,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: AppConfig.spacingM.w),
-              ElevatedButton.icon(
-                onPressed: () => context.push('/templates'),
-                icon: const Icon(Icons.fitness_center_rounded),
-                label: const Text('Template Schede'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.purple600,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppConfig.spacingL.w,
-                    vertical: AppConfig.spacingM.h,
+                SizedBox(width: AppConfig.spacingM.w),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/templates'),
+                  icon: const Icon(Icons.fitness_center_rounded),
+                  label: const Text('Template Schede'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.purple600,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppConfig.spacingL.w,
+                      vertical: AppConfig.spacingM.h,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

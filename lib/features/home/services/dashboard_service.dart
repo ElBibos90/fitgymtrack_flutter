@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/quick_action.dart';
 import '../../tools/presentation/widgets/one_rep_max_dialog.dart';
+import '../../../core/services/user_role_service.dart';
+import '../../../features/auth/models/login_response.dart';
 
 /// Service per gestire la business logic della dashboard
 class DashboardService {
@@ -48,7 +50,13 @@ class DashboardService {
   }
 
   /// Quick Actions secondarie (future features)
-  static List<QuickAction> getSecondaryActions(BuildContext context) {
+  /// 🎯 NUOVO: Nasconde azioni per utenti role_id: 2 (collegati a palestra)
+  static List<QuickAction> getSecondaryActions(BuildContext context, {User? user}) {
+    // Se l'utente è collegato a una palestra, non mostrare azioni secondarie
+    if (!UserRoleService.canSeeQuickActions(user)) {
+      return [];
+    }
+    
     return [
       QuickAction(
         id: 'templates',

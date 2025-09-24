@@ -1,0 +1,22 @@
+[2025-09-24 07:11:57] GET - /api/client_subscription_management.php?action=client_subscription&client_id=33
+Headers: {"user-agent":"Dart\/3.9 (dart:io)","accept":"application\/json","accept-encoding":"gzip","host":"fitgymtrack.com","authorization":"Bearer ee38a82c259729285d1954191d0d63ea8f45c5a62852111bb550a9a33a86d277","content-type":"application\/json"}
+GET params: {"action":"client_subscription","client_id":"33"}
+POST data: 
+---
+[2025-09-24 07:11:57] AUTH - authMiddleware result: {"user_id":33,"expires_at":"2025-09-25 00:18:42","username":"Membro1","email":"membro1@gmail.com","name":"Membro1","role_id":2,"role_name":"user","trainer_id":null,"is_tester":0}
+[2025-09-24 07:11:57] SUCCESS - User authenticated: {"user_id":33,"expires_at":"2025-09-25 00:18:42","username":"Membro1","email":"membro1@gmail.com","name":"Membro1","role_id":2,"role_name":"user","trainer_id":null,"is_tester":0}
+[2025-09-24 07:11:57] ROUTING - Method: GET, Action: client_subscription
+[2025-09-24 07:11:57] CALLING - getClientSubscription with client_id: 33
+[2025-09-24 07:11:57] FUNCTION START - getClientSubscription called with client_id: 33, user_id: 33, role: user
+[2025-09-24 07:11:57] RESPONSE - Subscription found: {"success":true,"subscription":{"id":4,"subscription_type":"monthly","subscription_name":"Abbonamento Mensile Standard","price":"49.90","currency":"EUR","start_date":"2024-09-18","end_date":"2024-10-18","status":"active","payment_status":"paid","auto_renew":1,"notes":"Abbonamento di test per Membro1","created_at":"2025-09-23 23:35:55","updated_at":"2025-09-23 23:35:55","client_name":"Membro1","client_email":"membro1@gmail.com","days_remaining":0}}
+[2025-09-24 07:13:38] GET - /api/client_subscription_management.php?action=client_subscription&client_id=33
+Headers: {"user-agent":"Dart\/3.9 (dart:io)","accept":"application\/json","accept-encoding":"gzip","host":"fitgymtrack.com","authorization":"Bearer ee38a82c259729285d1954191d0d63ea8f45c5a62852111bb550a9a33a86d277","content-type":"application\/json"}
+GET params: {"action":"client_subscription","client_id":"33"}
+POST data: 
+---
+[2025-09-24 07:13:38] AUTH - authMiddleware result: {"user_id":33,"expires_at":"2025-09-25 00:18:42","username":"Membro1","email":"membro1@gmail.com","name":"Membro1","role_id":2,"role_name":"user","trainer_id":null,"is_tester":0}
+[2025-09-24 07:13:38] SUCCESS - User authenticated: {"user_id":33,"expires_at":"2025-09-25 00:18:42","username":"Membro1","email":"membro1@gmail.com","name":"Membro1","role_id":2,"role_name":"user","trainer_id":null,"is_tester":0}
+[2025-09-24 07:13:38] ROUTING - Method: GET, Action: client_subscription
+[2025-09-24 07:13:38] CALLING - getClientSubscription with client_id: 33
+[2025-09-24 07:13:38] FUNCTION START - getClientSubscription called with client_id: 33, user_id: 33, role: user
+[2025-09-24 07:13:38] RESPONSE - Subscription found: {"success":true,"subscription":{"id":4,"subscription_type":"monthly","subscription_name":"Abbonamento Mensile Standard","price":"59.90","currency":"EUR","start_date":"2024-09-18","end_date":"2024-10-18","status":"active","payment_status":"paid","auto_renew":1,"notes":"Abbonamento di test per Membro1","created_at":"2025-09-23 23:35:55","updated_at":"2025-09-24 09:13:25","client_name":"Membro1","client_email":"membro1@gmail.com","days_remaining":0}}

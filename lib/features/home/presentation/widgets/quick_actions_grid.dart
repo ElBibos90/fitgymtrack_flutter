@@ -6,13 +6,16 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/ui_animations.dart';
 import '../../models/quick_action.dart';
 import '../../services/dashboard_service.dart';
+import '../../../auth/models/login_response.dart';
 
 /// Widget per visualizzare la griglia delle Quick Actions
 /// ✅ FIX: Ora supporta callback functions per navigazione corretta
+/// 🎯 NUOVO: Supporta ruoli utente per nascondere azioni
 class QuickActionsGrid extends StatelessWidget {
   final bool showSecondaryActions;
   final int crossAxisCount;
   final double childAspectRatio;
+  final User? user; // 🎯 NUOVO: Utente per controllo ruoli
 
   // 🆕 CALLBACK FUNCTIONS per navigazione corretta
   final VoidCallback? onNavigateToWorkouts;
@@ -24,6 +27,7 @@ class QuickActionsGrid extends StatelessWidget {
     this.showSecondaryActions = false,
     this.crossAxisCount = 2,
     this.childAspectRatio = 1.3,
+    this.user, // 🎯 NUOVO: Parametro utente
     // 🆕 Aggiunti parametri per callback
     this.onNavigateToWorkouts,
     this.onNavigateToAchievements,
@@ -42,9 +46,9 @@ class QuickActionsGrid extends StatelessWidget {
       onNavigateToProfile: onNavigateToProfile,
     );
 
-    // Opzionalmente aggiungi azioni secondarie
+    // Opzionalmente aggiungi azioni secondarie (con controllo ruoli)
     final actions = showSecondaryActions
-        ? [...primaryActions, ...DashboardService.getSecondaryActions(context)]
+        ? [...primaryActions, ...DashboardService.getSecondaryActions(context, user: user)]
         : primaryActions;
 
     return Column(
