@@ -1,190 +1,110 @@
 <?php
-// ============================================================================
-// API GESTIONE ABBONAMENTI CLIENTI PALESTRE
-// Versione ricreata da zero per funzionare con webapp e Flutter
-// ============================================================================
+// API per la gestione degli abbonamenti clienti palestra
+// Versione pulita senza logging di debug
 
-// Abilita il reporting degli errori per il debug
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+// Configurazione errori
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// 🔍 DEBUG: Log della richiesta
-$logFile = __DIR__ . '/api_debug_log.txt';
-$logMessage = "[" . date('Y-m-d H:i:s') . "] " . $_SERVER['REQUEST_METHOD'] . " - " . $_SERVER['REQUEST_URI'] . "\n";
-$logMessage .= "Headers: " . json_encode(getallheaders()) . "\n";
-$logMessage .= "GET params: " . json_encode($_GET) . "\n";
-$logMessage .= "POST data: " . file_get_contents('php://input') . "\n";
-$logMessage .= "---\n";
-file_put_contents($logFile, $logMessage, FILE_APPEND | LOCK_EX);
-
-error_log("🔍 [DEBUG] client_subscription_management.php accessed - Method: " . $_SERVER['REQUEST_METHOD']);
-error_log("🔍 [DEBUG] Headers: " . json_encode(getallheaders()));
-error_log("🔍 [DEBUG] GET params: " . json_encode($_GET));
-error_log("🔍 [DEBUG] POST data: " . file_get_contents('php://input'));
-
-// CORS headers - Supporta sia webapp che Flutter
+// Headers CORS per webapp e Flutter
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Access-Control-Max-Age: 86400');
+header('Content-Type: application/json');
 
-// Gestisci preflight OPTIONS
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+// Gestione preflight OPTIONS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Content-Type JSON
-header('Content-Type: application/json');
+// Includi file di configurazione
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth_functions.php';
 
-// Include configurazione e funzioni
-include 'config.php';
-require_once 'auth_functions.php';
-
-// Verifica connessione database
-if (!$conn) {
-    error_log("❌ [ERROR] Database connection failed");
+// Connessione al database (già creata in config.php)
+// Verifica connessione
+if ($conn->connect_error) {
     http_response_code(500);
-    echo json_encode(['error' => 'Errore connessione database']);
+    echo json_encode(['error' => 'Errore di connessione al database']);
     exit();
 }
 
-$method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? '';
-
-error_log("🔍 [DEBUG] Method: $method, Action: $action");
-
-// Verifica autenticazione
-error_log("🔍 [DEBUG] About to call authMiddleware");
+// Autenticazione
 $user = authMiddleware($conn, ['trainer', 'gym', 'admin', 'user']);
-error_log("🔍 [DEBUG] authMiddleware result: " . json_encode($user));
-
-// Log nel file
-$authLogMessage = "[" . date('Y-m-d H:i:s') . "] AUTH - authMiddleware result: " . json_encode($user) . "\n";
-file_put_contents($logFile, $authLogMessage, FILE_APPEND | LOCK_EX);
 
 if (!$user) {
-    error_log("❌ [DEBUG] authMiddleware failed - user not authenticated");
-    $errorLogMessage = "[" . date('Y-m-d H:i:s') . "] ERROR - authMiddleware failed\n";
-    file_put_contents($logFile, $errorLogMessage, FILE_APPEND | LOCK_EX);
     http_response_code(401);
     echo json_encode(['error' => 'Autenticazione richiesta']);
     exit();
 }
 
-error_log("✅ [DEBUG] User authenticated: " . json_encode($user));
-$successLogMessage = "[" . date('Y-m-d H:i:s') . "] SUCCESS - User authenticated: " . json_encode($user) . "\n";
-file_put_contents($logFile, $successLogMessage, FILE_APPEND | LOCK_EX);
-
 // Routing delle azioni
-$routingLogMessage = "[" . date('Y-m-d H:i:s') . "] ROUTING - Method: $method, Action: $action\n";
-file_put_contents($logFile, $routingLogMessage, FILE_APPEND | LOCK_EX);
+$method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
 
 switch($method) {
     case 'GET':
         switch($action) {
             case 'client_subscription':
-                $functionLogMessage = "[" . date('Y-m-d H:i:s') . "] CALLING - getClientSubscription with client_id: " . ($_GET['client_id'] ?? 'null') . "\n";
-                file_put_contents($logFile, $functionLogMessage, FILE_APPEND | LOCK_EX);
                 getClientSubscription($conn, $user, $_GET['client_id'] ?? null);
                 break;
+            case 'client_subscription_history':
+                getClientSubscriptionHistory($conn, $user, $_GET['client_id'] ?? null);
+                break;
             default:
-                $errorLogMessage = "[" . date('Y-m-d H:i:s') . "] ERROR - Action not specified: $action\n";
-                file_put_contents($logFile, $errorLogMessage, FILE_APPEND | LOCK_EX);
                 http_response_code(400);
                 echo json_encode(['error' => 'Azione non specificata']);
+                break;
+        }
+        break;
+        
+    case 'POST':
+        switch($action) {
+            case 'create_subscription':
+                createClientSubscription($conn, $user);
+                break;
+            default:
+                http_response_code(400);
+                echo json_encode(['error' => 'Azione non specificata']);
+                break;
         }
         break;
         
     default:
-        $errorLogMessage = "[" . date('Y-m-d H:i:s') . "] ERROR - Method not allowed: $method\n";
-        file_put_contents($logFile, $errorLogMessage, FILE_APPEND | LOCK_EX);
         http_response_code(405);
         echo json_encode(['error' => 'Metodo non consentito']);
+        break;
 }
 
 /**
- * Ottieni abbonamento attuale di un cliente
+ * Recupera l'abbonamento attivo di un cliente
  */
 function getClientSubscription($conn, $user, $client_id) {
-    global $logFile;
-    
-    $functionStartLog = "[" . date('Y-m-d H:i:s') . "] FUNCTION START - getClientSubscription called with client_id: $client_id, user_id: {$user['user_id']}, role: {$user['role_name']}\n";
-    file_put_contents($logFile, $functionStartLog, FILE_APPEND | LOCK_EX);
-    
-    error_log("🔍 [DEBUG] getClientSubscription called with client_id: $client_id, user_id: {$user['user_id']}, role: {$user['role_name']}");
-    
     if (!$client_id) {
-        $errorLog = "[" . date('Y-m-d H:i:s') . "] ERROR - Missing client_id\n";
-        file_put_contents($logFile, $errorLog, FILE_APPEND | LOCK_EX);
         http_response_code(400);
         echo json_encode(['error' => 'ID cliente mancante']);
         return;
     }
     
     try {
-        // Se l'utente è un user normale, può accedere solo ai propri dati
-        if ($user['role_name'] === 'user') {
-            $user_id = $user['user_id'] ?? $user['id'] ?? null;
-            if ($user_id != $client_id) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Accesso negato: puoi accedere solo ai tuoi dati']);
-                return;
-            }
-            $gym_id = null; // Per gli utenti normali, non filtriamo per gym_id
-        } else {
-            // Per trainer, gym e admin, usa la logica esistente
-            $gym_id = getTrainerGymId($conn, $user);
-            
-            // Verifica che il cliente appartenga alla palestra del trainer
-            if (!verifyClientAccess($conn, $client_id, $gym_id)) {
-                http_response_code(403);
-                echo json_encode(['error' => 'Accesso negato al cliente']);
-                return;
-            }
+        // Verifica permessi di accesso
+        if (!verifyClientAccess($conn, $client_id, $user)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accesso negato al cliente']);
+            return;
         }
         
-        // Query per abbonamento attivo
-        if ($gym_id !== null) {
-            // Per trainer, gym e admin - filtra per gym_id
-            $stmt = $conn->prepare("
-                SELECT 
-                    cs.id, cs.subscription_type, cs.subscription_name, cs.price, cs.currency,
-                    cs.start_date, cs.end_date, cs.status, cs.payment_status, cs.auto_renew,
-                    cs.notes, cs.created_at, cs.updated_at,
-                    u.name as client_name, u.email as client_email
-                FROM client_subscriptions cs
-                JOIN users u ON cs.client_id = u.id
-                WHERE cs.client_id = ? AND cs.gym_id = ? 
-                AND cs.status = 'active'
-                ORDER BY cs.created_at DESC
-                LIMIT 1
-            ");
-            $stmt->bind_param("ii", $client_id, $gym_id);
-        } else {
-            // Per utenti normali - non filtra per gym_id
-            error_log("🔍 [DEBUG] Executing query for user (no gym_id filter)");
-            $stmt = $conn->prepare("
-                SELECT 
-                    cs.id, cs.subscription_type, cs.subscription_name, cs.price, cs.currency,
-                    cs.start_date, cs.end_date, cs.status, cs.payment_status, cs.auto_renew,
-                    cs.notes, cs.created_at, cs.updated_at,
-                    u.name as client_name, u.email as client_email
-                FROM client_subscriptions cs
-                JOIN users u ON cs.client_id = u.id
-                WHERE cs.client_id = ? 
-                AND cs.status = 'active'
-                ORDER BY cs.created_at DESC
-                LIMIT 1
-            ");
-            $stmt->bind_param("i", $client_id);
-        }
+        // Query per recuperare l'abbonamento attivo dalla tabella client_subscriptions
+        $sql = "SELECT cs.*, g.name as gym_name 
+                FROM client_subscriptions cs 
+                LEFT JOIN gyms g ON cs.gym_id = g.id 
+                WHERE cs.client_id = ? AND cs.status = 'active'";
         
-        error_log("🔍 [DEBUG] About to execute query");
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $client_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        error_log("🔍 [DEBUG] Query executed, num_rows: " . $result->num_rows);
         
         if ($result->num_rows > 0) {
             $subscription = $result->fetch_assoc();
@@ -193,68 +113,262 @@ function getClientSubscription($conn, $user, $client_id) {
             $end_date = new DateTime($subscription['end_date']);
             $today = new DateTime();
             $days_remaining = $today->diff($end_date)->days;
+            
             if ($end_date < $today) {
                 $days_remaining = 0;
             }
-            $subscription['days_remaining'] = $days_remaining;
             
-            error_log("✅ [DEBUG] Subscription found: " . json_encode($subscription));
             $response = [
                 'success' => true,
-                'subscription' => $subscription
+                'subscription' => [
+                    'id' => $subscription['id'],
+                    'client_id' => $subscription['client_id'],
+                    'gym_id' => $subscription['gym_id'],
+                    'gym_name' => $subscription['gym_name'],
+                    'subscription_name' => $subscription['subscription_name'],
+                    'subscription_type' => $subscription['subscription_type'],
+                    'price' => $subscription['price'],
+                    'currency' => $subscription['currency'],
+                    'start_date' => $subscription['start_date'],
+                    'end_date' => $subscription['end_date'],
+                    'status' => $subscription['status'],
+                    'payment_status' => $subscription['payment_status'],
+                    'auto_renew' => $subscription['auto_renew'],
+                    'days_remaining' => $days_remaining,
+                    'notes' => $subscription['notes']
+                ]
             ];
-            $responseLogMessage = "[" . date('Y-m-d H:i:s') . "] RESPONSE - Subscription found: " . json_encode($response) . "\n";
-            file_put_contents($logFile, $responseLogMessage, FILE_APPEND | LOCK_EX);
             echo json_encode($response);
         } else {
-            error_log("ℹ️ [DEBUG] No active subscription found");
-            echo json_encode([
-                'success' => true,
-                'subscription' => null,
-                'message' => 'Nessun abbonamento attivo'
-            ]);
+            $response = [
+                'success' => false,
+                'message' => 'Nessun abbonamento attivo trovato'
+            ];
+            echo json_encode($response);
         }
         
     } catch (Exception $e) {
-        error_log("❌ [ERROR] Exception in getClientSubscription: " . $e->getMessage());
-        error_log("❌ [ERROR] Stack trace: " . $e->getTraceAsString());
         http_response_code(500);
-        echo json_encode(['error' => 'Errore nel recupero abbonamento: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'Errore nel recupero dell\'abbonamento: ' . $e->getMessage()]);
     }
 }
 
 /**
- * Utility: Ottieni gym_id del trainer
+ * Recupera la cronologia degli abbonamenti di un cliente
  */
-function getTrainerGymId($conn, $user) {
-    if (hasRole($user, 'admin')) {
-        return $_GET['gym_id'] ?? null;
+function getClientSubscriptionHistory($conn, $user, $client_id) {
+    if (!$client_id) {
+        http_response_code(400);
+        echo json_encode(['error' => 'ID cliente mancante']);
+        return;
     }
     
-    if (hasRole($user, 'gym') || hasRole($user, 'trainer')) {
-        $stmt = $conn->prepare("SELECT gym_id FROM users WHERE id = ?");
-        $stmt->bind_param("i", $user['user_id']);
+    try {
+        // Verifica permessi di accesso
+        if (!verifyClientAccess($conn, $client_id, $user)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accesso negato al cliente']);
+            return;
+        }
+        
+        // Query per recuperare la cronologia dalla tabella client_subscriptions
+        $sql = "SELECT cs.*, g.name as gym_name 
+                FROM client_subscriptions cs 
+                LEFT JOIN gyms g ON cs.gym_id = g.id 
+                WHERE cs.client_id = ? 
+                ORDER BY cs.created_at DESC";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $client_id);
         $stmt->execute();
         $result = $stmt->get_result();
-        return $result->num_rows > 0 ? $result->fetch_assoc()['gym_id'] : null;
+        
+        $history = [];
+        while ($row = $result->fetch_assoc()) {
+            // Calcola giorni rimanenti
+            $end_date = new DateTime($row['end_date']);
+            $today = new DateTime();
+            $days_remaining = $today->diff($end_date)->days;
+            
+            if ($end_date < $today) {
+                $days_remaining = 0;
+            }
+            
+            $history[] = [
+                'id' => $row['id'],
+                'client_id' => $row['client_id'],
+                'gym_id' => $row['gym_id'],
+                'gym_name' => $row['gym_name'],
+                'subscription_name' => $row['subscription_name'],
+                'subscription_type' => $row['subscription_type'],
+                'price' => $row['price'],
+                'currency' => $row['currency'],
+                'start_date' => $row['start_date'],
+                'end_date' => $row['end_date'],
+                'status' => $row['status'],
+                'payment_status' => $row['payment_status'],
+                'auto_renew' => $row['auto_renew'],
+                'days_remaining' => $days_remaining,
+                'notes' => $row['notes'],
+                'created_at' => $row['created_at'],
+                'updated_at' => $row['updated_at']
+            ];
+        }
+        
+        $response = [
+            'success' => true,
+            'history' => $history
+        ];
+        echo json_encode($response);
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Errore nel recupero della cronologia: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Crea un nuovo abbonamento per un cliente
+ */
+function createClientSubscription($conn, $user) {
+    // Solo trainer, gym e admin possono creare abbonamenti
+    if (!in_array($user['role_name'], ['trainer', 'gym', 'admin'])) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Permessi insufficienti per creare abbonamenti']);
+        return;
+    }
+    
+    try {
+        // Leggi i dati POST
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Dati mancanti']);
+            return;
+        }
+        
+        $client_id = $input['client_id'] ?? null;
+        $subscription_name = $input['subscription_name'] ?? '';
+        $subscription_type = $input['subscription_type'] ?? 'monthly';
+        $price = $input['price'] ?? 0;
+        $start_date = $input['start_date'] ?? date('Y-m-d');
+        $end_date = $input['end_date'] ?? null;
+        $auto_renew = 0; // Sempre disabilitato
+        $notes = $input['notes'] ?? '';
+        
+        if (!$client_id || !$subscription_name || !$end_date) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Dati obbligatori mancanti']);
+            return;
+        }
+        
+        // Ottieni gym_id del trainer
+        $gym_id = getTrainerGymId($conn, $user);
+        
+        if (!$gym_id) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Palestra non trovata']);
+            return;
+        }
+        
+        // Verifica che il cliente appartenga alla palestra
+        if (!verifyClientAccess($conn, $client_id, $user)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accesso negato al cliente']);
+            return;
+        }
+        
+        // 1. Disattiva eventuali abbonamenti attivi esistenti
+        $deactivateStmt = $conn->prepare("
+            UPDATE client_subscriptions 
+            SET status = 'expired', updated_at = NOW(),
+                notes = CONCAT(IFNULL(notes, ''), '\n', 'Sostituito da nuovo abbonamento il ', NOW())
+            WHERE client_id = ? AND gym_id = ? AND status = 'active'
+        ");
+        $deactivateStmt->bind_param("ii", $client_id, $gym_id);
+        $deactivateStmt->execute();
+        
+        // 2. Inserisci nuovo abbonamento
+        $stmt = $conn->prepare("
+            INSERT INTO client_subscriptions 
+            (client_id, gym_id, trainer_id, subscription_type, subscription_name, price, currency, 
+             start_date, end_date, status, payment_status, auto_renew, notes, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'EUR', ?, ?, 'active', 'paid', ?, ?, NOW(), NOW())
+        ");
+        
+        $trainer_id = $user['user_id'];
+        $stmt->bind_param("iiisssssis", 
+            $client_id, $gym_id, $trainer_id, $subscription_type, $subscription_name, 
+            $price, $start_date, $end_date, $auto_renew, $notes
+        );
+        
+        if ($stmt->execute()) {
+            $subscription_id = $conn->insert_id;
+            
+            $response = [
+                'success' => true,
+                'message' => 'Abbonamento creato con successo',
+                'subscription_id' => $subscription_id
+            ];
+            echo json_encode($response);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Errore nella creazione dell\'abbonamento']);
+        }
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Errore nella creazione dell\'abbonamento: ' . $e->getMessage()]);
+    }
+}
+
+/**
+ * Verifica se l'utente può accedere ai dati del cliente
+ */
+function verifyClientAccess($conn, $client_id, $user) {
+    // Se l'utente è un cliente (role_id: 2), può accedere solo ai propri dati
+    if ($user['role_name'] === 'user') {
+        return $user['user_id'] == $client_id;
+    }
+    
+    // Per trainer, gym e admin, verifica che il cliente appartenga alla loro palestra
+    $gym_id = getTrainerGymId($conn, $user);
+    if (!$gym_id) {
+        return false;
+    }
+    
+    // Verifica che il cliente abbia abbonamenti nella palestra
+    $stmt = $conn->prepare("SELECT id FROM client_subscriptions WHERE client_id = ? AND gym_id = ?");
+    $stmt->bind_param("ii", $client_id, $gym_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    return $result->num_rows > 0;
+}
+
+/**
+ * Ottiene l'ID della palestra del trainer
+ */
+function getTrainerGymId($conn, $user) {
+    if ($user['role_name'] === 'gym') {
+        return $user['gym_id'];
+    }
+    
+    // Usa la tabella users (che ha il campo gym_id)
+    $stmt = $conn->prepare("SELECT gym_id FROM users WHERE id = ?");
+    $stmt->bind_param("i", $user['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        return $row['gym_id'];
     }
     
     return null;
 }
 
-/**
- * Utility: Verifica accesso al cliente
- */
-function verifyClientAccess($conn, $client_id, $gym_id) {
-    $stmt = $conn->prepare("
-        SELECT 1 FROM gym_memberships 
-        WHERE user_id = ? AND gym_id = ? AND role_in_gym = 'member'
-    ");
-    $stmt->bind_param("ii", $client_id, $gym_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->num_rows > 0;
-}
-
+// Chiudi connessione
 $conn->close();
 ?>
