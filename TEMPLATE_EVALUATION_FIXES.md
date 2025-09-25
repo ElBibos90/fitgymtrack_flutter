@@ -106,3 +106,4 @@ Il backend deve supportare:
 - Il feedback utente è immediato e informativo
 - La gestione degli errori è robusta e fornisce informazioni utili per il debugging
 
+

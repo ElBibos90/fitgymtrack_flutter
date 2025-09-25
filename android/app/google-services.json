@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "282400437237",
+    "project_id": "fitgymtrack-1c62f",
+    "storage_bucket": "fitgymtrack-1c62f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282400437237:android:c412be36bdd771be4726bc",
+        "android_client_info": {
+          "package_name": "com.fitgymtracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsC_d7wgfyFXAMR5uVXXw1XHYikNX98Gc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

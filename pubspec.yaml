@@ -43,6 +43,11 @@ dependencies:
   shared_preferences: ^2.2.3
   flutter_secure_storage: ^9.2.2
 
+  # Firebase & Push Notifications
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^19.4.2
+
   # Date & Time
   intl: ^0.20.2
 
@@ -76,7 +81,7 @@ dependencies:
 
   # ?? BACKGROUND TIMER DEPENDENCIES
   # Notifiche locali per timer in background
-  flutter_local_notifications: ^19.4.2
+  # flutter_local_notifications: ^19.4.2 (già definito sopra)
   # Timezone per gestione notifiche
   timezone: ^0.10.1
 

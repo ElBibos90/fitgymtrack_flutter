@@ -20,6 +20,10 @@ import '../../../workouts/bloc/workout_history_bloc.dart';
 import '../../../workouts/bloc/active_workout_bloc.dart';
 import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/freemium_stats_dashboard.dart';
+import '../../../notifications/presentation/screens/notifications_screen.dart';
+import '../../../notifications/presentation/widgets/notification_badge_icon.dart';
+import '../../../notifications/presentation/widgets/notification_bell_header.dart';
+import '../../../notifications/bloc/notification_bloc.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/user_role_service.dart';
 
@@ -300,11 +304,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
   }
 
-  /// 🚀 PERFORMANCE: Carica subscription con debouncing DOPO validazione token
-  Future<void> _loadSubscriptionWithDebouncing() async {
-    if (_isSubscriptionLoaded) return;
+  /// 🚀 PERFORMANCE: Carica notifiche iniziali
+  Future<void> _loadInitialNotifications() async {
+      try {
+        print('[CONSOLE] [home_screen]🔔 Loading initial notifications...');
+        context.read<NotificationBloc>().add(const LoadNotificationsEvent());
+      } catch (e) {
+        print('[CONSOLE] [home_screen]❌ Error loading initial notifications: $e');
+      }
+    }
 
-    try {
+    // 🚀 PERFORMANCE: Carica subscription con debouncing DOPO validazione token
+    Future<void> _loadSubscriptionWithDebouncing() async {
+      if (_isSubscriptionLoaded) return;
+
+      try {
       print('[CONSOLE] [home_screen]💳 Loading subscription with debouncing...');
 
       // 🔧 FIX: Verifica che l'utente sia autenticato prima di caricare subscription
@@ -313,6 +327,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         print('[CONSOLE] [home_screen]❌ User not authenticated, skipping subscription load');
         return;
       }
+
+      // 🔔 Carica anche le notifiche iniziali
+      _loadInitialNotifications();
 
       await ApiRequestDebouncer.debounceRequest<void>(
         key: 'subscription_check_expired',
@@ -401,6 +418,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _initializeStatsTab() {
     print('[CONSOLE] [home_screen]📈 Initializing stats tab...');
     // Lazy load di plateau bloc se necessario
+  }
+
+  void _initializeNotificationsTab() {
+    print('[CONSOLE] [home_screen]🔔 Initializing notifications tab...');
+    // Carica le notifiche quando l'utente accede al tab
+    context.read<NotificationBloc>().add(const LoadNotificationsEvent());
   }
 
   void _initializeSubscriptionTab() {
@@ -545,6 +568,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
       actions: [
+        // 🔔 Campanellina notifiche
+        NotificationBellHeader(
+          color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+          size: 24.0,
+        ),
         IconButton(
           icon: Icon(
             Icons.settings,

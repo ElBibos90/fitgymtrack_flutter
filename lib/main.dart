@@ -9,7 +9,9 @@ import 'core/di/dependency_injection.dart';
 import 'core/services/audio_settings_service.dart';
 import 'core/services/background_timer_service.dart';
 import 'core/services/global_connectivity_service.dart';
+import 'core/services/firebase_service.dart';
 import 'core/router/app_router.dart';
+import 'core/navigation/navigator_key.dart';
 import 'core/utils/api_request_debouncer.dart';
 import 'core/services/app_update_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
@@ -22,6 +24,7 @@ import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'features/stats/bloc/stats_bloc.dart';
 import 'features/templates/bloc/template_bloc.dart';
+import 'features/notifications/bloc/notification_bloc.dart';
 import 'core/config/app_config.dart';
 import 'features/payments/services/stripe_service.dart';
 import 'core/config/stripe_config.dart';
@@ -46,6 +49,9 @@ void main() async {
 
   // 🌐 Inizializza servizio connettività globale
   getIt<GlobalConnectivityService>().initialize();
+
+  // 🔥 Inizializza Firebase
+  await FirebaseService().initialize();
 
   // 🔍 DEBUG: Verifica configurazione Stripe all'avvio
   StripeConfig.printTestingInfo();
@@ -94,6 +100,9 @@ class FitGymTrackApp extends StatelessWidget {
         // 💰 LAZY: StripeBloc - Pagamenti
         BlocProvider<StripeBloc>(create: (context) => getIt<StripeBloc>()),
         
+        // 🔔 NOTIFICATION: NotificationBloc - Gestione notifiche
+        BlocProvider<NotificationBloc>(create: (context) => getIt<NotificationBloc>()),
+        
         // 👤 LAZY: ProfileBloc - Profilo utente
         BlocProvider<ProfileBloc>(create: (context) => getIt<ProfileBloc>()),
         
@@ -110,6 +119,12 @@ class FitGymTrackApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
         routerConfig: AppRouter.createRouter(),
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+            child: child!,
+          );
+        },
       ),
     );
   }

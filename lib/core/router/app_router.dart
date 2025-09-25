@@ -31,6 +31,7 @@ import '../../features/workouts/presentation/screens/workout_history_screen.dart
 import '../../features/workouts/presentation/screens/workout_plan_details_screen.dart';
 import '../../features/templates/presentation/screens/templates_screen.dart';
 import '../../features/templates/presentation/screens/template_details_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -158,6 +159,17 @@ class AppRouter {
           builder: (context, state) {
             return AuthWrapper(
               authenticatedChild: const FAQScreen(),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/notifications',
+          name: 'notifications',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: const NotificationsScreen(),
               unauthenticatedChild: const LoginScreen(),
             );
           },

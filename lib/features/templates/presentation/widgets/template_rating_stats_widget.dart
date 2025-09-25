@@ -356,3 +356,4 @@ class TemplateRatingStatsWidget extends StatelessWidget {
   }
 }
 
+

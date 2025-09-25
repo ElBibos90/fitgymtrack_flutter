@@ -58,11 +58,14 @@ class GymSubscriptionSection extends StatelessWidget {
             child: const CircularProgressIndicator(strokeWidth: 2),
           ),
           SizedBox(width: 12.w),
-          Text(
-            'Caricamento abbonamento palestra...',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey[600],
+          Expanded(
+            child: Text(
+              'Caricamento abbonamento palestra...',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey[600],
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

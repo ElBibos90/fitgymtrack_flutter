@@ -41,7 +41,7 @@ require_once 'auth_functions.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Verifica autenticazione e ruolo
-$user = authMiddleware($conn, ['admin', 'trainer']);
+$user = authMiddleware($conn, ['admin', 'trainer', 'gym']);
 if (!$user) {
     exit();
 }
@@ -114,6 +114,17 @@ function getAllUsers($conn, $user) {
             } else {
                 $stmt = $conn->prepare($baseQuery . $whereClause . " ORDER BY u.created_at DESC");
                 $stmt->bind_param("ii", $user['user_id'], $user['user_id']);
+            }
+        } else if (hasRole($user, 'gym')) {
+            // Per gym, mostra tutti gli utenti della stessa palestra
+            $whereClause = " WHERE u.gym_id = (SELECT gym_id FROM users WHERE id = ?)";
+            if ($roleFilter) {
+                $whereClause .= " AND r.name = ?";
+                $stmt = $conn->prepare($baseQuery . $whereClause . " ORDER BY u.created_at DESC");
+                $stmt->bind_param("is", $user['user_id'], $roleFilter);
+            } else {
+                $stmt = $conn->prepare($baseQuery . $whereClause . " ORDER BY u.created_at DESC");
+                $stmt->bind_param("i", $user['user_id']);
             }
         } else {
             // Per admin, mostra tutti gli utenti o filtra per ruolo

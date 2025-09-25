@@ -39,6 +39,10 @@ import '../../features/stats/bloc/stats_bloc.dart';
 import '../../features/templates/services/template_service.dart';
 import '../../features/templates/bloc/template_bloc.dart';
 
+// Notification features
+import '../../features/notifications/repositories/notification_repository.dart';
+import '../../features/notifications/bloc/notification_bloc.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -115,6 +119,11 @@ class DependencyInjection {
     // Stats Repository
     getIt.registerLazySingleton<StatsRepository>(() => StatsRepository(
       getIt<ApiClient>(),
+    ));
+
+    // Notification Repository
+    getIt.registerLazySingleton<NotificationRepository>(() => NotificationRepository(
+      dio: getIt<Dio>(),
     ));
 
     // ============================================================================
@@ -236,6 +245,23 @@ class DependencyInjection {
       //print('[CONSOLE] [dependency_injection]✅ [DI] Template services registered successfully!');
     } catch (e) {
       //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Template services: $e');
+      rethrow;
+    }
+
+    // ============================================================================
+    // 🔔 NOTIFICATION SERVICES
+    // ============================================================================
+
+    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering Notification services...');
+    try {
+      // Notification Bloc
+      getIt.registerLazySingleton<NotificationBloc>(() => NotificationBloc(
+        repository: getIt<NotificationRepository>(),
+      ));
+      
+      //print('[CONSOLE] [dependency_injection]✅ [DI] Notification services registered successfully!');
+    } catch (e) {
+      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Notification services: $e');
       rethrow;
     }
 
