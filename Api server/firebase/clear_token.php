@@ -1,5 +1,5 @@
 <?php
-// fitgymtrack_flutter/Api server/firebase/register_token.php
+// fitgymtrack_flutter/Api server/firebase/clear_token.php
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -42,50 +42,31 @@ try {
     }
     
     $fcm_token = $input['fcm_token'] ?? null;
-    $platform = $input['platform'] ?? 'unknown';
     $user_id = $input['user_id'] ?? $user['user_id'];
     
     if (!$fcm_token) {
         throw new Exception('FCM token richiesto');
     }
     
-    // Verifica se il token esiste già
-    $checkStmt = $conn->prepare("
-        SELECT id FROM user_fcm_tokens 
+    // Pulisci il token FCM per l'utente
+    $deleteStmt = $conn->prepare("
+        DELETE FROM user_fcm_tokens 
         WHERE user_id = ? AND fcm_token = ?
     ");
-    $checkStmt->bind_param("is", $user_id, $fcm_token);
-    $checkStmt->execute();
-    $result = $checkStmt->get_result();
+    $deleteStmt->bind_param("is", $user_id, $fcm_token);
+    $deleteStmt->execute();
     
-    if ($result->num_rows > 0) {
-        // Token già esistente, aggiorna timestamp
-        $updateStmt = $conn->prepare("
-            UPDATE user_fcm_tokens 
-            SET platform = ?, updated_at = NOW() 
-            WHERE user_id = ? AND fcm_token = ?
-        ");
-        $updateStmt->bind_param("sis", $platform, $user_id, $fcm_token);
-        $updateStmt->execute();
-        
+    if ($deleteStmt->affected_rows > 0) {
         echo json_encode([
             'success' => true,
-            'message' => 'Token aggiornato con successo',
-            'action' => 'updated'
+            'message' => 'Token FCM rimosso con successo',
+            'action' => 'deleted'
         ]);
     } else {
-        // Nuovo token, inserisci
-        $insertStmt = $conn->prepare("
-            INSERT INTO user_fcm_tokens (user_id, fcm_token, platform, created_at, updated_at) 
-            VALUES (?, ?, ?, NOW(), NOW())
-        ");
-        $insertStmt->bind_param("iss", $user_id, $fcm_token, $platform);
-        $insertStmt->execute();
-        
         echo json_encode([
             'success' => true,
-            'message' => 'Token registrato con successo',
-            'action' => 'created'
+            'message' => 'Token FCM non trovato (già rimosso)',
+            'action' => 'not_found'
         ]);
     }
     

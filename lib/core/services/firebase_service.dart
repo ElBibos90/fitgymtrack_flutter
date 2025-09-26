@@ -42,12 +42,12 @@ class FirebaseService {
       await _getFCMToken();
       
       if (kDebugMode) {
-        print('🔥 Firebase initialized successfully');
-        print('📱 FCM Token: $_fcmToken');
+        print('[CONSOLE] [FCM] 🔥 Firebase initialized successfully');
+        print('[CONSOLE] [FCM] 📱 FCM Token: $_fcmToken');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Firebase initialization error: $e');
+        print('[CONSOLE] [FCM] ❌ Firebase initialization error: $e');
       }
       rethrow;
     }
@@ -91,7 +91,7 @@ class FirebaseService {
     );
 
     if (kDebugMode) {
-      print('📱 Notification permission status: ${settings.authorizationStatus}');
+      print('[CONSOLE] [FCM] 📱 Notification permission status: ${settings.authorizationStatus}');
     }
 
     // Gestisci notifiche in foreground
@@ -107,7 +107,7 @@ class FirebaseService {
     }
   }
 
-  /// Ottiene e salva FCM token
+  /// Ottiene e salva FCM token (solo localmente, non al server)
   Future<void> _getFCMToken() async {
     try {
       _fcmToken = await _messaging.getToken();
@@ -117,34 +117,43 @@ class FirebaseService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('fcm_token', _fcmToken!);
         
-        // Invia token al server
-        await _sendTokenToServer(_fcmToken!);
-        
         if (kDebugMode) {
-          print('📱 FCM Token saved and sent to server');
+          print('[CONSOLE] [FCM] 📱 FCM Token saved locally (not sent to server yet)');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error getting FCM token: $e');
+        print('[CONSOLE] [FCM] ❌ Error getting FCM token: $e');
       }
     }
   }
 
-  /// Invia FCM token al server
-  Future<void> _sendTokenToServer(String token) async {
+  /// Invia FCM token al server (solo quando utente è loggato)
+  Future<void> registerTokenForUser(int userId) async {
     try {
-      final dio = DioClient.getInstance();
-      await dio.post(
-        'https://fitgymtrack.com/api/firebase/register_token.php',
-        data: {
-          'fcm_token': token,
-          'platform': defaultTargetPlatform.name,
-        },
-      );
+      if (_fcmToken == null) {
+        // Se non abbiamo il token, proviamo a ottenerlo
+        await _getFCMToken();
+      }
+      
+      if (_fcmToken != null) {
+        final dio = DioClient.getInstance();
+        await dio.post(
+          'https://fitgymtrack.com/api/firebase/register_token.php',
+          data: {
+            'fcm_token': _fcmToken!,
+            'platform': defaultTargetPlatform.name,
+            'user_id': userId, // Aggiungiamo l'user_id per associare il token
+          },
+        );
+        
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] 📱 FCM Token registered for user $userId');
+        }
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error sending token to server: $e');
+        print('[CONSOLE] [FCM] ❌ Error registering token for user $userId: $e');
       }
     }
   }
@@ -152,7 +161,7 @@ class FirebaseService {
   /// Gestisce notifiche in foreground
   void _handleForegroundMessage(RemoteMessage message) {
     if (kDebugMode) {
-      print('[NOTIFICHE] 📱 Foreground message received: ${message.notification?.title}');
+      print('[CONSOLE] [FCM] 📱 Foreground message received: ${message.notification?.title}');
     }
 
     // Mostra notifica locale
@@ -160,7 +169,7 @@ class FirebaseService {
     
     // Aggiorna il BLoC delle notifiche
     if (kDebugMode) {
-      print('[NOTIFICHE] 📱 Calling _updateNotificationBloc...');
+      print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBloc...');
     }
     _updateNotificationBloc();
   }
@@ -168,7 +177,7 @@ class FirebaseService {
   /// Gestisce notifiche in background
   void _handleBackgroundMessage(RemoteMessage message) {
     if (kDebugMode) {
-      print('[NOTIFICHE] 📱 Background message received: ${message.notification?.title}');
+      print('[CONSOLE] [FCM] 📱 Background message received: ${message.notification?.title}');
     }
 
     // Naviga alla schermata notifiche
@@ -176,7 +185,7 @@ class FirebaseService {
     
     // Aggiorna il BLoC delle notifiche
     if (kDebugMode) {
-      print('[NOTIFICHE] 📱 Calling _updateNotificationBloc...');
+      print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBloc...');
     }
     _updateNotificationBloc();
   }
@@ -211,9 +220,9 @@ class FirebaseService {
     final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
     
     if (kDebugMode) {
-      print('[NOTIFICHE] 📱 Showing local notification with ID: $notificationId');
-      print('[NOTIFICHE] 📱 Title: ${message.notification?.title}');
-      print('[NOTIFICHE] 📱 Body: ${message.notification?.body}');
+      print('[CONSOLE] [FCM] 📱 Showing local notification with ID: $notificationId');
+      print('[CONSOLE] [FCM] 📱 Title: ${message.notification?.title}');
+      print('[CONSOLE] [FCM] 📱 Body: ${message.notification?.body}');
     }
     
     await _localNotifications.show(
@@ -228,7 +237,7 @@ class FirebaseService {
   /// Gestisce tap su notifica
   void _onNotificationTapped(NotificationResponse response) {
     if (kDebugMode) {
-      print('📱 Notification tapped: ${response.payload}');
+      print('[CONSOLE] [FCM] 📱 Notification tapped: ${response.payload}');
     }
 
     // Naviga alla schermata notifiche
@@ -245,31 +254,31 @@ class FirebaseService {
   void _updateNotificationBloc() {
     try {
       if (kDebugMode) {
-        print('[NOTIFICHE] 📱 _updateNotificationBloc called');
+        print('[CONSOLE] [FCM] 📱 _updateNotificationBloc called');
       }
       
       // SOLUZIONE ALTERNATIVA: Usa GetIt per ottenere il BLoC direttamente
       final notificationBloc = getIt<NotificationBloc>();
       if (kDebugMode) {
-        print('[NOTIFICHE] 📱 BLoC obtained from GetIt');
+        print('[CONSOLE] [FCM] 📱 BLoC obtained from GetIt');
       }
       
       if (notificationBloc != null) {
         if (kDebugMode) {
-          print('[NOTIFICHE] 📱 Adding LoadNotificationsEvent...');
+          print('[CONSOLE] [FCM] 📱 Adding LoadNotificationsEvent...');
         }
         notificationBloc.add(const LoadNotificationsEvent());
         if (kDebugMode) {
-          print('[NOTIFICHE] 📱 Notification BLoC updated successfully');
+          print('[CONSOLE] [FCM] 📱 Notification BLoC updated successfully');
         }
       } else {
         if (kDebugMode) {
-          print('[NOTIFICHE] ❌ BLoC is null, cannot update');
+          print('[CONSOLE] [FCM] ❌ BLoC is null, cannot update');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[NOTIFICHE] ❌ Error updating notification BLoC: $e');
+        print('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
       }
     }
   }
@@ -285,11 +294,11 @@ class FirebaseService {
     try {
       await _messaging.subscribeToTopic(topic);
       if (kDebugMode) {
-        print('📱 Subscribed to topic: $topic');
+        print('[CONSOLE] [FCM] 📱 Subscribed to topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error subscribing to topic: $e');
+        print('[CONSOLE] [FCM] ❌ Error subscribing to topic: $e');
       }
     }
   }
@@ -299,11 +308,35 @@ class FirebaseService {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       if (kDebugMode) {
-        print('📱 Unsubscribed from topic: $topic');
+        print('[CONSOLE] [FCM] 📱 Unsubscribed from topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error unsubscribing from topic: $e');
+        print('[CONSOLE] [FCM] ❌ Error unsubscribing from topic: $e');
+      }
+    }
+  }
+
+  /// Pulisce il token FCM quando l'utente fa logout
+  Future<void> clearTokenForUser(int userId) async {
+    try {
+      if (_fcmToken != null) {
+        final dio = DioClient.getInstance();
+        await dio.post(
+          'https://fitgymtrack.com/api/firebase/clear_token.php',
+          data: {
+            'fcm_token': _fcmToken!,
+            'user_id': userId,
+          },
+        );
+        
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] 📱 FCM Token cleared for user $userId');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] ❌ Error clearing token for user $userId: $e');
       }
     }
   }

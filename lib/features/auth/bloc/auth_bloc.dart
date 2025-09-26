@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../repository/auth_repository.dart';
 import '../models/login_response.dart';
 import '../../../core/services/global_connectivity_service.dart';
+import '../../../core/services/firebase_service.dart';
 import '../../../core/di/dependency_injection.dart';
 import '../../workouts/bloc/active_workout_bloc.dart';
 
@@ -370,6 +371,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  /// 🔥 Registra token FCM per l'utente dopo login riuscito
+  Future<void> _registerFCMTokenAfterLogin(int userId) async {
+    try {
+      print('[CONSOLE] [FCM] 🔥 Registering FCM token for user $userId...');
+      final firebaseService = FirebaseService();
+      await firebaseService.registerTokenForUser(userId);
+      print('[CONSOLE] [FCM] ✅ FCM token registered successfully for user $userId');
+    } catch (e) {
+      print('[CONSOLE] [FCM] ❌ Error registering FCM token for user $userId: $e');
+    }
+  }
+
+  /// 🔥 Pulisce token FCM quando l'utente fa logout
+  Future<void> _clearFCMTokenOnLogout(int userId) async {
+    try {
+      print('[CONSOLE] [FCM] 🔥 Clearing FCM token for user $userId...');
+      final firebaseService = FirebaseService();
+      await firebaseService.clearTokenForUser(userId);
+      print('[CONSOLE] [FCM] ✅ FCM token cleared successfully for user $userId');
+    } catch (e) {
+      print('[CONSOLE] [FCM] ❌ Error clearing FCM token for user $userId: $e');
+    }
+  }
+
 
 
   Future<void> _onLoginRequested(
@@ -385,6 +410,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (response.token != null && response.user != null) {
           // 🌐 Sincronizza dati offline dopo login riuscito
           _syncOfflineDataAfterLogin();
+          
+          // 🔥 Registra token FCM per l'utente
+          _registerFCMTokenAfterLogin(response.user!.id);
           
           // 🔧 FIX: Controlla workout pending automaticamente dopo login
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -493,6 +521,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     emit(const AuthLoading());
 
+    // 🔥 Pulisci token FCM prima del logout
+    try {
+      final currentUser = await _authRepository.getCurrentUser();
+      if (currentUser != null) {
+        await _clearFCMTokenOnLogout(currentUser.id);
+      }
+    } catch (e) {
+      print('[CONSOLE] [FCM] ❌ Error clearing FCM token during logout: $e');
+    }
+
     final result = await _authRepository.logout();
 
     result.fold(
@@ -533,6 +571,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         if (user != null && token != null) {
           print('[CONSOLE] [auth_bloc]✅ Token valid, user authenticated: ${user.username}');
+          
+          // 🔥 Registra token FCM per l'utente già autenticato
+          _registerFCMTokenAfterLogin(user.id);
           
           // 🔧 FIX: Controlla workout pending anche per token già validi
           Future.delayed(const Duration(milliseconds: 500), () {
