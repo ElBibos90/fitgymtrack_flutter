@@ -1,0 +1,453 @@
+DIAGNOSTICA iOS FIREBASE - DXF172
+Data: Fri Sep 26 01:49:34 PDT 2025
+Computer: DXF172
+
+=== SISTEMA ===
+
+🖥️ Sistema:
+ProductName:		macOS
+ProductVersion:		15.7
+BuildVersion:		24G222
+
+
+=== XCODE ===
+
+🛠️ Xcode:
+Xcode 26.0
+Build version 17A324
+
+
+=== FLUTTER ===
+
+📱 Flutter:
+Flutter 3.35.4 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision d693b4b9db (10 days ago) • 2025-09-16 14:27:41 +0000
+Engine • hash feee8ee8fb8b975dd9990f86d3bda11e6e75faf3 (revision c298091351) (10 days ago) • 2025-09-15 14:04:24.000Z
+Tools • Dart 3.9.2 • DevTools 2.48.0
+
+
+=== EMULATORI iOS ===
+
+📱 Emulatori iOS:
+== Devices ==
+-- iOS 17.5 --
+    iPhone 15 Pro (A5B7EAB2-8088-4311-8FF3-BF1CCA25C212) (Shutdown) 
+    iPhone 15 Pro Max (BD915945-4EC7-4168-A0CC-5F54289F4B49) (Shutdown) 
+    iPhone 15 (0BA3DB2D-8BA8-4B9A-A90E-6CF96B8C1FED) (Shutdown) 
+    iPhone 15 Plus (F86662C7-53F9-48E6-BD48-7FDDEBFABEE7) (Shutdown) 
+    iPhone SE (3rd generation) (E5B2F459-430C-4EFC-ACAF-872472C6F1DE) (Shutdown) 
+    iPad Pro 11-inch (M4) (A60DAC36-C794-486A-BEE1-4B130314EB94) (Shutdown) 
+    iPad Pro 13-inch (M4) (BBE38B5D-4A1F-4BA9-BF03-24C9B25ED098) (Shutdown) 
+    iPad Air 11-inch (M2) (F34B4D1D-4D90-475D-9B83-D518452E6779) (Shutdown) 
+    iPad Air 13-inch (M2) (16D976BB-09A9-4DF1-9B8D-77265C459935) (Shutdown) 
+    iPad (10th generation) (DA2C113E-EE30-485A-B216-7D998F0484CE) (Shutdown) 
+    iPad mini (6th generation) (69FAEA56-ABEF-4A85-A1E7-F9433703B27D) (Shutdown) 
+-- iOS 18.4 --
+    iPhone 16 Pro (AC948DCF-8A5A-4DC0-8C11-7B2C889B3DA9) (Shutdown) 
+    iPhone 16 Pro Max (5E4EB0B1-922C-4E24-A3DB-D86991CBD034) (Shutdown) 
+    iPhone 16e (8FC1E923-A66A-4B9D-ADAB-53246FB79AF3) (Shutdown) 
+    iPhone 16 (219C877C-9B50-43CC-A652-73388967BCDB) (Shutdown) 
+    iPhone 16 Plus (2B0F9E73-5A15-4A4F-AF40-7A153E0AFFB0) (Shutdown) 
+    iPad Pro 11-inch (M4) (399E8620-2F19-42B3-A436-8D85AD64814E) (Shutdown) 
+    iPad Pro 13-inch (M4) (728F8EA6-198C-4C71-AB54-10C1E07CC35A) (Shutdown) 
+    iPad mini (A17 Pro) (BC321ED2-E011-45AB-B707-ED770D3BD8EE) (Shutdown) 
+    iPad (A16) (14495EFA-7965-4FA0-AFDF-AD8FD30A4A8C) (Shutdown) 
+    iPad Air 13-inch (M3) (12A5A6D7-5376-4680-83BB-79E2319D1684) (Shutdown) 
+    iPad Air 11-inch (M3) (1FA504C6-2AAF-4BE8-8DEE-37F8CE91D350) (Shutdown) 
+-- iOS 18.6 --
+    iPhone 16 Pro (3861FB0D-78C2-459A-8437-F5D95A176907) (Shutdown) 
+    iPhone 16 Pro Max (26DD6444-FBAE-4365-8B0D-B3A80841F6AA) (Shutdown) 
+    iPhone 16e (E9DA6351-857B-451B-A480-509B1A4CF1A8) (Booted) 
+    iPhone 16 (BA63E8C5-9857-4B50-BC71-544993005092) (Shutdown) 
+    iPhone 16 Plus (4A73A041-2231-4E36-ADE5-2CA38FBB6ABC) (Shutdown) 
+    iPad Pro 11-inch (M4) (766FC5DC-B5FF-4998-9EAC-752D53C417B9) (Shutdown) 
+    iPad Pro 13-inch (M4) (804DB4C9-FBCD-46EF-BD21-3C8EB00005D9) (Shutdown) 
+    iPad mini (A17 Pro) (13E105F9-EA5F-4734-833C-ADAEAAF63004) (Shutdown) 
+    iPad (A16) (7DC975D7-510A-48B2-B6F0-E7417CE76663) (Shutdown) 
+    iPad Air 13-inch (M3) (59E93279-F693-44FF-B7E4-E01BB0B00B93) (Shutdown) 
+    iPad Air 11-inch (M3) (7451FCFD-5A2E-45A8-8B5E-B9890964E1CF) (Shutdown) 
+-- iOS 26.0 --
+    iPhone 17 Pro (E38B3DC3-A83F-48F3-A396-537F586DD144) (Shutdown) 
+    iPhone 17 Pro Max (642F93FF-6F3F-4C10-86C0-F49AE5F2A6CF) (Shutdown) 
+    iPhone Air (2ED2070B-93F0-48F8-9B4D-00CE84FD5704) (Shutdown) 
+    iPhone 17 (0F816B35-1C7E-4B12-8AE3-FC46C3B124B0) (Shutdown) 
+    iPhone 16e (E3F720F2-AEC1-44AF-A53F-7DD10B26CAC9) (Shutdown) 
+    iPhone 14 Pro (5CFB3C18-CFA2-4E88-9AA7-90E28D3AC154) (Shutdown) 
+    iPad Pro 11-inch (M4) (42868502-69EC-4CF0-9E67-D17E63F55233) (Shutdown) 
+    iPad Pro 13-inch (M4) (67C18AE2-9176-41EE-AA81-2ACE4693F444) (Shutdown) 
+    iPad mini (A17 Pro) (A15485ED-BCB4-4AF5-B7FB-E798A65E19EC) (Shutdown) 
+    iPad (A16) (55FBBBB0-E485-45D4-BE51-6089F458F30E) (Shutdown) 
+    iPad Air 13-inch (M3) (EF2F6B85-09B2-4042-942F-38F97A7ABB56) (Shutdown) 
+    iPad Air 11-inch (M3) (ED79B84E-9987-44FA-BE7A-C92B836C9EC6) (Shutdown) 
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-18-3 --
+    iPhone 16 Pro (BF737DA7-B6FA-4017-9F43-8859AC77A0B8) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 Pro Max (39119731-A268-4F3F-B96C-C84A5DD3C209) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16e (2D40D560-DB3F-42AA-AEAA-56A22E794863) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 (785EA4D7-25AE-46FD-88BC-7EDCABD18D60) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 Plus (8902B975-9B16-4032-9E7B-78510377C1A7) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone SE (3rd generation) (992DD6CB-E6A3-4D56-BBFA-A6DFD0C40F79) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Pro 11-inch (M4) (D871C086-CD37-4DB2-B003-47BA675F1A7B) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Pro 13-inch (M4) (0D0B000F-CED7-4F38-9EE4-72B9C3AFA01D) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad mini (A17 Pro) (2493C20F-BA2A-4F7C-A163-B1F4250F51E7) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad (A16) (8AC5D09C-6C3E-4AF6-9F5E-BBBFB5784EBC) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 13-inch (M3) (840EB731-55BE-400A-B085-3D2CCA8627B4) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 11-inch (M3) (217ABF0B-A2BE-4999-BB12-8C21C58A53DF) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 11-inch (M2) (BCE53F4D-7B69-4396-AA66-54E1ED88A38F) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 13-inch (M2) (2804A7CB-1DBE-4704-A79D-F337B47EC394) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad (10th generation) (96122AB6-1445-467E-972C-87C9E1008A57) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+-- Unavailable: com.apple.CoreSimulator.SimRuntime.iOS-18-5 --
+    iPhone 16 Pro (4DBF19FA-6F4A-470E-ADFF-24370D3CC810) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 Pro Max (69CF633A-CD61-4436-B7C5-EABF64DE2898) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16e (7BD850B9-E50E-496C-BE0E-D57227AFE766) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 (1B431A38-E75E-4793-B3E3-DB4EA35D0131) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPhone 16 Plus (A86B2C2D-3DE7-4628-BE73-9FED5D24BB20) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Pro 11-inch (M4) (6543C2E5-700D-4816-99DC-453BC5ECB69F) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Pro 13-inch (M4) (974D2E03-ED78-4AA0-A660-19D5A3248352) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad mini (A17 Pro) (223FFE80-1EA1-4544-BB74-4B4F399828B4) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad (A16) (A56FEA7D-822E-4A15-8724-DED9A80C43A3) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 13-inch (M3) (964C1EB1-0791-4374-B789-3C5B25E858C1) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+    iPad Air 11-inch (M3) (EDDFD7C9-30F3-4661-A4A4-BD6D92E87174) (Shutdown) (unavailable, runtime profile not found using "System" match policy)
+
+
+=== RUNTIME iOS ===
+
+📱 Runtime iOS:
+== Runtimes ==
+iOS 17.5 (17.5 - 21F79) - com.apple.CoreSimulator.SimRuntime.iOS-17-5
+iOS 18.4 (18.4 - 22E238) - com.apple.CoreSimulator.SimRuntime.iOS-18-4
+iOS 18.6 (18.6 - 22G86) - com.apple.CoreSimulator.SimRuntime.iOS-18-6
+iOS 26.0 (26.0 - 23A343) - com.apple.CoreSimulator.SimRuntime.iOS-26-0
+
+
+=== DEVELOPER ACCOUNT ===
+
+🔐 Developer Account:
+  1) 3016193CA6FA71061C1976F72AC77797B78F4817 "Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+     1 valid identities found
+
+
+=== PROFILI PROVISIONING ===
+
+📋 Profili Provisioning:
+Directory non trovata
+
+
+=== FIREBASE iOS ===
+
+🔥 Firebase iOS (GoogleService-Info.plist):
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDH31miMonUQXuT57g_sb7Z57Kla--pbeg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>282400437237</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.fitgymtrack.app</string>
+	<key>PROJECT_ID</key>
+	<string>fitgymtrack-1c62f</string>
+	<key>STORAGE_BUCKET</key>
+	<string>fitgymtrack-1c62f.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:282400437237:ios:a456f83a6cce8df34726bc</string>
+</dict>
+</plist>
+
+=== FIREBASE ANDROID ===
+
+🔥 Firebase Android (google-services.json):
+{
+  "project_info": {
+    "project_number": "282400437237",
+    "project_id": "fitgymtrack-1c62f",
+    "storage_bucket": "fitgymtrack-1c62f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282400437237:android:c412be36bdd771be4726bc",
+        "android_client_info": {
+          "package_name": "com.fitgymtracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsC_d7wgfyFXAMR5uVXXw1XHYikNX98Gc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+
+=== BUNDLE ID iOS ===
+
+📦 Bundle ID iOS:
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+
+
+=== PACKAGE NAME ANDROID ===
+
+📦 Package Name Android:
+File build.gradle non trovato
+
+
+=== ENTITLEMENTS ===
+
+🔐 Entitlements:
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>
+
+
+=== APPDELEGATE ===
+
+📱 AppDelegate.swift:
+import Flutter
+import UIKit
+import Firebase
+
+@main
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    FirebaseApp.configure()
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}
+
+
+=== FIREBASE DEPENDENCIES ===
+
+📦 Firebase Dependencies:
+
+  # Firebase & Push Notifications
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^19.4.2
+
+  # Date & Time
+  intl: ^0.20.2
+
+  # Charts & Visualizations
+  fl_chart: ^0.65.0
+
+  # Animations
+  lottie: ^3.3.1
+
+
+=== iOS PODS ===
+
+📦 iOS Pods Firebase:
+  - Firebase/CoreOnly (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - Firebase/Messaging (11.15.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 11.15.0)
+  - firebase_core (3.15.2):
+    - Firebase/CoreOnly (= 11.15.0)
+  - firebase_messaging (15.2.10):
+    - Firebase/Messaging (= 11.15.0)
+    - firebase_core
+  - FirebaseCore (11.15.0):
+    - FirebaseCoreInternal (~> 11.15.0)
+  - FirebaseCoreInternal (11.15.0):
+  - FirebaseInstallations (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - FirebaseMessaging (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
+    - Firebase
+    - FirebaseCore
+    - FirebaseCoreInternal
+    - FirebaseInstallations
+    - FirebaseMessaging
+  firebase_core:
+    :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_messaging:
+    :path: ".symlinks/plugins/firebase_messaging/ios"
+  Firebase: d99ac19b909cd2c548339c2241ecd0d1599ab02e
+  firebase_core: 995454a784ff288be5689b796deb9e9fa3601818
+  firebase_messaging: f4a41dd102ac18b840eba3f39d67e77922d3f707
+  FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
+  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
+  FirebaseInstallations: 317270fec08a5d418fdbc8429282238cab3ac843
+  FirebaseMessaging: 3b26e2cee503815e01c3701236b020aa9b576f09
+
+
+=== FIREBASE SERVICE ===
+
+🔥 Firebase Service:
+  }
+
+  /// Ottiene e salva FCM token
+  Future<void> _getFCMToken() async {
+    try {
+      _fcmToken = await _messaging.getToken();
+      
+      if (_fcmToken != null) {
+        // Salva token localmente
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', _fcmToken!);
+        
+        // Invia token al server
+        await _sendTokenToServer(_fcmToken!);
+        
+        if (kDebugMode) {
+          print('📱 FCM Token saved and sent to server');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error getting FCM token: $e');
+      }
+    }
+  }
+
+
+
+=== INFO.PLIST ===
+
+📱 Info.plist:
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Fitgymtrack Flutter</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>fitgymtrack_flutter</string>
+--
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<!-- 🔧 AUTOFILL: Configurazioni essenziali per autofill password su iOS -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>CFBundleURLTypes</key>
+
+
+=== KEYCHAIN ACCESS ===
+
+🔐 Keychain Access:
+    0x00000001 <blob>="Apple Development: Eddy Rebesan (Eddy Rebesan)"
+    "alis"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "labl"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "subj"<blob>=0x30818C311A3018060A0992268993F22C6401010C0A533339583653345138393135303306035504030C2C4170706C6520446576656C6F706D656E743A2045646479205265626573616E20284A434A37374B424453362931133011060355040B0C0A5144424E51354E4C4D4831153013060355040A0C0C45646479205265626573616E310B3009060355040613025553  "0\201\2141\0320\030\006\012\011\222&\211\223\362,d\001\001\014\012S39X6S4Q891503\006\003U\004\003\014,Apple Development: Eddy Rebesan (JCJ77KBDS6)1\0230\021\006\003U\004\013\014\012QDBNQ5NLMH1\0250\023\006\003U\004\012\014\014Eddy Rebesan1\0130\011\006\003U\004\006\023\002US"
+
+
+=== FLUTTER DOCTOR ===
+
+🩺 Flutter Doctor:
+[✓] Flutter (Channel stable, 3.35.4, on macOS 15.7 24G222 darwin-arm64 (Rosetta), locale it-IT) [1.005ms]
+    • Flutter version 3.35.4 on channel stable at /Users/admin/flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision d693b4b9db (10 days ago), 2025-09-16 14:27:41 +0000
+    • Engine revision c298091351
+    • Dart version 3.9.2
+    • DevTools version 2.48.0
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-lldb-debugging
+
+[✗] Android toolchain - develop for Android devices [580ms]
+    ✗ Unable to locate Android SDK.
+      Install Android Studio from: https://developer.android.com/studio/index.html
+      On first launch it will assist you in installing the Android SDK components.
+      (or visit https://flutter.dev/to/macos-android-setup for detailed instructions).
+      If the Android SDK has been installed to a custom location, please use
+      `flutter config --android-sdk` to update to that location.
+
+
+[✓] Xcode - develop for iOS and macOS (Xcode 26.0) [3,7s]
+    • Xcode at /Applications/Xcode.app/Contents/Developer
+    • Build 17A324
+    • CocoaPods version 1.16.2
+
+[✗] Chrome - develop for the web (Cannot find Chrome executable at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome) [6ms]
+    ! Cannot find Chrome. Try setting CHROME_EXECUTABLE to a Chrome executable.
+
+[!] Android Studio (not installed) [6ms]
+    • Android Studio not found; download from https://developer.android.com/studio/index.html
+      (or visit https://flutter.dev/to/macos-android-setup for detailed instructions).
+
+[✓] VS Code (version 1.104.2) [5ms]
+    • VS Code at /Users/admin/Downloads/Visual Studio Code.app/Contents
+    • Flutter extension can be installed from:
+      🔨 https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter
+
+[✓] Connected device (2 available) [8,7s]
+    • iPhone 16e (mobile) • E9DA6351-857B-451B-A480-509B1A4CF1A8 • ios          • com.apple.CoreSimulator.SimRuntime.iOS-18-6 (simulator)
+    • macOS (desktop)     • macos                                • darwin-arm64 • macOS 15.7 24G222 darwin-arm64 (Rosetta)
+
+[✓] Network resources [331ms]
+    • All expected network resources are available.
+
+! Doctor found issues in 3 categories.
+
+
+=== DISPOSITIVI FLUTTER ===
+
+📱 Dispositivi Flutter:
+Found 2 connected devices:
+  iPhone 16e (mobile) • E9DA6351-857B-451B-A480-509B1A4CF1A8 • ios          • com.apple.CoreSimulator.SimRuntime.iOS-18-6 (simulator)
+  macOS (desktop)     • macos                                • darwin-arm64 • macOS 15.7 24G222 darwin-arm64 (Rosetta)
+
+Checking for wireless devices...
+
+No wireless devices were found.
+
+Run "flutter emulators" to list and start any available device emulators.
+
+If you expected another device to be detected, please run "flutter doctor" to diagnose potential issues. You may also try increasing the time to wait for connected devices with the "--device-timeout" flag. Visit https://flutter.dev/setup/ for troubleshooting tips.
+
