@@ -198,11 +198,12 @@ Il sistema di notifiche in-app permette alle palestre e ai trainer di comunicare
 
 ## 🔮 **FASI FUTURE**
 
-### **📅 FASE 4 - iOS Push Notifications**
-- **iOS Firebase Integration**: APNs + Firebase per iOS
-- **iOS Configuration**: `GoogleService-Info.plist` e setup Xcode
-- **iOS Testing**: Test su dispositivi iOS reali
-- **Cross-Platform**: Notifiche funzionanti su Android e iOS
+### **📅 FASE 4 - iOS Push Notifications (IN CORSO)**
+- **🔍 STEP 1**: Controlli sistema iOS - Verificare dettagli sistema, configurazione Xcode
+- **🔍 STEP 2**: iOS Firebase Integration - APNs + Firebase per iOS
+- **🔍 STEP 3**: iOS Configuration - `GoogleService-Info.plist` e setup Xcode
+- **🔍 STEP 4**: iOS Testing - Test su dispositivi iOS reali
+- **🔍 STEP 5**: Cross-Platform - Notifiche funzionanti su Android e iOS
 
 ### **📅 FASE 5 - Deep Linking Avanzato**
 - **Deep Linking**: Apertura diretta a sezioni specifiche
@@ -522,10 +523,12 @@ lib/features/notifications/
 - ✅ Anti-spam system
 - ✅ Dark theme completo
 
-### **v4.0.0 - Fase 4 (Pianificata)**
-- 🔄 iOS Push Notifications
-- 🔄 APNs integration
-- 🔄 Cross-platform testing
+### **v4.0.0 - Fase 4 (IN CORSO - iOS Push Notifications)**
+- 🔄 **PROSSIMO STEP**: Controlli sistema iOS
+- 🔄 **DA VERIFICARE**: Dettagli sistema iOS, configurazione Xcode
+- 🔄 **DA IMPLEMENTARE**: iOS Push Notifications
+- 🔄 **DA IMPLEMENTARE**: APNs integration
+- 🔄 **DA IMPLEMENTARE**: Cross-platform testing
 
 ### **v5.0.0 - Fase 5 (Pianificata)**
 - 🔄 Deep Linking avanzato
@@ -539,7 +542,7 @@ lib/features/notifications/
 
 ---
 
-**📅 Ultimo Aggiornamento**: 25/09/2025  
+**📅 Ultimo Aggiornamento**: 26/09/2025  
 **👨‍💻 Sviluppatore**: AI Assistant  
-**📋 Versione Documentazione**: 3.0.0  
-**🎯 Stato**: Fase 3 Completata (Android) - Pronto per Fase 4 (iOS)
+**📋 Versione Documentazione**: 3.1.0  
+**🎯 Stato**: Fase 3 Completata (Android) - **IN CORSO Fase 4 (iOS) - STEP 1: Controlli Sistema iOS**
