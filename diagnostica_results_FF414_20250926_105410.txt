@@ -1,0 +1,465 @@
+DIAGNOSTICA iOS FIREBASE - FF414
+Data: Fri Sep 26 10:54:10 CEST 2025
+Computer: FF414
+
+=== SISTEMA ===
+
+🖥️ Sistema:
+ProductName:		macOS
+ProductVersion:		14.7.7
+BuildVersion:		23H723
+
+
+=== XCODE ===
+
+🛠️ Xcode:
+Xcode 16.2
+Build version 16C5032a
+
+
+=== FLUTTER ===
+
+📱 Flutter:
+
+
+=== EMULATORI iOS ===
+
+📱 Emulatori iOS:
+== Devices ==
+-- iOS 16.0 --
+    iPhone 14 Pro (AE6C08FB-96B9-4EDD-A67A-910AFCB9AF30) (Shutdown) 
+    iPhone 14 Pro Max (8E4C4884-5C09-44FE-B455-8154D6C6A739) (Shutdown) 
+    iPhone 14 (3C497106-C3ED-4084-801F-478E42A6326A) (Shutdown) 
+    iPhone 14 Plus (8E5105DC-D6BC-4EC3-9438-8910546A7C2E) (Shutdown) 
+    iPhone SE (3rd generation) (FF9BBC01-52CA-4A11-B852-DC1A06D2F1A8) (Shutdown) 
+    iPad Air (5th generation) (D0DB8181-6FB7-4594-AB30-821B87ECA251) (Shutdown) 
+    iPad mini (6th generation) (41D582CF-3AB0-48AC-90E9-673EB8940B8D) (Shutdown) 
+    iPad Pro (11-inch) (3rd generation) (E330C1D1-A5F6-4F26-8400-CAA69366EE44) (Shutdown) 
+    iPad Pro (12.9-inch) (5th generation) (B20FAF2F-910D-4A2F-9710-212AB4DADBF4) (Shutdown) 
+    iPad (9th generation) (453A15F3-1A2C-4F77-B660-A14D93A4D2FA) (Shutdown) 
+-- iOS 16.1 --
+    iPhone 14 Pro (35C923C0-9D6F-4ED7-97A7-3B0DE28D40A4) (Shutdown) 
+    iPhone 14 Pro Max (771E7910-B8E1-46D1-92CA-33097867C67D) (Shutdown) 
+    iPhone 14 (5B0EEB20-76DC-4168-ADD9-433F55F2B72A) (Shutdown) 
+    iPhone 14 Plus (BC94F1C7-8847-41FB-84FB-AEBEEE635D31) (Shutdown) 
+    iPhone SE (3rd generation) (6421F7EC-6BE7-45A0-BCFE-87AE5073930B) (Shutdown) 
+    iPad Pro (11-inch) (4th generation) (554AC0E8-C4B2-4A65-B2CC-F59AE55053C4) (Shutdown) 
+    iPad Pro (12.9-inch) (6th generation) (D28DC01C-A952-432C-A76C-FBE836BDB94B) (Shutdown) 
+    iPad (10th generation) (84F370B8-E7BE-4F12-850A-7422042BDDEA) (Shutdown) 
+    iPad Air (5th generation) (B2B9C74B-DB5E-4652-81C6-E391FC7386AD) (Shutdown) 
+    iPad mini (6th generation) (D12E8B19-25B0-429D-8736-277293058762) (Shutdown) 
+-- iOS 17.2 --
+    iPhone 15 Pro (F6F06C84-A577-4B8A-981C-A83A4A7ED2BE) (Shutdown) 
+    iPhone 15 Pro Max (FA1B5E05-A582-42C9-92C2-5A2A64BFB630) (Shutdown) 
+    iPhone 15 (2E52354D-E459-410F-B038-3A08E742CD98) (Shutdown) 
+    iPhone 15 Plus (B02BD7C1-7A9A-469C-810D-AB672917BBEC) (Shutdown) 
+    iPhone SE (3rd generation) (C9F0380B-8697-4267-8F6C-FD1335102F37) (Shutdown) 
+    iPad Pro (11-inch) (4th generation) (9D35C5B7-7B3C-4901-8369-6703ECC6D99D) (Shutdown) 
+    iPad Pro (12.9-inch) (6th generation) (77D08A6B-73B1-4E12-90A0-10EC234C9F0F) (Shutdown) 
+    iPad (10th generation) (7E275FA6-EE62-4660-A39E-485C483EA888) (Shutdown) 
+    iPad Air (5th generation) (7BC0ACE0-4B78-4B3E-957A-54F78640FE29) (Shutdown) 
+    iPad mini (6th generation) (50A7F40D-670A-410F-BA0C-23D20458F971) (Shutdown) 
+-- iOS 17.4 --
+    iPhone 15 Pro (FEC78E84-A93C-4F5A-99A6-9B8D5C7BF053) (Shutdown) 
+    iPhone 15 Pro Max (78EEF9E4-A8BE-474B-A61D-D00A7666AB2F) (Shutdown) 
+    iPhone 15 (3AC80AA9-485C-4A48-B15C-CA35253D7B1C) (Shutdown) 
+    iPhone 15 Plus (DE2320C0-F779-402A-81FF-343B6E998677) (Shutdown) 
+    iPhone SE (3rd generation) (5F94248B-7F2E-4EAC-8BF1-369973A71A9D) (Shutdown) 
+    iPad Pro 11-inch (M4) (3C28B11B-1BC1-4585-8C72-3AA9B1FBEE12) (Shutdown) 
+    iPad Pro 13-inch (M4) (4B9C63CC-38EE-4843-B84D-245CDF6E7433) (Shutdown) 
+    iPad Air 11-inch (M2) (BC82DE0F-6BFF-4C56-99A0-78A18499357E) (Shutdown) 
+    iPad Air 13-inch (M2) (062AA1EC-AF73-438A-B39A-0548C36A6FFB) (Shutdown) 
+    iPad (10th generation) (ED151EE2-CC1B-4A95-A618-C631EB69A44B) (Shutdown) 
+    iPad mini (6th generation) (091280B5-2EF4-4DEE-AA6A-5403B784E092) (Shutdown) 
+-- iOS 17.5 --
+    iPhone 15 Pro (BEB6C5F9-AF0E-4C5F-B0F1-DBCAB30A1FE6) (Shutdown) 
+    iPhone 15 Pro Max (796E7FF0-2FC0-4EC4-AF0C-B94BF1930569) (Shutdown) 
+    iPhone 15 (E30F88A7-ED98-4899-BEB9-CDA6469EFB2C) (Shutdown) 
+    iPhone 15 Plus (B876E084-2760-482B-9D4C-C723590764B2) (Shutdown) 
+    iPhone SE (3rd generation) (01D399AD-103E-4DF4-A7AB-FCBDCBCA9D8E) (Shutdown) 
+    iPad Pro 11-inch (M4) (BFA97FBF-0417-48D2-BF18-1B77688A0FFF) (Shutdown) 
+    iPad Pro 13-inch (M4) (3A82E5DF-F109-4C9C-80BC-C0F8DEB13530) (Shutdown) 
+    iPad Air 11-inch (M2) (133AA6AD-DD3B-4D10-9818-AE109D63B4E0) (Shutdown) 
+    iPad Air 13-inch (M2) (48097DD8-79F0-4651-927C-E9380A871EE9) (Shutdown) 
+    iPad (10th generation) (E202204C-479E-421A-AC63-0A95DEABBA95) (Shutdown) 
+    iPad mini (6th generation) (967B0ADD-1965-4CAF-A78F-748F8F475F3A) (Shutdown) 
+-- iOS 18.0 --
+    iPhone 16 Pro (5027DB35-2C09-486F-BB28-21FB7168EBA7) (Shutdown) 
+    iPhone 16 Pro Max (B9E536CC-EB7D-41EA-AAC8-CCA7FECA45F1) (Shutdown) 
+    iPhone 16 (733D5449-90D6-4974-9DD7-376D907BAD6C) (Shutdown) 
+    iPhone 16 Plus (966754C2-509A-43E6-951C-53076C9ED45C) (Shutdown) 
+    iPhone SE (3rd generation) (4BFE054E-AB06-41E8-B241-98CC6C0D4483) (Shutdown) 
+    iPad Pro 11-inch (M4) (7ACDED8B-C201-48B0-A22B-23B01CB4CA37) (Shutdown) 
+    iPad Pro 13-inch (M4) (085F2840-7B4D-4F34-B9D4-A53401F3C1A6) (Shutdown) 
+    iPad Air 11-inch (M2) (05D02205-237F-412E-86C8-8AF07F98675E) (Shutdown) 
+    iPad Air 13-inch (M2) (7C014336-65E2-4DD9-A53D-4271F3F65193) (Shutdown) 
+    iPad (10th generation) (2BA23899-388C-4F19-8A0A-20FF9A85BF2E) (Shutdown) 
+    iPad mini (6th generation) (2BDA6E81-3962-4DE7-8A92-59E343BCC133) (Shutdown) 
+-- iOS 18.1 --
+    iPhone 16 Pro (021CBB89-F4D4-4B0E-85B6-6B6AC1583163) (Shutdown) 
+    iPhone 16 Pro Max (3346ACD1-FF59-42FB-959C-2F1D1928235C) (Shutdown) 
+    iPhone 16 (2045A142-E97B-4CFA-B4A6-104A29D2AD5C) (Shutdown) 
+    iPhone 16 Plus (7B9D91B3-56E3-454B-A892-A42870EDFDD3) (Shutdown) 
+    iPhone SE (3rd generation) (98151AA7-021D-402E-A13B-6E72F3343C93) (Shutdown) 
+    iPad Pro 11-inch (M4) (BFC2C8DF-D809-4498-AEF4-F9CB785E6443) (Shutdown) 
+    iPad Pro 13-inch (M4) (0398C89B-054F-47A9-8AF1-63057683FA9A) (Shutdown) 
+    iPad Air 11-inch (M2) (68353D21-35B8-46E9-BD91-28CD9C9073CC) (Shutdown) 
+    iPad Air 13-inch (M2) (19FDF9CC-1F1B-4237-9407-3ABA75BEFFFF) (Shutdown) 
+    iPad mini (A17 Pro) (A59EE4A7-7D55-4C7E-9653-DB0F196E5E4B) (Shutdown) 
+    iPad (10th generation) (71606840-7EDB-4D25-BD42-B3AD56CA76EE) (Shutdown) 
+    iPad mini (6th generation) (80F0DA1C-8855-4807-AABF-70C2C706901B) (Shutdown) 
+-- iOS 18.3 --
+    iPhone 16 Pro (354900FF-5356-4B50-8CE2-D15BABB601E2) (Shutdown) 
+    iPhone 16 Pro Max (915512D8-8CAC-440C-B2F4-A85705D8AB05) (Shutdown) 
+    iPhone 16e (A31CD83F-8BFD-4F65-8916-E4E905B4DC6A) (Shutdown) 
+    iPhone 16 (607D3BCB-16A2-4DAD-8930-785E4AFD29B4) (Shutdown) 
+    iPhone 16 Plus (BE73A417-27F6-4B42-8733-331C75655914) (Shutdown) 
+    iPhone SE (3rd generation) (E351C974-3481-4921-BBAF-2455B01C36E0) (Shutdown) 
+    iPad Pro 11-inch (M4) (0B23B549-1642-45D5-B82C-088C6B8BE1F6) (Shutdown) 
+    iPad Pro 13-inch (M4) (B64D32C9-6542-4A28-B57E-DAD2A747E0F7) (Shutdown) 
+    iPad Air 13-inch (M3) (1FC84E45-0A39-482C-8205-97690E00CE8E) (Shutdown) 
+    iPad Air 11-inch (M3) (D8DD8F16-E40C-44AF-9CEB-3F752FC3F326) (Shutdown) 
+    iPad Air 11-inch (M2) (32E03F87-D018-4B69-83FB-2B7CCD51A8CA) (Shutdown) 
+    iPad Air 13-inch (M2) (BD97EAF6-0C6B-4109-88DA-D98ADECD7EC0) (Shutdown) 
+    iPad mini (A17 Pro) (9C75A719-212C-4F39-8A52-30D3AABE1392) (Shutdown) 
+    iPad (A16) (5DF7B352-A311-4BFF-8506-1E6164A2DEAA) (Shutdown) 
+    iPad (10th generation) (1223B22D-4FFD-4BC6-80AA-86E3C8D8291E) (Shutdown) 
+    iPad mini (6th generation) (0852DDA4-9381-4B56-9628-BBC82F25738C) (Shutdown) 
+-- tvOS 17.5 --
+    Apple TV 4K (3rd generation) (6B1946FD-79A2-4AC3-8258-3C4191FDFD85) (Shutdown) 
+    Apple TV 4K (3rd generation) (at 1080p) (088E4DB8-725D-4E48-86BD-6F84C977C2A4) (Shutdown) 
+    Apple TV (62A107E4-847B-4834-9B39-889CBBE3AC9C) (Shutdown) 
+-- tvOS 18.2 --
+    Apple TV 4K (3rd generation) (8584A1B5-1548-426D-A1BB-2C3D96EF559F) (Shutdown) 
+    Apple TV 4K (3rd generation) (at 1080p) (F00F2722-EE93-4E08-A901-FEE62AAD6029) (Shutdown) 
+    Apple TV (FC751B47-A8A2-4F4A-8147-82F1BE604A21) (Shutdown) 
+-- watchOS 10.5 --
+    Apple Watch Series 9 (45mm) (C1B85F24-3C2D-400E-93B2-4E00B8BAD392) (Shutdown) 
+    Apple Watch Series 9 (41mm) (9F65DF55-255B-400F-8B28-1D1DB4F31DC5) (Shutdown) 
+    Apple Watch Ultra 2 (49mm) (06C91CC9-0FFF-44FD-8D60-FBF982D81B04) (Shutdown) 
+    Apple Watch SE (44mm) (2nd generation) (5634FA72-FFD7-4021-AEB1-72B343CA23A9) (Shutdown) 
+    Apple Watch SE (40mm) (2nd generation) (52E78F68-4822-4D78-84C8-8A9118A1E532) (Shutdown) 
+-- watchOS 11.2 --
+    Apple Watch Series 10 (46mm) (50073195-91C3-4CED-A9F1-F6DFD1E8EB07) (Shutdown) 
+    Apple Watch Series 10 (42mm) (9216C437-4929-410A-8D0E-27030172ECA5) (Shutdown) 
+    Apple Watch Ultra 2 (49mm) (76252E98-3398-4945-BA1B-4D64831B814F) (Shutdown) 
+    Apple Watch SE (44mm) (2nd generation) (DB1D0D87-58FD-42E7-8B31-B824595B49EC) (Shutdown) 
+    Apple Watch SE (40mm) (2nd generation) (56BB5D42-EF4B-4E82-84C0-47904107A102) (Shutdown) 
+-- visionOS 1.2 --
+    Apple Vision Pro (7AA1F1A3-B58C-4984-A131-164C9AC3FBBB) (Shutdown) 
+-- visionOS 2.2 --
+    Apple Vision Pro (72785641-E667-4E2D-9AF9-D623D3943670) (Shutdown) 
+-- visionOS 2.3 --
+    Apple Vision Pro (3B468F9D-D6C2-4529-A0F2-DCCCFE771DA8) (Shutdown) 
+
+
+=== RUNTIME iOS ===
+
+📱 Runtime iOS:
+== Runtimes ==
+iOS 16.0 (16.0 - 20A360) - com.apple.CoreSimulator.SimRuntime.iOS-16-0
+iOS 16.1 (16.1 - 20B72) - com.apple.CoreSimulator.SimRuntime.iOS-16-1
+iOS 17.2 (17.2 - 21C62) - com.apple.CoreSimulator.SimRuntime.iOS-17-2
+iOS 17.4 (17.4 - 21E213) - com.apple.CoreSimulator.SimRuntime.iOS-17-4
+iOS 17.5 (17.5 - 21F79) - com.apple.CoreSimulator.SimRuntime.iOS-17-5
+iOS 18.0 (18.0 - 22A3351) - com.apple.CoreSimulator.SimRuntime.iOS-18-0
+iOS 18.1 (18.1 - 22B81) - com.apple.CoreSimulator.SimRuntime.iOS-18-1
+iOS 18.3 (18.3.1 - 22D8075) - com.apple.CoreSimulator.SimRuntime.iOS-18-3
+tvOS 17.5 (17.5 - 21L569) - com.apple.CoreSimulator.SimRuntime.tvOS-17-5
+tvOS 18.2 (18.2 - 22K154) - com.apple.CoreSimulator.SimRuntime.tvOS-18-2
+watchOS 10.5 (10.5 - 21T575) - com.apple.CoreSimulator.SimRuntime.watchOS-10-5
+watchOS 11.2 (11.2 - 22S99) - com.apple.CoreSimulator.SimRuntime.watchOS-11-2
+visionOS 1.2 (1.2 - 21O5565d) - com.apple.CoreSimulator.SimRuntime.xrOS-1-2
+visionOS 2.2 (2.2 - 22N840) - com.apple.CoreSimulator.SimRuntime.xrOS-2-2
+visionOS 2.3 (2.3 - 22N895) - com.apple.CoreSimulator.SimRuntime.xrOS-2-3
+
+
+=== DEVELOPER ACCOUNT ===
+
+🔐 Developer Account:
+  1) 62956BF0C27E2E59DCC6B79E6C61AEC1A0A71508 "Apple Development: Eddy Rebesan (JCJ77KBDS6)" (CSSMERR_TP_CERT_REVOKED)
+  2) 4DC0CCEF884EE3B3A0F5102400FF580315BA277D "Apple Development: Eddy Rebesan (JCJ77KBDS6)" (CSSMERR_TP_CERT_REVOKED)
+  3) 2A2495EC5A288EC86BC229E8004A7472C9D17AEA "Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+     3 valid identities found
+
+
+=== PROFILI PROVISIONING ===
+
+📋 Profili Provisioning:
+Directory non trovata
+
+
+=== FIREBASE iOS ===
+
+🔥 Firebase iOS (GoogleService-Info.plist):
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDH31miMonUQXuT57g_sb7Z57Kla--pbeg</string>
+	<key>GCM_SENDER_ID</key>
+	<string>282400437237</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.fitgymtrack.app</string>
+	<key>PROJECT_ID</key>
+	<string>fitgymtrack-1c62f</string>
+	<key>STORAGE_BUCKET</key>
+	<string>fitgymtrack-1c62f.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:282400437237:ios:a456f83a6cce8df34726bc</string>
+</dict>
+</plist>
+
+=== FIREBASE ANDROID ===
+
+🔥 Firebase Android (google-services.json):
+{
+  "project_info": {
+    "project_number": "282400437237",
+    "project_id": "fitgymtrack-1c62f",
+    "storage_bucket": "fitgymtrack-1c62f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282400437237:android:c412be36bdd771be4726bc",
+        "android_client_info": {
+          "package_name": "com.fitgymtracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsC_d7wgfyFXAMR5uVXXw1XHYikNX98Gc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+
+=== BUNDLE ID iOS ===
+
+📦 Bundle ID iOS:
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.fitgymtrackFlutter.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+--
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitgymtrack.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+
+
+=== PACKAGE NAME ANDROID ===
+
+📦 Package Name Android:
+File build.gradle non trovato
+
+
+=== ENTITLEMENTS ===
+
+🔐 Entitlements:
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>
+
+
+=== APPDELEGATE ===
+
+📱 AppDelegate.swift:
+import Flutter
+import UIKit
+import Firebase
+
+@main
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    FirebaseApp.configure()
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+}
+
+
+=== FIREBASE DEPENDENCIES ===
+
+📦 Firebase Dependencies:
+
+  # Firebase & Push Notifications
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  flutter_local_notifications: ^19.4.2
+
+  # Date & Time
+  intl: ^0.20.2
+
+  # Charts & Visualizations
+  fl_chart: ^0.65.0
+
+  # Animations
+  lottie: ^3.3.1
+
+
+=== iOS PODS ===
+
+📦 iOS Pods Firebase:
+  - Firebase/CoreOnly (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - Firebase/Messaging (11.15.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 11.15.0)
+  - firebase_core (3.15.2):
+    - Firebase/CoreOnly (= 11.15.0)
+  - firebase_messaging (15.2.10):
+    - Firebase/Messaging (= 11.15.0)
+    - firebase_core
+  - FirebaseCore (11.15.0):
+    - FirebaseCoreInternal (~> 11.15.0)
+  - FirebaseCoreInternal (11.15.0):
+  - FirebaseInstallations (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+  - FirebaseMessaging (11.15.0):
+    - FirebaseCore (~> 11.15.0)
+    - FirebaseInstallations (~> 11.0)
+  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
+  - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
+    - Firebase
+    - FirebaseCore
+    - FirebaseCoreInternal
+    - FirebaseInstallations
+    - FirebaseMessaging
+  firebase_core:
+    :path: ".symlinks/plugins/firebase_core/ios"
+  firebase_messaging:
+    :path: ".symlinks/plugins/firebase_messaging/ios"
+  Firebase: d99ac19b909cd2c548339c2241ecd0d1599ab02e
+  firebase_core: 995454a784ff288be5689b796deb9e9fa3601818
+  firebase_messaging: f4a41dd102ac18b840eba3f39d67e77922d3f707
+  FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
+  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
+  FirebaseInstallations: 317270fec08a5d418fdbc8429282238cab3ac843
+  FirebaseMessaging: 3b26e2cee503815e01c3701236b020aa9b576f09
+
+
+=== FIREBASE SERVICE ===
+
+🔥 Firebase Service:
+  }
+
+  /// Ottiene e salva FCM token
+  Future<void> _getFCMToken() async {
+    try {
+      _fcmToken = await _messaging.getToken();
+      
+      if (_fcmToken != null) {
+        // Salva token localmente
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', _fcmToken!);
+        
+        // Invia token al server
+        await _sendTokenToServer(_fcmToken!);
+        
+        if (kDebugMode) {
+          print('📱 FCM Token saved and sent to server');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error getting FCM token: $e');
+      }
+    }
+  }
+
+
+
+=== INFO.PLIST ===
+
+📱 Info.plist:
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Fitgymtrack Flutter</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>fitgymtrack_flutter</string>
+--
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<!-- 🔧 AUTOFILL: Configurazioni essenziali per autofill password su iOS -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>CFBundleURLTypes</key>
+
+
+=== KEYCHAIN ACCESS ===
+
+🔐 Keychain Access:
+    0x00000001 <blob>="Apple Development: Eddy Rebesan (Eddy Rebesan)"
+    0x00000001 <blob>="Apple Development: Eddy Rebesan (Eddy Rebesan)"
+    0x00000001 <blob>="Apple Development: Eddy Rebesan (Eddy Rebesan)"
+    "alis"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "labl"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "subj"<blob>=0x30818C311A3018060A0992268993F22C6401010C0A533339583653345138393135303306035504030C2C4170706C6520446576656C6F706D656E743A2045646479205265626573616E20284A434A37374B424453362931133011060355040B0C0A5144424E51354E4C4D4831153013060355040A0C0C45646479205265626573616E310B3009060355040613025553  "0\201\2141\0320\030\006\012\011\222&\211\223\362,d\001\001\014\012S39X6S4Q891503\006\003U\004\003\014,Apple Development: Eddy Rebesan (JCJ77KBDS6)1\0230\021\006\003U\004\013\014\012QDBNQ5NLMH1\0250\023\006\003U\004\012\014\014Eddy Rebesan1\0130\011\006\003U\004\006\023\002US"
+    "alis"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "labl"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "subj"<blob>=0x30818C311A3018060A0992268993F22C6401010C0A533339583653345138393135303306035504030C2C4170706C6520446576656C6F706D656E743A2045646479205265626573616E20284A434A37374B424453362931133011060355040B0C0A5144424E51354E4C4D4831153013060355040A0C0C45646479205265626573616E310B3009060355040613025553  "0\201\2141\0320\030\006\012\011\222&\211\223\362,d\001\001\014\012S39X6S4Q891503\006\003U\004\003\014,Apple Development: Eddy Rebesan (JCJ77KBDS6)1\0230\021\006\003U\004\013\014\012QDBNQ5NLMH1\0250\023\006\003U\004\012\014\014Eddy Rebesan1\0130\011\006\003U\004\006\023\002US"
+    "alis"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "labl"<blob>="Apple Development: Eddy Rebesan (JCJ77KBDS6)"
+    "subj"<blob>=0x30818C311A3018060A0992268993F22C6401010C0A533339583653345138393135303306035504030C2C4170706C6520446576656C6F706D656E743A2045646479205265626573616E20284A434A37374B424453362931133011060355040B0C0A5144424E51354E4C4D4831153013060355040A0C0C45646479205265626573616E310B3009060355040613025553  "0\201\2141\0320\030\006\012\011\222&\211\223\362,d\001\001\014\012S39X6S4Q891503\006\003U\004\003\014,Apple Development: Eddy Rebesan (JCJ77KBDS6)1\0230\021\006\003U\004\013\014\012QDBNQ5NLMH1\0250\023\006\003U\004\012\014\014Eddy Rebesan1\0130\011\006\003U\004\006\023\002US"
+    "acct"<blob>="com.mosyle.macos.manager.mdm.client.pushDeviceToken"
+
+
+=== FLUTTER DOCTOR ===
+
+🩺 Flutter Doctor:
+
+
+=== DISPOSITIVI FLUTTER ===
+
+📱 Dispositivi Flutter:
+
