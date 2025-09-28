@@ -1,6 +1,7 @@
 // lib/features/notifications/presentation/widgets/notification_badge_icon.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../bloc/notification_bloc.dart';
 
@@ -19,7 +20,10 @@ class NotificationBadgeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<NotificationBloc, NotificationState>(
+    return BlocConsumer<NotificationBloc, NotificationState>(
+      listener: (context, state) {
+        // Forza rebuild quando lo stato cambia
+      },
       builder: (context, state) {
         int unreadCount = 0;
         

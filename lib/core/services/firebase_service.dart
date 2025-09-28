@@ -1,5 +1,6 @@
 // lib/core/services/firebase_service.dart
 
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -97,6 +98,10 @@ class FirebaseService {
 
     // Gestisci notifiche in foreground
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+    
+    
+    // Avvia un timer per controllare le notifiche in foreground (iOS e Android)
+    _startForegroundChecker();
 
     // Gestisci notifiche quando app è in background
     FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
@@ -207,6 +212,8 @@ class FirebaseService {
   void _handleForegroundMessage(RemoteMessage message) {
     if (kDebugMode) {
       print('[CONSOLE] [FCM] 📱 Foreground message received: ${message.notification?.title}');
+      print('[CONSOLE] [FCM] 📱 Message data: ${message.data}');
+      print('[CONSOLE] [FCM] 📱 Platform: ${defaultTargetPlatform}');
     }
 
     // Mostra notifica locale
@@ -214,9 +221,11 @@ class FirebaseService {
     
     // Aggiorna il BLoC delle notifiche
     if (kDebugMode) {
-      print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBloc...');
+      print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBlocImmediate...');
     }
-    _updateNotificationBloc();
+    
+    // Forza aggiornamento immediato del BLoC
+    _updateNotificationBlocImmediate();
   }
 
   /// Gestisce notifiche in background
@@ -326,6 +335,62 @@ class FirebaseService {
         print('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
       }
     }
+  }
+
+  /// Aggiorna il BLoC delle notifiche immediatamente (per iOS)
+  void _updateNotificationBlocImmediate() {
+    try {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] 📱 _updateNotificationBlocImmediate called');
+      }
+      
+      // Prova a ottenere il BLoC dal context globale
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] 📱 Context found, getting BLoC from context');
+        }
+        
+        final notificationBloc = context.read<NotificationBloc>();
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] 📱 BLoC obtained from context');
+        }
+        
+        notificationBloc.add(const LoadNotificationsEvent());
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] 📱 Notification BLoC updated via context');
+        }
+      } else {
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] ❌ Context is null, trying GetIt');
+        }
+        
+        // Fallback a GetIt
+        final notificationBloc = getIt<NotificationBloc>();
+        if (notificationBloc != null) {
+          notificationBloc.add(const LoadNotificationsEvent());
+          if (kDebugMode) {
+            print('[CONSOLE] [FCM] 📱 Notification BLoC updated via GetIt');
+          }
+        } else {
+          if (kDebugMode) {
+            print('[CONSOLE] [FCM] ❌ BLoC is null in both methods');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] ❌ Error in _updateNotificationBlocImmediate: $e');
+      }
+    }
+  }
+
+  /// Avvia il checker per le notifiche in foreground (iOS e Android)
+  void _startForegroundChecker() {
+    // Controlla le notifiche ogni 2 secondi quando l'app è in foreground
+    Timer.periodic(const Duration(seconds: 2), (timer) {
+      _updateNotificationBlocImmediate();
+    });
   }
 
 

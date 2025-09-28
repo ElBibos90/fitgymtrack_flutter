@@ -6,9 +6,14 @@ $ErrorActionPreference = "Stop"
 
 # Verifica Flutter
 Write-Host "Verifica Flutter..." -ForegroundColor Yellow
-$flutterVersion = flutter --version 2>$null
+$flutterPath = "/Users/eddyrebesan/flutter/bin/flutter"
+if (-not (Test-Path $flutterPath)) {
+    Write-Host "ERRORE: Flutter non trovato in $flutterPath" -ForegroundColor Red
+    exit 1
+}
+$flutterVersion = & $flutterPath --version 2>$null
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERRORE: Flutter non trovato o non configurato correttamente" -ForegroundColor Red
+    Write-Host "ERRORE: Flutter non configurato correttamente" -ForegroundColor Red
     exit 1
 }
 Write-Host $flutterVersion[0] -ForegroundColor Gray
@@ -56,6 +61,9 @@ Write-Host "   - SÌ: Gli utenti riceveranno prompt di aggiornamento (is_active 
 Write-Host "   - NO: La versione viene inserita ma non attiva (is_active = 0)" -ForegroundColor Gray
 Write-Host "   (Consigliato: NO se la nuova versione non è ancora negli store)" -ForegroundColor Cyan
 $updateDatabase = Read-Host "Aggiornare versione nel database? (s/N)"
+if ([string]::IsNullOrWhiteSpace($updateDatabase)) {
+    $updateDatabase = "n"
+}
 $updateDatabase = $updateDatabase.ToLower()
 
 # Richiedi piattaforma
@@ -64,6 +72,9 @@ Write-Host "   1. Android" -ForegroundColor White
 Write-Host "   2. iOS" -ForegroundColor White
 Write-Host "   3. Entrambe" -ForegroundColor White
 $platformChoice = Read-Host "Scelta (1/2/3)"
+if ([string]::IsNullOrWhiteSpace($platformChoice)) {
+    $platformChoice = "1"
+}
 
 switch ($platformChoice) {
     "1" { $platformTarget = "android" }
@@ -80,6 +91,9 @@ Write-Host "`nTarget Audience:" -ForegroundColor Yellow
 Write-Host "   1. Production" -ForegroundColor White
 Write-Host "   2. Tester" -ForegroundColor White
 $audienceChoice = Read-Host "Scelta (1/2)"
+if ([string]::IsNullOrWhiteSpace($audienceChoice)) {
+    $audienceChoice = "1"
+}
 
 switch ($audienceChoice) {
     "1" { $targetAudience = "production" }
@@ -92,6 +106,9 @@ switch ($audienceChoice) {
 
 # Richiedi se è aggiornamento critico
 $isCritical = Read-Host "`nAggiornamento critico? (s/N)"
+if ([string]::IsNullOrWhiteSpace($isCritical)) {
+    $isCritical = "n"
+}
 $isCritical = $isCritical.ToLower() -eq "s"
 
 # Richiedi messaggio di aggiornamento
@@ -109,6 +126,9 @@ if ($updateMessage) {
 }
 
 $confirm = Read-Host "`nProcedere? (S/n)"
+if ([string]::IsNullOrWhiteSpace($confirm)) {
+    $confirm = "s"
+}
 if ($confirm.ToLower() -eq "n") {
     Write-Host "Operazione annullata" -ForegroundColor Yellow
     exit 0
@@ -227,7 +247,7 @@ finally:
 
 # STEP 3: Pulizia build precedente
 Write-Host "`nSTEP 3: Pulizia build precedente..." -ForegroundColor Yellow
-flutter clean
+& $flutterPath clean
 if ($LASTEXITCODE -eq 0) {
     Write-Host "   Build pulita" -ForegroundColor Green
 } else {
@@ -237,7 +257,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # STEP 4: Aggiornamento dipendenze
 Write-Host "`nSTEP 4: Aggiornamento dipendenze..." -ForegroundColor Yellow
-flutter pub get
+& $flutterPath pub get
 if ($LASTEXITCODE -eq 0) {
     Write-Host "   Dipendenze aggiornate" -ForegroundColor Green
 } else {
@@ -247,7 +267,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # STEP 5: Compilazione AAB per Android
 Write-Host "`nSTEP 5: Compilazione AAB per Android..." -ForegroundColor Yellow
-flutter build appbundle --release
+& $flutterPath build appbundle --release
 if ($LASTEXITCODE -eq 0) {
     Write-Host "   AAB generato: build/app/outputs/bundle/release/app-release.aab" -ForegroundColor Green
 } else {
