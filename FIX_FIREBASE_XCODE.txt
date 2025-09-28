@@ -1,0 +1,37 @@
+# FIX FIREBASE XCODE - COMANDI DA ESEGUIRE
+# Copia e incolla questi comandi uno alla volta
+
+# 1. PULISCI TUTTO
+cd /Users/eddyrebesan/Desktop/Repo/fitgymtrack_flutter
+flutter clean
+
+# 2. RIMUOVI PODS E REINSTALLA
+cd ios
+rm -rf Pods
+rm Podfile.lock
+pod install
+
+# 3. TORNA ALLA CARTELLA PRINCIPALE
+cd ..
+
+# 4. REINSTALLA DIPENDENZE FLUTTER
+flutter pub get
+
+# 5. PULISCI E RIGENERA SYMLINKS
+flutter clean
+flutter pub get
+
+# 6. VERIFICA SYMLINKS FIREBASE
+ls ios/.symlinks/plugins/ | grep firebase
+
+# 7. VERIFICA PODS FIREBASE
+ls ios/Pods/ | grep -i firebase
+
+# 8. INSTALLA ROSETTA (necessario per Apple Silicon)
+sudo softwareupdate --install-rosetta --agree-to-license
+
+# 9. PROVA BUILD iOS
+flutter build ios --no-codesign
+
+# 10. AVVIA APP SU DISPOSITIVO
+flutter run -d 00008110-000149901AA2401E

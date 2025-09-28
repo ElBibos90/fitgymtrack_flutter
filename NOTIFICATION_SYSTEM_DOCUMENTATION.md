@@ -198,12 +198,23 @@ Il sistema di notifiche in-app permette alle palestre e ai trainer di comunicare
 
 ## 🔮 **FASI FUTURE**
 
-### **📅 FASE 4 - iOS Push Notifications (IN CORSO)**
-- **🔍 STEP 1**: Controlli sistema iOS - Verificare dettagli sistema, configurazione Xcode
-- **🔍 STEP 2**: iOS Firebase Integration - APNs + Firebase per iOS
-- **🔍 STEP 3**: iOS Configuration - `GoogleService-Info.plist` e setup Xcode
-- **🔍 STEP 4**: iOS Testing - Test su dispositivi iOS reali
-- **🔍 STEP 5**: Cross-Platform - Notifiche funzionanti su Android e iOS
+### **📅 FASE 4 - iOS Push Notifications (COMPLETATA E TESTATA)**
+- **✅ STEP 1**: Controlli sistema iOS - Verificato dettagli sistema, configurazione Xcode
+- **✅ STEP 2**: iOS Firebase Integration - APNs + Firebase per iOS configurato
+- **✅ STEP 3**: iOS Configuration - `GoogleService-Info.plist` e setup Xcode completato
+- **✅ STEP 4**: iOS Testing - App funzionante su dispositivo iOS reale
+- **✅ STEP 5**: APNs Certificates - Configurazione certificati Apple Developer Console
+- **✅ STEP 6**: Upload certificati su Firebase Console
+- **✅ STEP 7**: Test notifiche push iOS su dispositivo reale
+- **✅ STEP 8**: Cross-Platform - Notifiche funzionanti su Android e iOS
+
+#### **📋 DETTAGLI STEP 5-8 - APNs Certificates e Fix Finale:**
+- **✅ Development Certificate**: Creato da zero e funzionante
+- **✅ Production Certificate**: Creato da zero e funzionante
+- **✅ Upload Firebase**: Entrambi i certificati caricati su Firebase Console
+- **✅ Xcode Capabilities**: Push Notifications abilitato in Xcode Signing & Capabilities
+- **✅ Fix APNs Token**: Risolto problema APNs token con correzione FirebaseService
+- **✅ Test Completato**: Notifiche push funzionanti su iOS dispositivo reale
 
 ### **📅 FASE 5 - Deep Linking Avanzato**
 - **Deep Linking**: Apertura diretta a sezioni specifiche
@@ -523,12 +534,19 @@ lib/features/notifications/
 - ✅ Anti-spam system
 - ✅ Dark theme completo
 
-### **v4.0.0 - Fase 4 (IN CORSO - iOS Push Notifications)**
-- 🔄 **PROSSIMO STEP**: Controlli sistema iOS
-- 🔄 **DA VERIFICARE**: Dettagli sistema iOS, configurazione Xcode
-- 🔄 **DA IMPLEMENTARE**: iOS Push Notifications
-- 🔄 **DA IMPLEMENTARE**: APNs integration
-- 🔄 **DA IMPLEMENTARE**: Cross-platform testing
+### **v4.0.0 - Fase 4 (COMPLETATA E TESTATA - iOS Push Notifications)**
+- ✅ **STEP 1 COMPLETATO**: Controlli sistema iOS - Verificato dettagli sistema, configurazione Xcode
+- ✅ **STEP 2 COMPLETATO**: iOS Firebase Integration - APNs + Firebase per iOS configurato
+- ✅ **STEP 3 COMPLETATO**: iOS Configuration - `GoogleService-Info.plist` e setup Xcode completato
+- ✅ **STEP 4 COMPLETATO**: iOS Testing - App funzionante su dispositivo iOS reale
+- ✅ **STEP 5 COMPLETATO**: APNs Certificates - Configurazione certificati Apple Developer Console
+  - ✅ **Development Certificate**: Creato da zero e funzionante
+  - ✅ **Production Certificate**: Creato da zero e funzionante
+- ✅ **STEP 6 COMPLETATO**: Upload certificati su Firebase Console
+- ✅ **STEP 7 COMPLETATO**: Test notifiche push iOS su dispositivo reale
+- ✅ **STEP 8 COMPLETATO**: Cross-platform testing (Android + iOS)
+- ✅ **FIX FINALE**: Push Notifications abilitato in Xcode Signing & Capabilities
+- ✅ **FIX APNs**: Risolto problema APNs token con correzione FirebaseService
 
 ### **v5.0.0 - Fase 5 (Pianificata)**
 - 🔄 Deep Linking avanzato
@@ -542,7 +560,8 @@ lib/features/notifications/
 
 ---
 
-**📅 Ultimo Aggiornamento**: 26/09/2025  
+**📅 Ultimo Aggiornamento**: 28/09/2025  
 **👨‍💻 Sviluppatore**: AI Assistant  
-**📋 Versione Documentazione**: 3.1.0  
-**🎯 Stato**: Fase 3 Completata (Android) - **IN CORSO Fase 4 (iOS) - STEP 1: Controlli Sistema iOS**
+**📋 Versione Documentazione**: 4.2.0  
+**🎯 Stato**: **FASE 4 COMPLETATA! 🎉** - Notifiche push funzionanti su Android e iOS  
+**📝 Note**: Sistema notifiche completamente funzionante su entrambe le piattaforme! Fix finale: Push Notifications abilitato in Xcode Signing & Capabilities. APNs token risolto con correzione FirebaseService. Pronto per Fase 5 (Deep Linking).

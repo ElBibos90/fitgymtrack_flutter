@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -110,6 +111,11 @@ class FirebaseService {
   /// Ottiene e salva FCM token (solo localmente, non al server)
   Future<void> _getFCMToken() async {
     try {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] 📱 Attempting to get FCM token...');
+      }
+      
+      // Prova a ottenere l'FCM token direttamente
       _fcmToken = await _messaging.getToken();
       
       if (_fcmToken != null) {
@@ -118,7 +124,42 @@ class FirebaseService {
         await prefs.setString('fcm_token', _fcmToken!);
         
         if (kDebugMode) {
-          print('[CONSOLE] [FCM] 📱 FCM Token saved locally (not sent to server yet)');
+          print('[CONSOLE] [FCM] 📱 FCM Token obtained and saved locally');
+          print('[CONSOLE] [FCM] 📱 Token: ${_fcmToken!.substring(0, 20)}...');
+        }
+      } else {
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] ❌ FCM token is null');
+        }
+        
+        // Su iOS, se l'FCM token è null, proviamo a ottenere l'APNs token
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          if (kDebugMode) {
+            print('[CONSOLE] [FCM] 📱 Trying to get APNs token for iOS...');
+          }
+          
+          final apnsToken = await _messaging.getAPNSToken();
+          if (apnsToken != null) {
+            if (kDebugMode) {
+              print('[CONSOLE] [FCM] 📱 APNs token obtained, retrying FCM token...');
+            }
+            
+            // Aspetta un po' e riprova l'FCM token
+            await Future.delayed(const Duration(seconds: 2));
+            _fcmToken = await _messaging.getToken();
+            
+            if (_fcmToken != null) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('fcm_token', _fcmToken!);
+              if (kDebugMode) {
+                print('[CONSOLE] [FCM] 📱 FCM Token obtained after APNs token');
+              }
+            }
+          } else {
+            if (kDebugMode) {
+              print('[CONSOLE] [FCM] ❌ APNs token also null');
+            }
+          }
         }
       }
     } catch (e) {
@@ -149,6 +190,10 @@ class FirebaseService {
         
         if (kDebugMode) {
           print('[CONSOLE] [FCM] 📱 FCM Token registered for user $userId');
+        }
+      } else {
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] ⚠️ Cannot register token - FCM token is null');
         }
       }
     } catch (e) {

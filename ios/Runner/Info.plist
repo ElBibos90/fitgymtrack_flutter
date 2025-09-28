@@ -76,5 +76,19 @@
 	<array>
 		<string>$(AppIdentifierPrefix)com.fitgymtrack.app</string>
 	</array>
+	<!-- 🔔 PUSH NOTIFICATIONS: Configurazioni per notifiche push iOS -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>background-processing</string>
+	</array>
+	<key>com.apple.developer.usernotifications.filtering</key>
+	<true/>
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>

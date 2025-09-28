@@ -1,0 +1,39 @@
+# COMANDI PER SETUP iOS PUSH NOTIFICATIONS
+# Copia e incolla questi comandi uno alla volta nel terminale
+
+# 1. INSTALLAZIONE HOMEBREW (se non presente)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. AGGIORNA PATH PER HOMEBREW (dopo installazione)
+echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# 3. INSTALLAZIONE COCOAPODS
+brew install cocoapods
+
+# 4. VERIFICA INSTALLAZIONE COCOAPODS
+
+
+
+# 5. VAI NELLA CARTELLA iOS
+cd /Users/eddyrebesan/Desktop/Repo/fitgymtrack_flutter/ios
+
+# 6. RISOLVI CONFLITTO STRIPE - ELIMINA LOCK E REINSTALLA
+rm Podfile.lock
+rm -rf Pods
+pod install
+
+# 7. TORNA ALLA CARTELLA PRINCIPALE
+cd ..
+
+# 8. VERIFICA INSTALLAZIONE DIPENDENZE
+ls ios/Pods/
+
+# 9. VERIFICA SYMLINKS FIREBASE
+ls ios/.symlinks/plugins/ | grep firebase
+
+# 10. BUILD TEST iOS (opzionale)
+flutter build ios --no-codesign
+
+# 11. VERIFICA CONFIGURAZIONE COMPLETA
+flutter doctor -v
