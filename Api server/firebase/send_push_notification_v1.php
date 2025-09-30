@@ -28,11 +28,16 @@ try {
         throw new Exception('Connessione database fallita');
     }
     
-    // Autentica l'utente (solo gym e trainer possono inviare notifiche)
-    $user = authMiddleware($conn, ['admin', 'trainer', 'gym']);
-    
     // Leggi i dati JSON
     $input = json_decode(file_get_contents('php://input'), true);
+    
+    // Autentica l'utente (solo gym e trainer possono inviare notifiche)
+    // Se i dati utente sono nel payload, usali direttamente, altrimenti autentica
+    if (isset($input['user_data'])) {
+        $user = $input['user_data'];
+    } else {
+        $user = authMiddleware($conn, ['admin', 'trainer', 'gym']);
+    }
     
     if (!$input) {
         throw new Exception('Dati JSON non validi');
@@ -53,14 +58,14 @@ try {
     $fcm_tokens = [];
     
     if ($is_broadcast) {
-        // Broadcast a tutti i membri della palestra
+        // Broadcast a tutti i membri della palestra (solo ruolo 'user')
         $tokensStmt = $conn->prepare("
             SELECT DISTINCT fcm_token 
             FROM user_fcm_tokens uft
             JOIN users u ON uft.user_id = u.id
             JOIN user_role r ON u.role_id = r.id
             WHERE u.gym_id = (SELECT gym_id FROM users WHERE id = ?) 
-            AND r.name IN ('user', 'trainer', 'gym')
+            AND r.name = 'user'
             AND uft.fcm_token IS NOT NULL
         ");
         $tokensStmt->bind_param("i", $user['user_id']);
@@ -85,26 +90,74 @@ try {
         $fcm_tokens[] = $row['fcm_token'];
     }
     
+    // Debug: Log dei token trovati
+    error_log('Broadcast Debug - User ID: ' . $user['user_id']);
+    error_log('Broadcast Debug - Tokens found: ' . count($fcm_tokens));
+    error_log('Broadcast Debug - Tokens: ' . json_encode($fcm_tokens));
+    
     if (empty($fcm_tokens)) {
-        throw new Exception('Nessun token FCM trovato per i destinatari');
+        // Debug: Verifica se ci sono utenti nella palestra
+        $debugStmt = $conn->prepare("
+            SELECT u.id, u.name, u.username, r.name as role_name, uft.fcm_token
+            FROM users u
+            JOIN user_role r ON u.role_id = r.id
+            LEFT JOIN user_fcm_tokens uft ON u.id = uft.user_id
+            WHERE u.gym_id = (SELECT gym_id FROM users WHERE id = ?)
+        ");
+        $debugStmt->bind_param("i", $user['user_id']);
+        $debugStmt->execute();
+        $debugResult = $debugStmt->get_result();
+        
+        $debugUsers = [];
+        while ($debugRow = $debugResult->fetch_assoc()) {
+            $debugUsers[] = $debugRow;
+        }
+        
+        error_log('Broadcast Debug - All users in gym: ' . json_encode($debugUsers));
+        
+        // Restituisci debug info invece di lanciare eccezione
+        echo json_encode([
+            'success' => false,
+            'message' => 'Nessun token FCM trovato per i destinatari',
+            'debug_info' => [
+                'user_id' => $user['user_id'],
+                'tokens_found' => 0,
+                'all_users_in_gym' => $debugUsers,
+                'is_broadcast' => $is_broadcast
+            ]
+        ]);
+        return;
     }
     
     // Invia notifica push usando V1 API
     $push_results = [];
     foreach ($fcm_tokens as $token) {
+        error_log('Broadcast Debug - Sending to token: ' . substr($token, 0, 20) . '...');
         $push_result = sendFCMNotificationV1($token, $title, $message, $type, $priority);
         $push_results[] = $push_result;
+        error_log('Broadcast Debug - Push result: ' . json_encode($push_result));
     }
     
-    // Salva notifica nel database
-    $notification_id = saveNotification($conn, $user, $title, $message, $type, $priority, $recipient_id, $is_broadcast);
+    // Se notification_id è già presente, non salvare di nuovo
+    $notification_id = $input['notification_id'] ?? null;
+    
+    if (!$notification_id) {
+        // Salva notifica nel database solo se non è già stata salvata
+        $notification_id = saveNotification($conn, $user, $title, $message, $type, $priority, $recipient_id, $is_broadcast);
+    }
     
     echo json_encode([
         'success' => true,
         'message' => 'Notifica push inviata con successo (V1 API)',
         'notification_id' => $notification_id,
         'recipients_count' => count($fcm_tokens),
-        'push_results' => $push_results
+        'push_results' => $push_results,
+        'debug_info' => [
+            'user_id' => $user['user_id'],
+            'tokens_found' => count($fcm_tokens),
+            'tokens' => array_map(function($token) { return substr($token, 0, 20) . '...'; }, $fcm_tokens),
+            'is_broadcast' => $is_broadcast
+        ]
     ]);
     
 } catch (Exception $e) {

@@ -88,14 +88,22 @@ function getUserNotifications($conn, $user) {
                 n.message,
                 n.type,
                 n.priority,
-                n.status,
+                CASE 
+                    WHEN n.is_broadcast = 1 THEN 
+                        CASE WHEN nbl.read_at IS NOT NULL THEN 'read' ELSE 'delivered' END
+                    ELSE n.status 
+                END as status,
                 n.created_at,
-                n.read_at,
+                CASE 
+                    WHEN n.is_broadcast = 1 THEN nbl.read_at
+                    ELSE n.read_at 
+                END as read_at,
                 n.is_broadcast,
                 u.name as sender_name,
                 u.username as sender_username
             FROM notifications n
             LEFT JOIN users u ON n.sender_id = u.id
+            LEFT JOIN notification_broadcast_log nbl ON n.id = nbl.notification_id AND nbl.recipient_id = ?
             WHERE (
                 n.recipient_id = ? OR 
                 (n.is_broadcast = 1 AND n.sender_id IN (
@@ -108,7 +116,7 @@ function getUserNotifications($conn, $user) {
             LIMIT ? OFFSET ?
         ");
         
-        $stmt->bind_param("iiii", $user['user_id'], $user['user_id'], $limit, $offset);
+        $stmt->bind_param("iiiii", $user['user_id'], $user['user_id'], $user['user_id'], $limit, $offset);
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -362,11 +370,17 @@ function sendNotification($conn, $user) {
                     'type' => $type,
                     'priority' => $priority,
                     'recipient_id' => $recipient_id,
-                    'is_broadcast' => $is_broadcast
+                    'is_broadcast' => $is_broadcast,
+                    'user_data' => $user,  // Passa i dati utente direttamente
+                    'notification_id' => $notification_id  // Passa l'ID della notifica già creata
                 ];
                 
-                // Chiama l'API push notification
-                $pushResponse = file_get_contents('http://localhost' . dirname($_SERVER['REQUEST_URI']) . '/firebase/send_push_notification_v1.php', false, stream_context_create([
+                // Chiama l'API push notification con percorso corretto
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'];
+                $pushUrl = $protocol . '://' . $host . '/api/firebase/send_push_notification_v1.php';
+                
+                $pushResponse = file_get_contents($pushUrl, false, stream_context_create([
                     'http' => [
                         'method' => 'POST',
                         'header' => 'Content-Type: application/json',
@@ -376,6 +390,8 @@ function sendNotification($conn, $user) {
                 
                 if ($pushResponse === false) {
                     error_log('Push notification failed: ' . error_get_last()['message']);
+                } else {
+                    error_log('Push notification response: ' . $pushResponse);
                 }
             } catch (Exception $pushError) {
                 error_log('Push notification error: ' . $pushError->getMessage());
@@ -439,16 +455,7 @@ function markAsRead($conn, $user) {
         $conn->begin_transaction();
         
         try {
-            // Aggiorna la notifica principale
-            $updateStmt = $conn->prepare("
-                UPDATE notifications 
-                SET status = 'read', read_at = NOW() 
-                WHERE id = ?
-            ");
-            $updateStmt->bind_param("i", $notification_id);
-            $updateStmt->execute();
-            
-            // Se è broadcast, aggiorna anche il log
+            // Se è broadcast, aggiorna solo il log specifico dell'utente
             if ($notification['is_broadcast']) {
                 $logStmt = $conn->prepare("
                     UPDATE notification_broadcast_log 
@@ -457,6 +464,15 @@ function markAsRead($conn, $user) {
                 ");
                 $logStmt->bind_param("ii", $notification_id, $user['user_id']);
                 $logStmt->execute();
+            } else {
+                // Per notifiche singole, aggiorna la notifica principale
+                $updateStmt = $conn->prepare("
+                    UPDATE notifications 
+                    SET status = 'read', read_at = NOW() 
+                    WHERE id = ?
+                ");
+                $updateStmt->bind_param("i", $notification_id);
+                $updateStmt->execute();
             }
             
             $conn->commit();

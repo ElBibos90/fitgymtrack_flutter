@@ -2,7 +2,7 @@
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
-version: 1.0.50+50
+version: 1.0.51+51
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -115,6 +115,8 @@ flutter:
     - assets/audio/
     - assets/icon/        # Ã°Å¸â€ â€¢ Per le icone personalizzate
     - assets/splash/      # Ã°Å¸â€ â€¢ Per lo splash screen
+
+
 
 
 
