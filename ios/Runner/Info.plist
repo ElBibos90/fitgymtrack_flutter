@@ -80,7 +80,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<string>background-processing</string>
 	</array>
 	<key>com.apple.developer.usernotifications.filtering</key>
 	<true/>
