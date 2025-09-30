@@ -1,7 +1,9 @@
 // lib/features/notifications/bloc/notification_bloc.dart
 
+import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/services.dart';
 import '../models/notification_models.dart';
 import '../repositories/notification_repository.dart';
 
@@ -178,6 +180,7 @@ class NotificationMarkedAsRead extends NotificationState {
 
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationRepository _repository;
+  static const MethodChannel _badgeChannel = MethodChannel('flutter_badge_channel');
 
   NotificationBloc({required NotificationRepository repository})
       : _repository = repository,
@@ -217,6 +220,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             pagination: response.pagination,
             hasReachedMax: notifications.length < 20,
           ));
+          
+          // Aggiorna badge iOS
+          await _updateiOSBadge(unreadCount);
         } else if (state is NotificationLoaded) {
           final currentState = state as NotificationLoaded;
           final updatedNotifications = [
@@ -224,12 +230,17 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             ...notifications,
           ];
           
+          final newUnreadCount = updatedNotifications.where((n) => n.isUnread).length;
+          
           emit(currentState.copyWith(
             notifications: updatedNotifications,
-            unreadCount: updatedNotifications.where((n) => n.isUnread).length,
+            unreadCount: newUnreadCount,
             pagination: response.pagination,
             hasReachedMax: notifications.length < 20,
           ));
+          
+          // Aggiorna badge iOS
+          await _updateiOSBadge(newUnreadCount);
         }
       } else {
         emit(const NotificationError('Errore nel caricamento delle notifiche'));
@@ -274,6 +285,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           notifications: updatedNotifications,
           unreadCount: unreadCount,
         ));
+
+        // Aggiorna badge iOS
+        await _updateiOSBadge(unreadCount);
       }
     } catch (e) {
       emit(NotificationError('Errore nel marcare la notifica come letta: ${e.toString()}'));
@@ -367,5 +381,22 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) {
     emit(const NotificationInitial());
+  }
+
+  /// Aggiorna il badge iOS con il conteggio notifiche non lette
+  Future<void> _updateiOSBadge(int unreadCount) async {
+    try {
+      // Solo per iOS
+      if (Platform.isIOS) {
+        print('[CONSOLE] [NOTIFICATIONS] 📱 Updating iOS badge to: $unreadCount');
+        
+        // Usa MethodChannel per comunicare con iOS
+        await _badgeChannel.invokeMethod('setBadgeCount', {'count': unreadCount});
+              
+        print('[CONSOLE] [NOTIFICATIONS] 📱 iOS badge updated successfully to: $unreadCount');
+      }
+    } catch (e) {
+      print('[CONSOLE] [NOTIFICATIONS] ❌ Error updating iOS badge: $e');
+    }
   }
 }

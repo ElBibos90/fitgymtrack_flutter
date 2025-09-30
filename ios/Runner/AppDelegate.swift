@@ -20,6 +20,9 @@ import FirebaseMessaging
     // 📱 Flutter Plugin Registration
     GeneratedPluginRegistrant.register(with: self)
     
+    // 🔔 Setup Badge Channel
+    setupBadgeChannel()
+    
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
@@ -44,6 +47,30 @@ import FirebaseMessaging
     
     // Set FCM messaging delegate
     Messaging.messaging().delegate = self
+  }
+  
+  // 🔔 Setup Badge Channel
+  private func setupBadgeChannel() {
+    let controller = window?.rootViewController as! FlutterViewController
+    let badgeChannel = FlutterMethodChannel(name: "flutter_badge_channel", binaryMessenger: controller.binaryMessenger)
+    
+    badgeChannel.setMethodCallHandler { (call, result) in
+      switch call.method {
+      case "setBadgeCount":
+        if let args = call.arguments as? [String: Any],
+           let count = args["count"] as? Int {
+          DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = count
+            print("🔔 [iOS] Badge count set to: \(count)")
+            result(nil)
+          }
+        } else {
+          result(FlutterError(code: "INVALID_ARGUMENTS", message: "Invalid arguments", details: nil))
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
   
   // 📱 Handle APNs Token Registration
