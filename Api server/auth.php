@@ -124,6 +124,17 @@ function handleLogin($conn, $data) {
         return;
     }
     
+    // 🔒 CONTROLLO ACCESSO WEBAPP: Blocca utenti "user" dalla webapp
+    $platform = detectPlatform();
+    if ($platform === 'webapp' && $user['role_name'] === 'user') {
+        http_response_code(403);
+        echo json_encode([
+            'error' => 'ACCESS_DENIED_WEBAPP',
+            'message' => 'Accesso negato: questa piattaforma è riservata a trainer, gestori palestra, amministratori e utenti standalone. Per accedere alle funzionalità della palestra, utilizza l\'app mobile FitGymTrack.'
+        ]);
+        return;
+    }
+    
     error_log("User found, verifying password for: " . $username);
     error_log("Stored password hash: " . $user['password']);
 

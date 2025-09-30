@@ -26,6 +26,8 @@ class DioClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'User-Agent': 'FitGymTrack Flutter App 1.0.0', // 🔒 Identifica l'app mobile
+        'X-Platform': 'mobile', // 🔒 Header personalizzato per identificare la piattaforma
       },
       // ✅ FIX: Accetta codici 403 come risposte valide per gestire limiti account free
       validateStatus: (status) {

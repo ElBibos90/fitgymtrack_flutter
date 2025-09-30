@@ -148,6 +148,38 @@ function hasAccessToUser($userData, $targetUserId, $conn) {
 }
 
 /**
+ * Rileva se la richiesta proviene dalla webapp o dall'app mobile
+ * 
+ * @return string 'webapp' o 'mobile'
+ */
+function detectPlatform() {
+    // Controlla User-Agent per rilevare l'app mobile
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    
+    // L'app Flutter ha un User-Agent specifico
+    if (strpos($userAgent, 'FitGymTrack') !== false || 
+        strpos($userAgent, 'Flutter') !== false ||
+        strpos($userAgent, 'Dart') !== false) {
+        return 'mobile';
+    }
+    
+    // Controlla header personalizzati dell'app
+    if (isset($_SERVER['HTTP_X_PLATFORM']) && $_SERVER['HTTP_X_PLATFORM'] === 'mobile') {
+        return 'mobile';
+    }
+    
+    // Controlla Origin per webapp
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (strpos($origin, 'fitgymtrack.com') !== false || 
+        strpos($origin, 'localhost:3000') !== false) {
+        return 'webapp';
+    }
+    
+    // Default: webapp
+    return 'webapp';
+}
+
+/**
  * Middleware per proteggere le API che richiedono autenticazione
  * 
  * @param mysqli $conn La connessione al database
@@ -170,6 +202,26 @@ function authMiddleware($conn, $allowedRoles = []) {
         http_response_code(401);
         echo json_encode(['error' => 'Token non valido o scaduto']);
         return false;
+    }
+    
+    // 🔒 CONTROLLO ACCESSO DIFFERENZIATO PER PIATTAFORMA
+    $platform = detectPlatform();
+    $userRole = $userData['role_name'];
+    
+    if ($platform === 'webapp') {
+        // WebApp: Admin, Trainer, Gym, Standalone (NO User)
+        if ($userRole === 'user') {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accesso negato: questa piattaforma è riservata a trainer, gestori palestra, amministratori e utenti standalone']);
+            return false;
+        }
+    } elseif ($platform === 'mobile') {
+        // App Mobile: Solo User, Standalone (NO Admin, NO Trainer, NO Gym)
+        if ($userRole === 'admin' || $userRole === 'trainer' || $userRole === 'gym') {
+            http_response_code(403);
+            echo json_encode(['error' => 'Accesso negato: questa app è riservata agli utenti e ai membri delle palestre']);
+            return false;
+        }
     }
     
     // Se sono specificati ruoli consentiti, verifica che l'utente ne abbia uno
