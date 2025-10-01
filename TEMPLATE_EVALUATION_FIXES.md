@@ -107,3 +107,4 @@ Il backend deve supportare:
 - La gestione degli errori è robusta e fornisce informazioni utili per il debugging
 
 
+
