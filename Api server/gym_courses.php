@@ -1074,10 +1074,10 @@ function selfEnroll($conn, $user, $data) {
             throw new Exception("Posti esauriti per questa sessione");
         }
         
-        // Verifica che non sia già iscritto
+        // Verifica che non sia già iscritto (solo iscrizioni attive)
         $check_stmt = $conn->prepare("
             SELECT id FROM gym_course_enrollments 
-            WHERE session_id = ? AND user_id = ?
+            WHERE session_id = ? AND user_id = ? AND status = 'enrolled'
         ");
         $check_stmt->bind_param("ii", $session_id, $user_id);
         $check_stmt->execute();
@@ -1183,20 +1183,19 @@ function selfCancel($conn, $user, $data) {
         // Verifica che l'iscrizione appartenga all'utente
         $check_stmt = $conn->prepare("
             SELECT id, session_id FROM gym_course_enrollments 
-            WHERE id = ? AND user_id = ? AND status = 'enrolled'
+            WHERE id = ? AND user_id = ?
         ");
         $check_stmt->bind_param("ii", $enrollment_id, $user_id);
         $check_stmt->execute();
         $result = $check_stmt->get_result();
         
         if ($result->num_rows === 0) {
-            throw new Exception("Iscrizione non trovata o già annullata");
+            throw new Exception("Iscrizione non trovata");
         }
         
-        // Annulla iscrizione
+        // Elimina completamente l'iscrizione
         $stmt = $conn->prepare("
-            UPDATE gym_course_enrollments 
-            SET status = 'cancelled', cancelled_at = NOW()
+            DELETE FROM gym_course_enrollments 
             WHERE id = ? AND user_id = ?
         ");
         
@@ -1205,10 +1204,10 @@ function selfCancel($conn, $user, $data) {
         if ($stmt->execute()) {
             echo json_encode([
                 'success' => true,
-                'message' => 'Iscrizione annullata con successo'
+                'message' => 'Iscrizione rimossa con successo'
             ]);
         } else {
-            throw new Exception("Errore nell'annullamento: " . $stmt->error);
+            throw new Exception("Errore nella rimozione: " . $stmt->error);
         }
         
     } catch (Exception $e) {

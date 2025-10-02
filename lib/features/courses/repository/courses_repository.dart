@@ -44,9 +44,15 @@ abstract class CoursesRepository {
     @Query('id') int sessionId,
   );
 
-  /// Ottieni le iscrizioni dell'utente corrente
+  /// Ottieni le iscrizioni dell'utente corrente (formato my_enrollments)
   @GET('/gym_courses.php')
-  Future<EnrollmentsResponse> getMyEnrollments(
+  Future<MyEnrollmentsResponse> getMyEnrollments(
+    @Query('action') String action,
+  );
+
+  /// Ottieni le iscrizioni dell'utente corrente (formato standard)
+  @GET('/gym_courses.php')
+  Future<EnrollmentsResponse> getMyEnrollmentsStandard(
     @Query('action') String action,
   );
 
@@ -133,9 +139,14 @@ extension CoursesRepositoryExtension on CoursesRepository {
     return await getSession('get_session', sessionId);
   }
 
-  /// Ottieni le mie iscrizioni
-  Future<EnrollmentsResponse> getMyCourseEnrollments() async {
+  /// Ottieni le mie iscrizioni (formato my_enrollments)
+  Future<MyEnrollmentsResponse> getMyCourseEnrollments() async {
     return await getMyEnrollments('my_enrollments');
+  }
+
+  /// Ottieni le mie iscrizioni (formato standard)
+  Future<EnrollmentsResponse> getMyCourseEnrollmentsStandard() async {
+    return await getMyEnrollmentsStandard('my_enrollments');
   }
 
   /// Iscriviti a una sessione

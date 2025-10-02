@@ -119,6 +119,16 @@ class CancelEnrollmentEvent extends CoursesEvent {
   List<Object?> get props => [enrollmentId];
 }
 
+/// Disdici l'iscrizione a una sessione (usando sessionId)
+class CancelSessionEnrollmentEvent extends CoursesEvent {
+  final int sessionId;
+
+  const CancelSessionEnrollmentEvent({required this.sessionId});
+
+  @override
+  List<Object?> get props => [sessionId];
+}
+
 // ============================================================================
 // EVENTI NAVIGAZIONE
 // ============================================================================

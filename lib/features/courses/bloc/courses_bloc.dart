@@ -37,6 +37,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     on<RefreshMyEnrollmentsEvent>(_onRefreshMyEnrollments);
     on<EnrollInSessionEvent>(_onEnrollInSession);
     on<CancelEnrollmentEvent>(_onCancelEnrollment);
+    on<CancelSessionEnrollmentEvent>(_onCancelSessionEnrollment);
     
     // Navigazione
     on<NavigateToCourseDetailsEvent>(_onNavigateToCourseDetails);
@@ -307,7 +308,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     try {
       emit(const MyEnrollmentsLoadingState());
       
-      final response = await _repository.getMyCourseEnrollments();
+      final response = await _repository.getMyCourseEnrollmentsStandard();
       
       if (response.success) {
         emit(MyEnrollmentsLoadedState(
@@ -336,7 +337,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     }
     
     try {
-      final response = await _repository.getMyCourseEnrollments();
+      final response = await _repository.getMyCourseEnrollmentsStandard();
       
       if (response.success) {
         emit(MyEnrollmentsLoadedState(
@@ -443,6 +444,96 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       emit(CourseOperationErrorState(
         message: 'Errore di connessione: ${e.toString()}',
         operation: 'Annullamento',
+      ));
+    }
+  }
+
+  Future<void> _onCancelSessionEnrollment(
+    CancelSessionEnrollmentEvent event,
+    Emitter<CoursesState> emit,
+  ) async {
+    try {
+      //print('[DEBUG] 🚫 Inizio disiscrizione per sessionId: ${event.sessionId}');
+      
+      // Salva lo stato precedente
+      final previousState = state;
+      
+      emit(CourseOperationInProgressState(
+        operation: 'Disiscrizione in corso...',
+        sessionId: event.sessionId,
+      ));
+      
+      // Prima otteniamo l'enrollmentId per questa sessione
+      //print('[DEBUG] 🚫 Recupero iscrizioni utente...');
+      final enrollmentsResponse = await _repository.getMyCourseEnrollments();
+      
+      //print('[DEBUG] 🚫 Risposta iscrizioni: success=${enrollmentsResponse.success}, count=${enrollmentsResponse.enrollments.length}');
+      
+      // Debug: stampa il primo enrollment per vedere la struttura
+      if (enrollmentsResponse.enrollments.isNotEmpty) {
+        final firstEnrollment = enrollmentsResponse.enrollments.first;
+        //print('[DEBUG] 🚫 Primo enrollment: enrollmentId=${firstEnrollment.enrollmentId}, sessionId=${firstEnrollment.sessionId}, status=${firstEnrollment.enrollmentStatus}');
+      }
+      
+      if (enrollmentsResponse.success) {
+        // Cerchiamo l'iscrizione per questa sessione
+        final enrollment = enrollmentsResponse.enrollments
+            .where((e) => e.sessionId == event.sessionId)
+            .firstOrNull;
+        
+        //print('[DEBUG] 🚫 Iscrizione trovata: ${enrollment != null}');
+        if (enrollment != null) {
+          //print('[DEBUG] 🚫 EnrollmentId: ${enrollment.enrollmentId}, SessionId: ${enrollment.sessionId}');
+        }
+        
+        if (enrollment != null) {
+          // Ora possiamo cancellare l'iscrizione
+          //print('[DEBUG] 🚫 Chiamata API per cancellare enrollmentId: ${enrollment.enrollmentId}');
+          final response = await _repository.cancelCourseEnrollment(enrollment.enrollmentId);
+          
+          //print('[DEBUG] 🚫 Risposta cancellazione: success=${response.success}, message=${response.message}');
+          
+          if (response.success) {
+            emit(CourseOperationSuccessState(
+              message: response.message,
+              operation: 'Disiscrizione completata',
+            ));
+            
+            // Dopo 2 secondi, ricarica le sessioni per aggiornare lo stato
+            await Future.delayed(const Duration(seconds: 2));
+            
+            if (state is CourseOperationSuccessState && previousState is CourseDetailsLoadedState) {
+              // Ricarica le sessioni per aggiornare lo stato dell'iscrizione
+              add(LoadCourseSessionsEvent(
+                courseId: previousState.course.id,
+                month: previousState.selectedMonth ?? _getCurrentMonth(),
+              ));
+            }
+          } else {
+            emit(CourseOperationErrorState(
+              message: response.message,
+              operation: 'Disiscrizione',
+            ));
+          }
+        } else {
+          //print('[DEBUG] 🚫 ERRORE: Iscrizione non trovata per sessionId: ${event.sessionId}');
+          emit(CourseOperationErrorState(
+            message: 'Iscrizione non trovata per questa sessione',
+            operation: 'Disiscrizione',
+          ));
+        }
+      } else {
+        //print('[DEBUG] 🚫 ERRORE: Fallimento nel recupero iscrizioni');
+        emit(CourseOperationErrorState(
+          message: 'Errore nel recupero delle iscrizioni',
+          operation: 'Disiscrizione',
+        ));
+      }
+    } catch (e) {
+      //print('[DEBUG] 🚫 ERRORE: Exception durante disiscrizione: $e');
+      emit(CourseOperationErrorState(
+        message: 'Errore di connessione: ${e.toString()}',
+        operation: 'Disiscrizione',
       ));
     }
   }

@@ -291,6 +291,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   EnrollInSessionEvent(sessionId: session.id),
                 );
               },
+              onCancel: () {
+                // Per ora, mostriamo un dialog di conferma
+                _showCancelDialog(context, session);
+              },
             );
           },
         ),
@@ -310,5 +314,59 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final now = DateTime.now();
     final monthAfterNext = DateTime(now.year, now.month + 2);
     return '${monthAfterNext.year}-${monthAfterNext.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Dialog conferma disiscrizione
+  void _showCancelDialog(BuildContext context, CourseSession session) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disdici Corso'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sei sicuro di voler disdire l\'iscrizione a:'),
+            SizedBox(height: 8.h),
+            Text(
+              session.courseTitle ?? 'Corso',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text('${session.formattedDate} - ${session.formattedTime}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              //print('[DEBUG] 🚫 Dialog: Pulsante Annulla cliccato');
+              Navigator.of(context).pop();
+            },
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              //print('[DEBUG] 🚫 Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
+              Navigator.of(context).pop();
+              
+              // Disdici l'iscrizione alla sessione
+              //print('[DEBUG] 🚫 Dialog: Chiamata context.read<CoursesBloc>()');
+              final bloc = context.read<CoursesBloc>();
+              //print('[DEBUG] 🚫 Dialog: BLoC ottenuto, aggiungo evento');
+              bloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
+              //print('[DEBUG] 🚫 Dialog: Evento aggiunto al BLoC');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Conferma'),
+          ),
+        ],
+      ),
+    );
   }
 }

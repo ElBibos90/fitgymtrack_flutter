@@ -11,11 +11,13 @@ import '../../models/course_models_clean.dart';
 class CourseSessionTile extends StatelessWidget {
   final CourseSession session;
   final VoidCallback onEnroll;
+  final VoidCallback? onCancel;
 
   const CourseSessionTile({
     super.key,
     required this.session,
     required this.onEnroll,
+    this.onCancel,
   });
 
   @override
@@ -242,7 +244,7 @@ class CourseSessionTile extends StatelessWidget {
       );
     }
     
-    if (session.isFull) {
+    if (session.isFull && !isEnrolled) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
         decoration: BoxDecoration(
@@ -260,14 +262,48 @@ class CourseSessionTile extends StatelessWidget {
       );
     }
     
+    // Se l'utente è iscritto, mostra due pulsanti: "Iscritto" e "Disdici corso"
+    if (isEnrolled) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Pulsante "Iscritto" (verde)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: AppColors.success),
+            ),
+            child: Text(
+              'Iscritto',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.success,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          
+          SizedBox(width: 8.w),
+          
+          // Pulsante "Disdici corso" (rosso)
+          CustomButton(
+            text: 'Disdici corso',
+            onPressed: isEnrolling ? null : onCancel,
+            type: ButtonType.outline,
+            size: ButtonSize.small,
+            isLoading: isEnrolling,
+          ),
+        ],
+      );
+    }
+    
+    // Se l'utente non è iscritto, mostra il pulsante "Iscriviti"
     return CustomButton(
-      text: isEnrolling 
-          ? 'Iscrizione...' 
-          : isEnrolled 
-              ? 'Iscritto' 
-              : 'Iscriviti',
-      onPressed: isEnrolling || isEnrolled ? null : onEnroll,
-      type: isEnrolled ? ButtonType.secondary : ButtonType.primary,
+      text: isEnrolling ? 'Iscrizione...' : 'Iscriviti',
+      onPressed: isEnrolling ? null : onEnroll,
+      type: ButtonType.primary,
       size: ButtonSize.small,
       isLoading: isEnrolling,
     );

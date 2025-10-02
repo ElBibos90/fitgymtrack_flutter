@@ -334,14 +334,21 @@ class SessionsResponse {
 @JsonSerializable()
 class CourseEnrollment {
   final int id;
+  @JsonKey(name: 'session_id')
   final int sessionId;
+  @JsonKey(name: 'user_id')
   final int userId;
+  @JsonKey(name: 'gym_id')
   final int gymId;
   final String status;
   final bool notified;
+  @JsonKey(name: 'notification_id')
   final int? notificationId;
+  @JsonKey(name: 'enrolled_at')
   final String enrolledAt;
+  @JsonKey(name: 'attended_at')
   final String? attendedAt;
+  @JsonKey(name: 'cancelled_at')
   final String? cancelledAt;
   final String? notes;
 
@@ -405,6 +412,82 @@ class CourseEnrollment {
   String get location => '';
 }
 
+/// Modello per la risposta my_enrollments (formato diverso dall'API)
+@JsonSerializable()
+class MyEnrollment {
+  @JsonKey(name: 'enrollment_id')
+  final int enrollmentId;
+  @JsonKey(name: 'enrollment_status')
+  final String enrollmentStatus;
+  @JsonKey(name: 'enrolled_at')
+  final String enrolledAt;
+  @JsonKey(name: 'attended_at')
+  final String? attendedAt;
+  @JsonKey(name: 'session_id')
+  final int sessionId;
+  @JsonKey(name: 'session_date')
+  final String sessionDate;
+  @JsonKey(name: 'start_time')
+  final String startTime;
+  @JsonKey(name: 'end_time')
+  final String endTime;
+  final String location;
+  @JsonKey(name: 'session_status')
+  final String sessionStatus;
+  @JsonKey(name: 'current_participants')
+  final int? currentParticipants;
+  @JsonKey(name: 'max_participants')
+  final int? maxParticipants;
+  @JsonKey(name: 'course_id')
+  final int courseId;
+  @JsonKey(name: 'course_title')
+  final String courseTitle;
+  @JsonKey(name: 'course_description')
+  final String courseDescription;
+  final String category;
+  final String color;
+
+  const MyEnrollment({
+    required this.enrollmentId,
+    required this.enrollmentStatus,
+    required this.enrolledAt,
+    this.attendedAt,
+    required this.sessionId,
+    required this.sessionDate,
+    required this.startTime,
+    required this.endTime,
+    required this.location,
+    required this.sessionStatus,
+    this.currentParticipants,
+    this.maxParticipants,
+    required this.courseId,
+    required this.courseTitle,
+    required this.courseDescription,
+    required this.category,
+    required this.color,
+  });
+
+  factory MyEnrollment.fromJson(Map<String, dynamic> json) => _$MyEnrollmentFromJson(json);
+  Map<String, dynamic> toJson() => _$MyEnrollmentToJson(this);
+
+  /// Converte MyEnrollment in CourseEnrollment
+  CourseEnrollment toCourseEnrollment() {
+    return CourseEnrollment(
+      id: enrollmentId,
+      sessionId: sessionId,
+      userId: 0, // Non disponibile in my_enrollments
+      gymId: 0, // Non disponibile in my_enrollments
+      status: enrollmentStatus,
+      notified: false, // Non disponibile in my_enrollments
+      notificationId: null,
+      enrolledAt: enrolledAt,
+      attendedAt: attendedAt,
+      cancelledAt: null,
+      notes: null,
+    );
+  }
+}
+
 /// Risposta per la lista delle iscrizioni
 @JsonSerializable()
 class EnrollmentsResponse {
@@ -418,6 +501,23 @@ class EnrollmentsResponse {
 
   factory EnrollmentsResponse.fromJson(Map<String, dynamic> json) => _$EnrollmentsResponseFromJson(json);
   Map<String, dynamic> toJson() => _$EnrollmentsResponseToJson(this);
+}
+
+/// Risposta per my_enrollments
+@JsonSerializable()
+class MyEnrollmentsResponse {
+  final bool success;
+  final List<MyEnrollment> enrollments;
+  final int count;
+
+  const MyEnrollmentsResponse({
+    required this.success,
+    required this.enrollments,
+    required this.count,
+  });
+
+  factory MyEnrollmentsResponse.fromJson(Map<String, dynamic> json) => _$MyEnrollmentsResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MyEnrollmentsResponseToJson(this);
 }
 
 /// Risposta per operazioni sui corsi

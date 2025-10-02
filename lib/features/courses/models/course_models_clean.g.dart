@@ -137,31 +137,72 @@ Map<String, dynamic> _$SessionsResponseToJson(SessionsResponse instance) =>
 CourseEnrollment _$CourseEnrollmentFromJson(Map<String, dynamic> json) =>
     CourseEnrollment(
       id: (json['id'] as num).toInt(),
-      sessionId: (json['sessionId'] as num).toInt(),
-      userId: (json['userId'] as num).toInt(),
-      gymId: (json['gymId'] as num).toInt(),
+      sessionId: (json['session_id'] as num).toInt(),
+      userId: (json['user_id'] as num).toInt(),
+      gymId: (json['gym_id'] as num).toInt(),
       status: json['status'] as String,
       notified: json['notified'] as bool,
-      notificationId: (json['notificationId'] as num?)?.toInt(),
-      enrolledAt: json['enrolledAt'] as String,
-      attendedAt: json['attendedAt'] as String?,
-      cancelledAt: json['cancelledAt'] as String?,
+      notificationId: (json['notification_id'] as num?)?.toInt(),
+      enrolledAt: json['enrolled_at'] as String,
+      attendedAt: json['attended_at'] as String?,
+      cancelledAt: json['cancelled_at'] as String?,
       notes: json['notes'] as String?,
     );
 
 Map<String, dynamic> _$CourseEnrollmentToJson(CourseEnrollment instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'sessionId': instance.sessionId,
-      'userId': instance.userId,
-      'gymId': instance.gymId,
+      'session_id': instance.sessionId,
+      'user_id': instance.userId,
+      'gym_id': instance.gymId,
       'status': instance.status,
       'notified': instance.notified,
-      'notificationId': instance.notificationId,
-      'enrolledAt': instance.enrolledAt,
-      'attendedAt': instance.attendedAt,
-      'cancelledAt': instance.cancelledAt,
+      'notification_id': instance.notificationId,
+      'enrolled_at': instance.enrolledAt,
+      'attended_at': instance.attendedAt,
+      'cancelled_at': instance.cancelledAt,
       'notes': instance.notes,
+    };
+
+MyEnrollment _$MyEnrollmentFromJson(Map<String, dynamic> json) => MyEnrollment(
+      enrollmentId: (json['enrollment_id'] as num).toInt(),
+      enrollmentStatus: json['enrollment_status'] as String,
+      enrolledAt: json['enrolled_at'] as String,
+      attendedAt: json['attended_at'] as String?,
+      sessionId: (json['session_id'] as num).toInt(),
+      sessionDate: json['session_date'] as String,
+      startTime: json['start_time'] as String,
+      endTime: json['end_time'] as String,
+      location: json['location'] as String,
+      sessionStatus: json['session_status'] as String,
+      currentParticipants: (json['current_participants'] as num?)?.toInt(),
+      maxParticipants: (json['max_participants'] as num?)?.toInt(),
+      courseId: (json['course_id'] as num).toInt(),
+      courseTitle: json['course_title'] as String,
+      courseDescription: json['course_description'] as String,
+      category: json['category'] as String,
+      color: json['color'] as String,
+    );
+
+Map<String, dynamic> _$MyEnrollmentToJson(MyEnrollment instance) =>
+    <String, dynamic>{
+      'enrollment_id': instance.enrollmentId,
+      'enrollment_status': instance.enrollmentStatus,
+      'enrolled_at': instance.enrolledAt,
+      'attended_at': instance.attendedAt,
+      'session_id': instance.sessionId,
+      'session_date': instance.sessionDate,
+      'start_time': instance.startTime,
+      'end_time': instance.endTime,
+      'location': instance.location,
+      'session_status': instance.sessionStatus,
+      'current_participants': instance.currentParticipants,
+      'max_participants': instance.maxParticipants,
+      'course_id': instance.courseId,
+      'course_title': instance.courseTitle,
+      'course_description': instance.courseDescription,
+      'category': instance.category,
+      'color': instance.color,
     };
 
 EnrollmentsResponse _$EnrollmentsResponseFromJson(Map<String, dynamic> json) =>
@@ -177,6 +218,24 @@ Map<String, dynamic> _$EnrollmentsResponseToJson(
     <String, dynamic>{
       'success': instance.success,
       'enrollments': instance.enrollments,
+    };
+
+MyEnrollmentsResponse _$MyEnrollmentsResponseFromJson(
+        Map<String, dynamic> json) =>
+    MyEnrollmentsResponse(
+      success: json['success'] as bool,
+      enrollments: (json['enrollments'] as List<dynamic>)
+          .map((e) => MyEnrollment.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      count: (json['count'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$MyEnrollmentsResponseToJson(
+        MyEnrollmentsResponse instance) =>
+    <String, dynamic>{
+      'success': instance.success,
+      'enrollments': instance.enrollments,
+      'count': instance.count,
     };
 
 CourseOperationResponse _$CourseOperationResponseFromJson(

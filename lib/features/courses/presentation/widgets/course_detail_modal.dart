@@ -5,6 +5,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../bloc/courses_bloc.dart';
 import '../../bloc/courses_event.dart';
 import '../../bloc/courses_state.dart';
+import '../../models/course_models_clean.dart';
 import '../widgets/course_info_section.dart';
 import '../widgets/course_session_tile.dart';
 
@@ -334,6 +335,10 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
                   EnrollInSessionEvent(sessionId: session.id),
                 );
               },
+              onCancel: () {
+                // Per ora, mostriamo un dialog di conferma
+                _showCancelDialog(context, session);
+              },
             );
           },
         ),
@@ -353,5 +358,57 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
     final now = DateTime.now();
     final monthAfterNext = DateTime(now.year, now.month + 2);
     return '${monthAfterNext.year}-${monthAfterNext.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Dialog conferma disiscrizione
+  void _showCancelDialog(BuildContext context, CourseSession session) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disdici Corso'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sei sicuro di voler disdire l\'iscrizione a:'),
+            SizedBox(height: 8.h),
+            Text(
+              session.courseTitle ?? 'Corso',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text('${session.formattedDate} - ${session.formattedTime}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              //print('[DEBUG] 🚫 Modal Dialog: Pulsante Annulla cliccato');
+              Navigator.of(context).pop();
+            },
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              //print('[DEBUG] 🚫 Modal Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
+              Navigator.of(context).pop();
+              
+              // Disdici l'iscrizione alla sessione
+              //print('[DEBUG] 🚫 Modal Dialog: Chiamata _coursesBloc.add()');
+              _coursesBloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
+              //print('[DEBUG] 🚫 Modal Dialog: Evento aggiunto al BLoC');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Conferma'),
+          ),
+        ],
+      ),
+    );
   }
 }
