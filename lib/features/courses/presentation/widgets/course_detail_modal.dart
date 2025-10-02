@@ -223,15 +223,14 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
             ),
           ),
           SizedBox(height: 12.h),
-          Wrap(
-            spacing: 8.w,
-            runSpacing: 8.h,
-            children: [
-              _buildMonthChip('Mese Corrente', null, state, isDarkMode),
-              _buildMonthChip('Prossimo Mese', _getNextMonth(), state, isDarkMode),
-              _buildMonthChip('Mese Dopo', _getMonthAfterNext(), state, isDarkMode),
-            ],
-          ),
+           Wrap(
+             spacing: 8.w,
+             runSpacing: 8.h,
+             children: [
+               _buildMonthChip('Mese Corrente', _getCurrentMonth(), state, isDarkMode),
+               _buildMonthChip('Prossimo Mese', _getNextMonth(), state, isDarkMode),
+             ],
+           ),
         ],
       ),
     );
@@ -241,17 +240,18 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
   Widget _buildMonthChip(String label, String? month, CourseDetailsLoadedState state, bool isDarkMode) {
     final isSelected = _selectedMonth == month;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedMonth = month;
-        });
-        context.read<CoursesBloc>().add(
-          LoadCourseSessionsEvent(
-            courseId: widget.courseId,
-            month: month,
-          ),
-        );
-      },
+       onTap: () {
+         print('[DEBUG] 📅 Modal: Pulsante "$label" cliccato con month=$month');
+         setState(() {
+           _selectedMonth = month;
+         });
+         context.read<CoursesBloc>().add(
+           LoadCourseSessionsEvent(
+             courseId: widget.courseId,
+             month: month,
+           ),
+         );
+       },
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         decoration: BoxDecoration(
@@ -328,22 +328,30 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
           separatorBuilder: (context, index) => SizedBox(height: 8.h),
           itemBuilder: (context, index) {
             final session = state.sessions[index];
-            return CourseSessionTile(
-              session: session,
-              onEnroll: () {
-                context.read<CoursesBloc>().add(
-                  EnrollInSessionEvent(sessionId: session.id),
-                );
-              },
-              onCancel: () {
-                // Per ora, mostriamo un dialog di conferma
-                _showCancelDialog(context, session);
-              },
-            );
+             return CourseSessionTile(
+               session: session,
+               onEnroll: () {
+                 context.read<CoursesBloc>().add(
+                   EnrollInSessionEvent(sessionId: session.id),
+                 );
+               },
+               onCancel: () {
+                 // Mostriamo un dialog di conferma
+                 _showCancelDialog(context, session);
+               },
+             );
           },
         ),
       ],
     );
+  }
+
+  /// Ottieni il mese corrente
+  String _getCurrentMonth() {
+    final now = DateTime.now();
+    final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    print('[DEBUG] 📅 Modal: _getCurrentMonth() restituisce $month');
+    return month;
   }
 
   /// Ottieni il prossimo mese
@@ -391,16 +399,16 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
             },
             child: const Text('Annulla'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              //print('[DEBUG] 🚫 Modal Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
-              Navigator.of(context).pop();
-              
-              // Disdici l'iscrizione alla sessione
-              //print('[DEBUG] 🚫 Modal Dialog: Chiamata _coursesBloc.add()');
-              _coursesBloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
-              //print('[DEBUG] 🚫 Modal Dialog: Evento aggiunto al BLoC');
-            },
+           ElevatedButton(
+             onPressed: () {
+               print('[DEBUG] 🚫 Modal Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
+               Navigator.of(context).pop();
+               
+               // Disdici l'iscrizione alla sessione
+               print('[DEBUG] 🚫 Modal Dialog: Chiamata _coursesBloc.add()');
+               _coursesBloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
+               print('[DEBUG] 🚫 Modal Dialog: Evento aggiunto al BLoC');
+             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,

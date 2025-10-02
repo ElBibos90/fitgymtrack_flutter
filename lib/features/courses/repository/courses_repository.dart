@@ -124,6 +124,7 @@ extension CoursesRepositoryExtension on CoursesRepository {
 
   /// Ottieni le sessioni per un mese specifico
   Future<SessionsResponse> getSessionsForMonth(String month, {int? courseId}) async {
+    print('[DEBUG] 📅 Repository: getSessionsForMonth chiamato con month=$month, courseId=$courseId');
     return await getSessions('list_sessions', courseId, month);
   }
 

@@ -181,9 +181,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             spacing: 8.w,
             runSpacing: 8.h,
             children: [
-              _buildMonthButton('Mese Corrente', null, state),
+              _buildMonthButton('Mese Corrente', _getCurrentMonth(), state),
               _buildMonthButton('Prossimo Mese', _getNextMonth(), state),
-              _buildMonthButton('Mese Dopo', _getMonthAfterNext(), state),
             ],
           ),
         ],
@@ -197,6 +196,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     
     return GestureDetector(
       onTap: () {
+        print('[DEBUG] 📅 UI: Pulsante "$label" cliccato con month=$month');
         setState(() {
           _selectedMonth = month;
         });
@@ -307,6 +307,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final now = DateTime.now();
     final nextMonth = DateTime(now.year, now.month + 1);
     return '${nextMonth.year}-${nextMonth.month.toString().padLeft(2, '0')}';
+  }
+
+  /// Ottieni il mese corrente
+  String _getCurrentMonth() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
   /// Ottieni il mese dopo il prossimo

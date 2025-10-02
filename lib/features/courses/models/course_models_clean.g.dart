@@ -173,15 +173,15 @@ MyEnrollment _$MyEnrollmentFromJson(Map<String, dynamic> json) => MyEnrollment(
       sessionDate: json['session_date'] as String,
       startTime: json['start_time'] as String,
       endTime: json['end_time'] as String,
-      location: json['location'] as String,
+      location: json['location'] as String?,
       sessionStatus: json['session_status'] as String,
       currentParticipants: (json['current_participants'] as num?)?.toInt(),
       maxParticipants: (json['max_participants'] as num?)?.toInt(),
       courseId: (json['course_id'] as num).toInt(),
       courseTitle: json['course_title'] as String,
-      courseDescription: json['course_description'] as String,
-      category: json['category'] as String,
-      color: json['color'] as String,
+      courseDescription: json['course_description'] as String?,
+      category: json['category'] as String?,
+      color: json['color'] as String?,
     );
 
 Map<String, dynamic> _$MyEnrollmentToJson(MyEnrollment instance) =>

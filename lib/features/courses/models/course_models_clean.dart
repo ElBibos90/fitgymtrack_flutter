@@ -431,7 +431,7 @@ class MyEnrollment {
   final String startTime;
   @JsonKey(name: 'end_time')
   final String endTime;
-  final String location;
+  final String? location;
   @JsonKey(name: 'session_status')
   final String sessionStatus;
   @JsonKey(name: 'current_participants')
@@ -443,9 +443,9 @@ class MyEnrollment {
   @JsonKey(name: 'course_title')
   final String courseTitle;
   @JsonKey(name: 'course_description')
-  final String courseDescription;
-  final String category;
-  final String color;
+  final String? courseDescription;
+  final String? category;
+  final String? color;
 
   const MyEnrollment({
     required this.enrollmentId,
@@ -456,15 +456,15 @@ class MyEnrollment {
     required this.sessionDate,
     required this.startTime,
     required this.endTime,
-    required this.location,
+    this.location,
     required this.sessionStatus,
     this.currentParticipants,
     this.maxParticipants,
     required this.courseId,
     required this.courseTitle,
-    required this.courseDescription,
-    required this.category,
-    required this.color,
+    this.courseDescription,
+    this.category,
+    this.color,
   });
 
   factory MyEnrollment.fromJson(Map<String, dynamic> json) => _$MyEnrollmentFromJson(json);
