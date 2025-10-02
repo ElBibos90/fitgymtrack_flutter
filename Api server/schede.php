@@ -135,13 +135,14 @@ switch($method) {
             
             $isAdmin = hasRole($user, 'admin');
             $isTrainer = hasRole($user, 'trainer');
+            $isGym = hasRole($user, 'gym');
             $userId = $user['user_id'];
             
             if(isset($_GET['id'])) {
                 $id = $_GET['id'];
                 
-                // Se l'utente è un trainer, verifica che abbia accesso a questa scheda (sistema palestre)
-                if ($isTrainer) {
+                // Se l'utente è un trainer o gym, verifica che abbia accesso a questa scheda (sistema palestre)
+                if ($isTrainer || $isGym) {
                     $checkAccess = $conn->prepare("
                         SELECT s.id 
                         FROM schede s
@@ -822,6 +823,7 @@ switch($method) {
             
             $isAdmin = hasRole($user, 'admin');
             $isTrainer = hasRole($user, 'trainer');
+            $isGym = hasRole($user, 'gym');
             $userId = $user['user_id'];
             
             if(!isset($_GET['id'])) {
@@ -832,8 +834,8 @@ switch($method) {
             //debugLog("Richiesta eliminazione scheda", ["id" => $id]);
             
             // Verifica dei permessi (sistema palestre)
-            if ($isTrainer) {
-                // Verifica che il trainer abbia accesso a questa scheda
+            if ($isTrainer || $isGym) {
+                // Verifica che il trainer o gym abbia accesso a questa scheda
                 $checkAccess = $conn->prepare("
                     SELECT s.id 
                     FROM schede s

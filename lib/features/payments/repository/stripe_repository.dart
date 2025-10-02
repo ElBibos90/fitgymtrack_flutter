@@ -232,7 +232,7 @@ class StripeRepository {
     required int amount, // in centesimi
     Map<String, dynamic>? metadata,
   }) async {
-    print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}');
+    //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Creating donation payment intent for amount: €${amount / 100}');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -264,7 +264,7 @@ class StripeRepository {
         },
       };
 
-      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation data: $donationData');
+      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation data: $donationData');
 
       // 🔧 FIX: Richiesta con retry automatico
       final response = await _makeAuthenticatedRequest(
@@ -274,7 +274,7 @@ class StripeRepository {
         retryOnFailure: true,
       );
 
-      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Full donation response: $response');
+      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Full donation response: $response');
 
       // 🔧 FIX CRITICO: Parsing corretto come per le subscription - SUPPORTA ENTRAMBI I FORMATI
       if (response['success'] == true) {
@@ -283,19 +283,19 @@ class StripeRepository {
         // Controlla nuovo formato: data.payment_intent (come backend moderno)
         if (response['data'] != null && response['data']['payment_intent'] != null) {
           paymentIntentData = response['data']['payment_intent'];
-          print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using new format: data.payment_intent');
+          //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using new format: data.payment_intent');
         }
         // Controlla vecchio formato: payment_intent diretto (legacy)
         else if (response['payment_intent'] != null) {
           paymentIntentData = response['payment_intent'];
-          print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using old format: payment_intent');
+          //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Donation using old format: payment_intent');
         }
 
         if (paymentIntentData != null) {
           try {
             final paymentIntent = StripePaymentIntentResponse.fromJson(paymentIntentData);
 
-            print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Donation payment intent created successfully: ${paymentIntent.paymentIntentId}');
+            //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Donation payment intent created successfully: ${paymentIntent.paymentIntentId}');
 
             return paymentIntent;
           } catch (e) {
@@ -321,7 +321,7 @@ class StripeRepository {
     required String paymentIntentId,
     required String subscriptionType,
   }) async {
-    print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId');
+    //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirming payment success: $paymentIntentId');
 
     return Result.tryCallAsync(() async {
       // 🔧 FIX: Validazione payment intent ID
@@ -336,7 +336,7 @@ class StripeRepository {
         'confirmed_at': DateTime.now().toIso8601String(),
       };
 
-      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm data: $confirmData');
+      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm data: $confirmData');
 
       // 🔧 FIX: Richiesta con retry automatico e timeout esteso
       final response = await _makeAuthenticatedRequest(
@@ -347,10 +347,10 @@ class StripeRepository {
         timeoutSeconds: 30, // Timeout più lungo per conferma pagamento
       );
 
-      print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm response: $response');
+      //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Confirm response: $response');
 
       if (response['success'] == true) {
-        print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Payment confirmed successfully');
+        //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Payment confirmed successfully');
 
         return true;
       } else {
@@ -369,7 +369,7 @@ class StripeRepository {
     bool retryForRecentPayment = false,
     int maxRetries = 3,
   }) async {
-    //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Getting current subscription (retryForRecentPayment: $retryForRecentPayment)...');
+    ////print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Getting current subscription (retryForRecentPayment: $retryForRecentPayment)...');
 
     return Result.tryCallAsync(() async {
       // Verifica autenticazione
@@ -386,7 +386,7 @@ class StripeRepository {
       while (attempt < maxRetries) {
         attempt++;
 
-        //print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Attempt $attempt/$maxRetries to get subscription');
+        ////print('[CONSOLE] [stripe_repository]🔧 [STRIPE REPO] Attempt $attempt/$maxRetries to get subscription');
 
         try {
           // 🔧 FIX: GET con query parameters + include incomplete subscriptions
@@ -410,7 +410,7 @@ class StripeRepository {
               if (data['subscription'] != null) {
                 // ✅ CLEAN: Con i model fix, il parsing ora funziona direttamente
                 subscription = StripeSubscription.fromJson(data['subscription']);
-                //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Current subscription found: ${subscription!.id} (${subscription!.status})');
+                ////print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Current subscription found: ${subscription!.id} (${subscription!.status})');
                 return subscription;
 
               } else if (data['subscriptions'] != null && data['subscriptions'] is List) {
@@ -420,7 +420,7 @@ class StripeRepository {
                 if (subscriptionsList.isNotEmpty) {
                   subscription = StripeSubscription.fromJson(subscriptionsList.first);
 
-                  //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Found subscription from list: ${subscription!.id} (${subscription!.status})');
+                  ////print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Found subscription from list: ${subscription!.id} (${subscription!.status})');
 
                   return subscription;
                 }
@@ -431,7 +431,7 @@ class StripeRepository {
             if (response['subscription'] != null) {
               subscription = StripeSubscription.fromJson(response['subscription']);
 
-              //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Current subscription found (legacy format): ${subscription!.id} (${subscription!.status})');
+              ////print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Current subscription found (legacy format): ${subscription!.id} (${subscription!.status})');
 
               return subscription;
             } else if (response['subscriptions'] != null && response['subscriptions'] is List) {
@@ -440,7 +440,7 @@ class StripeRepository {
               if (subscriptionsList.isNotEmpty) {
                 subscription = StripeSubscription.fromJson(subscriptionsList.first);
 
-                //print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Found subscription from list (legacy format): ${subscription!.id} (${subscription!.status})');
+                ////print('[CONSOLE] [stripe_repository]✅ [STRIPE REPO] Found subscription from list (legacy format): ${subscription!.id} (${subscription!.status})');
 
                 return subscription;
               }
@@ -449,7 +449,7 @@ class StripeRepository {
 
           // Se non trova subscription e stiamo facendo retry per recent payment
           if (retryForRecentPayment && attempt < maxRetries) {
-            //print('[CONSOLE] [stripe_repository]⏳ [STRIPE REPO] No subscription found on attempt $attempt, retrying in ${attempt * 2} seconds...');
+            ////print('[CONSOLE] [stripe_repository]⏳ [STRIPE REPO] No subscription found on attempt $attempt, retrying in ${attempt * 2} seconds...');
             await Future.delayed(Duration(seconds: attempt * 2));
             continue;
           }

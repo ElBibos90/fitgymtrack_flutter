@@ -41,7 +41,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     super.initState();
     _pageController = PageController();
 
-    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Screen initialized for ${widget.paymentType}');
+    //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Screen initialized for ${widget.paymentType}');
   }
 
   @override
@@ -130,11 +130,11 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   // ============================================================================
 
   void _handleStripeStateChanges(BuildContext context, StripeState state) {
-    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] State changed: ${state.runtimeType}');
+    //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] State changed: ${state.runtimeType}');
 
     if (state is StripePaymentLoading) {
       // 🔧 FIX: Attiva overlay quando inizia il processing
-      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Loading state - showing overlay');
+      //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Loading state - showing overlay');
       setState(() {
         _isPaymentProcessing = true;
         _paymentCompleted = false;
@@ -142,7 +142,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
 
     } else if (state is StripePaymentReady) {
       // 🔧 FIX: Gestione automatica per donazioni
-      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Payment Ready - processing automatically for ${state.paymentType}');
+      //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Payment Ready - processing automatically for ${state.paymentType}');
 
       // Per le donazioni, processa automaticamente il payment
       if (state.paymentType == 'donation') {
@@ -161,7 +161,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       }
 
     } else if (state is StripePaymentSuccess) {
-      print('[CONSOLE][DEBUG] Payment success, removing overlay e forzando pagina 2');
+      //print('[CONSOLE][DEBUG] Payment success, removing overlay e forzando pagina 2');
       setState(() {
         _isPaymentProcessing = false;
         _paymentCompleted = true;
@@ -172,7 +172,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       // Forza un ulteriore rebuild dopo 100ms
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
-          print('[CONSOLE][DEBUG] Forzo setState dopo 100ms');
+          //print('[CONSOLE][DEBUG] Forzo setState dopo 100ms');
           setState(() {
             _isPaymentProcessing = false;
             _currentPage = 2;
@@ -202,7 +202,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       if (widget.paymentType == 'donation') {
         Future.delayed(const Duration(seconds: 3), () {
           if (context.mounted) {
-            print('[CONSOLE][DEBUG] Forzo jumpToPage(2) e setState nella delayed close');
+            //print('[CONSOLE][DEBUG] Forzo jumpToPage(2) e setState nella delayed close');
             _pageController.jumpToPage(2);
             setState(() {
               _isPaymentProcessing = false;
@@ -215,7 +215,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
 
     } else if (state is StripeErrorState) {
       // 🔧 FIX: Cleanup overlay anche in caso di errore
-      print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Error state: ${state.message}');
+      //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Error state: ${state.message}');
       setState(() {
         _isPaymentProcessing = false; // Rimuovi overlay
         _paymentCompleted = false;    // Non completato
@@ -242,7 +242,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
     } else {
       // 🔧 FIX: Per qualsiasi altro stato, assicurati che l'overlay sia rimosso
       if (_isPaymentProcessing && !_paymentCompleted) {
-        print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Unknown state, cleaning up overlay');
+        //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Unknown state, cleaning up overlay');
         setState(() {
           _isPaymentProcessing = false;
         });
@@ -255,7 +255,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   // ============================================================================
 
   void _startDonationPayment(double amount) {
-    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting donation payment: €$amount');
+    //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting donation payment: €$amount');
 
     final amountInCents = (amount * 100).round();
 
@@ -814,7 +814,7 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   // ============================================================================
 
   void _startSubscriptionPayment() {
-    print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting subscription payment');
+    //print('[CONSOLE][stripe_payment_screen]🔧 [PAYMENT] Starting subscription payment');
 
     // Usa il vero priceId dal config
     const premiumPriceId = 'price_1RXVOfHHtQGHyul9qMGFmpmO'; // Real price ID dal config

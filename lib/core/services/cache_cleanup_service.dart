@@ -24,50 +24,50 @@ class CacheCleanupService {
   /// 🧹 PULIZIA COMPLETA AL LOGOUT
   /// Pulisce TUTTE le cache per evitare contaminazione tra account
   static Future<void> clearAllCachesOnLogout() async {
-    print('[CONSOLE] [cache_cleanup] 🧹 Starting complete cache cleanup on logout...');
+    //print('[CONSOLE] [cache_cleanup] 🧹 Starting complete cache cleanup on logout...');
     
     try {
       // 1. 🗑️ PULISCI CACHE API (già implementato)
       ApiRequestDebouncer.clearAllCache();
-      print('[CONSOLE] [cache_cleanup] ✅ API cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ API cache cleared');
 
       // 2. 🗑️ PULISCI CACHE IMMAGINI
       await _clearImageCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Image cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Image cache cleared');
 
       // 3. 🗑️ PULISCI CACHE SCHEDE ALLENAMENTO
       await _clearWorkoutSchedeCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Workout schede cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Workout schede cache cleared');
 
       // 4. 🗑️ PULISCI CACHE ALLENAMENTI OFFLINE
       await _clearOfflineWorkoutCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Offline workout cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Offline workout cache cleared');
 
       // 5. 🗑️ PULISCI CACHE IMPOSTAZIONI AUDIO
       await _clearAudioSettingsCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Audio settings cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Audio settings cache cleared');
 
       // 6. 🗑️ PULISCI CACHE TEMA
       await _clearThemeCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Theme cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Theme cache cleared');
 
       // 7. 🗑️ PULISCI CACHE SUBSCRIPTION (SharedPreferences)
       await _clearSubscriptionCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Subscription cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Subscription cache cleared');
 
       // 8. 🗑️ PULISCI CACHE PLATEAU (SharedPreferences)
       await _clearPlateauCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Plateau cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Plateau cache cleared');
 
       // 9. 🗑️ PULISCI CACHE TIMER BACKGROUND
       await _clearBackgroundTimerCache();
-      print('[CONSOLE] [cache_cleanup] ✅ Background timer cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ Background timer cache cleared');
 
       // 10. 🗑️ PULISCI CACHE APP UPDATE
       await _clearAppUpdateCache();
-      print('[CONSOLE] [cache_cleanup] ✅ App update cache cleared');
+      //print('[CONSOLE] [cache_cleanup] ✅ App update cache cleared');
 
-      print('[CONSOLE] [cache_cleanup] 🎉 Complete cache cleanup completed successfully!');
+      //print('[CONSOLE] [cache_cleanup] 🎉 Complete cache cleanup completed successfully!');
       
     } catch (e) {
       print('[CONSOLE] [cache_cleanup] ❌ Error during cache cleanup: $e');
@@ -77,7 +77,7 @@ class CacheCleanupService {
   /// 🧹 PULIZIA SELEZIONATA (mantiene solo schede e offline)
   /// Per quando vuoi mantenere solo le cache essenziali
   static Future<void> clearNonEssentialCaches() async {
-    print('[CONSOLE] [cache_cleanup] 🧹 Starting non-essential cache cleanup...');
+    //print('[CONSOLE] [cache_cleanup] 🧹 Starting non-essential cache cleanup...');
     
     try {
       // Pulisci cache non essenziali (MANTIENE schede e offline)
@@ -95,7 +95,7 @@ class CacheCleanupService {
       // - offline_workout_data (per riprendere allenamenti)
       // - pending_series_queue (per sincronizzazione)
       
-      print('[CONSOLE] [cache_cleanup] ✅ Non-essential caches cleared (kept schede + offline)');
+      //print('[CONSOLE] [cache_cleanup] ✅ Non-essential caches cleared (kept schede + offline)');
       
     } catch (e) {
       print('[CONSOLE] [cache_cleanup] ❌ Error during non-essential cache cleanup: $e');
@@ -235,7 +235,7 @@ class CacheCleanupService {
   /// 🧹 PULIZIA TOTALE (nuclear option)
   /// Pulisce TUTTO, incluso storage sicuro
   static Future<void> clearEverything() async {
-    print('[CONSOLE] [cache_cleanup] 💥 NUCLEAR OPTION: Clearing everything...');
+    //print('[CONSOLE] [cache_cleanup] 💥 NUCLEAR OPTION: Clearing everything...');
     
     try {
       // Pulisci tutto
@@ -248,7 +248,7 @@ class CacheCleanupService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
       
-      print('[CONSOLE] [cache_cleanup] 💥 Everything cleared!');
+      //print('[CONSOLE] [cache_cleanup] 💥 Everything cleared!');
       
     } catch (e) {
       print('[CONSOLE] [cache_cleanup] ❌ Error during nuclear cleanup: $e');

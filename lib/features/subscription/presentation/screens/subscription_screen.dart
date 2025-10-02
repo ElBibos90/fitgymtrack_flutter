@@ -47,7 +47,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       if (!mounted) return; // Evita aggiornamenti se il widget è smontato
       
       if (stripeState is stripe_bloc.StripePaymentSuccess && stripeState.paymentType == 'subscription') {
-        print('[CONSOLE][DEBUG] SubscriptionScreen: Payment success, reloading subscription');
+        //print('[CONSOLE][DEBUG] SubscriptionScreen: Payment success, reloading subscription');
         // Ricarica subscription dopo pagamento riuscito
         context.read<SubscriptionBloc>().add(const LoadSubscriptionEvent(
           checkExpired: false,
@@ -316,7 +316,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // ============================================================================
 
   void _subscribeToPremium(BuildContext context, {bool isRecurring = true}) {
-    print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting Premium subscription (recurring: $isRecurring)...');
+    //print('[CONSOLE][subscription_screen]🔧 [SUBSCRIPTION] Starting Premium subscription (recurring: $isRecurring)...');
 
     // 🔧 FIX: Usa i piani configurati invece di priceId hardcoded
     final plan = isRecurring 

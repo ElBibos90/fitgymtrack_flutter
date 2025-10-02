@@ -195,7 +195,7 @@ try {
             if (empty($order['plan_id']) || !is_numeric($order['plan_id'])) {
                 //debugLog("ERRORE: plan_id non valido", $order['plan_id']);
                 // Usa un valore di default o gestisci l'errore
-                $plan_id = 3; // Assumi che sia il piano Base (ID 3)
+                $plan_id = 3; // Assumi che sia il piano Premium (ID 3)
             } else {
                 $plan_id = intval($order['plan_id']);
             }

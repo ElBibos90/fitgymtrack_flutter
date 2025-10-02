@@ -42,7 +42,7 @@ class _WorkoutDetailsScreenState extends State<WorkoutDetailsScreen> {
     _workoutHistoryBloc = WorkoutHistoryBloc(
       workoutRepository: getIt<WorkoutRepository>(),
     );
-    print('[DEBUG] [workout_details_screen] BLoC instance: ${_workoutHistoryBloc.hashCode}');
+    //print('[DEBUG] [workout_details_screen] BLoC instance: ${_workoutHistoryBloc.hashCode}');
     _workoutHistoryBloc.loadWorkoutSeriesDetail(widget.workoutId);
   }
 
@@ -105,9 +105,9 @@ class _WorkoutDetailsScreenState extends State<WorkoutDetailsScreen> {
           },
           child: BlocBuilder<WorkoutHistoryBloc, WorkoutHistoryState>(
             builder: (context, state) {
-              print('[DEBUG] [workout_details_screen] Current state: ${state.runtimeType}');
+              //print('[DEBUG] [workout_details_screen] Current state: ${state.runtimeType}');
               if (state is WorkoutSeriesDetailLoaded) {
-                print('[DEBUG] [workout_details_screen] Received WorkoutSeriesDetailLoaded with ${state.seriesDetails.length} series');
+                //print('[DEBUG] [workout_details_screen] Received WorkoutSeriesDetailLoaded with ${state.seriesDetails.length} series');
               }
               return LoadingOverlay(
                 isLoading: state is WorkoutHistoryLoading,
@@ -121,25 +121,25 @@ class _WorkoutDetailsScreenState extends State<WorkoutDetailsScreen> {
   }
 
   Widget _buildBody(BuildContext context, WorkoutHistoryState state) {
-    print('[DEBUG] [workout_details_screen] _buildBody called with state: ${state.runtimeType}');
+    //print('[DEBUG] [workout_details_screen] _buildBody called with state: ${state.runtimeType}');
     
     if (state is WorkoutHistoryLoading) {
-      print('[DEBUG] [workout_details_screen] Showing loading state');
+      //print('[DEBUG] [workout_details_screen] Showing loading state');
       return _buildLoadingState();
     }
 
     if (state is WorkoutSeriesDetailLoaded) {
-      print('[DEBUG] [workout_details_screen] Showing series list with ${state.seriesDetails.length} series');
+      //print('[DEBUG] [workout_details_screen] Showing series list with ${state.seriesDetails.length} series');
       return _buildSeriesList(context, state.seriesDetails);
     }
 
     if (state is WorkoutHistoryError) {
-      print('[DEBUG] [workout_details_screen] Showing error state: ${state.message}');
+      //print('[DEBUG] [workout_details_screen] Showing error state: ${state.message}');
       return _buildErrorState(state);
     }
 
     // Se lo stato è iniziale, mostriamo il loading con un timeout
-    print('[DEBUG] [workout_details_screen] Showing loading state with timeout');
+    //print('[DEBUG] [workout_details_screen] Showing loading state with timeout');
     return _buildLoadingStateWithTimeout();
   }
 

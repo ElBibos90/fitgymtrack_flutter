@@ -52,7 +52,7 @@ class WorkoutOfflineService {
       };
 
       await _prefs!.setString(_offlineWorkoutKey, jsonEncode(offlineData));
-      print('[CONSOLE] [offline_service] 💾 Workout saved offline');
+      //print('[CONSOLE] [offline_service] 💾 Workout saved offline');
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error saving offline workout: $e');
     }
@@ -77,7 +77,7 @@ class WorkoutOfflineService {
         return null;
       }
 
-      print('[CONSOLE] [offline_service] 📱 Loaded offline workout: ${data['allenamento_id']}');
+      //print('[CONSOLE] [offline_service] 📱 Loaded offline workout: ${data['allenamento_id']}');
       return data;
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error loading offline workout: $e');
@@ -90,7 +90,7 @@ class WorkoutOfflineService {
     await _ensurePrefsInitialized();
     await _prefs!.remove(_offlineWorkoutKey);
     await _prefs!.remove(_pendingSeriesKey);
-    print('[CONSOLE] [offline_service] 🧹 Offline workout cleared');
+    //print('[CONSOLE] [offline_service] 🧹 Offline workout cleared');
   }
 
   // ============================================================================
@@ -113,7 +113,7 @@ class WorkoutOfflineService {
       pendingSeries.add(seriesData);
       await _savePendingSeries(pendingSeries);
       
-      print('[CONSOLE] [offline_service] 📋 Series queued for sync: ${series.serieId}');
+      //print('[CONSOLE] [offline_service] 📋 Series queued for sync: ${series.serieId}');
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error queuing series: $e');
     }
@@ -162,11 +162,11 @@ class WorkoutOfflineService {
       final results = await Connectivity().checkConnectivity();
       final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
       if (result == ConnectivityResult.none) {
-        print('[CONSOLE] [offline_service] 📡 No internet connection, skipping sync');
+        //print('[CONSOLE] [offline_service] 📡 No internet connection, skipping sync');
         return false;
       }
 
-      print('[CONSOLE] [offline_service] 🔄 Starting sync...');
+      //print('[CONSOLE] [offline_service] 🔄 Starting sync...');
 
       // Sincronizza serie pendenti
       final pendingSeries = await getPendingSeries();
@@ -184,16 +184,16 @@ class WorkoutOfflineService {
         // Rimuovi solo se scaduto o se l'allenamento è stato completato
         if (isExpired) {
           await clearOfflineWorkout();
-          print('[CONSOLE] [offline_service] 🧹 Offline workout expired and cleared');
+          //print('[CONSOLE] [offline_service] 🧹 Offline workout expired and cleared');
         } else {
-          print('[CONSOLE] [offline_service] ✅ Offline workout still active, keeping for restore');
+          //print('[CONSOLE] [offline_service] ✅ Offline workout still active, keeping for restore');
         }
       }
 
       // Aggiorna timestamp ultima sincronizzazione
       await _updateLastSyncTime();
       
-      print('[CONSOLE] [offline_service] ✅ Sync completed successfully');
+      //print('[CONSOLE] [offline_service] ✅ Sync completed successfully');
       return true;
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Sync failed: $e');
@@ -213,7 +213,7 @@ class WorkoutOfflineService {
 
         // Limita i tentativi a 3
         if (retryCount >= 3) {
-          print('[CONSOLE] [offline_service] ⚠️ Max retries reached for series: ${series.serieId}');
+          //print('[CONSOLE] [offline_service] ⚠️ Max retries reached for series: ${series.serieId}');
           continue;
         }
 
@@ -228,7 +228,7 @@ class WorkoutOfflineService {
           onSuccess: (_) {
             // Rimuovi dalla coda se sincronizzazione riuscita
             removeSeriesFromQueue(series.serieId ?? '');
-            print('[CONSOLE] [offline_service] ✅ Series synced: ${series.serieId}');
+            //print('[CONSOLE] [offline_service] ✅ Series synced: ${series.serieId}');
           },
           onFailure: (exception, message) {
             // Incrementa contatore tentativi
@@ -246,7 +246,7 @@ class WorkoutOfflineService {
     // Salva le serie fallite per retry successivo
     if (failedSeries.isNotEmpty) {
       await _savePendingSeries(failedSeries);
-      print('[CONSOLE] [offline_service] ⏳ ${failedSeries.length} series queued for retry');
+      //print('[CONSOLE] [offline_service] ⏳ ${failedSeries.length} series queued for retry');
     }
   }
 
@@ -312,7 +312,7 @@ class WorkoutOfflineService {
   /// Sincronizza tutti i dati offline disponibili
   Future<void> syncOfflineData() async {
     try {
-      print('[CONSOLE] [offline_service] 🔄 Starting offline data sync...');
+      //print('[CONSOLE] [offline_service] 🔄 Starting offline data sync...');
       
       // Verifica connettività
       final connectivity = Connectivity();
@@ -336,7 +336,7 @@ class WorkoutOfflineService {
       // Aggiorna timestamp sincronizzazione
       await _updateLastSyncTime();
       
-      print('[CONSOLE] [offline_service] ✅ Offline data sync completed');
+      //print('[CONSOLE] [offline_service] ✅ Offline data sync completed');
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error during offline sync: $e');
     }
@@ -370,7 +370,7 @@ class WorkoutOfflineService {
       
       await _saveOfflineCompletions(pendingCompletions);
       
-      print('[CONSOLE] [offline_service] 💾 Workout queued for offline completion: $allenamentoId');
+      //print('[CONSOLE] [offline_service] 💾 Workout queued for offline completion: $allenamentoId');
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error saving offline completion: $e');
     }
@@ -403,7 +403,7 @@ class WorkoutOfflineService {
       final pendingCompletions = await getOfflineCompletions();
       if (pendingCompletions.isEmpty) return;
 
-      print('[CONSOLE] [offline_service] 🔄 Syncing ${pendingCompletions.length} offline completions...');
+      //print('[CONSOLE] [offline_service] 🔄 Syncing ${pendingCompletions.length} offline completions...');
 
       final List<Map<String, dynamic>> failedCompletions = [];
 
@@ -429,7 +429,7 @@ class WorkoutOfflineService {
 
           result.fold(
             onSuccess: (_) {
-              print('[CONSOLE] [offline_service] ✅ Workout completion synced: $allenamentoId');
+              //print('[CONSOLE] [offline_service] ✅ Workout completion synced: $allenamentoId');
             },
             onFailure: (exception, message) {
               // Incrementa contatore tentativi
@@ -447,11 +447,11 @@ class WorkoutOfflineService {
       // Salva i completamenti falliti per retry successivo
       if (failedCompletions.isNotEmpty) {
         await _saveOfflineCompletions(failedCompletions);
-        print('[CONSOLE] [offline_service] ⏳ ${failedCompletions.length} completions queued for retry');
+        //print('[CONSOLE] [offline_service] ⏳ ${failedCompletions.length} completions queued for retry');
       } else {
         // Rimuovi tutti i completamenti se sincronizzati con successo
         await _saveOfflineCompletions([]);
-        print('[CONSOLE] [offline_service] ✅ All offline completions synced successfully');
+        //print('[CONSOLE] [offline_service] ✅ All offline completions synced successfully');
       }
     } catch (e) {
       print('[CONSOLE] [offline_service] ❌ Error syncing offline completions: $e');

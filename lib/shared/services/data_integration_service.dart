@@ -25,7 +25,7 @@ class DataIntegrationService {
     }
 
     _initializingUsers.add(userId);
-    print('[CONSOLE] [data_integration_service] 🚀 Initializing data for user: $userId');
+    //print('[CONSOLE] [data_integration_service] 🚀 Initializing data for user: $userId');
 
     try {
       // Carica subscription data
@@ -40,7 +40,7 @@ class DataIntegrationService {
         }
       });
 
-      print('[CONSOLE] [data_integration_service] ✅ Data initialization completed for user: $userId');
+      //print('[CONSOLE] [data_integration_service] ✅ Data initialization completed for user: $userId');
     } finally {
       // 🔧 FIX: Pulisci flag dopo delay per permettere retry se necessario
       Future.delayed(const Duration(seconds: 3), () {
@@ -51,7 +51,7 @@ class DataIntegrationService {
 
   /// Pulisce tutti i dati quando l'utente fa logout
   static void clearUserData(BuildContext context) {
-    print('[CONSOLE] [data_integration_service] 🧹 Clearing user data');
+    //print('[CONSOLE] [data_integration_service] 🧹 Clearing user data');
 
     // 🔧 FIX: Pulisci flag inizializzazioni
     _initializingUsers.clear();
@@ -65,18 +65,18 @@ class DataIntegrationService {
     if (context.mounted) {
       try {
         context.read<SubscriptionBloc>().add(const ResetSubscriptionBlocEvent());
-        print('[CONSOLE] [data_integration_service] ✅ Subscription bloc reset');
+        //print('[CONSOLE] [data_integration_service] ✅ Subscription bloc reset');
       } catch (e) {
         print('[CONSOLE] [data_integration_service] ⚠️ Error resetting subscription bloc: $e');
       }
     }
 
-    print('[CONSOLE] [data_integration_service] ✅ User data cleared');
+    //print('[CONSOLE] [data_integration_service] ✅ User data cleared');
   }
 
   /// Ricarica tutti i dati (per pull-to-refresh)
   static Future<void> refreshAllData(BuildContext context) async {
-    print('[CONSOLE] [data_integration_service] 🔄 Refreshing all data');
+    //print('[CONSOLE] [data_integration_service] 🔄 Refreshing all data');
 
     if (!context.mounted) return;
 
@@ -100,7 +100,7 @@ class DataIntegrationService {
       // Delay per UX
       await Future.delayed(const Duration(milliseconds: 500));
 
-      print('[CONSOLE] [data_integration_service] ✅ All data refreshed for user: $userId');
+      //print('[CONSOLE] [data_integration_service] ✅ All data refreshed for user: $userId');
     }
   }
 
@@ -118,7 +118,7 @@ class DataIntegrationService {
         workoutHistoryState is WorkoutHistoryInitial ||
         workoutHistoryState is WorkoutHistoryLoading);
 
-    print('[CONSOLE] [data_integration_service] 🔍 Data ready check: Auth=$isAuthOk, Sub=$isSubscriptionOk, Workout=$isWorkoutOk');
+    //print('[CONSOLE] [data_integration_service] 🔍 Data ready check: Auth=$isAuthOk, Sub=$isSubscriptionOk, Workout=$isWorkoutOk');
 
     return isAuthOk && isSubscriptionOk && isWorkoutOk;
   }
@@ -188,7 +188,7 @@ class DataIntegrationService {
 
   static void _loadSubscriptionData(BuildContext context) {
     if (context.mounted) {
-      print('[CONSOLE] [data_integration_service] 📋 Loading subscription data');
+      //print('[CONSOLE] [data_integration_service] 📋 Loading subscription data');
       context.read<SubscriptionBloc>().add(
         const LoadSubscriptionEvent(checkExpired: true),
       );
@@ -197,7 +197,7 @@ class DataIntegrationService {
 
   static void _loadWorkoutHistory(BuildContext context, int userId) {
     if (context.mounted) {
-      print('[CONSOLE] [data_integration_service] 📊 Loading workout history for userId: $userId');
+      //print('[CONSOLE] [data_integration_service] 📊 Loading workout history for userId: $userId');
       context.read<WorkoutHistoryBloc>().add(
         GetWorkoutHistory(userId: userId),
       );
@@ -206,7 +206,7 @@ class DataIntegrationService {
 
   static void _loadUserStats(BuildContext context, int userId) {
     if (context.mounted) {
-      print('[CONSOLE] [data_integration_service] 📈 Loading user stats for userId: $userId');
+      //print('[CONSOLE] [data_integration_service] 📈 Loading user stats for userId: $userId');
       context.read<WorkoutHistoryBloc>().add(
         GetUserStats(userId: userId),
       );

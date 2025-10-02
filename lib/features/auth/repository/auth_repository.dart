@@ -123,7 +123,7 @@ class AuthRepository {
 
       // Poi valida il token in modo intelligente
       final isValid = await sessionService.validateTokenIntelligently();
-      print('[CONSOLE] [auth_repository]🔍 Token validation result: $isValid');
+      //print('[CONSOLE] [auth_repository]🔍 Token validation result: $isValid');
       return isValid;
       
     } catch (e) {

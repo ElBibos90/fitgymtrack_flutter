@@ -92,7 +92,7 @@ class DashboardService {
   /// ❌ DEPRECATO: Naviga alla tab Workouts usando GoRouter (PROBLEMATICO)
   /// Usare invece la callback function onNavigateToWorkouts
   static void _navigateToWorkouts(BuildContext context) {
-    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    //print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
     print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToWorkouts callback instead');
     // Per ora usa GoRouter come fallback
     context.go('/workouts');

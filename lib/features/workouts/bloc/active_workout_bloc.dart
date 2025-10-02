@@ -1864,11 +1864,11 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     RestorePendingWorkout event,
     Emitter<ActiveWorkoutState> emit,
   ) async {
-    print('[CONSOLE] [active_workout_bloc] 🌐 [EVENT] RestorePendingWorkout received for workout: ${event.pendingWorkout['allenamento_id']}');
+    //print('[CONSOLE] [active_workout_bloc] 🌐 [EVENT] RestorePendingWorkout received for workout: ${event.pendingWorkout['allenamento_id']}');
     _log('🌐 [EVENT] RestorePendingWorkout received for workout: ${event.pendingWorkout['allenamento_id']}');
 
     try {
-      print('[CONSOLE] [active_workout_bloc] 🔄 Emitting OfflineRestoreInProgress...');
+      //print('[CONSOLE] [active_workout_bloc] 🔄 Emitting OfflineRestoreInProgress...');
       emit(const OfflineRestoreInProgress(message: 'Ripristino allenamento in sospeso dal database...'));
 
       final pendingWorkout = event.pendingWorkout;
@@ -1876,18 +1876,18 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       final schedaId = pendingWorkout['scheda_id'] as int;
       final dataAllenamento = DateTime.parse(pendingWorkout['data_allenamento']);
 
-      print('[CONSOLE] [active_workout_bloc] 🌐 [PENDING] Restoring workout: $allenamentoId, scheda: $schedaId');
+      //print('[CONSOLE] [active_workout_bloc] 🌐 [PENDING] Restoring workout: $allenamentoId, scheda: $schedaId');
       _log('🌐 [PENDING] Restoring workout: $allenamentoId, scheda: $schedaId');
 
       // Carica esercizi dalla scheda
-      print('[CONSOLE] [active_workout_bloc] 📡 Loading exercises for scheda: $schedaId');
+      //print('[CONSOLE] [active_workout_bloc] 📡 Loading exercises for scheda: $schedaId');
       final exercisesResult = await _workoutRepository.getWorkoutExercises(schedaId);
       List<WorkoutExercise> exercises = [];
       
       exercisesResult.fold(
         onSuccess: (exercisesList) {
           exercises = exercisesList;
-          print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${exercises.length} exercises');
+          //print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${exercises.length} exercises');
         },
         onFailure: (exception, message) {
           print('[CONSOLE] [active_workout_bloc] ❌ Error loading exercises: $message');
@@ -1901,7 +1901,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       );
 
       // Carica le serie completate dal database
-      print('[CONSOLE] [active_workout_bloc] 📡 Loading completed series for workout: $allenamentoId');
+      //print('[CONSOLE] [active_workout_bloc] 📡 Loading completed series for workout: $allenamentoId');
       final completedSeriesResult = await _workoutRepository.getCompletedSeries(allenamentoId);
       Map<int, List<CompletedSeriesData>> completedSeries = {};
       
@@ -1914,7 +1914,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
             }
             completedSeries[series.schedaEsercizioId]!.add(series);
           }
-          print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${seriesList.length} completed series');
+          //print('[CONSOLE] [active_workout_bloc] ✅ Loaded ${seriesList.length} completed series');
         },
         onFailure: (exception, message) {
           print('[CONSOLE] [active_workout_bloc] ⚠️ Error loading completed series: $message');
@@ -1936,7 +1936,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       // Calcola il tempo trascorso
       final elapsedTime = DateTime.now().difference(dataAllenamento);
 
-      print('[CONSOLE] [active_workout_bloc] 🎯 Emitting WorkoutSessionActive...');
+      //print('[CONSOLE] [active_workout_bloc] 🎯 Emitting WorkoutSessionActive...');
       // Emetti lo stato ripristinato
       emit(WorkoutSessionActive(
         activeWorkout: activeWorkout,
@@ -1946,10 +1946,10 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         startTime: dataAllenamento,
       ));
 
-      print('[CONSOLE] [active_workout_bloc] ✅ [PENDING] Workout restored successfully from database');
+      //print('[CONSOLE] [active_workout_bloc] ✅ [PENDING] Workout restored successfully from database');
       _log('✅ [PENDING] Workout restored successfully from database');
     } catch (e) {
-      print('[CONSOLE] [active_workout_bloc] 💥 Exception in restore: $e');
+      //print('[CONSOLE] [active_workout_bloc] 💥 Exception in restore: $e');
       _log('💥 [PENDING] Exception in restore: $e');
       emit(ActiveWorkoutError(
         message: 'Errore nel ripristino dell\'allenamento: $e',

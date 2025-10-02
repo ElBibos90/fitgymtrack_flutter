@@ -35,7 +35,7 @@ class WorkoutSchedeCacheService {
       await _prefs!.setString(_schedeCacheKey, jsonEncode(cacheData));
       await _prefs!.setString(_lastUpdateKey, DateTime.now().toIso8601String());
       
-      print('[CONSOLE] [schede_cache] 💾 Cached ${schede.length} workout plans');
+      //print('[CONSOLE] [schede_cache] 💾 Cached ${schede.length} workout plans');
     } catch (e) {
       print('[CONSOLE] [schede_cache] ❌ Error caching schede: $e');
     }
@@ -55,7 +55,7 @@ class WorkoutSchedeCacheService {
       // Verifica se il cache è ancora valido
       final isExpired = DateTime.now().difference(timestamp) > _cacheValidity;
       if (isExpired) {
-        print('[CONSOLE] [schede_cache] ⏰ Cache expired, clearing...');
+        //print('[CONSOLE] [schede_cache] ⏰ Cache expired, clearing...');
         await clearCache();
         return null;
       }
@@ -64,7 +64,7 @@ class WorkoutSchedeCacheService {
           .map((s) => WorkoutPlan.fromJson(s as Map<String, dynamic>))
           .toList();
 
-      print('[CONSOLE] [schede_cache] 📱 Loaded ${schedeList.length} cached workout plans');
+      //print('[CONSOLE] [schede_cache] 📱 Loaded ${schedeList.length} cached workout plans');
       return schedeList;
     } catch (e) {
       print('[CONSOLE] [schede_cache] ❌ Error loading cached schede: $e');
@@ -100,7 +100,7 @@ class WorkoutSchedeCacheService {
     await _ensurePrefsInitialized();
     await _prefs!.remove(_schedeCacheKey);
     await _prefs!.remove(_lastUpdateKey);
-    print('[CONSOLE] [schede_cache] 🧹 Cache cleared');
+    //print('[CONSOLE] [schede_cache] 🧹 Cache cleared');
   }
 
   /// Ottiene informazioni sul cache

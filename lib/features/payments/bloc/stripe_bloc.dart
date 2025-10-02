@@ -448,16 +448,16 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
       );
 
       // 🔧 FIX CRITICO: Analizza correttamente il Result
-      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
-      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
-      print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
+      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Payment Sheet result: ${result.runtimeType}');
+      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isSuccess: ${result.isSuccess}');
+      //print('[CONSOLE] [stripe_bloc]🔧 [STRIPE BLOC] Result isFailure: ${result.isFailure}');
 
       if (result.isSuccess) {
         final paymentOption = result.data;
         final paymentIntentId = _extractPaymentIntentId(event.clientSecret);
 
         // 🚀 CRITICAL FIX: Chiama backend per confermare e sincronizzare DB
-        print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
+        //print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Calling backend to confirm payment and sync database...');
 
         try {
           final confirmResult = await _repository.confirmPaymentSuccess(
@@ -476,7 +476,7 @@ class StripeBloc extends Bloc<StripeEvent, StripeState> {
 
             // 🚀 Refresh intelligente dei dati dopo conferma backend
             if (event.paymentType == 'subscription') {
-              print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
+              //print('[CONSOLE] [stripe_bloc]🚀 [STRIPE BLOC] Payment confirmed - loading subscription with post-payment retry');
               add(const LoadCurrentSubscriptionEvent(afterPayment: true));
             }
 

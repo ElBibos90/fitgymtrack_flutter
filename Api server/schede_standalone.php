@@ -37,13 +37,6 @@ require_once 'auth_functions.php';
 
 header('Content-Type: application/json');
 
-// Funzione di debug per tracciare errori
-function debug_log($message, $data = null) {
-    error_log("DEBUG[" . date('Y-m-d H:i:s') . "]: $message");
-    if ($data !== null) {
-        error_log("DATA: " . print_r($data, true));
-    }
-}
 
 // NUOVA FUNZIONE: Garantisce che set_type sia sempre una stringa valida
 function sanitize_set_type($value) {
@@ -55,25 +48,29 @@ function sanitize_set_type($value) {
     
     // Se il valore è numerico, vuoto o non nella lista valida, usiamo 'normal'
     if (is_numeric($str_value) || empty($str_value) || !in_array($str_value, $valid_types)) {
-        debug_log("⚠️ Valore set_type non valido ($str_value), impostato a 'normal'");
         return 'normal';
     }
     
-    debug_log("✅ Valore set_type valido: $str_value");
     return $str_value;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
-
-debug_log("Richiesta ricevuta: $method");
 
 switch ($method) {
     case 'GET':
         if (isset($_GET['scheda_id'])) {
             // Recupera esercizi di una scheda (AGGIORNATO con campi REST-PAUSE)
             $scheda_id = intval($_GET['scheda_id']);
-            debug_log("GET: Recupero esercizi per scheda_id=$scheda_id");
             
+            // Prima recupera i dati della scheda
+            $scheda_query = "SELECT nome, descrizione FROM schede WHERE id = ?";
+            $scheda_stmt = $conn->prepare($scheda_query);
+            $scheda_stmt->bind_param('i', $scheda_id);
+            $scheda_stmt->execute();
+            $scheda_result = $scheda_stmt->get_result();
+            $scheda_data = $scheda_result->fetch_assoc();
+            
+            // Poi recupera gli esercizi
             $query = "
                 SELECT se.id as scheda_esercizio_id, se.esercizio_id as id, e.nome, e.gruppo_muscolare, e.attrezzatura, e.descrizione, 
                     e.is_isometric, e.immagine_nome, se.serie, se.ripetizioni, se.peso, se.ordine, se.tempo_recupero, 
@@ -103,8 +100,20 @@ switch ($method) {
                 $esercizi[] = $row;
             }
 
-            debug_log("Esercizi recuperati:", count($esercizi));
-            echo json_encode(['success' => true, 'esercizi' => $esercizi]);
+            
+            // Restituisci sia i dati della scheda che gli esercizi
+            $response = [
+                'success' => true, 
+                'esercizi' => $esercizi
+            ];
+            
+            // Aggiungi nome e descrizione della scheda se disponibili
+            if ($scheda_data) {
+                $response['nome'] = $scheda_data['nome'];
+                $response['descrizione'] = $scheda_data['descrizione'];
+            }
+            
+            echo json_encode($response);
             exit;
         }
 
@@ -115,13 +124,15 @@ switch ($method) {
         }
 
         $user_id = intval($_GET['user_id']);
-        debug_log("GET: Recupero schede per user_id=$user_id");
         
         $query = "
-            SELECT s.id, s.nome, s.descrizione, s.data_creazione
+            SELECT s.id, s.nome, s.descrizione, s.data_creazione,
+                   COUNT(se.id) as num_esercizi
             FROM schede s
             INNER JOIN user_workout_assignments uwa ON uwa.scheda_id = s.id
+            LEFT JOIN scheda_esercizi se ON se.scheda_id = s.id
             WHERE uwa.user_id = ? AND uwa.active = 1
+            GROUP BY s.id, s.nome, s.descrizione, s.data_creazione
         ";
         $stmt = $conn->prepare($query);
         $stmt->bind_param('i', $user_id);
@@ -130,10 +141,11 @@ switch ($method) {
         $schede = [];
 
         while ($row = $result->fetch_assoc()) {
+            // Assicuriamoci che num_esercizi sia un numero
+            $row['num_esercizi'] = intval($row['num_esercizi']);
             $schede[] = $row;
         }
 
-        debug_log("Schede recuperate:", count($schede));
         echo json_encode(['success' => true, 'schede' => $schede]);
         break;
 
@@ -141,12 +153,9 @@ switch ($method) {
         // Gestione eliminazione scheda
         if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['scheda_id'])) {
             $scheda_id = intval($_POST['scheda_id']);
-            debug_log("POST: Eliminazione scheda_id=$scheda_id");
-            debug_log("POST data ricevuta:", $_POST);
 
             // Verifica connessione database
             if (!$conn) {
-                debug_log("❌ ERRORE: Connessione database non disponibile");
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Errore connessione database']);
                 exit;
@@ -157,10 +166,8 @@ switch ($method) {
             
             try {
                 // Verifica che la scheda esista
-                debug_log("Verifica esistenza scheda");
                 $check_stmt = $conn->prepare("SELECT id FROM schede WHERE id = ?");
                 if (!$check_stmt) {
-                    debug_log("❌ ERRORE PREPARE check: " . $conn->error);
                     throw new Exception("Errore nella verifica scheda: " . $conn->error);
                 }
                 $check_stmt->bind_param('i', $scheda_id);
@@ -168,108 +175,104 @@ switch ($method) {
                 $check_result = $check_stmt->get_result();
                 
                 if ($check_result->num_rows === 0) {
-                    debug_log("❌ ERRORE: Scheda $scheda_id non trovata");
                     throw new Exception("Scheda non trovata");
                 }
-                debug_log("✅ Scheda $scheda_id trovata, procedo con l'eliminazione");
                 $check_stmt->close();
                 // 1. Elimina tutti gli esercizi della scheda
-                debug_log("Eliminazione esercizi della scheda");
+                
                 $stmt = $conn->prepare("DELETE FROM scheda_esercizi WHERE scheda_id = ?");
                 if (!$stmt) {
-                    debug_log("❌ ERRORE PREPARE: " . $conn->error);
+                    
                     throw new Exception("Errore nella preparazione query esercizi: " . $conn->error);
                 }
                 $stmt->bind_param('i', $scheda_id);
                 $result = $stmt->execute();
                 if (!$result) {
-                    debug_log("❌ ERRORE EXECUTE esercizi: " . $stmt->error);
+                    
                     throw new Exception("Errore nell'eliminazione esercizi: " . $stmt->error);
                 }
                 $affected_rows = $stmt->affected_rows;
-                debug_log("✅ Eliminati $affected_rows esercizi dalla scheda");
+                
                 $stmt->close();
                 
                 // 2. Elimina tutti gli assignment della scheda
-                debug_log("Eliminazione assignment della scheda");
+                
                 $stmt = $conn->prepare("DELETE FROM user_workout_assignments WHERE scheda_id = ?");
                 if (!$stmt) {
-                    debug_log("❌ ERRORE PREPARE assignment: " . $conn->error);
+                    
                     throw new Exception("Errore nella preparazione query assignment: " . $conn->error);
                 }
                 $stmt->bind_param('i', $scheda_id);
                 $result = $stmt->execute();
                 if (!$result) {
-                    debug_log("❌ ERRORE EXECUTE assignment: " . $stmt->error);
+                    
                     throw new Exception("Errore nell'eliminazione assignment: " . $stmt->error);
                 }
                 $affected_rows = $stmt->affected_rows;
-                debug_log("✅ Eliminati $affected_rows assignment dalla scheda");
+                
                 $stmt->close();
                 
                 // ✅ NUOVO: 3. Elimina tutte le serie completate degli allenamenti associati alla scheda
-                debug_log("Eliminazione serie completate degli allenamenti associati alla scheda");
+                
                 $stmt = $conn->prepare("DELETE sc FROM serie_completate sc 
                                        INNER JOIN allenamenti a ON sc.allenamento_id = a.id 
                                        WHERE a.scheda_id = ?");
                 if (!$stmt) {
-                    debug_log("❌ ERRORE PREPARE serie_completate: " . $conn->error);
+                    
                     throw new Exception("Errore nella preparazione query serie_completate: " . $conn->error);
                 }
                 $stmt->bind_param('i', $scheda_id);
                 $result = $stmt->execute();
                 if (!$result) {
-                    debug_log("❌ ERRORE EXECUTE serie_completate: " . $stmt->error);
+                    
                     throw new Exception("Errore nell'eliminazione serie_completate: " . $stmt->error);
                 }
                 $affected_rows = $stmt->affected_rows;
-                debug_log("✅ Eliminate $affected_rows serie completate degli allenamenti associati alla scheda");
+                
                 $stmt->close();
                 
                 // ✅ NUOVO: 4. Elimina tutti gli allenamenti associati alla scheda
-                debug_log("Eliminazione allenamenti associati alla scheda");
+                
                 $stmt = $conn->prepare("DELETE FROM allenamenti WHERE scheda_id = ?");
                 if (!$stmt) {
-                    debug_log("❌ ERRORE PREPARE allenamenti: " . $conn->error);
+                    
                     throw new Exception("Errore nella preparazione query allenamenti: " . $conn->error);
                 }
                 $stmt->bind_param('i', $scheda_id);
                 $result = $stmt->execute();
                 if (!$result) {
-                    debug_log("❌ ERRORE EXECUTE allenamenti: " . $stmt->error);
+                    
                     throw new Exception("Errore nell'eliminazione allenamenti: " . $stmt->error);
                 }
                 $affected_rows = $stmt->affected_rows;
-                debug_log("✅ Eliminati $affected_rows allenamenti associati alla scheda");
+                
                 $stmt->close();
                 
                 // 5. Elimina la scheda (ora è il passo 5 invece di 4)
-                debug_log("Eliminazione scheda principale");
+                
                 $stmt = $conn->prepare("DELETE FROM schede WHERE id = ?");
                 if (!$stmt) {
-                    debug_log("❌ ERRORE PREPARE scheda: " . $conn->error);
+                    
                     throw new Exception("Errore nella preparazione query scheda: " . $conn->error);
                 }
                 $stmt->bind_param('i', $scheda_id);
                 $result = $stmt->execute();
                 if (!$result) {
-                    debug_log("❌ ERRORE EXECUTE scheda: " . $stmt->error);
+                    
                     throw new Exception("Errore nell'eliminazione scheda: " . $stmt->error);
                 }
                 $affected_rows = $stmt->affected_rows;
-                debug_log("✅ Eliminata scheda (affected rows: $affected_rows)");
                 $stmt->close();
                 
                 // Commit della transazione
                 $conn->commit();
-                debug_log("✅ Scheda eliminata con successo");
+                
                 
                 echo json_encode(['success' => true, 'message' => 'Scheda eliminata con successo.']);
                 
             } catch (Exception $e) {
                 // Rollback in caso di errore
                 $conn->rollback();
-                debug_log("❌ ERRORE eliminazione: " . $e->getMessage());
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'Errore durante l\'eliminazione: ' . $e->getMessage()]);
             }
@@ -280,23 +283,22 @@ switch ($method) {
         break;
 
     case 'PUT':
-        debug_log("PUT: Aggiornamento scheda");
+        
         
         $input_data = file_get_contents("php://input");
-        debug_log("PUT data raw ricevuta:", $input_data);
+        
         
         // Decodifichiamo JSON 
         $input = json_decode($input_data, true);
         
         // In caso di errore JSON
         if (json_last_error() !== JSON_ERROR_NONE) {
-            debug_log("❌ ERRORE JSON: " . json_last_error_msg());
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'JSON non valido: ' . json_last_error_msg()]);
             exit;
         }
         
-        debug_log("PUT data decodificata:", $input);
+        
 
         if (!isset($input['scheda_id'], $input['nome'], $input['descrizione'], $input['esercizi'])) {
             http_response_code(400);
@@ -309,7 +311,7 @@ switch ($method) {
         $descrizione = trim($input['descrizione']);
         $esercizi = $input['esercizi']; 
 
-        debug_log("Esercizi ricevuti:", $esercizi);
+        
 
         $conn->begin_transaction();
         try {
@@ -318,11 +320,11 @@ switch ($method) {
             $stmt->bind_param('ssi', $nome, $descrizione, $scheda_id);
             $stmt->execute();
             $stmt->close();
-            debug_log("Scheda base aggiornata");
+            
 
             // Aggiorna esercizi
             foreach ($esercizi as $ex) {
-                debug_log("Elaborazione esercizio:", $ex);
+                
                 
                 $serie = intval($ex['serie']);
                 $ripetizioni = intval($ex['ripetizioni']);
@@ -344,19 +346,7 @@ switch ($method) {
                 $rest_pause_reps = isset($ex['rest_pause_reps']) && !empty($ex['rest_pause_reps']) ? $ex['rest_pause_reps'] : null;
                 $rest_pause_rest_seconds = isset($ex['rest_pause_rest_seconds']) ? intval($ex['rest_pause_rest_seconds']) : 15;
 
-                debug_log("⭐ VALORI FINALI:", [
-                    'serie' => $serie, 
-                    'ripetizioni' => $ripetizioni,
-                    'peso' => $peso,
-                    'ordine' => $ordine,
-                    'tempo_recupero' => $tempo_recupero,
-                    'note' => $note,
-                    'set_type' => $set_type . ' (' . gettype($set_type) . ')',
-                    'linked_to_previous' => $linked_to_previous,
-                    'is_rest_pause' => $is_rest_pause,
-                    'rest_pause_reps' => $rest_pause_reps,
-                    'rest_pause_rest_seconds' => $rest_pause_rest_seconds
-                ]);
+
 
                 $check = $conn->prepare("
                     SELECT id FROM scheda_esercizi
@@ -368,7 +358,7 @@ switch ($method) {
 
                 if ($check_result->num_rows > 0) {
                     // Update esistente - AGGIORNATO per includere campi REST-PAUSE
-                    debug_log("Aggiornamento esercizio esistente");
+                    
                     $update = $conn->prepare("
                         UPDATE scheda_esercizi 
                         SET serie = ?, ripetizioni = ?, peso = ?, ordine = ?, 
@@ -384,15 +374,15 @@ $update->bind_param('iidiissiisiii',
 );
                     
                     if (!$update->execute()) {
-                        debug_log("❌ ERRORE UPDATE: " . $update->error);
+                        
                         throw new Exception("Errore nell'aggiornamento: " . $update->error);
                     }
                     
                     $update->close();
-                    debug_log("Esercizio aggiornato con successo");
+                    
                 } else {
                     // Insert nuovo - AGGIORNATO per includere campi REST-PAUSE
-                    debug_log("Inserimento nuovo esercizio");
+                    
                     $insert = $conn->prepare("
                         INSERT INTO scheda_esercizi 
                         (scheda_id, esercizio_id, serie, ripetizioni, peso, ordine, tempo_recupero, note, set_type, linked_to_previous, is_rest_pause, rest_pause_reps, rest_pause_rest_seconds) 
@@ -405,7 +395,7 @@ $update->bind_param('iidiissiisiii',
                     );
                     
                     if (!$insert->execute()) {
-                        debug_log("❌ ERRORE INSERT: " . $insert->error);
+                        
                         throw new Exception("Errore nell'inserimento: " . $insert->error);
                     }
                     
@@ -416,23 +406,23 @@ $update->bind_param('iidiissiisiii',
                     $check_insert->execute();
                     $check_result = $check_insert->get_result();
                     $check_row = $check_result->fetch_assoc();
-                    debug_log("✅ VERIFICA INSERT: set_type salvato come '" . $check_row['set_type'] . "'");
+                    
                     $check_insert->close();
                     
                     $insert->close();
-                    debug_log("Nuovo esercizio inserito con successo");
+                    
                 }
             }
 
             // Rimuovi esercizi eliminati
             if (isset($input['rimuovi'])) {
                 $rimuovi = $input['rimuovi']; 
-                debug_log("Esercizi da rimuovere:", $rimuovi);
+                
                 
                 if ($rimuovi && is_array($rimuovi)) {
                     foreach ($rimuovi as $exRimosso) {
                         $esercizio_id = intval($exRimosso['id']);
-                        debug_log("Rimozione esercizio ID: $esercizio_id");
+                        
                         
                         $delete = $conn->prepare("
                             DELETE FROM scheda_esercizi
@@ -441,17 +431,16 @@ $update->bind_param('iidiissiisiii',
                         $delete->bind_param('ii', $scheda_id, $esercizio_id);
                         $delete->execute();
                         $delete->close();
-                        debug_log("Esercizio rimosso con successo");
+                        
                     }
                 }
             }
 
             $conn->commit();
-            debug_log("Transazione completata con successo");
+            
             echo json_encode(['success' => true, 'message' => 'Scheda aggiornata con successo.']);
         } catch (Exception $e) {
             $conn->rollback();
-            debug_log("ERRORE durante l'aggiornamento: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Errore aggiornamento: ' . $e->getMessage()]);
         }

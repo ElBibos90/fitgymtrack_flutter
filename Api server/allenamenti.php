@@ -47,6 +47,7 @@ if (!$userData) {
 // Ottieni l'ID dell'utente autenticato
 $userId = $userData['user_id'];
 $isTrainer = hasRole($userData, 'trainer');
+$isGym = hasRole($userData, 'gym');
 $isAdmin = hasRole($userData, 'admin');
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -69,8 +70,8 @@ switch($method) {
                     // Admin vede tutti gli allenamenti
                     $stmt = $conn->prepare($baseQuery . " WHERE a.id = ?");
                     $stmt->bind_param("i", $id);
-                } else if ($isTrainer) {
-                    // Trainer vede gli allenamenti dei suoi utenti
+                } else if ($isTrainer || $isGym) {
+                    // Trainer e gym vedono gli allenamenti dei loro utenti
                     $stmt = $conn->prepare($baseQuery . "
                         JOIN users u ON uwa.user_id = u.id
                         WHERE a.id = ? AND (u.trainer_id = ? OR a.user_id = ?)
@@ -104,8 +105,8 @@ switch($method) {
                 if ($isAdmin) {
                     // Admin vede tutti gli allenamenti
                     $stmt = $conn->prepare($baseQuery . " ORDER BY a.data_allenamento DESC");
-                } else if ($isTrainer) {
-                    // Trainer vede gli allenamenti dei suoi utenti
+                } else if ($isTrainer || $isGym) {
+                    // Trainer e gym vedono gli allenamenti dei loro utenti
                     $stmt = $conn->prepare($baseQuery . "
                         JOIN users u ON uwa.user_id = u.id 
                         WHERE u.trainer_id = ? OR a.user_id = ?
@@ -155,8 +156,8 @@ switch($method) {
                 // L'admin ha accesso a tutte le schede
                 $stmt = $conn->prepare("SELECT id FROM schede WHERE id = ?");
                 $stmt->bind_param("i", $scheda_id);
-            } else if ($isTrainer) {
-                // Verifica che la scheda sia assegnata a un utente di questo trainer
+            } else if ($isTrainer || $isGym) {
+                // Verifica che la scheda sia assegnata a un utente di questo trainer o gym
                 $stmt = $conn->prepare("
                     SELECT s.id 
                     FROM schede s

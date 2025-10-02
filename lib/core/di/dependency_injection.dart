@@ -43,6 +43,10 @@ import '../../features/templates/bloc/template_bloc.dart';
 import '../../features/notifications/repositories/notification_repository.dart';
 import '../../features/notifications/bloc/notification_bloc.dart';
 
+// Courses features
+import '../../features/courses/repository/courses_repository.dart';
+import '../../features/courses/bloc/courses_bloc.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -124,6 +128,13 @@ class DependencyInjection {
     // Notification Repository
     getIt.registerLazySingleton<NotificationRepository>(() => NotificationRepository(
       dio: getIt<Dio>(),
+    ));
+
+    // ============================================================================
+    // COURSES REPOSITORY
+    // ============================================================================
+    getIt.registerLazySingleton<CoursesRepository>(() => CoursesRepository(
+      getIt<Dio>(),
     ));
 
     // ============================================================================
@@ -257,6 +268,13 @@ class DependencyInjection {
       // Notification Bloc
       getIt.registerLazySingleton<NotificationBloc>(() => NotificationBloc(
         repository: getIt<NotificationRepository>(),
+      ));
+
+      // ============================================================================
+      // COURSES BLOC
+      // ============================================================================
+      getIt.registerLazySingleton<CoursesBloc>(() => CoursesBloc(
+        repository: getIt<CoursesRepository>(),
       ));
       
       //print('[CONSOLE] [dependency_injection]✅ [DI] Notification services registered successfully!');

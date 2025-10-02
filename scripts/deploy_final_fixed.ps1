@@ -181,12 +181,12 @@ try:
     connection = mysql.connector.connect(**config)
     cursor = connection.cursor()
     
-    print('Disattivazione versioni precedenti...')
+    //print('Disattivazione versioni precedenti...')
     # Disattiva SOLO le versioni dello stesso target_audience SE la nuova versione deve essere attiva
     if updateDatabaseActive:
         cursor.execute("UPDATE app_versions SET is_active = 0 WHERE target_audience = %s", (targetAudience,))
     
-    print('Inserimento nuova versione...')
+    //print('Inserimento nuova versione...')
     version_name = newVersion
     build_number = newBuild
     version_code = versionCode

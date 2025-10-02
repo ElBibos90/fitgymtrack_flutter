@@ -18,7 +18,7 @@ class GymSubscriptionRepository {
 
   /// Recupera l'abbonamento palestra dell'utente
   Future<Result<GymSubscription>> getGymSubscription(int userId) async {
-    print('[CONSOLE] [gym_subscription_repository] 🏋️ Recupero abbonamento palestra per utente: $userId');
+    //print('[CONSOLE] [gym_subscription_repository] 🏋️ Recupero abbonamento palestra per utente: $userId');
 
     return Result.tryCallAsync(() async {
       try {
@@ -28,15 +28,15 @@ class GymSubscriptionRepository {
           'client_id': userId.toString(),
         });
 
-        print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Status code: ${response.statusCode}');
-        print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Response headers: ${response.headers}');
+        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Status code: ${response.statusCode}');
+        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Response headers: ${response.headers}');
         
         final data = response.data;
       
         // 🔍 DEBUG: Log della risposta completa
-        print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Risposta API completa: $data');
-        print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}');
-        print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - subscription: ${data['subscription']}');
+        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Risposta API completa: $data');
+        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}');
+        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - subscription: ${data['subscription']}');
 
         if (data['success'] == true && data['subscription'] != null) {
           final subscriptionData = data['subscription'];
@@ -63,12 +63,12 @@ class GymSubscriptionRepository {
             currency: subscriptionData['currency'] ?? 'EUR',
           );
 
-          print('[CONSOLE] [gym_subscription_repository] ✅ Abbonamento palestra recuperato: ${gymSubscription.gymName} - ${gymSubscription.planName}');
+          //print('[CONSOLE] [gym_subscription_repository] ✅ Abbonamento palestra recuperato: ${gymSubscription.gymName} - ${gymSubscription.planName}');
           return gymSubscription;
         } else {
-          print('[CONSOLE] [gym_subscription_repository] ℹ️ Nessun abbonamento attivo per l\'utente');
-          print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}, subscription: ${data['subscription']}');
-          print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - message: ${data['message']}');
+          //print('[CONSOLE] [gym_subscription_repository] ℹ️ Nessun abbonamento attivo per l\'utente');
+          //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}, subscription: ${data['subscription']}');
+          //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - message: ${data['message']}');
           throw Exception(data['message'] ?? 'Nessun abbonamento attivo');
         }
       } on DioException catch (e) {

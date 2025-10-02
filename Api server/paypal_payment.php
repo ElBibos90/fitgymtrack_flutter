@@ -194,7 +194,7 @@ try {
         }
         
         $planId = intval($input['plan_id']);
-        $description = 'Abbonamento FitGymTrack - Piano Base';
+        $description = 'Abbonamento FitGymTrack - Piano Premium';
     } else if ($type === 'donation') {
         // Gestione donazione
         $message = isset($input['message']) ? $input['message'] : null;

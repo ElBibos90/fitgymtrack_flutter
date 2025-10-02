@@ -137,8 +137,9 @@ switch($method) {
                 // Verifica permessi
                 $isAdmin = hasRole($userData, 'admin');
                 $isTrainer = hasRole($userData, 'trainer');
+                $isGym = hasRole($userData, 'gym');
                 
-                error_log("Ruoli - Admin: " . ($isAdmin ? 'Sì' : 'No') . ", Trainer: " . ($isTrainer ? 'Sì' : 'No'));
+                error_log("Ruoli - Admin: " . ($isAdmin ? 'Sì' : 'No') . ", Trainer: " . ($isTrainer ? 'Sì' : 'No') . ", Gym: " . ($isGym ? 'Sì' : 'No'));
         
                 // Verifica se l'utente può assegnare la scheda (sistema palestre)
                 if (!$isAdmin) {

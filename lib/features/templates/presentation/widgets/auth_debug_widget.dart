@@ -346,11 +346,11 @@ class _AuthDebugWidgetState extends State<AuthDebugWidget> {
       final token = await sessionService.getAuthToken();
       final isAuthenticated = await sessionService.isAuthenticated();
       
-      print('🔍 AuthDebugWidget: Token locale presente: ${token != null && token.isNotEmpty}');
-      print('🔍 AuthDebugWidget: IsAuthenticated: $isAuthenticated');
+      //print('🔍 AuthDebugWidget: Token locale presente: ${token != null && token.isNotEmpty}');
+      //print('🔍 AuthDebugWidget: IsAuthenticated: $isAuthenticated');
       
       if (token != null) {
-        print('🔍 AuthDebugWidget: Token (primi 20 caratteri): ${token.substring(0, 20)}...');
+        //print('🔍 AuthDebugWidget: Token (primi 20 caratteri): ${token.substring(0, 20)}...');
       }
 
       // Test 2: Verifica con server

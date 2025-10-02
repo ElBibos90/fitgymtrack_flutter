@@ -80,7 +80,7 @@ if ($limitCheck['limit_reached']) {
     http_response_code(403);
     echo json_encode([
         'success' => false,
-        'message' => 'Hai raggiunto il limite di schede per il tuo piano. Passa al piano Base per avere schede illimitate.',
+        'message' => 'Hai raggiunto il limite di schede per il tuo piano. Passa al piano Premium per avere schede illimitate.',
         'upgrade_required' => true
     ]);
     exit;

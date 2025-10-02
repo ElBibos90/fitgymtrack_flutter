@@ -288,12 +288,12 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
       final token = await sessionService.getAuthToken();
       final isAuthenticated = await sessionService.isAuthenticated();
       
-      print('🔍 TokenDebugWidget: Token locale: ${token != null ? 'Presente' : 'Mancante'}');
-      print('🔍 TokenDebugWidget: IsAuthenticated: $isAuthenticated');
+      //print('🔍 TokenDebugWidget: Token locale: ${token != null ? 'Presente' : 'Mancante'}');
+      //print('🔍 TokenDebugWidget: IsAuthenticated: $isAuthenticated');
       
       if (token != null) {
-        print('🔍 TokenDebugWidget: Token (primi 30 caratteri): ${token.substring(0, 30)}...');
-        print('🔍 TokenDebugWidget: Token length: ${token.length}');
+        //print('🔍 TokenDebugWidget: Token (primi 30 caratteri): ${token.substring(0, 30)}...');
+        //print('🔍 TokenDebugWidget: Token length: ${token.length}');
       }
 
       setState(() {
@@ -321,12 +321,12 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
     try {
       // Test connessione con Dio
       final dio = getIt<Dio>();
-      print('🔍 TokenDebugWidget: Testando connessione con Dio...');
+      //print('🔍 TokenDebugWidget: Testando connessione con Dio...');
       
       // Test semplice - chiamata a un endpoint che richiede autenticazione
       final response = await dio.get('/simple_auth_test.php');
       
-      print('🔍 TokenDebugWidget: Risposta server: ${response.statusCode}');
+      //print('🔍 TokenDebugWidget: Risposta server: ${response.statusCode}');
       print('🔍 TokenDebugWidget: Dati risposta: ${response.data}');
       
       if (response.statusCode == 200) {
@@ -337,7 +337,7 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
           _isAuthenticated = isAuth;
         });
         
-        print('🔍 TokenDebugWidget: Server conferma autenticazione: $isAuth');
+        //print('🔍 TokenDebugWidget: Server conferma autenticazione: $isAuth');
       }
     } catch (e) {
       setState(() {
@@ -360,13 +360,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
     try {
       // Test template rating con Dio
       final dio = getIt<Dio>();
-      print('🔍 TokenDebugWidget: Testando template rating...');
+      //print('🔍 TokenDebugWidget: Testando template rating...');
       
       // Test template rating finale
       final response = await dio.get('/test_rating_final.php');
       
-      print('🔍 TokenDebugWidget: Risposta template rating: ${response.statusCode}');
-      print('🔍 TokenDebugWidget: Dati template rating: ${response.data}');
+      //print('🔍 TokenDebugWidget: Risposta template rating: ${response.statusCode}');
+      //print('🔍 TokenDebugWidget: Dati template rating: ${response.data}');
       
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
@@ -376,7 +376,7 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
           _isAuthenticated = isAuth;
         });
         
-        print('🔍 TokenDebugWidget: Template rating test: ${data['message']}');
+        //print('🔍 TokenDebugWidget: Template rating test: ${data['message']}');
       }
     } catch (e) {
       setState(() {

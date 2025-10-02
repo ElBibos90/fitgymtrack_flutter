@@ -33,7 +33,7 @@ switch ($method) {
             http_response_code(403);
             echo json_encode([
                 'success' => false,
-                'message' => 'Hai raggiunto il limite di esercizi personalizzati per il tuo piano. Passa al piano Base per avere esercizi illimitati.',
+                'message' => 'Hai raggiunto il limite di esercizi personalizzati per il tuo piano. Passa al piano Premium per avere esercizi illimitati.',
                 'upgrade_required' => true
             ]);
             exit;

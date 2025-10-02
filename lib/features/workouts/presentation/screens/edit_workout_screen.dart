@@ -238,8 +238,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _exercises.removeAt(index);
       _removedExercises.add(exerciseToRemove);
 
-      print('[CONSOLE] [edit_workout_screen]🔍 ESERCIZIO RIMOSSO:');
-      print('[CONSOLE] [edit_workout_screen]- Nome: ${exerciseToRemove.nome}');
+      //print('[CONSOLE] [edit_workout_screen]🔍 ESERCIZIO RIMOSSO:');
+      //print('[CONSOLE] [edit_workout_screen]- Nome: ${exerciseToRemove.nome}');
       print(
           '[CONSOLE] [edit_workout_screen]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
       print(
@@ -353,7 +353,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   // ✅ AGGIUNTO: Gestione del back navigation come nel create_workout_screen
   void _handleBackNavigation() async {
-    print('[CONSOLE] [edit_workout_screen]🔄 Handling back navigation');
+    //print('[CONSOLE] [edit_workout_screen]🔄 Handling back navigation');
 
     // ✅ STESSO APPROCCIO DEL CREATE: Gestione stati del bloc
     final currentState = _workoutBloc.state;

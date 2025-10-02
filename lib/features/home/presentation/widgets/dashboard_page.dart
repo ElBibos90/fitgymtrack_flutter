@@ -250,7 +250,7 @@ class DashboardPage extends StatelessWidget {
 
   /// Gestisce il refresh della dashboard
   Future<void> _handleRefresh(BuildContext context) async {
-    print('[CONSOLE] [dashboard_page]🔄 Refreshing dashboard data...');
+    //print('[CONSOLE] [dashboard_page]🔄 Refreshing dashboard data...');
 
     // Ricarica i dati dello stato di autenticazione
     final authBloc = context.read<AuthBloc>();

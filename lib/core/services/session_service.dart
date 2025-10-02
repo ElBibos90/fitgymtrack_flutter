@@ -61,13 +61,13 @@ class SessionService {
         }
         
         // Se non c'è errore, il token è valido
-        print('[CONSOLE] [session_service]✅ Token validation successful');
+        //print('[CONSOLE] [session_service]✅ Token validation successful');
         await _saveLastValidationTime();
         return true;
       }
       
       // Se la risposta non è un Map, considera il token valido
-      print('[CONSOLE] [session_service]✅ Token validation successful (non-map response)');
+      //print('[CONSOLE] [session_service]✅ Token validation successful (non-map response)');
       await _saveLastValidationTime();
       return true;
       
@@ -116,15 +116,15 @@ class SessionService {
 
   /// 🔧 NUOVO: Verifica intelligente del token (locale + server se necessario)
   Future<bool> validateTokenIntelligently() async {
-    print('[CONSOLE] [session_service]🔍 Starting intelligent token validation...');
+    //print('[CONSOLE] [session_service]🔍 Starting intelligent token validation...');
     
     // Prima controlla se è stato validato recentemente
     if (await isTokenRecentlyValidated()) {
-      print('[CONSOLE] [session_service]✅ Token recently validated, skipping server check');
+      //print('[CONSOLE] [session_service]✅ Token recently validated, skipping server check');
       return true;
     }
 
-    print('[CONSOLE] [session_service]🌐 Token not recently validated, checking with server...');
+    //print('[CONSOLE] [session_service]🌐 Token not recently validated, checking with server...');
     // Altrimenti valida con il server
     return await validateTokenWithServer();
   }
@@ -160,7 +160,7 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
-    print('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
+    //print('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
     
     // 1. Pulisci sessioni e token
     await Future.wait([
@@ -172,7 +172,7 @@ class SessionService {
     // 2. 🧹 NUOVO: Pulisci cache non essenziali (mantiene solo schede e offline)
     await CacheCleanupService.clearNonEssentialCaches();
     
-    print('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
+    //print('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
   }
 
   Future<void> clearUserData() async {

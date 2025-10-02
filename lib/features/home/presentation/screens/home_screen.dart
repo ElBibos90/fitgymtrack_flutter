@@ -26,6 +26,9 @@ import '../../../notifications/presentation/widgets/notification_bell_header.dar
 import '../../../notifications/bloc/notification_bloc.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/user_role_service.dart';
+import '../../../../core/di/dependency_injection.dart';
+import '../../../courses/presentation/screens/courses_list_screen.dart';
+import '../../../courses/bloc/courses_bloc.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -70,13 +73,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onNavigateToSubscription: () {
           // 🎯 NUOVO: Controlla se il tab abbonamento è disponibile
           if (UserRoleService.canSeeSubscriptionTab(user)) {
-            _onTabTapped(3); // Tab 3 = Abbonamento
+            _onTabTapped(4); // Tab 4 = Abbonamento (dopo aver aggiunto Corsi)
           } else {
             print('[CONSOLE] [home_screen]❌ Subscription tab not available for user role');
           }
         },
       ),
       () => WorkoutPlansScreen(controller: _workoutController),
+      () => BlocProvider(
+        create: (context) => getIt<CoursesBloc>(),
+        child: const CoursesListScreen(),
+      ),
       () => const FreemiumStatsDashboard(),
     ];
     
@@ -100,6 +107,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         label: 'Allenamenti',
       ),
       const BottomNavigationBarItem(
+        icon: Icon(Icons.school_rounded),
+        label: 'Corsi',
+      ),
+      const BottomNavigationBarItem(
         icon: Icon(Icons.analytics_rounded),
         label: 'Statistiche',
       ),
@@ -120,7 +131,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    print('[CONSOLE] [home_screen]🚀 HomeScreen initialized');
+    //print('[CONSOLE] [home_screen]🚀 HomeScreen initialized');
 
     // 🚀 PERFORMANCE: Inizializzazione sequenziale post-frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -170,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (_isInitialDataLoaded) return;
 
     try {
-      print('[CONSOLE] [home_screen]🚀 Starting sequential initialization...');
+      //print('[CONSOLE] [home_screen]🚀 Starting sequential initialization...');
 
       // STEP 1: Verifica stato auth (già disponibile)
       final authState = context.read<AuthBloc>().state;
@@ -188,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
 
-      print('[CONSOLE] [home_screen]👤 User authenticated: $userId');
+      //print('[CONSOLE] [home_screen]👤 User authenticated: $userId');
 
       // STEP 2: Carica subscription (priorità alta - necessaria per UI)
       await _loadSubscriptionWithDebouncing();
@@ -200,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _initializeDashboard();
 
       _isInitialDataLoaded = true;
-      print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
+      //print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
 
       // 🔧 NUOVO: Controllo aggiornamenti in background (non bloccante)
       _scheduleBackgroundUpdateCheck();
@@ -217,17 +228,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// 🌐 NUOVO: Avvia l'allenamento in sospeso
   void _startPendingWorkout(Map<String, dynamic> pendingWorkout) {
     try {
-      print('[CONSOLE] [home_screen] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
+      //print('[CONSOLE] [home_screen] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
       
       // Ottieni il Bloc degli allenamenti attivi
       final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
-      print('[CONSOLE] [home_screen] 🔍 ActiveWorkoutBloc obtained: ${activeWorkoutBloc.hashCode}');
+      //print('[CONSOLE] [home_screen] 🔍 ActiveWorkoutBloc obtained: ${activeWorkoutBloc.hashCode}');
       
       // Aggiungi listener per aspettare che l'allenamento sia ripristinato
       StreamSubscription? subscription;
       subscription = activeWorkoutBloc.stream.listen((state) {
         if (state is WorkoutSessionActive) {
-          print('[CONSOLE] [home_screen] ✅ Workout session active, navigating to active workout screen');
+          //print('[CONSOLE] [home_screen] ✅ Workout session active, navigating to active workout screen');
           // Naviga alla schermata dell'allenamento attivo con il schedaId corretto
           final schedaId = state.activeWorkout.schedaId;
           context.go('/workouts/$schedaId/start');
@@ -241,10 +252,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
       
       // Avvia l'allenamento in sospeso dal database
-      print('[CONSOLE] [home_screen] 📤 Dispatching RestorePendingWorkout event...');
+      //print('[CONSOLE] [home_screen] 📤 Dispatching RestorePendingWorkout event...');
       activeWorkoutBloc.add(RestorePendingWorkout(pendingWorkout));
       
-      print('[CONSOLE] [home_screen] ✅ Pending workout started successfully');
+      //print('[CONSOLE] [home_screen] ✅ Pending workout started successfully');
     } catch (e) {
       print('[CONSOLE] [home_screen] ❌ Error starting pending workout: $e');
     }
@@ -288,15 +299,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (!mounted) return;
       
       try {
-        print('[CONSOLE] [home_screen]🔄 Background update check started...');
+        //print('[CONSOLE] [home_screen]🔄 Background update check started...');
         
         final updateInfo = await AppUpdateService.checkForUpdates();
         
         if (updateInfo != null && mounted) {
-          print('[CONSOLE] [home_screen]📱 Update available in background');
+          //print('[CONSOLE] [home_screen]📱 Update available in background');
           AppUpdateService.showUpdateDialog(context, updateInfo);
         } else {
-          print('[CONSOLE] [home_screen]ℹ️ No update available (background check)');
+          //print('[CONSOLE] [home_screen]ℹ️ No update available (background check)');
         }
       } catch (e) {
         print('[CONSOLE] [home_screen]❌ Background update check error: $e');
@@ -307,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// 🚀 PERFORMANCE: Carica notifiche iniziali
   Future<void> _loadInitialNotifications() async {
       try {
-        print('[CONSOLE] [home_screen]🔔 Loading initial notifications...');
+        //print('[CONSOLE] [home_screen]🔔 Loading initial notifications...');
         context.read<NotificationBloc>().add(const LoadNotificationsEvent());
       } catch (e) {
         print('[CONSOLE] [home_screen]❌ Error loading initial notifications: $e');
@@ -319,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (_isSubscriptionLoaded) return;
 
       try {
-      print('[CONSOLE] [home_screen]💳 Loading subscription with debouncing...');
+      //print('[CONSOLE] [home_screen]💳 Loading subscription with debouncing...');
 
       // 🔧 FIX: Verifica che l'utente sia autenticato prima di caricare subscription
       final authState = context.read<AuthBloc>().state;
@@ -334,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       await ApiRequestDebouncer.debounceRequest<void>(
         key: 'subscription_check_expired',
         request: () async {
-          print('[CONSOLE] [home_screen]🌐 Loading subscription (token already validated)...');
+          //print('[CONSOLE] [home_screen]🌐 Loading subscription (token already validated)...');
           context.read<SubscriptionBloc>().add(
             const LoadSubscriptionEvent(checkExpired: true),
           );
@@ -342,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
 
       _isSubscriptionLoaded = true;
-      print('[CONSOLE] [home_screen]✅ Subscription loaded successfully');
+      //print('[CONSOLE] [home_screen]✅ Subscription loaded successfully');
     } catch (e) {
       print('[CONSOLE] [home_screen]❌ Subscription loading error: $e');
     }
@@ -350,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// 🚀 PERFORMANCE: Carica workout history in background
   void _loadWorkoutHistoryAsync(int userId) {
-    print('[CONSOLE] [home_screen]📊 Loading workout history async...');
+    //print('[CONSOLE] [home_screen]📊 Loading workout history async...');
 
     // Non bloccare il main thread
     Future.microtask(() async {
@@ -367,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         );
 
         _isWorkoutHistoryLoaded = true;
-        print('[CONSOLE] [home_screen]✅ Workout history loaded async');
+        //print('[CONSOLE] [home_screen]✅ Workout history loaded async');
       } catch (e) {
         print('[CONSOLE] [home_screen]❌ Workout history async error: $e');
       }
@@ -378,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _initializeDashboard() {
     if (_tabInitialized[0] == true) return;
 
-    print('[CONSOLE] [home_screen]📊 Initializing dashboard...');
+    //print('[CONSOLE] [home_screen]📊 Initializing dashboard...');
     _tabInitialized[0] = true;
 
     // Marca dashboard come pronta
@@ -393,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _initializeTabIfNeeded(int index) {
     if (_tabInitialized[index] == true) return;
 
-    print('[CONSOLE] [home_screen]🎯 Initializing tab $index...');
+    //print('[CONSOLE] [home_screen]🎯 Initializing tab $index...');
 
     switch (index) {
       case 1: // Workouts
@@ -411,23 +422,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _initializeWorkoutsTab() {
-    print('[CONSOLE] [home_screen]💪 Initializing workouts tab...');
+    //print('[CONSOLE] [home_screen]💪 Initializing workouts tab...');
     // Lazy load di workout blocs se necessario
   }
 
   void _initializeStatsTab() {
-    print('[CONSOLE] [home_screen]📈 Initializing stats tab...');
+    //print('[CONSOLE] [home_screen]📈 Initializing stats tab...');
     // Lazy load di plateau bloc se necessario
   }
 
   void _initializeNotificationsTab() {
-    print('[CONSOLE] [home_screen]🔔 Initializing notifications tab...');
+    //print('[CONSOLE] [home_screen]🔔 Initializing notifications tab...');
     // Carica le notifiche quando l'utente accede al tab
     context.read<NotificationBloc>().add(const LoadNotificationsEvent());
   }
 
   void _initializeSubscriptionTab() {
-    print('[CONSOLE] [home_screen]💳 Initializing subscription tab...');
+    //print('[CONSOLE] [home_screen]💳 Initializing subscription tab...');
     // Già caricato nell'inizializzazione sequenziale
   }
 
@@ -435,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _onTabTapped(int index) {
     if (_selectedIndex == index) return; // Evita tap duplicati
 
-    print('[CONSOLE] [home_screen]🎯 Tab tapped: $index');
+    //print('[CONSOLE] [home_screen]🎯 Tab tapped: $index');
 
     // 🎯 NUOVO: Controlla se il tab è valido per l'utente corrente
     final authState = context.read<AuthBloc>().state;
@@ -490,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           // Re-inizializza se auth cambia
           _initializeSequentially();
         } else if (state is PendingWorkoutPrompt) {
-          print('[CONSOLE] [home_screen] 📱 Showing pending workout prompt for workout: ${state.pendingWorkout['allenamento_id']}');
+          //print('[CONSOLE] [home_screen] 📱 Showing pending workout prompt for workout: ${state.pendingWorkout['allenamento_id']}');
           _showPendingWorkoutDialog(context, state);
         }
       },
@@ -625,10 +636,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _handleTabVisibilityChange(int previousIndex, int currentIndex) {
     if (currentIndex == 1) {
       _workoutController.onTabVisible();
-      print('[CONSOLE] [home_screen]👁️ Workout tab became visible');
+      //print('[CONSOLE] [home_screen]👁️ Workout tab became visible');
     } else if (previousIndex == 1) {
       _workoutController.onTabHidden();
-      print('[CONSOLE] [home_screen]👁️ Workout tab became hidden');
+      //print('[CONSOLE] [home_screen]👁️ Workout tab became hidden');
     }
   }
 
@@ -638,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _handleAchievementsNavigation() {
-    print('[CONSOLE] [home_screen]🏆 Navigate to achievements');
+    //print('[CONSOLE] [home_screen]🏆 Navigate to achievements');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Achievement - Feature in arrivo!'),
@@ -648,29 +659,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _handleProfileNavigation() {
-    print('[CONSOLE] [home_screen]👤 Navigate to profile');
+    //print('[CONSOLE] [home_screen]👤 Navigate to profile');
     // ✅ FIXED: Naviga alla ProfileScreen esistente
     context.push('/profile');
   }
 
   void _handleSettingsNavigation() {
-    print('[CONSOLE] [home_screen]⚙️ Navigate to settings');
+    //print('[CONSOLE] [home_screen]⚙️ Navigate to settings');
     context.push('/settings');
   }
 
   /// ✅ Navigation helpers (da codice esistente)
   void navigateToWorkouts() {
-    print('[CONSOLE] [home_screen]🏋️ Navigating to workouts tab via callback');
+    //print('[CONSOLE] [home_screen]🏋️ Navigating to workouts tab via callback');
     _onTabTapped(1);
   }
 
   void navigateToSubscription() {
-    print('[CONSOLE] [home_screen]💳 Navigating to subscription tab via callback');
+    //print('[CONSOLE] [home_screen]💳 Navigating to subscription tab via callback');
     _onTabTapped(3);
   }
 
   void navigateToStats() {
-    print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
+    //print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
     _onTabTapped(2);
   }
 }

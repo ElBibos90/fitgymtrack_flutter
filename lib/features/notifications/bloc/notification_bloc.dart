@@ -388,12 +388,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     try {
       // Solo per iOS
       if (Platform.isIOS) {
-        print('[CONSOLE] [NOTIFICATIONS] 📱 Updating iOS badge to: $unreadCount');
+        //print('[CONSOLE] [NOTIFICATIONS] 📱 Updating iOS badge to: $unreadCount');
         
         // Usa MethodChannel per comunicare con iOS
         await _badgeChannel.invokeMethod('setBadgeCount', {'count': unreadCount});
               
-        print('[CONSOLE] [NOTIFICATIONS] 📱 iOS badge updated successfully to: $unreadCount');
+        //print('[CONSOLE] [NOTIFICATIONS] 📱 iOS badge updated successfully to: $unreadCount');
       }
     } catch (e) {
       print('[CONSOLE] [NOTIFICATIONS] ❌ Error updating iOS badge: $e');

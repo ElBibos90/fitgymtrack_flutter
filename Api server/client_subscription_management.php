@@ -338,7 +338,21 @@ function verifyClientAccess($conn, $client_id, $user) {
         return false;
     }
     
-    // Verifica che il cliente abbia abbonamenti nella palestra
+    // Per gym e trainer, verifica che il cliente appartenga alla loro palestra
+    if ($user['role_name'] === 'gym' || $user['role_name'] === 'trainer') {
+        $stmt = $conn->prepare("
+            SELECT u.id 
+            FROM users u 
+            WHERE u.id = ? AND u.gym_id = ?
+        ");
+        $stmt->bind_param("ii", $client_id, $gym_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        return $result->num_rows > 0;
+    }
+    
+    // Per admin, verifica che il cliente abbia abbonamenti nella palestra
     $stmt = $conn->prepare("SELECT id FROM client_subscriptions WHERE client_id = ? AND gym_id = ?");
     $stmt->bind_param("ii", $client_id, $gym_id);
     $stmt->execute();

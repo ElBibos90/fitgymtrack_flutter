@@ -259,7 +259,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
     
-    print('[CONSOLE] [auth_bloc] 📱 Emitting PendingWorkoutPrompt for workout: $workoutId');
+    //print('[CONSOLE] [auth_bloc] 📱 Emitting PendingWorkoutPrompt for workout: $workoutId');
     
     // 🔧 FIX: Reset del flag precedente e marca come in elaborazione
     _isProcessingPendingWorkout = false;
@@ -280,7 +280,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     RestorePendingWorkoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    print('[CONSOLE] [auth_bloc] 🔄 Restoring pending workout...');
+    //print('[CONSOLE] [auth_bloc] 🔄 Restoring pending workout...');
     
     try {
       final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
@@ -317,7 +317,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     WorkoutCompleted event,
     Emitter<AuthState> emit,
   ) async {
-    print('[CONSOLE] [auth_bloc] ✅ Workout completed, clearing PendingWorkoutPrompt state...');
+    //print('[CONSOLE] [auth_bloc] ✅ Workout completed, clearing PendingWorkoutPrompt state...');
     
     // 🔧 FIX: Reset del flag per permettere nuovi controlli
     _isProcessingPendingWorkout = false;
@@ -333,7 +333,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     CheckPendingWorkoutAuth event,
     Emitter<AuthState> emit,
   ) async {
-    print('[CONSOLE] [auth_bloc] 🔍 Checking pending workout for user: ${event.userId}');
+    //print('[CONSOLE] [auth_bloc] 🔍 Checking pending workout for user: ${event.userId}');
     
     try {
       final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
@@ -342,7 +342,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       StreamSubscription? subscription;
       subscription = activeWorkoutBloc.stream.listen((state) {
         if (state is PendingWorkoutFound) {
-          print('[CONSOLE] [auth_bloc] 📱 Pending workout found: ${state.pendingWorkout['allenamento_id']}');
+          //print('[CONSOLE] [auth_bloc] 📱 Pending workout found: ${state.pendingWorkout['allenamento_id']}');
           // Emetti evento per mostrare il prompt all'utente
           add(PendingWorkoutDetected(pendingWorkout: state.pendingWorkout));
           // Cancella il listener dopo averlo usato
@@ -353,7 +353,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Controlla se ci sono allenamenti in sospeso
       activeWorkoutBloc.add(CheckPendingWorkout(event.userId));
       
-      print('[CONSOLE] [auth_bloc] ✅ Pending workout check initiated');
+      //print('[CONSOLE] [auth_bloc] ✅ Pending workout check initiated');
     } catch (e) {
       print('[CONSOLE] [auth_bloc] ❌ Error checking pending workouts: $e');
     }
@@ -362,10 +362,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   /// 🌐 Sincronizza i dati offline dopo un login riuscito
   Future<void> _syncOfflineDataAfterLogin() async {
     try {
-      print('[CONSOLE] [auth_bloc] 🌐 Syncing offline data after successful login...');
+      //print('[CONSOLE] [auth_bloc] 🌐 Syncing offline data after successful login...');
       final globalConnectivity = getIt<GlobalConnectivityService>();
       await globalConnectivity.forceSync();
-      print('[CONSOLE] [auth_bloc] ✅ Offline data sync completed after login');
+      //print('[CONSOLE] [auth_bloc] ✅ Offline data sync completed after login');
     } catch (e) {
       print('[CONSOLE] [auth_bloc] ❌ Error syncing offline data after login: $e');
     }
@@ -374,10 +374,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   /// 🔥 Registra token FCM per l'utente dopo login riuscito
   Future<void> _registerFCMTokenAfterLogin(int userId) async {
     try {
-      print('[CONSOLE] [FCM] 🔥 Registering FCM token for user $userId...');
+      //print('[CONSOLE] [FCM] 🔥 Registering FCM token for user $userId...');
       final firebaseService = FirebaseService();
       await firebaseService.registerTokenForUser(userId);
-      print('[CONSOLE] [FCM] ✅ FCM token registered successfully for user $userId');
+      //print('[CONSOLE] [FCM] ✅ FCM token registered successfully for user $userId');
     } catch (e) {
       print('[CONSOLE] [FCM] ❌ Error registering FCM token for user $userId: $e');
     }
@@ -386,10 +386,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   /// 🔥 Pulisce token FCM quando l'utente fa logout
   Future<void> _clearFCMTokenOnLogout(int userId) async {
     try {
-      print('[CONSOLE] [FCM] 🔥 Clearing FCM token for user $userId...');
+      //print('[CONSOLE] [FCM] 🔥 Clearing FCM token for user $userId...');
       final firebaseService = FirebaseService();
       await firebaseService.clearTokenForUser(userId);
-      print('[CONSOLE] [FCM] ✅ FCM token cleared successfully for user $userId');
+      //print('[CONSOLE] [FCM] ✅ FCM token cleared successfully for user $userId');
     } catch (e) {
       print('[CONSOLE] [FCM] ❌ Error clearing FCM token for user $userId: $e');
     }
@@ -550,7 +550,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
 
     try {
-      print('[CONSOLE] [auth_bloc]🔍 Checking authentication status...');
+      //print('[CONSOLE] [auth_bloc]🔍 Checking authentication status...');
       
       // 🔧 FIX: Prima controlla se c'è un token salvato
       final hasToken = await _authRepository.sessionService.isAuthenticated();
@@ -561,7 +561,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
 
       // 🔧 FIX: Valida il token con il server (sempre, per sicurezza)
-      print('[CONSOLE] [auth_bloc]🌐 Validating token with server...');
+      //print('[CONSOLE] [auth_bloc]🌐 Validating token with server...');
       final isValid = await _authRepository.sessionService.validateTokenWithServer();
       
       if (isValid) {
@@ -570,7 +570,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final token = await _authRepository.sessionService.getAuthToken();
 
         if (user != null && token != null) {
-          print('[CONSOLE] [auth_bloc]✅ Token valid, user authenticated: ${user.username}');
+          //print('[CONSOLE] [auth_bloc]✅ Token valid, user authenticated: ${user.username}');
           
           // 🔥 Registra token FCM per l'utente già autenticato
           _registerFCMTokenAfterLogin(user.id);
@@ -718,7 +718,7 @@ class RegisterBloc extends Bloc<AuthEvent, AuthState> {
 /// 🌐 NUOVO: Estensione per AuthBloc con metodo checkPendingWorkout
 extension AuthBlocExtension on AuthBloc {
   void checkPendingWorkout(int userId) {
-    print('[CONSOLE] [auth_bloc] 🔍 Public check for pending workouts for user: $userId');
+    //print('[CONSOLE] [auth_bloc] 🔍 Public check for pending workouts for user: $userId');
     add(CheckPendingWorkoutAuth(userId));
   }
 }

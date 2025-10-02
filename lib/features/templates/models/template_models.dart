@@ -7,21 +7,21 @@ part 'template_models.g.dart';
 bool _boolFromInt(dynamic value) {
   try {
     if (value == null) {
-      print('🔍 _boolFromInt: value is null, returning false');
+      //print('🔍 _boolFromInt: value is null, returning false');
       return false;
     }
     if (value is bool) return value;
     if (value is int) {
       final result = value != 0;
-      print('🔍 _boolFromInt: int $value -> $result');
+      //print('🔍 _boolFromInt: int $value -> $result');
       return result;
     }
     if (value is String) {
       final result = value == '1' || value.toLowerCase() == 'true';
-      print('🔍 _boolFromInt: string "$value" -> $result');
+      //print('🔍 _boolFromInt: string "$value" -> $result');
       return result;
     }
-    print('🔍 _boolFromInt: value=$value, type=${value.runtimeType}');
+    //print('🔍 _boolFromInt: value=$value, type=${value.runtimeType}');
     return false;
   } catch (e) {
     print('❌ _boolFromInt ERROR: value=$value, type=${value.runtimeType}, error=$e');
@@ -42,17 +42,17 @@ double? _doubleFromDynamic(dynamic value) {
 double _doubleFromDynamicRequired(dynamic value) {
   try {
     if (value == null) {
-      print('🔍 _doubleFromDynamicRequired: value is null, returning 0.0');
+      //print('🔍 _doubleFromDynamicRequired: value is null, returning 0.0');
       return 0.0;
     }
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) {
       final result = double.tryParse(value) ?? 0.0;
-      print('🔍 _doubleFromDynamicRequired: string "$value" -> $result');
+      //print('🔍 _doubleFromDynamicRequired: string "$value" -> $result');
       return result;
     }
-    print('🔍 _doubleFromDynamicRequired: value=$value, type=${value.runtimeType}');
+    //print('🔍 _doubleFromDynamicRequired: value=$value, type=${value.runtimeType}');
     return 0.0;
   } catch (e) {
     print('❌ _doubleFromDynamicRequired ERROR: value=$value, type=${value.runtimeType}, error=$e');
@@ -65,7 +65,7 @@ String _stringFromDynamic(dynamic value) {
   try {
     if (value == null) return '';
     if (value is String) return value;
-    print('🔍 _stringFromDynamic: value=$value, type=${value.runtimeType}');
+    //print('🔍 _stringFromDynamic: value=$value, type=${value.runtimeType}');
     return value.toString();
   } catch (e) {
     print('❌ _stringFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
@@ -88,7 +88,7 @@ int _intFromDynamic(dynamic value) {
     if (value is int) return value;
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
-    print('🔍 _intFromDynamic: value=$value, type=${value.runtimeType}');
+    //print('🔍 _intFromDynamic: value=$value, type=${value.runtimeType}');
     return 0;
   } catch (e) {
     print('❌ _intFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
@@ -291,7 +291,7 @@ class WorkoutTemplate {
 
   factory WorkoutTemplate.fromJson(Map<String, dynamic> json) {
     try {
-      print('🔍 WorkoutTemplate.fromJson: parsing template ${json['id']} - ${json['name']}');
+      //print('🔍 WorkoutTemplate.fromJson: parsing template ${json['id']} - ${json['name']}');
       return _$WorkoutTemplateFromJson(json);
     } catch (e) {
       print('❌ WorkoutTemplate.fromJson ERROR: template ${json['id']} - ${json['name']}, error=$e');
@@ -421,7 +421,7 @@ class TemplateExercise {
 
   factory TemplateExercise.fromJson(Map<String, dynamic> json) {
     try {
-      print('🔍 TemplateExercise.fromJson: parsing exercise ${json['exercise_id']} - ${json['exercise_name']}');
+      //print('🔍 TemplateExercise.fromJson: parsing exercise ${json['exercise_id']} - ${json['exercise_name']}');
       return _$TemplateExerciseFromJson(json);
     } catch (e) {
       print('❌ TemplateExercise.fromJson ERROR: exercise ${json['exercise_id']} - ${json['exercise_name']}, error=$e');

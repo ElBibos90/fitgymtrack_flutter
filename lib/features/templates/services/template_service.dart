@@ -18,7 +18,7 @@ class TemplateService {
     int offset = 0,
   }) async {
     try {
-      print('🔍 TemplateService.getTemplates: Starting with params: categoryId=$categoryId, difficulty=$difficulty, goal=$goal, featured=$featured, search=$search, limit=$limit, offset=$offset');
+      //print('🔍 TemplateService.getTemplates: Starting with params: categoryId=$categoryId, difficulty=$difficulty, goal=$goal, featured=$featured, search=$search, limit=$limit, offset=$offset');
       
       final queryParams = <String, dynamic>{
         'limit': limit,
@@ -31,18 +31,18 @@ class TemplateService {
       if (featured != null) queryParams['featured'] = featured;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-      print('🔍 TemplateService.getTemplates: Query params: $queryParams');
+      //print('🔍 TemplateService.getTemplates: Query params: $queryParams');
 
       final response = await _dio.get(
         '/workout_templates.php',
         queryParameters: queryParams,
       );
 
-      print('🔍 TemplateService.getTemplates: API Response status: ${response.statusCode}');
-      print('🔍 TemplateService.getTemplates: API Response data: ${response.data}');
+      //print('🔍 TemplateService.getTemplates: API Response status: ${response.statusCode}');
+      //print('🔍 TemplateService.getTemplates: API Response data: ${response.data}');
 
       final result = TemplatesResponse.fromJson(response.data);
-      print('🔍 TemplateService.getTemplates: Parsed ${result.templates.length} templates successfully');
+      //print('🔍 TemplateService.getTemplates: Parsed ${result.templates.length} templates successfully');
       
       return result;
     } catch (e) {
@@ -55,18 +55,18 @@ class TemplateService {
   /// Ottiene i dettagli di un template specifico
   Future<TemplateDetailsResponse> getTemplateDetails(int templateId) async {
     try {
-      print('🔍 TemplateService.getTemplateDetails: Starting for templateId=$templateId');
+      //print('🔍 TemplateService.getTemplateDetails: Starting for templateId=$templateId');
       
       final response = await _dio.get(
         '/template_details.php',
         queryParameters: {'id': templateId},
       );
 
-      print('🔍 TemplateService.getTemplateDetails: API Response status: ${response.statusCode}');
-      print('🔍 TemplateService.getTemplateDetails: API Response data: ${response.data}');
+      //print('🔍 TemplateService.getTemplateDetails: API Response status: ${response.statusCode}');
+      //print('🔍 TemplateService.getTemplateDetails: API Response data: ${response.data}');
 
       final result = TemplateDetailsResponse.fromJson(response.data);
-      print('🔍 TemplateService.getTemplateDetails: Parsed template ${result.template.name} with ${result.template.exercises?.length ?? 0} exercises successfully');
+      //print('🔍 TemplateService.getTemplateDetails: Parsed template ${result.template.name} with ${result.template.exercises?.length ?? 0} exercises successfully');
       
       return result;
     } catch (e) {
@@ -81,15 +81,15 @@ class TemplateService {
     CreateWorkoutFromTemplateRequest request,
   ) async {
     try {
-      print('🔍 TemplateService.createWorkoutFromTemplate: Starting with request: ${request.toJson()}');
+      //print('🔍 TemplateService.createWorkoutFromTemplate: Starting with request: ${request.toJson()}');
       
       final response = await _dio.post(
         '/create_workout_from_template.php',
         data: request.toJson(),
       );
 
-      print('🔍 TemplateService.createWorkoutFromTemplate: API Response status: ${response.statusCode}');
-      print('🔍 TemplateService.createWorkoutFromTemplate: API Response data: ${response.data}');
+      //print('🔍 TemplateService.createWorkoutFromTemplate: API Response status: ${response.statusCode}');
+      //print('🔍 TemplateService.createWorkoutFromTemplate: API Response data: ${response.data}');
 
       // Controlla se la risposta contiene un errore
       if (response.data is Map<String, dynamic>) {
@@ -101,7 +101,7 @@ class TemplateService {
       }
 
       final result = CreateWorkoutFromTemplateResponse.fromJson(response.data);
-      print('🔍 TemplateService.createWorkoutFromTemplate: Parsed response successfully');
+      //print('🔍 TemplateService.createWorkoutFromTemplate: Parsed response successfully');
       
       return result;
     } catch (e) {
@@ -132,7 +132,7 @@ class TemplateService {
     String? review,
   }) async {
     try {
-      print('🔍 TemplateService.submitTemplateRating: Starting with templateId=$templateId, rating=$rating');
+      //print('🔍 TemplateService.submitTemplateRating: Starting with templateId=$templateId, rating=$rating');
       
       final response = await _dio.post(
         '/template_ratings.php',
@@ -143,8 +143,8 @@ class TemplateService {
         },
       );
 
-      print('🔍 TemplateService.submitTemplateRating: API Response status: ${response.statusCode}');
-      print('🔍 TemplateService.submitTemplateRating: API Response data: ${response.data}');
+      //print('🔍 TemplateService.submitTemplateRating: API Response status: ${response.statusCode}');
+      //print('🔍 TemplateService.submitTemplateRating: API Response data: ${response.data}');
 
       // Controlla se la risposta contiene un errore
       if (response.data is Map<String, dynamic>) {
@@ -159,7 +159,7 @@ class TemplateService {
         }
       }
 
-      print('🔍 TemplateService.submitTemplateRating: Rating submitted successfully');
+      //print('🔍 TemplateService.submitTemplateRating: Rating submitted successfully');
     } catch (e) {
       print('❌ TemplateService.submitTemplateRating ERROR: $e');
       print('❌ TemplateService.submitTemplateRating ERROR stack: ${e.toString()}');

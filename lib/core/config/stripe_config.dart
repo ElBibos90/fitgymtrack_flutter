@@ -197,24 +197,24 @@ class StripeConfig {
 
   /// Stampa informazioni di configurazione per debug
   static void printTestingInfo() {
-    print('[CONSOLE] [stripe_config]');
-    print('[CONSOLE] [stripe_config]🔍 STRIPE CONFIGURATION STATUS');
-    print('[CONSOLE] [stripe_config]=====================================');
+    //print('[CONSOLE] [stripe_config]');
+    //print('[CONSOLE] [stripe_config]🔍 STRIPE CONFIGURATION STATUS');
+    //print('[CONSOLE] [stripe_config]=====================================');
 
     for (final check in configurationChecks) {
-      print('[CONSOLE] [stripe_config]$check');
+      //print('[CONSOLE] [stripe_config]$check');
     }
 
-    print('[CONSOLE] [stripe_config]');
+    //print('[CONSOLE] [stripe_config]');
 
     if (isReadyForTesting) {
-      print('[CONSOLE] [stripe_config]✅ READY FOR TESTING');
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]🚀 TEST FLOW:');
-      print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
-      print('[CONSOLE] [stripe_config]   2. Subscription Screen → Scegli tipo pagamento');
-      print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
-      print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
+      //print('[CONSOLE] [stripe_config]✅ READY FOR TESTING');
+      //print('[CONSOLE] [stripe_config]');
+      //print('[CONSOLE] [stripe_config]🚀 TEST FLOW:');
+      //print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
+      //print('[CONSOLE] [stripe_config]   2. Subscription Screen → Scegli tipo pagamento');
+      //print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
+      //print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
     } else {
       print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
       print('[CONSOLE] [stripe_config]');

@@ -36,10 +36,10 @@ class StripeService {
       }
 
       // 🔍 DEBUG: Verifica che la chiave sia quella corretta
-      print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Checking publishable key...');
-      print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Key: ${StripeConfig.publishableKey}');
-      print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Expected: pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY');
-      print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Keys match: ${StripeConfig.publishableKey == 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY'}');
+      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Checking publishable key...');
+      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Key: ${StripeConfig.publishableKey}');
+      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Expected: pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY');
+      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Keys match: ${StripeConfig.publishableKey == 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY'}');
 
       if (!StripeConfig.isValidKey(StripeConfig.publishableKey)) {
         throw Exception('❌ Invalid Stripe publishable key format: ${StripeConfig.publishableKey.substring(0, 8)}...');
@@ -65,8 +65,8 @@ class StripeService {
         // STEP 2: CONFIGURA STRIPE PUBLISHABLE KEY
         // ============================================================================
 
-        print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 1: Setting publishable key...');
-        print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Setting key: ${StripeConfig.publishableKey.substring(0, 20)}...');
+        //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 1: Setting publishable key...');
+        //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Setting key: ${StripeConfig.publishableKey.substring(0, 20)}...');
         Stripe.publishableKey = StripeConfig.publishableKey;
         _currentPublishableKey = StripeConfig.publishableKey;
 
@@ -87,13 +87,13 @@ class StripeService {
         _isInitialized = true;
         _lastError = null;
 
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Stripe SDK initialized successfully!');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key length: ${StripeConfig.publishableKey.length}');
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key ends with: ${StripeConfig.publishableKey.substring(StripeConfig.publishableKey.length - 4)}');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Stripe SDK initialized successfully!');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key length: ${StripeConfig.publishableKey.length}');
+        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key ends with: ${StripeConfig.publishableKey.substring(StripeConfig.publishableKey.length - 4)}');
 
         return true;
 

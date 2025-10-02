@@ -292,23 +292,23 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento dettagli serie...'));
 
-    print('[DEBUG] [workout_history_bloc] Loading series details for workout: ${event.allenamentoId}');
-    print('[DEBUG] [workout_history_bloc] BLoC instance: ${this.hashCode}');
+    //print('[DEBUG] [workout_history_bloc] Loading series details for workout: ${event.allenamentoId}');
+    //print('[DEBUG] [workout_history_bloc] BLoC instance: ${this.hashCode}');
 
     final result = await _workoutRepository.getWorkoutSeriesDetail(event.allenamentoId);
 
     result.fold(
       onSuccess: (seriesDetails) {
         print('[DEBUG] [workout_history_bloc] Successfully loaded ${seriesDetails.length} series details');
-        print('[DEBUG] [workout_history_bloc] About to emit WorkoutSeriesDetailLoaded');
+        //print('[DEBUG] [workout_history_bloc] About to emit WorkoutSeriesDetailLoaded');
         emit(WorkoutSeriesDetailLoaded(
           seriesDetails: seriesDetails,
           allenamentoId: event.allenamentoId,
         ));
-        print('[DEBUG] [workout_history_bloc] Emitted WorkoutSeriesDetailLoaded');
+        //print('[DEBUG] [workout_history_bloc] Emitted WorkoutSeriesDetailLoaded');
       },
       onFailure: (exception, message) {
-        print('[DEBUG] [workout_history_bloc] Error loading series details: $message');
+        //print('[DEBUG] [workout_history_bloc] Error loading series details: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento dei dettagli delle serie',
           exception: exception,

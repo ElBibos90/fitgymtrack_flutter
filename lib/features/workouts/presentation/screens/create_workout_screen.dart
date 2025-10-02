@@ -389,7 +389,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 currentUserId: _currentUserId,
                 onExercisesRefresh: () {
                   // Ricarica gli esercizi disponibili dopo la creazione di un nuovo esercizio
-                  print('[CONSOLE] [create_workout_screen]🔄 Refreshing exercises after creation...');
+                  //print('[CONSOLE] [create_workout_screen]🔄 Refreshing exercises after creation...');
                   _loadAvailableExercises();
                 },
               ),

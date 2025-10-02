@@ -123,11 +123,11 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
     Emitter<GymSubscriptionState> emit,
   ) async {
     try {
-      print('[CONSOLE] [gym_subscription_bloc] 🏋️ Loading gym subscription for user: ${event.userId}');
+      //print('[CONSOLE] [gym_subscription_bloc] 🏋️ Loading gym subscription for user: ${event.userId}');
 
       // Controlla cache se non è force refresh
       if (!event.forceRefresh && _isCacheValid()) {
-        print('[CONSOLE] [gym_subscription_bloc] ⚡ Using cached gym subscription data');
+        //print('[CONSOLE] [gym_subscription_bloc] ⚡ Using cached gym subscription data');
         emit(GymSubscriptionLoaded(
           subscription: _cachedSubscription!,
           loadedAt: _lastUpdate!,
@@ -137,7 +137,7 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
 
       // Evita carichi multipli simultanei
       if (_isLoading) {
-        print('[CONSOLE] [gym_subscription_bloc] ⏳ Gym subscription loading already in progress');
+        //print('[CONSOLE] [gym_subscription_bloc] ⏳ Gym subscription loading already in progress');
         return;
       }
 
@@ -150,7 +150,7 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
         _cachedSubscription = result.data;
         _lastUpdate = DateTime.now();
         
-        print('[CONSOLE] [gym_subscription_bloc] ✅ Gym subscription loaded: ${result.data!.gymName}');
+        //print('[CONSOLE] [gym_subscription_bloc] ✅ Gym subscription loaded: ${result.data!.gymName}');
         emit(GymSubscriptionLoaded(
           subscription: result.data!,
           loadedAt: _lastUpdate!,
@@ -202,6 +202,6 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
   void invalidateCache() {
     _cachedSubscription = null;
     _lastUpdate = null;
-    print('[CONSOLE] [gym_subscription_bloc] 🧹 Cache invalidated');
+    //print('[CONSOLE] [gym_subscription_bloc] 🧹 Cache invalidated');
   }
 }

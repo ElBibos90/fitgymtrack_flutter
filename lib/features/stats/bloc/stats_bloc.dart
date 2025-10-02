@@ -135,12 +135,12 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      print('🔄 Caricamento statistiche iniziali...');
+      //print('🔄 Caricamento statistiche iniziali...');
       emit(StatsLoading());
 
       final bundle = await _repository.getStatsBundle(event.initialPeriod);
 
-      print('✅ Statistiche iniziali caricate con successo');
+      //print('✅ Statistiche iniziali caricate con successo');
       emit(StatsLoaded(
         userStats: bundle.userStats,
         periodStats: bundle.periodStats,
@@ -164,12 +164,12 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      print('🔄 Caricamento statistiche utente...');
+      //print('🔄 Caricamento statistiche utente...');
       emit(StatsLoading());
 
       final userStats = await _repository.getUserStats();
 
-      print('✅ Statistiche utente caricate con successo');
+      //print('✅ Statistiche utente caricate con successo');
 
       if (state is StatsLoaded) {
         final currentState = state as StatsLoaded;
@@ -194,7 +194,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      print('🔄 Cambio periodo a: ${event.period.displayName}');
+      //print('🔄 Cambio periodo a: ${event.period.displayName}');
 
       if (state is StatsLoaded) {
         final currentState = state as StatsLoaded;
@@ -209,7 +209,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
 
       final periodStats = await _repository.getPeriodStats(event.period);
 
-      print('✅ Statistiche periodo ${event.period.displayName} caricate');
+      //print('✅ Statistiche periodo ${event.period.displayName} caricate');
 
       if (state is StatsPeriodLoading) {
         final loadingState = state as StatsPeriodLoading;
@@ -239,7 +239,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      print('🔄 Refresh completo statistiche...');
+      //print('🔄 Refresh completo statistiche...');
 
       StatsPeriod currentPeriod = StatsPeriod.week;
       if (state is StatsLoaded) {
@@ -248,7 +248,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
 
       final bundle = await _repository.getStatsBundle(currentPeriod);
 
-      print('✅ Refresh statistiche completato');
+      //print('✅ Refresh statistiche completato');
       emit(StatsLoaded(
         userStats: bundle.userStats,
         periodStats: bundle.periodStats,
@@ -277,16 +277,16 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       ) async {
     try {
       if (state is! StatsLoaded) {
-        print('⚠️ Tentativo di refresh periodo senza stato caricato');
+        //print('⚠️ Tentativo di refresh periodo senza stato caricato');
         return;
       }
 
       final currentState = state as StatsLoaded;
-      print('🔄 Refresh statistiche periodo: ${currentState.currentPeriod.displayName}');
+      //print('🔄 Refresh statistiche periodo: ${currentState.currentPeriod.displayName}');
 
       final periodStats = await _repository.refreshPeriodStats(currentState.currentPeriod);
 
-      print('✅ Refresh periodo completato');
+      //print('✅ Refresh periodo completato');
       emit(currentState.copyWith(periodStats: periodStats));
 
     } on StatsException catch (e) {

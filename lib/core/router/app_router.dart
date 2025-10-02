@@ -32,6 +32,10 @@ import '../../features/workouts/presentation/screens/workout_plan_details_screen
 import '../../features/templates/presentation/screens/templates_screen.dart';
 import '../../features/templates/presentation/screens/template_details_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/courses/presentation/screens/courses_list_screen.dart';
+import '../../features/courses/presentation/screens/course_detail_screen.dart';
+import '../../features/courses/presentation/screens/my_courses_screen.dart';
+import '../../features/courses/bloc/courses_bloc.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -257,6 +261,58 @@ class AppRouter {
                   paymentType: 'donation',
                   // 🔧 FIX: Rimosso 'parameters: parameters' - parametro non definito
                 ),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+
+        // ============================================================================
+        // COURSES ROUTES
+        // ============================================================================
+        
+        GoRoute(
+          path: '/courses',
+          name: 'courses',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: BlocProvider(
+                create: (context) => getIt<CoursesBloc>(),
+                child: const CoursesListScreen(),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+        
+        GoRoute(
+          path: '/courses/:courseId',
+          name: 'course-detail',
+          builder: (context, state) {
+            final courseId = int.tryParse(state.pathParameters['courseId'] ?? '');
+            if (courseId == null) {
+              return const Scaffold(
+                body: Center(child: Text('ID corso non valido')),
+              );
+            }
+            return AuthWrapper(
+              authenticatedChild: BlocProvider(
+                create: (context) => getIt<CoursesBloc>(),
+                child: CourseDetailScreen(courseId: courseId),
+              ),
+              unauthenticatedChild: const LoginScreen(),
+            );
+          },
+        ),
+        
+        GoRoute(
+          path: '/my-courses',
+          name: 'my-courses',
+          builder: (context, state) {
+            return AuthWrapper(
+              authenticatedChild: BlocProvider(
+                create: (context) => getIt<CoursesBloc>(),
+                child: const MyCoursesScreen(),
               ),
               unauthenticatedChild: const LoginScreen(),
             );

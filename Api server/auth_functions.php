@@ -48,7 +48,7 @@ function validateAuthToken($conn, $token) {
     // Verifica se il token esiste ed è valido
     $stmt = $conn->prepare("
         SELECT t.user_id, t.expires_at, u.username, u.email, u.name, u.role_id, 
-               r.name as role_name, u.trainer_id, u.is_tester
+               r.name as role_name, u.trainer_id, u.gym_id, u.is_tester
         FROM auth_tokens t
         JOIN users u ON t.user_id = u.id
         JOIN user_role r ON u.role_id = r.id

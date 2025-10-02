@@ -275,7 +275,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       final hasOfflineWorkout = stats['has_offline_workout'] == true;
       
       if (hasOfflineWorkout) {
-        print('[CONSOLE] [active_workout_screen] 📱 Found offline workout, attempting restore...');
+        //print('[CONSOLE] [active_workout_screen] 📱 Found offline workout, attempting restore...');
         _activeWorkoutBloc.restoreOfflineWorkout();
       }
     } catch (e) {
@@ -749,7 +749,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // 🆕 NUOVO: Controlla se c'è già un allenamento attivo
       final currentState = _activeWorkoutBloc.state;
       if (currentState is WorkoutSessionActive) {
-        print('[CONSOLE] [active_workout_screen] ✅ Found existing active workout, using it');
+        //print('[CONSOLE] [active_workout_screen] ✅ Found existing active workout, using it');
         // Usa l'allenamento esistente invece di avviarne uno nuovo
         setState(() {
           _isInitialized = true;
@@ -757,7 +757,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         });
         _slideController.forward();
       } else {
-        print('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
+        //print('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
         // Avvia un nuovo allenamento solo se non ce n'è già uno attivo
         _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
       }
