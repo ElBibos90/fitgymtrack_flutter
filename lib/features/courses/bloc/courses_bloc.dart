@@ -63,12 +63,34 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadCoursesEvent event,
     Emitter<CoursesState> emit,
   ) async {
+    print('[COURSES_DEBUG] 🔍 _onLoadCourses: INIZIATO');
     try {
       emit(const CoursesLoadingState());
       
-      final response = await _repository.getAllCourses();
+      // 🔧 FIX: Retry automatico per problemi di timing dopo logout/login
+      CoursesResponse? response;
+      int retryCount = 0;
+      const maxRetries = 2;
       
-      if (response.success) {
+      while (retryCount <= maxRetries) {
+        try {
+          response = await _repository.getAllCourses();
+          break; // Successo, esci dal loop
+        } catch (e) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            // Aspetta un po' prima di riprovare
+            await Future.delayed(Duration(milliseconds: 500 * retryCount));
+            continue;
+          } else {
+            // Ultimo tentativo fallito, rilancia l'errore
+            rethrow;
+          }
+        }
+      }
+      
+      if (response != null && response.success) {
+        print('[COURSES_DEBUG] 🔍 _onLoadCourses: Caricati ${response.courses.length} corsi');
         emit(CoursesLoadedState(
           courses: response.courses,
           filteredCourses: response.courses,
@@ -174,10 +196,12 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadCourseDetailsEvent event,
     Emitter<CoursesState> emit,
   ) async {
+    print('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: INIZIATO per courseId=${event.courseId}');
     try {
       emit(const CourseDetailsLoadingState());
       
       final course = await _repository.getCourseDetails(event.courseId);
+      print('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: Corso caricato - id=${course.id}, title=${course.title}');
       
       emit(CourseDetailsLoadedState(
         course: course,
@@ -201,10 +225,12 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     }
     
     try {
-      print('[DEBUG] 📅 BLoC: LoadCourseSessionsEvent ricevuto con month=${event.month}, courseId=${event.courseId}');
+      print('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: INIZIATO per courseId=${event.courseId}, month=${event.month}');
       final response = event.month != null
           ? await _repository.getSessionsForMonth(event.month!, courseId: event.courseId)
           : await _repository.getCurrentMonthSessions(courseId: event.courseId);
+      
+      print('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: Caricate ${response.sessions.length} sessioni');
       
       if (response.success) {
         if (currentState is CourseDetailsLoadedState) {
@@ -306,12 +332,39 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadMyEnrollmentsEvent event,
     Emitter<CoursesState> emit,
   ) async {
+    print('[COURSES_DEBUG] 🔍 _onLoadMyEnrollments: INIZIATO');
     try {
       emit(const MyEnrollmentsLoadingState());
       
-      final response = await _repository.getMyCourseEnrollmentsStandard();
+      // 🔧 FIX: Retry automatico per problemi di timing dopo logout/login
+      EnrollmentsResponse? response;
+      int retryCount = 0;
+      const maxRetries = 2;
       
-      if (response.success) {
+      while (retryCount <= maxRetries) {
+        try {
+          response = await _repository.getMyCourseEnrollmentsStandard();
+          break; // Successo, esci dal loop
+        } catch (e) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            // Aspetta un po' prima di riprovare
+            await Future.delayed(Duration(milliseconds: 500 * retryCount));
+            continue;
+          } else {
+            // Ultimo tentativo fallito, rilancia l'errore
+            rethrow;
+          }
+        }
+      }
+      
+      if (response != null && response.success) {
+        // DEBUG: Log per verificare i dati ricevuti
+        print('[COURSES_DEBUG] 🔍 MyEnrollments: Ricevute ${response.enrollments.length} iscrizioni');
+        if (response.enrollments.isNotEmpty) {
+          print('[COURSES_DEBUG] 🔍 MyEnrollments: Prima iscrizione - enrollment_id: ${response.enrollments.first.enrollmentId}');
+        }
+        
         emit(MyEnrollmentsLoadedState(
           enrollments: response.enrollments,
         ));

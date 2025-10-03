@@ -498,8 +498,8 @@ function listSessions($conn, $user, $month = null, $course_id = null) {
         
         // Costruisci la query con filtro opzionale per course_id
         $where_conditions = "tc.gym_id = ? AND tc.is_course = TRUE AND DATE(tc.start_datetime) BETWEEN ? AND ?";
-        $bind_params = [$gym_id, $start_date, $end_date];
-        $bind_types = "iss";
+        $bind_params = [$user['user_id'], $gym_id, $start_date, $end_date]; // user_id PRIMO per il LEFT JOIN
+        $bind_types = "iiss";
         
         if ($course_id) {
             $where_conditions .= " AND tc.course_id = ?";
@@ -526,10 +526,15 @@ function listSessions($conn, $user, $month = null, $course_id = null) {
                 gc.title as course_title,
                 gc.category,
                 u.name as trainer_name,
-                tc.current_participants as enrolled_count
+                tc.current_participants as enrolled_count,
+                CASE 
+                    WHEN gce.id IS NOT NULL THEN 1 
+                    ELSE 0 
+                END as is_enrolled
             FROM trainer_calendar tc
             INNER JOIN gym_courses gc ON tc.course_id = gc.id
             LEFT JOIN users u ON tc.trainer_id = u.id
+            LEFT JOIN gym_course_enrollments gce ON tc.id = gce.session_id AND gce.user_id = ? AND gce.status != 'cancelled'
             WHERE $where_conditions
             ORDER BY tc.start_datetime ASC
         ");
@@ -543,6 +548,11 @@ function listSessions($conn, $user, $month = null, $course_id = null) {
             $sessions[] = $row;
         }
         
+        // DEBUG: Log per verificare il filtro user_id
+        error_log("[LIST_SESSIONS_DEBUG] User ID: " . $user['user_id'] . ", Trovate " . count($sessions) . " sessioni");
+        if (count($sessions) > 0) {
+            error_log("[LIST_SESSIONS_DEBUG] Prima sessione - id: " . $sessions[0]['id'] . ", is_enrolled: " . $sessions[0]['is_enrolled']);
+        }
         
         echo json_encode([
             'success' => true,
@@ -1121,6 +1131,9 @@ function myEnrollments($conn, $user) {
     try {
         $user_id = $user['user_id'];
         
+        // DEBUG: Log per verificare il filtro user_id
+        error_log("[MY_ENROLLMENTS_DEBUG] User ID ricevuto: " . $user_id);
+        
         $stmt = $conn->prepare("
             SELECT 
                 gce.id as enrollment_id,
@@ -1154,6 +1167,12 @@ function myEnrollments($conn, $user) {
         $enrollments = [];
         while ($row = $result->fetch_assoc()) {
             $enrollments[] = $row;
+        }
+        
+        // DEBUG: Log per verificare i risultati
+        error_log("[MY_ENROLLMENTS_DEBUG] Trovate " . count($enrollments) . " iscrizioni per user_id: " . $user_id);
+        if (count($enrollments) > 0) {
+            error_log("[MY_ENROLLMENTS_DEBUG] Prima iscrizione: " . json_encode($enrollments[0]));
         }
         
         echo json_encode([
@@ -1589,6 +1608,42 @@ function authMiddlewareForUsers($conn) {
 }
 
 // ============================================================================
+// ENDPOINT TEST PROMEMORIA
+// ============================================================================
+
+/**
+ * POST: Test manuale sistema promemoria
+ */
+function testCourseReminders($conn, $user) {
+    try {
+        // Solo admin e gym possono testare
+        if (!hasRole($user, 'admin') && !hasRole($user, 'gym')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Solo admin e gestori palestra possono testare il sistema promemoria']);
+            return;
+        }
+        
+        // Includi e esegui la logica del cron job
+        require_once 'course_reminder_cron.php';
+        
+        // Esegui il processamento
+        $result = processCourseReminders($conn);
+        
+        echo json_encode([
+            'success' => $result['success'],
+            'message' => 'Test promemoria completato',
+            'courses_processed' => $result['courses_processed'] ?? 0,
+            'notifications_sent' => $result['notifications_sent'] ?? 0,
+            'error' => $result['error'] ?? null
+        ]);
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+}
+
+// ============================================================================
 // ROUTING PRINCIPALE
 // ============================================================================
 
@@ -1671,6 +1726,10 @@ try {
                 case 'mark_attendance':
                     verifyGymAccess($user);
                     markAttendance($conn, $user, $input);
+                    break;
+                case 'test_reminders':
+                    // Endpoint test promemoria (admin e gym)
+                    testCourseReminders($conn, $user);
                     break;
                 
                 // Endpoint SELF-SERVICE per utenti normali

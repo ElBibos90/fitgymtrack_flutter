@@ -44,3 +44,5 @@ Write-Host "Avviando app con filtro FCM..." -ForegroundColor Green
 flutter run --debug | Select-String '\[CONSOLE\] \[FCM\]'
 
 
+
+

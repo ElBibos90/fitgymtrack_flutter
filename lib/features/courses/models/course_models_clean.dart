@@ -237,6 +237,8 @@ class CourseSession {
   final int? maxParticipants;
   @JsonKey(name: 'enrolled_count')
   final int? enrolledCount;
+  @JsonKey(name: 'is_enrolled')
+  final int? isEnrolled;
   final String? color;
 
   const CourseSession({
@@ -251,6 +253,7 @@ class CourseSession {
     this.currentParticipants,
     this.maxParticipants,
     this.enrolledCount,
+    this.isEnrolled,
     this.color,
   });
 

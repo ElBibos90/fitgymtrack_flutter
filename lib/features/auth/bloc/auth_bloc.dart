@@ -531,6 +531,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       print('[CONSOLE] [FCM] ❌ Error clearing FCM token during logout: $e');
     }
 
+
     final result = await _authRepository.logout();
 
     result.fold(

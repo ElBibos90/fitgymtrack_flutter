@@ -142,12 +142,18 @@ extension CoursesRepositoryExtension on CoursesRepository {
 
   /// Ottieni le mie iscrizioni (formato my_enrollments)
   Future<MyEnrollmentsResponse> getMyCourseEnrollments() async {
-    return await getMyEnrollments('my_enrollments');
+    print('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyCourseEnrollments (formato my_enrollments)');
+    final response = await getMyEnrollments('my_enrollments');
+    print('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni (formato my_enrollments)');
+    return response;
   }
 
   /// Ottieni le mie iscrizioni (formato standard)
   Future<EnrollmentsResponse> getMyCourseEnrollmentsStandard() async {
-    return await getMyEnrollmentsStandard('my_enrollments');
+    print('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyEnrollmentsStandard');
+    final response = await getMyEnrollmentsStandard('my_enrollments');
+    print('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni');
+    return response;
   }
 
   /// Iscriviti a una sessione

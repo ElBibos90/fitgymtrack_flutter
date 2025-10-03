@@ -101,6 +101,7 @@ CourseSession _$CourseSessionFromJson(Map<String, dynamic> json) =>
       currentParticipants: (json['current_participants'] as num?)?.toInt(),
       maxParticipants: (json['max_participants'] as num?)?.toInt(),
       enrolledCount: (json['enrolled_count'] as num?)?.toInt(),
+      isEnrolled: (json['is_enrolled'] as num?)?.toInt(),
       color: json['color'] as String?,
     );
 
@@ -117,6 +118,7 @@ Map<String, dynamic> _$CourseSessionToJson(CourseSession instance) =>
       'current_participants': instance.currentParticipants,
       'max_participants': instance.maxParticipants,
       'enrolled_count': instance.enrolledCount,
+      'is_enrolled': instance.isEnrolled,
       'color': instance.color,
     };
 

@@ -273,7 +273,7 @@ class DependencyInjection {
       // ============================================================================
       // COURSES BLOC
       // ============================================================================
-      getIt.registerLazySingleton<CoursesBloc>(() => CoursesBloc(
+      getIt.registerFactory<CoursesBloc>(() => CoursesBloc(
         repository: getIt<CoursesRepository>(),
       ));
       

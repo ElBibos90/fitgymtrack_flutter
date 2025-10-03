@@ -169,6 +169,16 @@ from datetime import datetime
 import sys
 
 try:
+    # Variabili (saranno sostituite da PowerShell)
+    newVersion = 'PLACEHOLDER_VERSION'
+    newBuild = 0
+    versionCode = 0
+    isCritical = False
+    updateDatabaseActive = False
+    updateMessage = ''
+    platformTarget = 'android'
+    targetAudience = 'production'
+    
     # Configurazione database
     config = {
         'host': '138.68.80.170',
@@ -182,12 +192,12 @@ try:
     connection = mysql.connector.connect(**config)
     cursor = connection.cursor()
     
-    //print('Disattivazione versioni precedenti...')
+    print('Disattivazione versioni precedenti...')
     # Disattiva SOLO le versioni dello stesso target_audience SE la nuova versione deve essere attiva
     if updateDatabaseActive:
         cursor.execute("UPDATE app_versions SET is_active = 0 WHERE target_audience = %s", (targetAudience,))
     
-    //print('Inserimento nuova versione...')
+    print('Inserimento nuova versione...')
     version_name = newVersion
     build_number = newBuild
     version_code = versionCode
@@ -213,14 +223,14 @@ finally:
         
         # Sostituisci variabili nello script Python
         $updateDatabaseActive = if ($updateDatabase -eq 's') { 'True' } else { 'False' }
-        $pythonScript = $pythonScript -replace 'newVersion', "'$newVersion'"
-        $pythonScript = $pythonScript -replace 'newBuild', $newBuild
-        $pythonScript = $pythonScript -replace 'versionCode', $versionCode
-        $pythonScript = $pythonScript -replace 'isCritical', $(if ($isCritical) { 'True' } else { 'False' })
-        $pythonScript = $pythonScript -replace 'updateDatabaseActive', $updateDatabaseActive
-        $pythonScript = $pythonScript -replace 'updateMessage', "'$updateMessage'"
-        $pythonScript = $pythonScript -replace 'platformTarget', "'$platformTarget'"
-        $pythonScript = $pythonScript -replace 'targetAudience', "'$targetAudience'"
+        $pythonScript = $pythonScript -replace "'PLACEHOLDER_VERSION'", "'$newVersion'"
+        $pythonScript = $pythonScript -replace 'newBuild = 0', "newBuild = $newBuild"
+        $pythonScript = $pythonScript -replace 'versionCode = 0', "versionCode = $versionCode"
+        $pythonScript = $pythonScript -replace 'isCritical = False', "isCritical = $(if ($isCritical) { 'True' } else { 'False' })"
+        $pythonScript = $pythonScript -replace 'updateDatabaseActive = False', "updateDatabaseActive = $updateDatabaseActive"
+        $pythonScript = $pythonScript -replace "updateMessage = ''", "updateMessage = '$updateMessage'"
+        $pythonScript = $pythonScript -replace "platformTarget = 'android'", "platformTarget = '$platformTarget'"
+        $pythonScript = $pythonScript -replace "targetAudience = 'production'", "targetAudience = '$targetAudience'"
         
         # Salva e esegui script Python
         $pythonScript | Out-File -FilePath "temp_db_update.py" -Encoding UTF8
