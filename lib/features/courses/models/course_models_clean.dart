@@ -239,6 +239,12 @@ class CourseSession {
   final int? enrolledCount;
   @JsonKey(name: 'is_enrolled')
   final int? isEnrolled;
+  @JsonKey(name: 'user_enrollment_id')
+  final int? userEnrollmentId;
+  @JsonKey(name: 'user_enrollment_status')
+  final String? userEnrollmentStatus;
+  @JsonKey(name: 'user_enrolled_at')
+  final String? userEnrolledAt;
   final String? color;
 
   const CourseSession({
@@ -254,6 +260,9 @@ class CourseSession {
     this.maxParticipants,
     this.enrolledCount,
     this.isEnrolled,
+    this.userEnrollmentId,
+    this.userEnrollmentStatus,
+    this.userEnrolledAt,
     this.color,
   });
 
@@ -286,6 +295,16 @@ class CourseSession {
 
   /// Numero di partecipanti attuali (con fallback)
   int get currentParticipantsCount => currentParticipants ?? 0;
+
+  /// Verifica se l'utente è iscritto (usando i nuovi campi dall'API)
+  bool get isUserEnrolled {
+    // Prima prova con i nuovi campi
+    if (userEnrollmentId != null && userEnrollmentStatus == 'enrolled') {
+      return true;
+    }
+    // Fallback al campo legacy
+    return (isEnrolled ?? 0) == 1;
+  }
 
   /// Formatta la data della sessione
   String get formattedDate {

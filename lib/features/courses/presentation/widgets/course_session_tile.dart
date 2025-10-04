@@ -30,8 +30,9 @@ class CourseSessionTile extends StatelessWidget {
         final isEnrolling = state is CourseOperationInProgressState && 
             state.sessionId == session.id;
         
-        // Verifica se l'utente è iscritto (usando is_enrolled dal server)
-        final isEnrolled = (session.isEnrolled ?? 0) == 1;
+        
+        // Verifica se l'utente è iscritto (usando i nuovi campi dall'API)
+        final isEnrolled = session.isUserEnrolled;
         
         return Container(
           padding: EdgeInsets.all(16.w),

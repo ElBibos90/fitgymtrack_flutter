@@ -232,6 +232,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       
       print('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: Caricate ${response.sessions.length} sessioni');
       
+      
       if (response.success) {
         if (currentState is CourseDetailsLoadedState) {
           emit(currentState.copyWith(
