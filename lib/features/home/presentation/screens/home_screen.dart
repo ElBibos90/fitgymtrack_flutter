@@ -22,7 +22,7 @@ import '../widgets/dashboard_page.dart';
 import '../../../stats/presentation/screens/freemium_stats_dashboard.dart';
 import '../../../notifications/presentation/screens/notifications_screen.dart';
 import '../../../notifications/presentation/widgets/notification_badge_icon.dart';
-import '../../../notifications/presentation/widgets/notification_bell_header.dart';
+import '../../../notifications/presentation/widgets/modern_notification_menu.dart';
 import '../../../notifications/bloc/notification_bloc.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/user_role_service.dart';
@@ -579,8 +579,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
       actions: [
-        // 🔔 Campanellina notifiche
-        NotificationBellHeader(
+        // 🔔 Menu notifiche moderno
+        ModernNotificationMenu(
           color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
           size: 24.0,
         ),

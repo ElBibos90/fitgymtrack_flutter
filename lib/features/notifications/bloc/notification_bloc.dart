@@ -40,6 +40,15 @@ class MarkAsReadEvent extends NotificationEvent {
   List<Object> get props => [notificationId];
 }
 
+class MarkAsUnreadEvent extends NotificationEvent {
+  final int notificationId;
+
+  const MarkAsUnreadEvent(this.notificationId);
+
+  @override
+  List<Object> get props => [notificationId];
+}
+
 class SendNotificationEvent extends NotificationEvent {
   final SendNotificationRequest request;
 
@@ -47,6 +56,19 @@ class SendNotificationEvent extends NotificationEvent {
 
   @override
   List<Object> get props => [request];
+}
+
+class MarkAllAsReadEvent extends NotificationEvent {
+  const MarkAllAsReadEvent();
+}
+
+class DeleteNotificationEvent extends NotificationEvent {
+  final int notificationId;
+
+  const DeleteNotificationEvent(this.notificationId);
+
+  @override
+  List<Object> get props => [notificationId];
 }
 
 class LoadSentNotificationsEvent extends NotificationEvent {
@@ -188,6 +210,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     
     on<LoadNotificationsEvent>(_onLoadNotifications);
     on<MarkAsReadEvent>(_onMarkAsRead);
+    on<MarkAsUnreadEvent>(_onMarkAsUnread);
+    on<MarkAllAsReadEvent>(_onMarkAllAsRead);
+    on<DeleteNotificationEvent>(_onDeleteNotification);
     on<SendNotificationEvent>(_onSendNotification);
     on<LoadSentNotificationsEvent>(_onLoadSentNotifications);
     on<RefreshUnreadCountEvent>(_onRefreshUnreadCount);
@@ -291,6 +316,118 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       }
     } catch (e) {
       emit(NotificationError('Errore nel marcare la notifica come letta: ${e.toString()}'));
+    }
+  }
+
+  /// Marca una notifica come non letta
+  Future<void> _onMarkAsUnread(
+    MarkAsUnreadEvent event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.markAsUnread(event.notificationId);
+
+      if (state is NotificationLoaded) {
+        final currentState = state as NotificationLoaded;
+        final updatedNotifications = currentState.notifications.map((notification) {
+          if (notification.id == event.notificationId) {
+            return Notification(
+              id: notification.id,
+              title: notification.title,
+              message: notification.message,
+              type: notification.type,
+              priority: notification.priority,
+              status: 'delivered',
+              createdAt: notification.createdAt,
+              readAt: null,
+              isBroadcast: notification.isBroadcast,
+              senderName: notification.senderName,
+              senderUsername: notification.senderUsername,
+            );
+          }
+          return notification;
+        }).toList();
+
+        final unreadCount = updatedNotifications.where((n) => n.isUnread).length;
+
+        emit(currentState.copyWith(
+          notifications: updatedNotifications,
+          unreadCount: unreadCount,
+        ));
+
+        // Aggiorna badge iOS
+        await _updateiOSBadge(unreadCount);
+      }
+    } catch (e) {
+      emit(NotificationError('Errore nel marcare la notifica come non letta: ${e.toString()}'));
+    }
+  }
+
+  /// Marca tutte le notifiche come lette
+  Future<void> _onMarkAllAsRead(
+    MarkAllAsReadEvent event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.markAllAsRead();
+
+      if (state is NotificationLoaded) {
+        final currentState = state as NotificationLoaded;
+        final updatedNotifications = currentState.notifications.map((notification) {
+          return Notification(
+            id: notification.id,
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            priority: notification.priority,
+            status: 'read',
+            createdAt: notification.createdAt,
+            readAt: DateTime.now().toIso8601String(),
+            isBroadcast: notification.isBroadcast,
+            senderName: notification.senderName,
+            senderUsername: notification.senderUsername,
+          );
+        }).toList();
+
+        emit(currentState.copyWith(
+          notifications: updatedNotifications,
+          unreadCount: 0,
+        ));
+
+        // Aggiorna badge iOS
+        await _updateiOSBadge(0);
+      }
+    } catch (e) {
+      emit(NotificationError('Errore nel marcare tutte le notifiche come lette: ${e.toString()}'));
+    }
+  }
+
+  /// Elimina una notifica
+  Future<void> _onDeleteNotification(
+    DeleteNotificationEvent event,
+    Emitter<NotificationState> emit,
+  ) async {
+    try {
+      await _repository.deleteNotification(event.notificationId);
+
+      if (state is NotificationLoaded) {
+        final currentState = state as NotificationLoaded;
+        final updatedNotifications = currentState.notifications
+            .where((notification) => notification.id != event.notificationId)
+            .toList();
+
+        final unreadCount = updatedNotifications.where((n) => n.isUnread).length;
+
+        emit(currentState.copyWith(
+          notifications: updatedNotifications,
+          unreadCount: unreadCount,
+        ));
+
+        // Aggiorna badge iOS
+        await _updateiOSBadge(unreadCount);
+      }
+    } catch (e) {
+      emit(NotificationError('Errore nell\'eliminazione della notifica: ${e.toString()}'));
     }
   }
 

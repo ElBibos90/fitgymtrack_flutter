@@ -9,6 +9,7 @@ import '../../models/notification_models.dart' as models;
 import '../../repositories/notification_repository.dart';
 import '../../../../core/config/app_config.dart';
 import '../widgets/notification_popup.dart';
+import '../widgets/notification_message_widget.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -305,12 +306,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 SizedBox(height: 12.h),
                 // Messaggio
-                Text(
-                  notification.message,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.grey[300] : AppColors.textSecondary,
-                  ),
+                NotificationMessageWidget(
+                  message: notification.message,
+                  isDark: isDark,
                 ),
                 SizedBox(height: 12.h),
                 // Footer con data e priorità

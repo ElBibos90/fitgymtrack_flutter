@@ -50,6 +50,23 @@ class NotificationRepository {
     }
   }
 
+  /// Marca una notifica come non letta
+  Future<void> markAsUnread(int notificationId) async {
+    try {
+      await _dio.put(
+        '${AppConfig.baseUrl}/notifications.php',
+        queryParameters: {
+          'id': notificationId,
+          'action': 'unread',
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      throw Exception('Errore nel marcare la notifica come non letta: $e');
+    }
+  }
+
   /// Invia una notifica (solo per gym/trainer)
   Future<SendNotificationResponse> sendNotification(
     SendNotificationRequest request,
@@ -104,6 +121,38 @@ class NotificationRepository {
       throw _handleDioError(e);
     } catch (e) {
       throw Exception('Errore nel recupero del conteggio notifiche: $e');
+    }
+  }
+
+  /// Marca tutte le notifiche come lette
+  Future<void> markAllAsRead() async {
+    try {
+      await _dio.put(
+        '${AppConfig.baseUrl}/notifications.php',
+        queryParameters: {
+          'action': 'mark_all_read',
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      throw Exception('Errore nel marcare tutte le notifiche come lette: $e');
+    }
+  }
+
+  /// Elimina una notifica
+  Future<void> deleteNotification(int notificationId) async {
+    try {
+      await _dio.delete(
+        '${AppConfig.baseUrl}/notifications.php',
+        queryParameters: {
+          'id': notificationId,
+        },
+      );
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      throw Exception('Errore nell\'eliminazione della notifica: $e');
     }
   }
 

@@ -7,6 +7,7 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../bloc/notification_bloc.dart';
 import '../../models/notification_models.dart' as models;
 import 'notification_popup.dart';
+import 'notification_message_widget.dart';
 
 /// 🔔 Popup overlay per notifiche stile moderno
 class NotificationPopupOverlay extends StatefulWidget {
@@ -259,14 +260,11 @@ class _NotificationPopupOverlayState extends State<NotificationPopupOverlay>
             ],
           ),
           SizedBox(height: 8.h),
-          Text(
-            notification.message,
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDark ? Colors.white70 : AppColors.textSecondary,
-            ),
+          NotificationMessageWidget(
+            message: notification.message,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+            isDark: isDark,
           ),
           SizedBox(height: 8.h),
           Row(

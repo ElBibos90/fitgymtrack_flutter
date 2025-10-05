@@ -15,6 +15,7 @@ import '../widgets/course_card.dart';
 import '../widgets/course_search_bar.dart';
 import '../widgets/course_category_filter.dart';
 import '../widgets/course_detail_modal.dart';
+import '../../../notifications/presentation/widgets/modern_notification_menu.dart';
 
 /// 🎓 Schermata lista corsi disponibili
 class CoursesListScreen extends StatefulWidget {
@@ -50,10 +51,10 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
       appBar: CustomAppBar(
         title: 'Corsi Disponibili',
         actions: [
-          // Badge notifiche
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => context.push('/notifications'),
+          // Menu notifiche moderno
+          ModernNotificationMenu(
+            color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
+            size: 24.0,
           ),
         ],
       ),
