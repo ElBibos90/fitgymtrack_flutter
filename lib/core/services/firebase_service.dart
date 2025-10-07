@@ -13,6 +13,8 @@ import '../../core/network/dio_client.dart';
 import '../../features/notifications/bloc/notification_bloc.dart';
 import '../../core/navigation/navigator_key.dart';
 import '../../core/di/dependency_injection.dart';
+import '../../features/auth/models/login_response.dart';
+import '../../features/auth/bloc/auth_bloc.dart';
 
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
@@ -96,6 +98,33 @@ class FirebaseService {
     if (kDebugMode) {
       //print('[CONSOLE] [FCM] 📱 Notification permission status: ${settings.authorizationStatus}');
     }
+
+    // 🔥 NUOVO: Listener per refresh automatico token FCM
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] 🔄 Token refreshed automatically: ${newToken.substring(0, 20)}...');
+      }
+      
+      // Aggiorna token locale
+      _fcmToken = newToken;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('fcm_token', newToken);
+      
+      // Registra nuovo token se utente è loggato
+      try {
+        final currentUser = await _getCurrentUser();
+        if (currentUser != null) {
+          await registerTokenForUser(currentUser.id);
+          if (kDebugMode) {
+            print('[CONSOLE] [FCM] ✅ New token registered for user ${currentUser.id}');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('[CONSOLE] [FCM] ❌ Error registering refreshed token: $e');
+        }
+      }
+    });
 
     // Gestisci notifiche in foreground
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -341,47 +370,21 @@ class FirebaseService {
   /// Aggiorna il BLoC delle notifiche immediatamente (per iOS)
   void _updateNotificationBlocImmediate() {
     try {
-      if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 _updateNotificationBlocImmediate called');
-      }
-      
       // Prova a ottenere il BLoC dal context globale
       final context = navigatorKey.currentContext;
       if (context != null) {
-        if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 Context found, getting BLoC from context');
-        }
-        
         final notificationBloc = context.read<NotificationBloc>();
-        if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 BLoC obtained from context');
-        }
-        
         notificationBloc.add(const LoadNotificationsEvent());
-        if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 Notification BLoC updated via context');
-        }
       } else {
-        if (kDebugMode) {
-          print('[CONSOLE] [FCM] ❌ Context is null, trying GetIt');
-        }
-        
-        // Fallback a GetIt
+        // Fallback a GetIt (silenzioso - è il comportamento normale)
         final notificationBloc = getIt<NotificationBloc>();
         if (notificationBloc != null) {
           notificationBloc.add(const LoadNotificationsEvent());
-          if (kDebugMode) {
-            //print('[CONSOLE] [FCM] 📱 Notification BLoC updated via GetIt');
-          }
-        } else {
-          if (kDebugMode) {
-            print('[CONSOLE] [FCM] ❌ BLoC is null in both methods');
-          }
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error in _updateNotificationBlocImmediate: $e');
+        print('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
       }
     }
   }
@@ -450,6 +453,36 @@ class FirebaseService {
       if (kDebugMode) {
         print('[CONSOLE] [FCM] ❌ Error clearing token for user $userId: $e');
       }
+    }
+  }
+
+  /// Ottiene l'utente corrente per il refresh del token
+  Future<User?> _getCurrentUser() async {
+    try {
+      // Prova a ottenere l'utente dal context globale
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        final authBloc = context.read<AuthBloc>();
+        if (authBloc.state is AuthAuthenticated) {
+          return (authBloc.state as AuthAuthenticated).user;
+        }
+      }
+      
+      // Fallback: prova a ottenere dai dati locali
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('user_id');
+      if (userId != null) {
+        // Qui potresti fare una chiamata API per ottenere i dati utente
+        // Per ora restituiamo null e gestiamo l'errore nel listener
+        return null;
+      }
+      
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('[CONSOLE] [FCM] ❌ Error getting current user: $e');
+      }
+      return null;
     }
   }
 }
