@@ -296,3 +296,4 @@ if ($platformTarget -eq "both") {
 if ($updateDatabase -ne 's') {
     Write-Host "   Database: Attiva la versione quando pubblichi negli store (UPDATE app_versions SET is_active = 1 WHERE version_name = '$newVersion' AND build_number = $newBuild)" -ForegroundColor Cyan
 }
+
