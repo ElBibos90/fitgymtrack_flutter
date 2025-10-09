@@ -205,8 +205,20 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        final currentUser = authState is AuthAuthenticated ? authState.user : null;
-        final canManageSchede = UserRoleService.canSeeQuickActions(currentUser);
+        final currentUser = authState is AuthAuthenticated 
+            ? authState.user 
+            : authState is AuthLoginSuccess 
+                ? authState.user 
+                : null;
+        final canManageSchede = UserRoleService.canManageWorkoutSchemes(currentUser);
+        
+        // 🔍 DEBUG: Log per verificare i permessi
+        //print('[CONSOLE] [Permessi]🔍 DEBUG PERMESSI:');
+        //print('[CONSOLE] [Permessi]- User ID: ${currentUser?.id}');
+        //print('[CONSOLE] [Permessi] - Role ID: ${currentUser?.roleId}');
+        //print('[CONSOLE] [Permessi] - isStandaloneUser: ${UserRoleService.isStandaloneUser(currentUser)}');
+        //print('[CONSOLE] [Permessi] - isGymUser: ${UserRoleService.isGymUser(currentUser)}');
+        //print('[CONSOLE] [Permessi] - canManageWorkoutSchemes: $canManageSchede');
         
         return Scaffold(
           appBar: CustomAppBar(

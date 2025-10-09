@@ -35,6 +35,11 @@ class UserRoleService {
     return isStandaloneUser(user);
   }
   
+  /// Verifica se l'utente può vedere il tab corsi
+  static bool canSeeCoursesTab(User? user) {
+    return isGymUser(user);
+  }
+  
   /// Verifica se l'utente può vedere i template schede
   static bool canSeeWorkoutTemplates(User? user) {
     return isStandaloneUser(user);

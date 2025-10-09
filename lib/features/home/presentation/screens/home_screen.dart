@@ -62,6 +62,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   // Cache delle pagine per evitare ricostruzioni
   final Map<int, Widget> _cachedPages = {};
+  int? _cachedUserId; // Traccia l'utente per cui è stata creata la cache
+  
+  // 🔧 FIX: Traccia l'utente per cui sono stati caricati i dati
+  int? _lastLoadedUserId;
 
   /// 🎯 NUOVO: Lista delle pagine dinamica basata sul ruolo utente
   List<Widget Function()> _getPageBuilders(User? user) {
@@ -73,19 +77,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         onNavigateToSubscription: () {
           // 🎯 NUOVO: Controlla se il tab abbonamento è disponibile
           if (UserRoleService.canSeeSubscriptionTab(user)) {
-            _onTabTapped(4); // Tab 4 = Abbonamento (dopo aver aggiunto Corsi)
+            // L'indice dipende da quante tab ci sono prima
+            final subscriptionIndex = UserRoleService.canSeeCoursesTab(user) ? 4 : 3;
+            _onTabTapped(subscriptionIndex);
           } else {
             print('[CONSOLE] [home_screen]❌ Subscription tab not available for user role');
           }
         },
       ),
       () => WorkoutPlansScreen(controller: _workoutController),
-      () => BlocProvider(
+    ];
+    
+    // Aggiungi tab corsi solo per utenti palestra
+    if (UserRoleService.canSeeCoursesTab(user)) {
+      pages.add(() => BlocProvider(
         create: (context) => getIt<CoursesBloc>(),
         child: const CoursesListScreen(),
-      ),
-      () => const FreemiumStatsDashboard(),
-    ];
+      ));
+    }
+    
+    // Aggiungi sempre le statistiche
+    pages.add(() => const FreemiumStatsDashboard());
     
     // Aggiungi tab abbonamento solo per utenti standalone
     if (UserRoleService.canSeeSubscriptionTab(user)) {
@@ -106,15 +118,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         icon: Icon(Icons.fitness_center_rounded),
         label: 'Allenamenti',
       ),
-      const BottomNavigationBarItem(
+    ];
+    
+    // Aggiungi tab corsi solo per utenti palestra
+    if (UserRoleService.canSeeCoursesTab(user)) {
+      items.add(const BottomNavigationBarItem(
         icon: Icon(Icons.school_rounded),
         label: 'Corsi',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.analytics_rounded),
-        label: 'Statistiche',
-      ),
-    ];
+      ));
+    }
+    
+    // Aggiungi sempre statistiche
+    items.add(const BottomNavigationBarItem(
+      icon: Icon(Icons.analytics_rounded),
+      label: 'Statistiche',
+    ));
     
     // Aggiungi tab abbonamento solo per utenti standalone
     if (UserRoleService.canSeeSubscriptionTab(user)) {
@@ -178,8 +196,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// 🚀 PERFORMANCE: Inizializzazione sequenziale intelligente
   Future<void> _initializeSequentially() async {
-    if (_isInitialDataLoaded) return;
-
     try {
       //print('[CONSOLE] [home_screen]🚀 Starting sequential initialization...');
 
@@ -199,6 +215,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         return;
       }
 
+      // 🔧 FIX: Se l'utente è cambiato, resetta i flag di caricamento
+      if (_lastLoadedUserId != userId) {
+        //print('[CONSOLE] [home_screen]🔄 User changed from $_lastLoadedUserId to $userId, resetting initialization flags');
+        _isSubscriptionLoaded = false;
+        _isWorkoutHistoryLoaded = false;
+        _isInitialDataLoaded = false;
+        _lastLoadedUserId = userId;
+      }
+
+      // Se i dati sono già stati caricati per questo utente, non ricaricarli
+      if (_isInitialDataLoaded) {
+        //print('[CONSOLE] [home_screen]⚡ Data already initialized for user $userId');
+        return;
+      }
+
       //print('[CONSOLE] [home_screen]👤 User authenticated: $userId');
 
       // STEP 2: Carica subscription (priorità alta - necessaria per UI)
@@ -211,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _initializeDashboard();
 
       _isInitialDataLoaded = true;
-      //print('[CONSOLE] [home_screen]✅ Sequential initialization completed');
+      //print('[CONSOLE] [home_screen]✅ Sequential initialization completed for user $userId');
 
       // 🔧 NUOVO: Controllo aggiornamenti in background (non bloccante)
       _scheduleBackgroundUpdateCheck();
@@ -327,8 +358,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     // 🚀 PERFORMANCE: Carica subscription con debouncing DOPO validazione token
     Future<void> _loadSubscriptionWithDebouncing() async {
-      if (_isSubscriptionLoaded) return;
-
       try {
       //print('[CONSOLE] [home_screen]💳 Loading subscription with debouncing...');
 
@@ -336,6 +365,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       final authState = context.read<AuthBloc>().state;
       if (authState is! AuthAuthenticated && authState is! AuthLoginSuccess) {
         print('[CONSOLE] [home_screen]❌ User not authenticated, skipping subscription load');
+        return;
+      }
+
+      // 🔧 FIX: Ottieni l'ID utente corrente
+      int currentUserId;
+      if (authState is AuthAuthenticated) {
+        currentUserId = authState.user.id;
+      } else if (authState is AuthLoginSuccess) {
+        currentUserId = authState.user.id;
+      } else {
+        return;
+      }
+
+      // 🔧 FIX: Se l'utente è cambiato, resetta i flag di caricamento
+      if (_lastLoadedUserId != currentUserId) {
+        //print('[CONSOLE] [home_screen]🔄 User changed from $_lastLoadedUserId to $currentUserId, resetting load flags');
+        _isSubscriptionLoaded = false;
+        _isWorkoutHistoryLoaded = false;
+        _isInitialDataLoaded = false;
+        _lastLoadedUserId = currentUserId;
+      }
+
+      // Se l'abbonamento è già stato caricato per questo utente, non ricaricarlo
+      if (_isSubscriptionLoaded) {
+        //print('[CONSOLE] [home_screen]⚡ Subscription already loaded for user $currentUserId');
         return;
       }
 
@@ -353,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       );
 
       _isSubscriptionLoaded = true;
-      //print('[CONSOLE] [home_screen]✅ Subscription loaded successfully');
+      //print('[CONSOLE] [home_screen]✅ Subscription loaded successfully for user $currentUserId');
     } catch (e) {
       print('[CONSOLE] [home_screen]❌ Subscription loading error: $e');
     }
@@ -362,6 +416,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// 🚀 PERFORMANCE: Carica workout history in background
   void _loadWorkoutHistoryAsync(int userId) {
     //print('[CONSOLE] [home_screen]📊 Loading workout history async...');
+
+    // Se la workout history è già stata caricata per questo utente, non ricaricarla
+    if (_isWorkoutHistoryLoaded && _lastLoadedUserId == userId) {
+      //print('[CONSOLE] [home_screen]⚡ Workout history already loaded for user $userId');
+      return;
+    }
 
     // Non bloccare il main thread
     Future.microtask(() async {
@@ -406,18 +466,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     //print('[CONSOLE] [home_screen]🎯 Initializing tab $index...');
 
-    switch (index) {
-      case 1: // Workouts
-        _initializeWorkoutsTab();
-        break;
-      case 2: // Stats
-        _initializeStatsTab();
-        break;
-      case 3: // Subscription
-        _initializeSubscriptionTab();
-        break;
-    }
-
+    // L'inizializzazione è già gestita dai BlocProvider
+    // Non servono azioni specifiche per tab
+    
     _tabInitialized[index] = true;
   }
 
@@ -446,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _onTabTapped(int index) {
     if (_selectedIndex == index) return; // Evita tap duplicati
 
-    //print('[CONSOLE] [home_screen]🎯 Tab tapped: $index');
+    print('[CONSOLE] [home_screen]🎯 Tab tapped: $index');
 
     // 🎯 NUOVO: Controlla se il tab è valido per l'utente corrente
     final authState = context.read<AuthBloc>().state;
@@ -457,7 +508,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       currentUser = authState.user;
     }
     
+    // 🔍 DEBUG: Log per verificare la navigazione
+    //print('[CONSOLE] [Permessi]🔍 DEBUG NAVIGAZIONE:');
+    //print('[CONSOLE] [Permessi] - User ID: ${currentUser?.id}');
+    //print('[CONSOLE] [Permessi] - Role ID: ${currentUser?.roleId}');
+    //print('[CONSOLE] [Permessi] - Tab clicked: $index');
+    //print('[CONSOLE] [Permessi] - isGymUser: ${UserRoleService.isGymUser(currentUser)}');
+    //print('[CONSOLE] [Permessi] - isStandaloneUser: ${UserRoleService.isStandaloneUser(currentUser)}');
+    
     final pageBuilders = _getPageBuilders(currentUser);
+    final navItems = _getNavItems(currentUser);
+    
+    //print('[CONSOLE] [Permessi] - Total pages: ${pageBuilders.length}');
+    //print('[CONSOLE] [Permessi] - Total nav items: ${navItems.length}');
+    //print('[CONSOLE] [Permessi] - Nav items: ${navItems.map((item) => item.label).toList()}');
+    
+    // 🔍 DEBUG: Verifica mapping dettagliato
+    //print('[CONSOLE] [Permessi]🔍 DEBUG MAPPING:');
+    for (int i = 0; i < navItems.length; i++) {
+      //print('[CONSOLE] [Permessi] - Nav[$i]: ${navItems[i].label}');
+    }
+    //print('[CONSOLE] [Permessi]🔍 DEBUG PAGES:');
+    //print('[CONSOLE] [Permessi] - Page[0]: Dashboard');
+    //print('[CONSOLE] [Permessi] - Page[1]: WorkoutPlansScreen');
+    if (UserRoleService.canSeeCoursesTab(currentUser)) {
+      //print('[CONSOLE] [Permessi] - Page[2]: CoursesListScreen');
+      //print('[CONSOLE] [Permessi] - Page[3]: FreemiumStatsDashboard');
+    } else {
+      //print('[CONSOLE] [Permessi] - Page[2]: FreemiumStatsDashboard');
+      if (UserRoleService.canSeeSubscriptionTab(currentUser)) {
+        //print('[CONSOLE] [Permessi] - Page[3]: SubscriptionScreen');
+      }
+    }
+    
     if (index >= pageBuilders.length) {
       print('[CONSOLE] [home_screen]❌ Tab $index not available for user role');
       return;
@@ -476,9 +559,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   /// Ottieni page per index con lazy loading
   Widget _getPageForIndex(int index, User? user) {
-    // Usa cache se disponibile
-    if (_cachedPages.containsKey(index)) {
-      return _cachedPages[index]!;
+    // 🔧 FIX: Pulisci cache se l'utente è cambiato
+    // Questo risolve il problema del mapping sbagliato tra indici e pagine
+    final userId = user?.id;
+    if (_cachedUserId != userId) {
+      _cachedPages.clear();
+      _cachedUserId = userId;
+      //print('[CONSOLE] [home_screen]🧹 Cache cleared for new user: $userId');
     }
 
     // Crea page e mettila in cache
@@ -677,11 +764,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void navigateToSubscription() {
     //print('[CONSOLE] [home_screen]💳 Navigating to subscription tab via callback');
-    _onTabTapped(3);
+    // Calcola indice dinamicamente in base al ruolo
+    final authState = context.read<AuthBloc>().state;
+    User? currentUser;
+    if (authState is AuthAuthenticated) {
+      currentUser = authState.user;
+    } else if (authState is AuthLoginSuccess) {
+      currentUser = authState.user;
+    }
+    
+    final subscriptionIndex = UserRoleService.canSeeCoursesTab(currentUser) ? 4 : 3;
+    _onTabTapped(subscriptionIndex);
   }
 
   void navigateToStats() {
     //print('[CONSOLE] [home_screen]📊 Navigating to stats tab via callback');
-    _onTabTapped(2);
+    // Calcola indice dinamicamente in base al ruolo
+    final authState = context.read<AuthBloc>().state;
+    User? currentUser;
+    if (authState is AuthAuthenticated) {
+      currentUser = authState.user;
+    } else if (authState is AuthLoginSuccess) {
+      currentUser = authState.user;
+    }
+    
+    final statsIndex = UserRoleService.canSeeCoursesTab(currentUser) ? 3 : 2;
+    _onTabTapped(statsIndex);
   }
 }
