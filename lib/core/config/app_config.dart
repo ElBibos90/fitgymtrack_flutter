@@ -6,8 +6,8 @@ class AppConfig {
   // API CONFIGURATION
   // ============================================================================
 
-  /// Base URL per le API
-  static const String baseUrl = Environment.baseUrl;
+  /// Base URL per le API - AUTO-SWITCH DEBUG/RELEASE
+  static String get baseUrl => Environment.baseUrl;
 
   // ============================================================================
   // DESIGN TOKENS

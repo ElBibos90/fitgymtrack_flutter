@@ -1,5 +1,6 @@
 // lib/features/stats/models/user_stats_models.dart
 import 'package:json_annotation/json_annotation.dart';
+import '../../exercises/models/muscle_group.dart';
 
 part 'user_stats_models.g.dart';
 
@@ -33,6 +34,14 @@ class UserStats {
   @JsonKey(name: 'last_workout_date')
   final String? lastWorkoutDate;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  // Campi opzionali per backward compatibility con API vecchie
+  @JsonKey(name: 'most_trained_muscle')
+  final MostTrainedMuscle? mostTrainedMuscle;
+  @JsonKey(name: 'muscle_distribution')
+  final List<MuscleDistribution>? muscleDistribution;
+  // ==================================================
+
   const UserStats({
     required this.totalWorkouts,
     required this.totalDurationMinutes,
@@ -47,6 +56,9 @@ class UserStats {
     required this.totalWeightLiftedKg,
     this.firstWorkoutDate,
     this.lastWorkoutDate,
+    // Nuovi campi muscoli (opzionali)
+    this.mostTrainedMuscle,
+    this.muscleDistribution,
   });
 
   factory UserStats.fromJson(Map<String, dynamic> json) =>
@@ -112,6 +124,11 @@ class PeriodStats {
   @JsonKey(name: 'workout_frequency')
   final double workoutFrequency; // allenamenti per settimana
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'muscle_distribution_period')
+  final List<MuscleDistributionPeriod>? muscleDistributionPeriod;
+  // ==================================================
+
   const PeriodStats({
     required this.period,
     required this.startDate,
@@ -123,6 +140,8 @@ class PeriodStats {
     required this.averageDuration,
     this.mostActiveDay,
     required this.workoutFrequency,
+    // Nuovi campi muscoli (opzionali)
+    this.muscleDistributionPeriod,
   });
 
   factory PeriodStats.fromJson(Map<String, dynamic> json) =>
@@ -333,4 +352,101 @@ class StatsResponse {
       _$StatsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$StatsResponseToJson(this);
+}
+
+// ============================================================================
+// NUOVI MODELS PER SISTEMA MUSCOLI SPECIFICI
+// ============================================================================
+
+/// Muscolo più allenato con dettagli
+@JsonSerializable()
+class MostTrainedMuscle {
+  final String name;
+  final String category;
+  final int count; // numero di serie
+
+  const MostTrainedMuscle({
+    required this.name,
+    required this.category,
+    required this.count,
+  });
+
+  factory MostTrainedMuscle.fromJson(Map<String, dynamic> json) =>
+      _$MostTrainedMuscleFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MostTrainedMuscleToJson(this);
+}
+
+/// Distribuzione muscoli allenati (top 10)
+@JsonSerializable()
+class MuscleDistribution {
+  @JsonKey(name: 'muscle_name')
+  final String muscleName;
+  @JsonKey(name: 'muscle_category')
+  final String muscleCategory;
+  @JsonKey(name: 'series_count')
+  final int seriesCount;
+  @JsonKey(name: 'exercises_count')
+  final int? exercisesCount;
+
+  const MuscleDistribution({
+    required this.muscleName,
+    required this.muscleCategory,
+    required this.seriesCount,
+    this.exercisesCount,
+  });
+
+  factory MuscleDistribution.fromJson(Map<String, dynamic> json) =>
+      _$MuscleDistributionFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MuscleDistributionToJson(this);
+
+  /// Calcola la percentuale rispetto al totale
+  double getPercentage(int totalSeries) {
+    if (totalSeries == 0) return 0.0;
+    return (seriesCount / totalSeries) * 100;
+  }
+}
+
+/// Distribuzione muscoli per periodo specifico (con dati aggiuntivi)
+@JsonSerializable()
+class MuscleDistributionPeriod {
+  @JsonKey(name: 'muscle_name')
+  final String muscleName;
+  @JsonKey(name: 'muscle_category')
+  final String muscleCategory;
+  @JsonKey(name: 'sessions_count')
+  final int sessionsCount; // numero di sessioni in cui è stato allenato
+  @JsonKey(name: 'series_count')
+  final int seriesCount;
+  @JsonKey(name: 'total_volume')
+  final double? totalVolume; // volume totale (kg)
+  @JsonKey(name: 'exercises_count')
+  final int? exercisesCount;
+
+  const MuscleDistributionPeriod({
+    required this.muscleName,
+    required this.muscleCategory,
+    required this.sessionsCount,
+    required this.seriesCount,
+    this.totalVolume,
+    this.exercisesCount,
+  });
+
+  factory MuscleDistributionPeriod.fromJson(Map<String, dynamic> json) =>
+      _$MuscleDistributionPeriodFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MuscleDistributionPeriodToJson(this);
+
+  /// Calcola la percentuale rispetto al totale serie
+  double getSeriesPercentage(int totalSeries) {
+    if (totalSeries == 0) return 0.0;
+    return (seriesCount / totalSeries) * 100;
+  }
+
+  /// Calcola il volume medio per serie
+  double get averageVolumePerSeries {
+    if (seriesCount == 0 || totalVolume == null) return 0.0;
+    return totalVolume! / seriesCount;
+  }
 }

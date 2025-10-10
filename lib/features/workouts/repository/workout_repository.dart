@@ -282,8 +282,6 @@ class WorkoutRepository {
 
   Future<Result<List<ExerciseItem>>> getAvailableExercises(int userId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting available exercises for user: $userId');
-
       final response = await _apiClient.getAvailableExercises(userId);
 
       if (response != null && response is Map<String, dynamic>) {
@@ -291,12 +289,12 @@ class WorkoutRepository {
 
         if (success) {
           final eserciziList = response['esercizi'] as List<dynamic>? ?? [];
+          
           final exercises = eserciziList
               .cast<Map<String, dynamic>>()
               .map((json) => ExerciseItem.fromJson(json))
               .toList();
 
-          //print('[CONSOLE] [workout_repository]Successfully loaded ${exercises.length} available exercises');
           return exercises;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi disponibili');

@@ -58,6 +58,17 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
       restPauseRestSeconds: json['rest_pause_rest_seconds'] == null
           ? 15
           : _parseIntSafe(json['rest_pause_rest_seconds']),
+      primaryMuscleId: (json['primary_muscle_id'] as num?)?.toInt(),
+      primaryMuscle: json['primary_muscle'] == null
+          ? null
+          : MuscleGroup.fromJson(
+              json['primary_muscle'] as Map<String, dynamic>),
+      secondaryMuscles: (json['secondary_muscles'] as List<dynamic>?)
+          ?.map((e) => SecondaryMuscle.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      allMuscleNames: (json['all_muscle_names'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
@@ -81,6 +92,10 @@ Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
       'is_rest_pause': instance.isRestPauseInt,
       'rest_pause_reps': instance.restPauseReps,
       'rest_pause_rest_seconds': instance.restPauseRestSeconds,
+      'primary_muscle_id': instance.primaryMuscleId,
+      'primary_muscle': instance.primaryMuscle,
+      'secondary_muscles': instance.secondaryMuscles,
+      'all_muscle_names': instance.allMuscleNames,
     };
 
 CreateWorkoutPlanRequest _$CreateWorkoutPlanRequestFromJson(

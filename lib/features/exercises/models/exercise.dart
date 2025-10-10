@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../../../core/config/app_config.dart';
+import 'muscle_group.dart';
+import 'secondary_muscle.dart';
 
 part 'exercise.g.dart';
 
@@ -22,6 +24,18 @@ class Exercise {
   final int? equipmentTypeId;
   final String? status;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  // Campi opzionali per backward compatibility con API vecchie
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'primary_muscle')
+  final MuscleGroup? primaryMuscle;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscle>? secondaryMuscles;
+  @JsonKey(name: 'all_muscle_names')
+  final List<String>? allMuscleNames;
+  // ==================================================
+
   const Exercise({
     required this.id,
     required this.nome,
@@ -33,6 +47,11 @@ class Exercise {
     this.isIsometric = 0,
     this.equipmentTypeId,
     this.status,
+    // Nuovi campi muscoli (opzionali)
+    this.primaryMuscleId,
+    this.primaryMuscle,
+    this.secondaryMuscles,
+    this.allMuscleNames,
   });
 
   /// Proprietà calcolata per facilitare l'uso
@@ -49,6 +68,28 @@ class Exercise {
       return '$baseUrl/serve_image.php?filename=$immagineNome';
     }
     return immagineUrl.isNotEmpty ? immagineUrl : null;
+  }
+
+  /// Verifica se l'esercizio ha informazioni sui muscoli dal nuovo sistema
+  bool get hasMuscleInfo => primaryMuscle != null || (allMuscleNames != null && allMuscleNames!.isNotEmpty);
+
+  /// Ottiene il nome del muscolo primario (usa il nuovo sistema se disponibile, altrimenti fallback a gruppo_muscolare)
+  String get primaryMuscleName => primaryMuscle?.name ?? gruppoMuscolare;
+
+  /// Ottiene tutti i nomi dei muscoli coinvolti (primario + secondari)
+  List<String> get allMuscles {
+    if (allMuscleNames != null && allMuscleNames!.isNotEmpty) {
+      return allMuscleNames!;
+    }
+    // Fallback: costruisci lista dai campi disponibili
+    final muscles = <String>[];
+    if (primaryMuscle != null) {
+      muscles.add(primaryMuscle!.name);
+    }
+    if (secondaryMuscles != null) {
+      muscles.addAll(secondaryMuscles!.map((m) => m.name));
+    }
+    return muscles.isNotEmpty ? muscles : [gruppoMuscolare];
   }
 
   factory Exercise.fromJson(Map<String, dynamic> json) => _$ExerciseFromJson(json);
@@ -74,6 +115,17 @@ class UserExercise {
   @JsonKey(name: 'immagine_nome')
   final String? immagineNome;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'primary_muscle')
+  final MuscleGroup? primaryMuscle;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscle>? secondaryMuscles;
+  @JsonKey(name: 'all_muscle_names')
+  final List<String>? allMuscleNames;
+  // ==================================================
+
   const UserExercise({
     required this.id,
     required this.nome,
@@ -85,6 +137,11 @@ class UserExercise {
     this.status = 'pending_review',
     this.immagineUrl,
     this.immagineNome,
+    // Nuovi campi muscoli (opzionali)
+    this.primaryMuscleId,
+    this.primaryMuscle,
+    this.secondaryMuscles,
+    this.allMuscleNames,
   });
 
   /// Proprietà calcolata per convertire Int a Boolean
@@ -101,6 +158,28 @@ class UserExercise {
       return '$baseUrl/serve_image.php?filename=$immagineNome';
     }
     return immagineUrl?.isNotEmpty == true ? immagineUrl : null;
+  }
+
+  /// Verifica se l'esercizio ha informazioni sui muscoli dal nuovo sistema
+  bool get hasMuscleInfo => primaryMuscle != null || (allMuscleNames != null && allMuscleNames!.isNotEmpty);
+
+  /// Ottiene il nome del muscolo primario (usa il nuovo sistema se disponibile, altrimenti fallback a gruppo_muscolare)
+  String get primaryMuscleName => primaryMuscle?.name ?? gruppoMuscolare;
+
+  /// Ottiene tutti i nomi dei muscoli coinvolti (primario + secondari)
+  List<String> get allMuscles {
+    if (allMuscleNames != null && allMuscleNames!.isNotEmpty) {
+      return allMuscleNames!;
+    }
+    // Fallback: costruisci lista dai campi disponibili
+    final muscles = <String>[];
+    if (primaryMuscle != null) {
+      muscles.add(primaryMuscle!.name);
+    }
+    if (secondaryMuscles != null) {
+      muscles.addAll(secondaryMuscles!.map((m) => m.name));
+    }
+    return muscles.isNotEmpty ? muscles : [gruppoMuscolare];
   }
 
   factory UserExercise.fromJson(Map<String, dynamic> json) => _$UserExerciseFromJson(json);
@@ -121,6 +200,13 @@ class CreateUserExerciseRequest {
   final int createdByUserId;
   final String status;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscleRequest>? secondaryMuscles;
+  // ==================================================
+
   const CreateUserExerciseRequest({
     required this.nome,
     required this.gruppoMuscolare,
@@ -129,10 +215,21 @@ class CreateUserExerciseRequest {
     this.isIsometric = false,
     required this.createdByUserId,
     this.status = 'pending_review',
+    // Nuovi campi muscoli (opzionali)
+    this.primaryMuscleId,
+    this.secondaryMuscles,
   });
 
   factory CreateUserExerciseRequest.fromJson(Map<String, dynamic> json) => _$CreateUserExerciseRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$CreateUserExerciseRequestToJson(this);
+  
+  Map<String, dynamic> toJson() {
+    final json = _$CreateUserExerciseRequestToJson(this);
+    // Converti secondary_muscles in formato corretto per l'API
+    if (secondaryMuscles != null && secondaryMuscles!.isNotEmpty) {
+      json['secondary_muscles'] = secondaryMuscles!.map((m) => m.toJson()).toList();
+    }
+    return json;
+  }
 }
 
 /// Classe per la richiesta di aggiornamento di un esercizio esistente
@@ -149,6 +246,13 @@ class UpdateUserExerciseRequest {
   @JsonKey(name: 'user_id')
   final int userId;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscleRequest>? secondaryMuscles;
+  // ==================================================
+
   const UpdateUserExerciseRequest({
     required this.id,
     required this.nome,
@@ -157,10 +261,21 @@ class UpdateUserExerciseRequest {
     this.attrezzatura,
     this.isIsometric = false,
     required this.userId,
+    // Nuovi campi muscoli (opzionali)
+    this.primaryMuscleId,
+    this.secondaryMuscles,
   });
 
   factory UpdateUserExerciseRequest.fromJson(Map<String, dynamic> json) => _$UpdateUserExerciseRequestFromJson(json);
-  Map<String, dynamic> toJson() => _$UpdateUserExerciseRequestToJson(this);
+  
+  Map<String, dynamic> toJson() {
+    final json = _$UpdateUserExerciseRequestToJson(this);
+    // Converti secondary_muscles in formato corretto per l'API
+    if (secondaryMuscles != null && secondaryMuscles!.isNotEmpty) {
+      json['secondary_muscles'] = secondaryMuscles!.map((m) => m.toJson()).toList();
+    }
+    return json;
+  }
 }
 
 /// Risposta generica per le operazioni sugli esercizi

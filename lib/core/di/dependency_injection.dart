@@ -46,6 +46,7 @@ import '../../features/notifications/bloc/notification_bloc.dart';
 // Courses features
 import '../../features/courses/repository/courses_repository.dart';
 import '../../features/courses/bloc/courses_bloc.dart';
+import '../services/muscle_groups_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -80,6 +81,11 @@ class DependencyInjection {
     ));
 
     getIt.registerLazySingleton<ApiClient>(() => ApiClient(getIt<Dio>()));
+    
+    // 💪 Muscle Groups Service
+    getIt.registerLazySingleton<MuscleGroupsService>(() => MuscleGroupsService(
+      getIt<Dio>(),
+    ));
 
     // ============================================================================
     // ROUTE OBSERVER

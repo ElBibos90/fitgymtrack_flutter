@@ -2,6 +2,8 @@
 // 🚀 FASE 3: Aggiornamento request classes per comunicazione REST-PAUSE con backend
 import 'package:json_annotation/json_annotation.dart';
 import '../../../core/config/app_config.dart';
+import '../../exercises/models/muscle_group.dart';
+import '../../exercises/models/secondary_muscle.dart';
 
 part 'workout_plan_models.g.dart';
 
@@ -143,6 +145,17 @@ class WorkoutExercise {
   @JsonKey(name: 'rest_pause_rest_seconds', fromJson: _parseIntSafe)
   final int restPauseRestSeconds;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'primary_muscle')
+  final MuscleGroup? primaryMuscle;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscle>? secondaryMuscles;
+  @JsonKey(name: 'all_muscle_names')
+  final List<String>? allMuscleNames;
+  // ==================================================
+
   const WorkoutExercise({
     required this.id,
     this.schedaEsercizioId,
@@ -164,6 +177,12 @@ class WorkoutExercise {
     this.isRestPauseInt = 0,           // ✅ 0 = disabilitato (sicuro)
     this.restPauseReps,                // ✅ null = nessuna sequenza (sicuro)
     this.restPauseRestSeconds = 15,    // ✅ 15s default sensato
+    // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+    this.primaryMuscleId,
+    this.primaryMuscle,
+    this.secondaryMuscles,
+    this.allMuscleNames,
+    // ==================================================
   });
 
   /// Proprietà calcolate per mantenere la compatibilità con il resto del codice
@@ -172,6 +191,24 @@ class WorkoutExercise {
 
   // 🚀 FASE 1: Nuova proprietà calcolata per REST-PAUSE (backward compatible)
   bool get isRestPause => isRestPauseInt > 0;
+
+  // ========== GETTER SISTEMA MUSCOLI ==========
+  bool get hasMuscleInfo => primaryMuscle != null || (allMuscleNames != null && allMuscleNames!.isNotEmpty);
+  String get primaryMuscleName => primaryMuscle?.name ?? gruppoMuscolare ?? '';
+  List<String> get allMuscles {
+    if (allMuscleNames != null && allMuscleNames!.isNotEmpty) {
+      return allMuscleNames!;
+    }
+    final muscles = <String>[];
+    if (primaryMuscle != null) {
+      muscles.add(primaryMuscle!.name);
+    }
+    if (secondaryMuscles != null) {
+      muscles.addAll(secondaryMuscles!.map((m) => m.name));
+    }
+    return muscles.isNotEmpty ? muscles : [gruppoMuscolare ?? ''];
+  }
+  // ===========================================
 
   /// URL completo per l'immagine GIF
   String? get imageUrl {

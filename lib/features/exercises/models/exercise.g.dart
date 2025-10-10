@@ -17,6 +17,17 @@ Exercise _$ExerciseFromJson(Map<String, dynamic> json) => Exercise(
       isIsometric: (json['is_isometric'] as num?)?.toInt() ?? 0,
       equipmentTypeId: (json['equipment_type_id'] as num?)?.toInt(),
       status: json['status'] as String?,
+      primaryMuscleId: (json['primary_muscle_id'] as num?)?.toInt(),
+      primaryMuscle: json['primary_muscle'] == null
+          ? null
+          : MuscleGroup.fromJson(
+              json['primary_muscle'] as Map<String, dynamic>),
+      secondaryMuscles: (json['secondary_muscles'] as List<dynamic>?)
+          ?.map((e) => SecondaryMuscle.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      allMuscleNames: (json['all_muscle_names'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$ExerciseToJson(Exercise instance) => <String, dynamic>{
@@ -30,6 +41,10 @@ Map<String, dynamic> _$ExerciseToJson(Exercise instance) => <String, dynamic>{
       'is_isometric': instance.isIsometric,
       'equipment_type_id': instance.equipmentTypeId,
       'status': instance.status,
+      'primary_muscle_id': instance.primaryMuscleId,
+      'primary_muscle': instance.primaryMuscle,
+      'secondary_muscles': instance.secondaryMuscles,
+      'all_muscle_names': instance.allMuscleNames,
     };
 
 UserExercise _$UserExerciseFromJson(Map<String, dynamic> json) => UserExercise(
@@ -43,6 +58,17 @@ UserExercise _$UserExerciseFromJson(Map<String, dynamic> json) => UserExercise(
       status: json['status'] as String? ?? 'pending_review',
       immagineUrl: json['immagine_url'] as String?,
       immagineNome: json['immagine_nome'] as String?,
+      primaryMuscleId: (json['primary_muscle_id'] as num?)?.toInt(),
+      primaryMuscle: json['primary_muscle'] == null
+          ? null
+          : MuscleGroup.fromJson(
+              json['primary_muscle'] as Map<String, dynamic>),
+      secondaryMuscles: (json['secondary_muscles'] as List<dynamic>?)
+          ?.map((e) => SecondaryMuscle.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      allMuscleNames: (json['all_muscle_names'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$UserExerciseToJson(UserExercise instance) =>
@@ -57,6 +83,10 @@ Map<String, dynamic> _$UserExerciseToJson(UserExercise instance) =>
       'status': instance.status,
       'immagine_url': instance.immagineUrl,
       'immagine_nome': instance.immagineNome,
+      'primary_muscle_id': instance.primaryMuscleId,
+      'primary_muscle': instance.primaryMuscle,
+      'secondary_muscles': instance.secondaryMuscles,
+      'all_muscle_names': instance.allMuscleNames,
     };
 
 CreateUserExerciseRequest _$CreateUserExerciseRequestFromJson(
@@ -69,6 +99,11 @@ CreateUserExerciseRequest _$CreateUserExerciseRequestFromJson(
       isIsometric: json['is_isometric'] as bool? ?? false,
       createdByUserId: (json['created_by_user_id'] as num).toInt(),
       status: json['status'] as String? ?? 'pending_review',
+      primaryMuscleId: (json['primary_muscle_id'] as num?)?.toInt(),
+      secondaryMuscles: (json['secondary_muscles'] as List<dynamic>?)
+          ?.map(
+              (e) => SecondaryMuscleRequest.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$CreateUserExerciseRequestToJson(
@@ -81,6 +116,8 @@ Map<String, dynamic> _$CreateUserExerciseRequestToJson(
       'is_isometric': instance.isIsometric,
       'created_by_user_id': instance.createdByUserId,
       'status': instance.status,
+      'primary_muscle_id': instance.primaryMuscleId,
+      'secondary_muscles': instance.secondaryMuscles,
     };
 
 UpdateUserExerciseRequest _$UpdateUserExerciseRequestFromJson(
@@ -93,6 +130,11 @@ UpdateUserExerciseRequest _$UpdateUserExerciseRequestFromJson(
       attrezzatura: json['attrezzatura'] as String?,
       isIsometric: json['is_isometric'] as bool? ?? false,
       userId: (json['user_id'] as num).toInt(),
+      primaryMuscleId: (json['primary_muscle_id'] as num?)?.toInt(),
+      secondaryMuscles: (json['secondary_muscles'] as List<dynamic>?)
+          ?.map(
+              (e) => SecondaryMuscleRequest.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$UpdateUserExerciseRequestToJson(
@@ -105,6 +147,8 @@ Map<String, dynamic> _$UpdateUserExerciseRequestToJson(
       'attrezzatura': instance.attrezzatura,
       'is_isometric': instance.isIsometric,
       'user_id': instance.userId,
+      'primary_muscle_id': instance.primaryMuscleId,
+      'secondary_muscles': instance.secondaryMuscles,
     };
 
 UserExerciseResponse _$UserExerciseResponseFromJson(

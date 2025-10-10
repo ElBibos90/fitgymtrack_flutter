@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
+import '../../../../shared/widgets/muscle_badge.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_models.dart';
 
@@ -204,6 +205,13 @@ class _WorkoutPlanDetailsScreenState extends State<WorkoutPlanDetailsScreen> {
               ),
             ),
           ],
+          // ========== NUOVI BADGE MUSCOLI ==========
+          SizedBox(height: AppConfig.spacingS.h),
+          MuscleBadge(
+            primaryMuscle: exercise.primaryMuscle,
+            secondaryMuscles: exercise.secondaryMuscles,
+          ),
+          // ===========================================
           SizedBox(height: AppConfig.spacingS.h),
           Row(
             children: [

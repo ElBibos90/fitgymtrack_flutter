@@ -365,21 +365,17 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
       ) async {
     emit(const WorkoutLoadingWithMessage(message: 'Caricamento esercizi disponibili...'));
 
-    //print('[CONSOLE] [workout_bloc]Loading available exercises for user: ${event.userId}');
-
     try {
       final result = await _workoutRepository.getAvailableExercises(event.userId);
 
       result.fold(
         onSuccess: (exercises) {
-          //print('[CONSOLE] [workout_bloc]Successfully loaded ${exercises.length} available exercises');
           emit(AvailableExercisesLoaded(
             availableExercises: exercises,
             userId: event.userId,
           ));
         },
         onFailure: (exception, message) {
-          //print('[CONSOLE] [workout_bloc]Error loading available exercises: $message');
           emit(WorkoutError(
             message: message ?? 'Errore nel caricamento degli esercizi disponibili',
             exception: exception,
@@ -387,7 +383,6 @@ class WorkoutBloc extends Bloc<WorkoutEvent, WorkoutState> {
         },
       );
     } catch (e) {
-      //print('[CONSOLE] [workout_bloc]Exception in _onGetAvailableExercises: $e');
       emit(WorkoutError(
         message: 'Errore nell\'elaborazione degli esercizi disponibili: ${e.toString()}',
         exception: e is Exception ? e : Exception(e.toString()),

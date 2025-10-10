@@ -21,6 +21,13 @@ UserStats _$UserStatsFromJson(Map<String, dynamic> json) => UserStats(
       totalWeightLiftedKg: (json['total_weight_lifted_kg'] as num).toDouble(),
       firstWorkoutDate: json['first_workout_date'] as String?,
       lastWorkoutDate: json['last_workout_date'] as String?,
+      mostTrainedMuscle: json['most_trained_muscle'] == null
+          ? null
+          : MostTrainedMuscle.fromJson(
+              json['most_trained_muscle'] as Map<String, dynamic>),
+      muscleDistribution: (json['muscle_distribution'] as List<dynamic>?)
+          ?.map((e) => MuscleDistribution.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$UserStatsToJson(UserStats instance) => <String, dynamic>{
@@ -37,6 +44,8 @@ Map<String, dynamic> _$UserStatsToJson(UserStats instance) => <String, dynamic>{
       'total_weight_lifted_kg': instance.totalWeightLiftedKg,
       'first_workout_date': instance.firstWorkoutDate,
       'last_workout_date': instance.lastWorkoutDate,
+      'most_trained_muscle': instance.mostTrainedMuscle,
+      'muscle_distribution': instance.muscleDistribution,
     };
 
 PeriodStats _$PeriodStatsFromJson(Map<String, dynamic> json) => PeriodStats(
@@ -50,6 +59,11 @@ PeriodStats _$PeriodStatsFromJson(Map<String, dynamic> json) => PeriodStats(
       averageDuration: (json['average_duration'] as num).toDouble(),
       mostActiveDay: json['most_active_day'] as String?,
       workoutFrequency: (json['workout_frequency'] as num).toDouble(),
+      muscleDistributionPeriod:
+          (json['muscle_distribution_period'] as List<dynamic>?)
+              ?.map((e) =>
+                  MuscleDistributionPeriod.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
 
 Map<String, dynamic> _$PeriodStatsToJson(PeriodStats instance) =>
@@ -64,6 +78,7 @@ Map<String, dynamic> _$PeriodStatsToJson(PeriodStats instance) =>
       'average_duration': instance.averageDuration,
       'most_active_day': instance.mostActiveDay,
       'workout_frequency': instance.workoutFrequency,
+      'muscle_distribution_period': instance.muscleDistributionPeriod,
     };
 
 WorkoutHistory _$WorkoutHistoryFromJson(Map<String, dynamic> json) =>
@@ -156,4 +171,56 @@ Map<String, dynamic> _$StatsResponseToJson(StatsResponse instance) =>
       'success': instance.success,
       'message': instance.message,
       'stats': instance.stats,
+    };
+
+MostTrainedMuscle _$MostTrainedMuscleFromJson(Map<String, dynamic> json) =>
+    MostTrainedMuscle(
+      name: json['name'] as String,
+      category: json['category'] as String,
+      count: (json['count'] as num).toInt(),
+    );
+
+Map<String, dynamic> _$MostTrainedMuscleToJson(MostTrainedMuscle instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'category': instance.category,
+      'count': instance.count,
+    };
+
+MuscleDistribution _$MuscleDistributionFromJson(Map<String, dynamic> json) =>
+    MuscleDistribution(
+      muscleName: json['muscle_name'] as String,
+      muscleCategory: json['muscle_category'] as String,
+      seriesCount: (json['series_count'] as num).toInt(),
+      exercisesCount: (json['exercises_count'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$MuscleDistributionToJson(MuscleDistribution instance) =>
+    <String, dynamic>{
+      'muscle_name': instance.muscleName,
+      'muscle_category': instance.muscleCategory,
+      'series_count': instance.seriesCount,
+      'exercises_count': instance.exercisesCount,
+    };
+
+MuscleDistributionPeriod _$MuscleDistributionPeriodFromJson(
+        Map<String, dynamic> json) =>
+    MuscleDistributionPeriod(
+      muscleName: json['muscle_name'] as String,
+      muscleCategory: json['muscle_category'] as String,
+      sessionsCount: (json['sessions_count'] as num).toInt(),
+      seriesCount: (json['series_count'] as num).toInt(),
+      totalVolume: (json['total_volume'] as num?)?.toDouble(),
+      exercisesCount: (json['exercises_count'] as num?)?.toInt(),
+    );
+
+Map<String, dynamic> _$MuscleDistributionPeriodToJson(
+        MuscleDistributionPeriod instance) =>
+    <String, dynamic>{
+      'muscle_name': instance.muscleName,
+      'muscle_category': instance.muscleCategory,
+      'sessions_count': instance.sessionsCount,
+      'series_count': instance.seriesCount,
+      'total_volume': instance.totalVolume,
+      'exercises_count': instance.exercisesCount,
     };

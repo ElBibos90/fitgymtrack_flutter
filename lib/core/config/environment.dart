@@ -1,14 +1,23 @@
 // lib/core/config/environment.dart
+import 'package:flutter/foundation.dart'; // Per kDebugMode
+
 class Environment {
   // ============================================================================
-  // API CONFIGURATION
+  // API CONFIGURATION - AUTO-SWITCH DEBUG/RELEASE
   // ============================================================================
 
-  /// Base URL per API production (ATTIVA)
-  static const String baseUrl = 'https://fitgymtrack.com/api/';
-
-  /// Base URL per sviluppo locale (DISATTIVATA - per evitare errori)
-  //static const String baseUrl = 'http://192.168.1.113/api/';
+  /// Base URL per API - CAMBIA AUTOMATICAMENTE:
+  /// - Debug/Simulatore → http://192.168.1.113/api/ (DEV)
+  /// - Release/Produzione → https://fitgymtrack.com/api/ (PROD)
+  static String get baseUrl {
+    if (kDebugMode) {
+      // 🟡 Modalità DEBUG - Usa server locale DEV
+      return 'http://192.168.1.113/api/';
+    } else {
+      // 🟢 Modalità RELEASE - Usa server produzione
+      return 'https://fitgymtrack.com/api/';
+    }
+  }
 
   // ============================================================================
   // APP CONFIGURATION
@@ -17,8 +26,8 @@ class Environment {
   static const String appName = 'FitGymTrack Flutter';
   static const String version = '1.0.0';
 
-  // 🔧 FIX: Debug false per produzione
-  static const bool isDebug = false;
+  // 🔧 Debug mode automatico da Flutter
+  static bool get isDebug => kDebugMode;
 
   // ============================================================================
   // TIMEOUT CONFIGURATION
@@ -109,31 +118,35 @@ class Environment {
 
   /// Mostra informazioni di configurazione per debug
   static void printConfiguration() {
-    //print('[CONSOLE] [environment]🔧 [ENV] Environment Configuration:');
-    //print('[CONSOLE] [environment]🔧 [ENV] Base URL: $baseUrl');
-    //print('[CONSOLE] [environment]🔧 [ENV] Is Debug: $isDebug');
-    //print('[CONSOLE] [environment]🔧 [ENV] Is Production: $isProduction');
-    //print('[CONSOLE] [environment]🔧 [ENV] App Version: $fullVersion');
+    print('🔧 [ENV] Environment Configuration:');
+    print('🔧 [ENV] Mode: ${kDebugMode ? "🟡 DEBUG" : "🟢 RELEASE"}');
+    print('🔧 [ENV] Base URL: $baseUrl');
+    print('🔧 [ENV] Is Debug: $isDebug');
+    print('🔧 [ENV] Is Production: $isProduction');
+    print('🔧 [ENV] App Version: $fullVersion');
   }
 
   /// Valida la configurazione dell'ambiente
   static bool validateConfiguration() {
-    if (baseUrl.isEmpty) {
-      //print('[CONSOLE] [environment]❌ [ENV] ERROR: Base URL is empty');
+    final currentUrl = baseUrl;
+    
+    if (currentUrl.isEmpty) {
+      print('❌ [ENV] ERROR: Base URL is empty');
       return false;
     }
 
-    if (!baseUrl.startsWith('http')) {
-      //print('[CONSOLE] [environment]❌ [ENV] ERROR: Base URL must start with http/https');
+    if (!currentUrl.startsWith('http')) {
+      print('❌ [ENV] ERROR: Base URL must start with http/https');
       return false;
     }
 
-    if (isProduction && baseUrl.contains('localhost') || baseUrl.contains('192.168')) {
-      //print('[CONSOLE] [environment]⚠️ [ENV] WARNING: Production mode but using local URL');
+    // In debug mode è OK usare URL locale
+    if (isProduction && (currentUrl.contains('localhost') || currentUrl.contains('192.168'))) {
+      print('⚠️ [ENV] WARNING: Production mode but using local URL');
       return false;
     }
 
-    //print('[CONSOLE] [environment]✅ [ENV] Configuration is valid');
+    print('✅ [ENV] Configuration is valid');
     return true;
   }
 }

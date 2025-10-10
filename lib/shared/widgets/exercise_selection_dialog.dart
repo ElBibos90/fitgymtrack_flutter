@@ -5,9 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
 import '../../features/exercises/models/exercises_response.dart';
+import '../../features/exercises/models/muscle_group.dart';
 import '../../features/exercises/services/image_service.dart';
+import '../../core/services/muscle_groups_service.dart';
+import 'package:get_it/get_it.dart';
 import 'create_exercise_dialog.dart';
 import 'exercise_editor.dart';
+import 'muscle_badge.dart';
 
 class ExerciseSelectionDialog extends StatefulWidget {
   final List<ExerciseItem> exercises;
@@ -38,19 +42,42 @@ class ExerciseSelectionDialog extends StatefulWidget {
 class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _selectedMuscleGroup;
 
   // ✨ NUOVO STATO per il dialog di creazione
   bool _showCreateExerciseDialog = false;
   bool _showEditor = false;
 
   List<ExerciseItem> _exercises = [];
+  
+  // ========== NUOVO SISTEMA MUSCOLI ==========
+  final MuscleGroupsService _muscleService = GetIt.I<MuscleGroupsService>();
+  List<MuscleGroup> _availableMuscles = [];
+  bool _loadingMuscles = false;
+  int? _selectedMuscleId;
+  // ===========================================
 
   @override
   void initState() {
     super.initState();
     _exercises = List.from(widget.exercises);
+    _loadMuscleGroups();
   }
+  
+  // ========== CARICA MUSCOLI DALL'API ==========
+  Future<void> _loadMuscleGroups() async {
+    setState(() => _loadingMuscles = true);
+    try {
+      final muscles = await _muscleService.getAllMuscleGroups();
+      setState(() {
+        _availableMuscles = muscles;
+        _loadingMuscles = false;
+      });
+    } catch (e) {
+      setState(() => _loadingMuscles = false);
+      //print('[CONSOLE] Error loading muscle groups: $e');
+    }
+  }
+  // ===========================================
 
   @override
   void dispose() {
@@ -246,41 +273,52 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
 
           SizedBox(height: 12.h),
 
-          // Muscle group filter
-          DropdownButtonFormField<String>(
-            value: _selectedMuscleGroup,
+          // ========== NUOVO FILTRO MUSCOLI SPECIFICI ==========
+          DropdownButtonFormField<int>(
+            value: _selectedMuscleId,
             style: TextStyle(
               color: colorScheme.onSurface,
             ),
             decoration: InputDecoration(
-              labelText: 'Filtra per gruppo muscolare',
+              labelText: 'Filtra per muscolo',
               labelStyle: TextStyle(
                 color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConfig.radiusM),
               ),
+              suffixIcon: _loadingMuscles 
+                ? Padding(
+                    padding: EdgeInsets.all(12.w),
+                    child: SizedBox(
+                      width: 20.w,
+                      height: 20.w,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : null,
             ),
             items: [
-              DropdownMenuItem<String>(
+              DropdownMenuItem<int>(
                 value: null,
                 child: Text(
-                  'Tutti i gruppi muscolari',
+                  'Tutti i muscoli',
                   style: TextStyle(color: colorScheme.onSurface),
                 ),
               ),
-              ..._availableMuscleGroups.map((group) => DropdownMenuItem<String>(
-                value: group,
+              ..._availableMuscles.map((muscle) => DropdownMenuItem<int>(
+                value: muscle.id,
                 child: Text(
-                  group,
+                  '${muscle.name} (${muscle.parentCategory})',
                   style: TextStyle(color: colorScheme.onSurface),
                 ),
               )),
             ],
             onChanged: (value) {
-              setState(() => _selectedMuscleGroup = value);
+              setState(() => _selectedMuscleId = value);
             },
           ),
+          // =====================================================
 
           // ✨ BOTTONE ALTERNATIVO PER SCHERMI PICCOLI
           if (widget.currentUserId != null) ...[
@@ -458,17 +496,13 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (exercise.gruppoMuscolare != null) ...[
-              SizedBox(height: 4.h),
-              Text(
-                exercise.gruppoMuscolare!,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
+            // ========== NUOVI BADGE MUSCOLI ==========
+            SizedBox(height: 4.h),
+            MuscleBadge(
+              primaryMuscle: exercise.primaryMuscle,
+              secondaryMuscles: exercise.secondaryMuscles,
+            ),
+            // ===========================================
             if (exercise.attrezzatura != null) ...[
               SizedBox(height: 2.h),
               Row(
@@ -576,23 +610,23 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
           exercise.nome.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
     }
 
-    // Filtro per gruppo muscolare
-    if (_selectedMuscleGroup != null && _selectedMuscleGroup!.isNotEmpty) {
-      filtered = filtered.where((exercise) =>
-      exercise.gruppoMuscolare?.toLowerCase() == _selectedMuscleGroup!.toLowerCase()).toList();
+    // ========== NUOVO FILTRO PER MUSCOLO SPECIFICO ==========
+    if (_selectedMuscleId != null) {
+      filtered = filtered.where((exercise) {
+        // Filtra se il muscolo primario corrisponde
+        if (exercise.primaryMuscleId == _selectedMuscleId) {
+          return true;
+        }
+        // Filtra se uno dei muscoli secondari corrisponde
+        if (exercise.secondaryMuscles != null) {
+          return exercise.secondaryMuscles!.any((m) => m.id == _selectedMuscleId);
+        }
+        return false;
+      }).toList();
     }
+    // ===========================================================
 
     return filtered;
-  }
-
-  List<String> get _availableMuscleGroups {
-    final groups = _exercises
-        .where((exercise) => exercise.gruppoMuscolare != null)
-        .map((exercise) => exercise.gruppoMuscolare!)
-        .toSet()
-        .toList();
-    groups.sort();
-    return groups;
   }
 
   void _addNewExercise(Map<String, dynamic> data) {

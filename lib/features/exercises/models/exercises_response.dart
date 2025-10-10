@@ -1,10 +1,11 @@
 // lib/features/exercises/models/exercises_response.dart
 import 'package:json_annotation/json_annotation.dart';
 import '../../../core/config/app_config.dart';
+import 'muscle_group.dart';
+import 'secondary_muscle.dart';
 
 part 'exercises_response.g.dart';
 
-@JsonSerializable()
 class ExerciseItem {
   final int id;
   final String nome;
@@ -35,6 +36,17 @@ class ExerciseItem {
   @JsonKey(name: 'is_isometric')
   final bool isIsometric;
 
+  // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+  @JsonKey(name: 'primary_muscle_id')
+  final int? primaryMuscleId;
+  @JsonKey(name: 'primary_muscle')
+  final MuscleGroup? primaryMuscle;
+  @JsonKey(name: 'secondary_muscles')
+  final List<SecondaryMuscle>? secondaryMuscles;
+  @JsonKey(name: 'all_muscle_names')
+  final List<String>? allMuscleNames;
+  // ==================================================
+
   const ExerciseItem({
     required this.id,
     required this.nome,
@@ -54,9 +66,33 @@ class ExerciseItem {
     this.ripetizioniDefault = 10,
     this.pesoDefault = 0.0,
     this.isIsometric = false,
+    // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+    this.primaryMuscleId,
+    this.primaryMuscle,
+    this.secondaryMuscles,
+    this.allMuscleNames,
+    // ==================================================
   });
 
-  // ✅ FIX: Factory constructor personalizzato che gestisce i tipi misti
+  // ========== GETTER SISTEMA MUSCOLI ==========
+  bool get hasMuscleInfo => primaryMuscle != null || (allMuscleNames != null && allMuscleNames!.isNotEmpty);
+  String get primaryMuscleName => primaryMuscle?.name ?? gruppoMuscolare ?? '';
+  List<String> get allMuscles {
+    if (allMuscleNames != null && allMuscleNames!.isNotEmpty) {
+      return allMuscleNames!;
+    }
+    final muscles = <String>[];
+    if (primaryMuscle != null) {
+      muscles.add(primaryMuscle!.name);
+    }
+    if (secondaryMuscles != null) {
+      muscles.addAll(secondaryMuscles!.map((m) => m.name));
+    }
+    return muscles.isNotEmpty ? muscles : [gruppoMuscolare ?? ''];
+  }
+  // ===========================================
+
+  // ✅ Parsing manuale SICURO
   factory ExerciseItem.fromJson(Map<String, dynamic> json) {
     return ExerciseItem(
       id: _parseInt(json['id']) ?? 0,
@@ -77,6 +113,14 @@ class ExerciseItem {
       ripetizioniDefault: _parseInt(json['ripetizioni_default']) ?? 10,
       pesoDefault: _parseDouble(json['peso_default']) ?? 0.0,
       isIsometric: _parseBool(json['is_isometric']) ?? false,
+      primaryMuscleId: _parseInt(json['primary_muscle_id']),
+      primaryMuscle: json['primary_muscle'] != null ? MuscleGroup.fromJson(json['primary_muscle']) : null,
+      secondaryMuscles: json['secondary_muscles'] != null 
+          ? (json['secondary_muscles'] as List).map((m) => SecondaryMuscle.fromJson(m)).toList()
+          : null,
+      allMuscleNames: json['all_muscle_names'] != null 
+          ? (json['all_muscle_names'] as List).cast<String>()
+          : null,
     );
   }
 
@@ -124,7 +168,32 @@ class ExerciseItem {
     return immagine?.isNotEmpty == true ? immagine : null;
   }
 
-  Map<String, dynamic> toJson() => _$ExerciseItemToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nome': nome,
+      'gruppo_muscolare': gruppoMuscolare,
+      'attrezzatura': attrezzatura,
+      'descrizione': descrizione,
+      'immagine': immagine,
+      'immagine_nome': immagineNome,
+      'is_custom': isCustom,
+      'created_by': createdBy,
+      'data_creazione': dataCreazione,
+      'is_approved': isApproved,
+      'categoria': categoria,
+      'difficolta': difficolta,
+      'istruzioni': istruzioni,
+      'serie_default': serieDefault,
+      'ripetizioni_default': ripetizioniDefault,
+      'peso_default': pesoDefault,
+      'is_isometric': isIsometric,
+      'primary_muscle_id': primaryMuscleId,
+      'primary_muscle': primaryMuscle?.toJson(),
+      'secondary_muscles': secondaryMuscles?.map((m) => m.toJson()).toList(),
+      'all_muscle_names': allMuscleNames,
+    };
+  }
 }
 
 
@@ -173,26 +242,6 @@ class ExerciseCategory {
   Map<String, dynamic> toJson() => _$ExerciseCategoryToJson(this);
 }
 
-/// Gruppo muscolare
-@JsonSerializable()
-class MuscleGroup {
-  final int id;
-  final String nome;
-  final String? descrizione;
-  final String? immagine;
-
-  const MuscleGroup({
-    required this.id,
-    required this.nome,
-    this.descrizione,
-    this.immagine,
-  });
-
-  factory MuscleGroup.fromJson(Map<String, dynamic> json) =>
-      _$MuscleGroupFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MuscleGroupToJson(this);
-}
 
 /// Attrezzatura per esercizi
 @JsonSerializable()

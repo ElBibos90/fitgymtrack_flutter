@@ -6,7 +6,11 @@ import '../theme/app_colors.dart';
 import '../../core/config/app_config.dart';
 import '../../core/di/dependency_injection.dart';
 import '../../core/network/api_client.dart';
+import '../../core/services/muscle_groups_service.dart';
 import '../../features/exercises/models/exercises_response.dart';
+import '../../features/exercises/models/muscle_group.dart';
+import '../../features/exercises/models/secondary_muscle.dart';
+import 'package:get_it/get_it.dart';
 // RIMOSSA: import image_service e image_selection_dialog - non più necessari
 // import '../../features/exercises/services/image_service.dart';
 // import 'image_selection_dialog.dart';
@@ -35,32 +39,19 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
   final _descriptionController = TextEditingController();
   final _equipmentController = TextEditingController();
 
-  String? _selectedMuscleGroup;
+  // ========== NUOVO SISTEMA MUSCOLI ==========
+  final MuscleGroupsService _muscleService = GetIt.I<MuscleGroupsService>();
+  List<MuscleGroup> _availableMuscles = [];
+  bool _loadingMuscles = false;
+  int? _selectedPrimaryMuscleId;
+  List<SecondaryMuscle> _selectedSecondaryMuscles = [];
+  // ===========================================
+  
   bool _isIsometric = false;
   bool _isLoading = false;
   // RIMOSSA: gestione immagine - sarà gestita dall'admin
   // String? _selectedImageName;
   // bool _showImageSelectionDialog = false;
-
-  // Lista dei gruppi muscolari predefiniti
-  final List<String> _muscleGroups = [
-    'Petto',
-    'Schiena',
-    'Spalle',
-    'Bicipiti',
-    'Tricipiti',
-    'Avambracci',
-    'Addominali',
-    'Quadricipiti',
-    'Bicipiti femorali',
-    'Polpacci',
-    'Glutei',
-    'Cardio',
-    'Full Body',
-    'Core',
-    'Gambe',
-    'Braccia',
-  ];
 
   // Lista delle attrezzature predefinite
   final List<String> _equipmentTypes = [
@@ -78,6 +69,28 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
     'Panca',
     'Altro',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMuscleGroups();
+  }
+
+  // ========== CARICA MUSCOLI DALL'API ==========
+  Future<void> _loadMuscleGroups() async {
+    setState(() => _loadingMuscles = true);
+    try {
+      final muscles = await _muscleService.getAllMuscleGroups();
+      setState(() {
+        _availableMuscles = muscles;
+        _loadingMuscles = false;
+      });
+    } catch (e) {
+      setState(() => _loadingMuscles = false);
+      //print('[CONSOLE] Error loading muscle groups: $e');
+    }
+  }
+  // ===========================================
 
   @override
   void dispose() {
@@ -207,12 +220,12 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
 
             SizedBox(height: 16.h),
 
-            // Gruppo muscolare
-            DropdownButtonFormField<String>(
-              value: _selectedMuscleGroup,
+            // ========== NUOVO SISTEMA: MUSCOLO PRIMARIO ==========
+            DropdownButtonFormField<int>(
+              value: _selectedPrimaryMuscleId,
               style: TextStyle(color: colorScheme.onSurface),
               decoration: InputDecoration(
-                labelText: 'Gruppo Muscolare *',
+                labelText: 'Muscolo Primario *',
                 labelStyle: TextStyle(
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -223,24 +236,44 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                   borderRadius: BorderRadius.circular(AppConfig.radiusM),
                   borderSide: BorderSide(color: colorScheme.primary),
                 ),
+                suffixIcon: _loadingMuscles 
+                  ? Padding(
+                      padding: EdgeInsets.all(12.w),
+                      child: SizedBox(
+                        width: 20.w,
+                        height: 20.w,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : null,
               ),
-              items: _muscleGroups.map((group) => DropdownMenuItem<String>(
-                value: group,
-                child: Text(
-                  group,
-                  style: TextStyle(color: colorScheme.onSurface),
+              items: [
+                DropdownMenuItem<int>(
+                  value: null,
+                  child: Text(
+                    'Seleziona muscolo primario',
+                    style: TextStyle(color: colorScheme.onSurface),
+                  ),
                 ),
-              )).toList(),
+                ..._availableMuscles.map((muscle) => DropdownMenuItem<int>(
+                  value: muscle.id,
+                  child: Text(
+                    '${muscle.name} (${muscle.parentCategory})',
+                    style: TextStyle(color: colorScheme.onSurface),
+                  ),
+                )),
+              ],
               onChanged: (value) {
-                setState(() => _selectedMuscleGroup = value);
+                setState(() => _selectedPrimaryMuscleId = value);
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Seleziona un gruppo muscolare';
+                if (value == null) {
+                  return 'Seleziona un muscolo primario';
                 }
                 return null;
               },
             ),
+            // =====================================================
 
             SizedBox(height: 16.h),
 
@@ -274,6 +307,41 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
                 });
               },
             ),
+
+            SizedBox(height: 16.h),
+
+            // ========== NUOVO SISTEMA: MUSCOLI SECONDARI ==========
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(AppConfig.radiusM),
+              ),
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Muscoli Secondari (opzionale)',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    'Seleziona i muscoli che vengono attivati secondariamente durante l\'esercizio',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  _buildSecondaryMusclesSelector(),
+                ],
+              ),
+            ),
+            // =====================================================
 
             SizedBox(height: 16.h),
 
@@ -448,10 +516,17 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
     setState(() => _isLoading = true);
 
     try {
-      // ✅ Richiesta corretta basata sul PHP reale
+      // ✅ Richiesta corretta basata sul PHP reale con NUOVO SISTEMA MUSCOLI
       final requestData = {
         'nome': _nameController.text.trim(),
-        'gruppo_muscolare': _selectedMuscleGroup, // ✅ Required
+        'gruppo_muscolare': _selectedPrimaryMuscleId != null 
+            ? _availableMuscles.firstWhere((m) => m.id == _selectedPrimaryMuscleId).parentCategory
+            : null, // ✅ Fallback per retrocompatibilità
+        'primary_muscle_id': _selectedPrimaryMuscleId, // ✅ NUOVO: Muscolo primario
+        'secondary_muscles': _selectedSecondaryMuscles.map((muscle) => {
+          'muscle_id': muscle.id,
+          'activation_level': muscle.activationLevel,
+        }).toList(), // ✅ NUOVO: Muscoli secondari
         'created_by_user_id': widget.currentUserId, // ✅ FIX: Nome corretto del campo!
         'descrizione': _descriptionController.text.trim().isEmpty
             ? null
@@ -480,11 +555,20 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
           final exerciseId = response['exercise_id'] as int? ??
               DateTime.now().millisecondsSinceEpoch;
 
-          // Crea l'ExerciseItem dal risultato
+          // Crea l'ExerciseItem dal risultato con NUOVO SISTEMA MUSCOLI
+          final primaryMuscle = _selectedPrimaryMuscleId != null 
+              ? _availableMuscles.firstWhere((m) => m.id == _selectedPrimaryMuscleId)
+              : null;
+              
           final newExercise = ExerciseItem(
             id: exerciseId,
             nome: _nameController.text.trim(),
-            gruppoMuscolare: _selectedMuscleGroup,
+            gruppoMuscolare: primaryMuscle?.parentCategory, // ✅ Fallback per retrocompatibilità
+            // ========== NUOVI CAMPI SISTEMA MUSCOLI ==========
+            primaryMuscleId: _selectedPrimaryMuscleId,
+            primaryMuscle: primaryMuscle,
+            secondaryMuscles: _selectedSecondaryMuscles,
+            // ==================================================
             attrezzatura: _equipmentController.text.trim().isEmpty
                 ? null
                 : _equipmentController.text.trim(),
@@ -542,4 +626,197 @@ class _CreateExerciseDialogState extends State<CreateExerciseDialog> {
       }
     }
   }
+
+  // ========== SELEZIONATORE MUSCOLI SECONDARI ==========
+  Widget _buildSecondaryMusclesSelector() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Column(
+      children: [
+        // Lista dei muscoli secondari selezionati
+        if (_selectedSecondaryMuscles.isNotEmpty) ...[
+          Wrap(
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: _selectedSecondaryMuscles.map((muscle) {
+              return Chip(
+                label: Text('${muscle.name} (${muscle.activationLevel})'),
+                onDeleted: () {
+                  setState(() {
+                    _selectedSecondaryMuscles.removeWhere((m) => m.id == muscle.id);
+                  });
+                },
+                backgroundColor: colorScheme.primaryContainer,
+                labelStyle: TextStyle(color: colorScheme.onPrimaryContainer),
+                deleteIconColor: colorScheme.onPrimaryContainer,
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        
+        // Bottone per aggiungere muscoli secondari
+        OutlinedButton.icon(
+          onPressed: _showSecondaryMuscleSelector,
+          icon: Icon(Icons.add, size: 18.w),
+          label: Text('Aggiungi Muscolo Secondario'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: colorScheme.primary,
+            side: BorderSide(color: colorScheme.primary),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSecondaryMuscleSelector() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // ✅ LOGICA MIGLIORATA: Prima categoria del primario, poi tutti gli altri
+    List<MuscleGroup> availableMuscles = _availableMuscles.where((muscle) => 
+      muscle.id != _selectedPrimaryMuscleId && 
+      !_selectedSecondaryMuscles.any((selected) => selected.id == muscle.id)
+    ).toList();
+    
+    // Se c'è un muscolo primario selezionato, raggruppa per categoria
+    if (_selectedPrimaryMuscleId != null) {
+      final primaryMuscle = _availableMuscles.firstWhere((m) => m.id == _selectedPrimaryMuscleId);
+      final primaryCategory = primaryMuscle.parentCategory;
+      
+      // Ordina: prima quelli della stessa categoria, poi gli altri
+      availableMuscles.sort((a, b) {
+        final aIsSameCategory = a.parentCategory == primaryCategory;
+        final bIsSameCategory = b.parentCategory == primaryCategory;
+        
+        if (aIsSameCategory && !bIsSameCategory) return -1; // a prima
+        if (!aIsSameCategory && bIsSameCategory) return 1;  // b prima
+        return a.name.compareTo(b.name); // stesso livello, ordina per nome
+      });
+    } else {
+      // Nessun primario selezionato, ordina per nome
+      availableMuscles.sort((a, b) => a.name.compareTo(b.name));
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Seleziona Muscolo Secondario'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400.h,
+          child: ListView.builder(
+            itemCount: availableMuscles.length,
+            itemBuilder: (context, index) {
+              final muscle = availableMuscles[index];
+              final isSameCategory = _selectedPrimaryMuscleId != null && 
+                  muscle.parentCategory == _availableMuscles
+                      .firstWhere((m) => m.id == _selectedPrimaryMuscleId)
+                      .parentCategory;
+              
+              return Column(
+                children: [
+                  // Separatore per categoria (solo se è diversa dalla precedente)
+                  if (index > 0 && 
+                      availableMuscles[index - 1].parentCategory != muscle.parentCategory)
+                    Divider(height: 1.h),
+                  
+                  ListTile(
+                    leading: isSameCategory 
+                        ? Icon(Icons.priority_high, color: colorScheme.primary, size: 16.w)
+                        : null,
+                    title: Text(
+                      muscle.name,
+                      style: TextStyle(
+                        fontWeight: isSameCategory ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${muscle.parentCategory}${isSameCategory ? ' • Stessa categoria del primario' : ''}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: isSameCategory 
+                            ? colorScheme.primary 
+                            : colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showActivationLevelDialog(muscle);
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annulla'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActivationLevelDialog(MuscleGroup muscle) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Livello di Attivazione'),
+        content: Text('Seleziona il livello di attivazione per ${muscle.name}:'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annulla'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _selectedSecondaryMuscles.add(SecondaryMuscle(
+                  id: muscle.id,
+                  name: muscle.name,
+                  activationLevel: 'low',
+                  parentCategory: muscle.parentCategory,
+                ));
+              });
+            },
+            child: Text('Bassa'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _selectedSecondaryMuscles.add(SecondaryMuscle(
+                  id: muscle.id,
+                  name: muscle.name,
+                  activationLevel: 'medium',
+                  parentCategory: muscle.parentCategory,
+                ));
+              });
+            },
+            child: Text('Media'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _selectedSecondaryMuscles.add(SecondaryMuscle(
+                  id: muscle.id,
+                  name: muscle.name,
+                  activationLevel: 'high',
+                  parentCategory: muscle.parentCategory,
+                ));
+              });
+            },
+            child: Text('Alta'),
+          ),
+        ],
+      ),
+    );
+  }
+  // =====================================================
 }
