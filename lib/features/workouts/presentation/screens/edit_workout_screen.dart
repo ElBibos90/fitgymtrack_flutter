@@ -42,6 +42,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   bool _isLoading = true;
   bool _hasChanges = false;
+  bool _isWaitingForRefresh = false; // ✅ Track se stiamo aspettando il refresh dopo update
 
   WorkoutPlan? _originalWorkoutPlan;
   List<WorkoutExercise> _exercises = [];
@@ -66,8 +67,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   @override
   void dispose() {
-    // Reset bloc state se disponibile
-    _workoutBloc.resetState();
+    // ✅ FIX iOS: NON resettare il bloc nel dispose - è condiviso e potrebbe essere in uso
+    // Il reset avviene solo quando necessario (es. onCancel)
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -217,11 +218,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       rimuovi: exercisesToRemove,
     );
 
+    // ✅ FIX iOS: Non navigare subito, lascia che il BlocListener gestisca la navigazione
+    //    dopo aver ricevuto lo stato WorkoutPlanUpdated
     _workoutBloc.updateWorkout(request);
-    _workoutBloc.resetState();
-    if (mounted) {
-      context.go('/dashboard?tab=1');
-    }
   }
 
   void _updateExercise(int index, WorkoutExercise updatedExercise) {
@@ -428,15 +427,24 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                     state.workoutPlan.id == widget.workoutId) {
                   _resetState(state.workoutPlan, state.exercises);
                 } else if (state is WorkoutPlanUpdated) {
+                  // ✅ FIX iOS: Mostra messaggio ma aspetta il refresh delle schede prima di navigare
                   CustomSnackbar.show(
                     context,
                     message: 'Scheda aggiornata con successo!',
                     isSuccess: true,
                   );
+                  setState(() {
+                    _isWaitingForRefresh = true;
+                  });
+                } else if (state is WorkoutPlansLoaded && _isWaitingForRefresh) {
+                  // ✅ FIX iOS: Naviga solo DOPO che le schede sono state ricaricate
                   if (mounted) {
                     context.go('/dashboard?tab=1');
                   }
                 } else if (state is WorkoutError) {
+                  setState(() {
+                    _isWaitingForRefresh = false;
+                  });
                   CustomSnackbar.show(
                     context,
                     message: state.message,
