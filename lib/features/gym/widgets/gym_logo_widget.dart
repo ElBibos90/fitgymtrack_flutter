@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../models/gym_logo_model.dart';
 
 class GymLogoWidget extends StatelessWidget {
@@ -27,13 +28,20 @@ class GymLogoWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
+    print('[LOGO] 🎨 [GymLogoWidget] Building logo widget');
+    print('[LOGO] 🎨 [GymLogoWidget] gymLogo: $gymLogo');
+    print('[LOGO] 🎨 [GymLogoWidget] hasCustomLogo: ${gymLogo?.hasCustomLogo}');
+    print('[LOGO] 🎨 [GymLogoWidget] logoUrl: ${gymLogo?.logoUrl}');
+    
     // Se non c'è logo o non ha logo personalizzato, mostra fallback
     if (gymLogo == null || !gymLogo!.hasCustomLogo) {
+      print('[LOGO] 🔄 [GymLogoWidget] Showing fallback logo');
       return showFallback 
         ? _buildFallbackLogo(context, colorScheme)
         : const SizedBox.shrink();
     }
     
+    print('[LOGO] 🖼️ [GymLogoWidget] Showing custom logo: ${gymLogo!.logoUrl}');
     return GestureDetector(
       onTap: onTap,
       child: _buildCustomLogo(context, colorScheme),
@@ -41,18 +49,50 @@ class GymLogoWidget extends StatelessWidget {
   }
   
   Widget _buildCustomLogo(BuildContext context, ColorScheme colorScheme) {
+    // Controlla se è SVG
+    final isSvg = gymLogo!.logoFilename?.toLowerCase().endsWith('.svg') ?? false;
+    
+    if (isSvg) {
+      print('[LOGO] 🎨 [GymLogoWidget] SVG detected, using SvgPicture.network');
+      return Container(
+        width: width ?? 200.w,  // Aumentato da 120.w
+        height: height ?? 50.h, // Aumentato da 32.h
+        constraints: BoxConstraints(
+          maxWidth: width ?? 200.w,
+          maxHeight: height ?? 50.h,
+        ),
+        child: SvgPicture.network(
+          gymLogo!.logoUrl,
+          fit: BoxFit.cover, // Cambiato da contain a cover per riempire meglio
+          placeholderBuilder: (context) => Container(
+            width: width ?? 200.w,
+            height: height ?? 50.h,
+            child: Center(
+              child: SizedBox(
+                width: 16.w,
+                height: 16.w,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // Per PNG/JPG usa Image.network
     return Container(
-      width: width ?? 120.w,
-      height: height ?? 32.h,
+      width: width ?? 200.w,  // Aumentato da 120.w
+      height: height ?? 50.h, // Aumentato da 32.h
       constraints: BoxConstraints(
-        maxWidth: width ?? 120.w,
-        maxHeight: height ?? 32.h,
+        maxWidth: width ?? 200.w,
+        maxHeight: height ?? 50.h,
       ),
       child: Image.network(
         gymLogo!.logoUrl,
-        fit: BoxFit.contain,
+        fit: BoxFit.cover, // Cambiato da contain a cover per riempire meglio
         errorBuilder: (context, error, stackTrace) {
-          print('[GymLogoWidget] ❌ Error loading logo: $error');
+          print('[LOGO] ❌ [GymLogoWidget] Error loading logo: $error');
+          print('[LOGO] ❌ [GymLogoWidget] StackTrace: $stackTrace');
           return showFallback 
             ? _buildFallbackLogo(context, colorScheme)
             : const SizedBox.shrink();
@@ -61,8 +101,8 @@ class GymLogoWidget extends StatelessWidget {
           if (loadingProgress == null) return child;
           
           return Container(
-            width: width ?? 120.w,
-            height: height ?? 32.h,
+            width: width ?? 200.w,
+            height: height ?? 50.h,
             child: Center(
               child: SizedBox(
                 width: 16.w,
@@ -84,8 +124,8 @@ class GymLogoWidget extends StatelessWidget {
   
   Widget _buildFallbackLogo(BuildContext context, ColorScheme colorScheme) {
     return Container(
-      width: width ?? 120.w,
-      height: height ?? 32.h,
+      width: width ?? 200.w,
+      height: height ?? 50.h,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -145,8 +185,8 @@ class _GymLogoWidgetWithLoadingState extends State<GymLogoWidgetWithLoading> {
         // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            width: widget.width ?? 120.w,
-            height: widget.height ?? 32.h,
+            width: widget.width ?? 200.w,
+            height: widget.height ?? 50.h,
             child: Center(
               child: SizedBox(
                 width: 16.w,

@@ -92,7 +92,7 @@ class DependencyInjection {
     
     // 🏢 Gym Logo Service
     getIt.registerLazySingleton<GymLogoService>(() => GymLogoService(
-      getIt<Dio>(),
+      DioClient.getInstance(sessionService: getIt<SessionService>()),
     ));
 
     // ============================================================================

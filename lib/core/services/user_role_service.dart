@@ -15,6 +15,11 @@ class UserRoleService {
     return user?.roleId == 2;
   }
   
+  /// Verifica se l'utente è un trainer
+  static bool isTrainerUser(User? user) {
+    return user?.roleId == 3;
+  }
+  
   /// Verifica se l'utente può gestire le schede (creare/modificare/cancellare)
   static bool canManageWorkoutSchemes(User? user) {
     return isStandaloneUser(user);

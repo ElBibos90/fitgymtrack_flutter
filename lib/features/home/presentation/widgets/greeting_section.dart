@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/services/data_integration_service.dart';
+import '../../../../core/di/dependency_injection.dart';
 import '../../../auth/bloc/auth_bloc.dart';
+import '../../../auth/models/login_response.dart';
+import '../../../gym/services/gym_logo_service.dart';
+import '../../../gym/widgets/gym_logo_widget.dart';
 import '../../services/dashboard_service.dart';
 
 /// Sezione di saluto personalizzato nella dashboard
@@ -82,20 +86,8 @@ class GreetingSection extends StatelessWidget {
                     ),
                   ),
 
-                  // Icona decorativa
-                  Container(
-                    width: 50.w,
-                    height: 50.w,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Icon(
-                      _getGreetingIcon(),
-                      size: 28.sp,
-                      color: Colors.white,
-                    ),
-                  ),
+                  // Logo della palestra o icona decorativa
+                  _buildGymLogoOrIcon(context, authState),
                 ],
               ),
 
@@ -146,6 +138,51 @@ class GreetingSection extends StatelessWidget {
         colors: [Color(0xFF2D3748), Color(0xFF4A5568)],
       );
     }
+  }
+
+  /// Costruisce il logo della palestra o icona di fallback
+  Widget _buildGymLogoOrIcon(BuildContext context, AuthState authState) {
+    // Se l'utente è autenticato, prova a mostrare il logo della palestra
+    if (authState is AuthAuthenticated || authState is AuthLoginSuccess) {
+      final user = authState is AuthAuthenticated ? authState.user : (authState as AuthLoginSuccess).user;
+      final gymLogoService = getIt<GymLogoService>();
+      
+      // Verifica se l'utente dovrebbe mostrare un logo palestra
+      if (gymLogoService.shouldShowGymLogo(user)) {
+        return Container(
+          width: 80.w,  // Aumentato da 60.w
+          height: 80.w, // Aumentato da 60.w
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(6.w), // Ridotto padding per più spazio logo
+            child: GymLogoWidgetWithLoading(
+              gymLogoFuture: gymLogoService.getGymLogoForCurrentUser(user),
+              width: 68.w,  // Aumentato da 44.w
+              height: 68.w, // Aumentato da 44.w
+              showFallback: false, // Non mostrare fallback, usa icona decorativa
+            ),
+          ),
+        );
+      }
+    }
+    
+    // Fallback: icona decorativa
+    return Container(
+      width: 50.w,
+      height: 50.w,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Icon(
+        _getGreetingIcon(),
+        size: 28.sp,
+        color: Colors.white,
+      ),
+    );
   }
 
   /// Icona appropriata per l'ora del giorno

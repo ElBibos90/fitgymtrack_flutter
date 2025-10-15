@@ -16,6 +16,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   flutter_screenutil: ^5.9.0
   cached_network_image: ^3.3.1
+  flutter_svg: ^2.0.10+1
 
   image_picker: ^1.0.4
   path: ^1.8.3

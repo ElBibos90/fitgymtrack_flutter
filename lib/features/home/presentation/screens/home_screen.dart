@@ -632,9 +632,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
+    // AppBar ora mostra sempre "FitGymTrack"
+    
     return CustomAppBar(
       title: 'FitGymTrack',
-      showGymLogo: true,
       showBackButton: false,
       actions: [
         // 🔔 Menu notifiche moderno
