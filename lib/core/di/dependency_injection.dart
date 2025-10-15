@@ -48,6 +48,9 @@ import '../../features/courses/repository/courses_repository.dart';
 import '../../features/courses/bloc/courses_bloc.dart';
 import '../services/muscle_groups_service.dart';
 
+// Gym features
+import '../../features/gym/services/gym_logo_service.dart';
+
 final getIt = GetIt.instance;
 
 class DependencyInjection {
@@ -84,6 +87,11 @@ class DependencyInjection {
     
     // 💪 Muscle Groups Service
     getIt.registerLazySingleton<MuscleGroupsService>(() => MuscleGroupsService(
+      getIt<Dio>(),
+    ));
+    
+    // 🏢 Gym Logo Service
+    getIt.registerLazySingleton<GymLogoService>(() => GymLogoService(
       getIt<Dio>(),
     ));
 

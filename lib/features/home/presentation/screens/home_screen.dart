@@ -29,6 +29,7 @@ import '../../../../core/services/user_role_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../../courses/presentation/screens/courses_list_screen.dart';
 import '../../../courses/bloc/courses_bloc.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 
 /// 🚀 PERFORMANCE OPTIMIZED: Home Screen con caricamento sequenziale intelligente
 class HomeScreen extends StatefulWidget {
@@ -630,41 +631,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return AppBar(
-      elevation: 0,
-      backgroundColor: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
-      automaticallyImplyLeading: false,
-      title: Row(
-        children: [
-          Container(
-            width: 32.w,
-            height: 32.h,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.indigo600, AppColors.green600],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              Icons.fitness_center,
-              color: Colors.white,
-              size: 18.sp,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            'FitGymTrack',
-            style: TextStyle(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
+    
+    return CustomAppBar(
+      title: 'FitGymTrack',
+      showGymLogo: true,
+      showBackButton: false,
       actions: [
         // 🔔 Menu notifiche moderno
         ModernNotificationMenu(
