@@ -128,30 +128,6 @@ abstract class ApiClient {
   Future<dynamic> assignWorkoutToUser(@Body() Map<String, dynamic> assignment);
 
   // ============================================================================
-  // WORKOUT SCHEMAS ENDPOINTS (GENERAL)
-  // ============================================================================
-
-  @GET("/schede.php")
-  Future<dynamic> getWorkoutSchemas({
-    @Query("show_inactive") String? showInactive,
-  });
-
-  @GET("/schede.php")
-  Future<dynamic> getWorkoutSchemaById(@Query("id") int schedaId);
-
-  @POST("/schede.php")
-  Future<dynamic> createWorkoutSchema(@Body() Map<String, dynamic> scheda);
-
-  @PUT("/schede.php")
-  Future<dynamic> updateWorkoutSchema(
-      @Query("id") int schedaId,
-      @Body() Map<String, dynamic> scheda,
-      );
-
-  @DELETE("/schede.php")
-  Future<dynamic> deleteWorkoutSchema(@Query("id") int schedaId);
-
-  // ============================================================================
   // WORKOUT SCHEMAS ENDPOINTS (STANDALONE)
   // ============================================================================
 
@@ -169,28 +145,6 @@ abstract class ApiClient {
       @Body() Map<String, dynamic> workout,
       {@Query("action") String action = "update"}
       );
-
-  // ============================================================================
-  // EXERCISES ENDPOINTS (GENERAL)
-  // ============================================================================
-
-  @GET("/esercizi.php")
-  Future<dynamic> getExercises();
-
-  @GET("/esercizi.php")
-  Future<dynamic> getExerciseById(@Query("id") int exerciseId);
-
-  @POST("/esercizi.php")
-  Future<dynamic> createExercise(@Body() Map<String, dynamic> exercise);
-
-  @PUT("/esercizi.php")
-  Future<dynamic> updateExercise(
-      @Query("id") int exerciseId,
-      @Body() Map<String, dynamic> exercise,
-      );
-
-  @DELETE("/esercizi.php")
-  Future<dynamic> deleteExercise(@Query("id") int exerciseId);
 
   // ============================================================================
   // IMAGES ENDPOINTS
@@ -218,105 +172,6 @@ abstract class ApiClient {
 
   @DELETE("/custom_exercise_standalone.php")
   Future<dynamic> deleteCustomExercise(@Body() Map<String, dynamic> request);
-
-  @GET("/user_exercises_standalone.php")
-  Future<dynamic> getUserCustomExercises(@Query("user_id") int userId);
-
-  @DELETE("/user_exercises_standalone.php")
-  Future<dynamic> deleteUserCustomExercise(
-      @Query("user_id") int userId,
-      @Body() Map<String, dynamic> request,
-      );
-
-  // ============================================================================
-  // EXERCISE APPROVAL ENDPOINTS (ADMIN)
-  // ============================================================================
-
-  @GET("/pending_exercises.php")
-  Future<dynamic> getPendingExercises();
-
-  @POST("/approve_exercise.php")
-  Future<dynamic> approveExercise(@Body() Map<String, dynamic> request);
-
-  // ============================================================================
-  // EQUIPMENT ENDPOINTS
-  // ============================================================================
-
-  @GET("/equipment_types.php")
-  Future<dynamic> getEquipmentTypes();
-
-  @GET("/equipment_types.php")
-  Future<dynamic> getEquipmentTypeById(@Query("id") int equipmentId);
-
-  @POST("/equipment_types.php")
-  Future<dynamic> createEquipmentType(@Body() Map<String, dynamic> equipment);
-
-  @PUT("/equipment_types.php")
-  Future<dynamic> updateEquipmentType(
-      @Query("id") int equipmentId,
-      @Body() Map<String, dynamic> equipment,
-      );
-
-  @DELETE("/equipment_types.php")
-  Future<dynamic> deleteEquipmentType(@Query("id") int equipmentId);
-
-  @GET("/equipment_weights.php")
-  Future<dynamic> getEquipmentWeights(@Query("equipment_id") int equipmentId);
-
-  @GET("/equipment_weights.php")
-  Future<dynamic> getEquipmentWeightById(@Query("id") int weightId);
-
-  @POST("/equipment_weights.php")
-  Future<dynamic> createEquipmentWeight(@Body() Map<String, dynamic> weight);
-
-  @DELETE("/equipment_weights.php")
-  Future<dynamic> deleteEquipmentWeight(@Query("id") int weightId);
-
-  @GET("/equipment_discs.php")
-  Future<dynamic> getEquipmentDiscs(@Query("equipment_id") int equipmentId);
-
-  @GET("/equipment_discs.php")
-  Future<dynamic> getEquipmentDiscById(@Query("id") int discId);
-
-  @POST("/equipment_discs.php")
-  Future<dynamic> createEquipmentDisc(@Body() Map<String, dynamic> disc);
-
-  @PUT("/equipment_discs.php")
-  Future<dynamic> updateEquipmentDisc(
-      @Query("id") int discId,
-      @Body() Map<String, dynamic> disc,
-      );
-
-  @DELETE("/equipment_discs.php")
-  Future<dynamic> deleteEquipmentDisc(@Query("id") int discId);
-
-  @GET("/public_equipment_data.php")
-  Future<dynamic> getPublicEquipmentByExercise(@Query("exercise_id") int exerciseId);
-
-  @GET("/public_equipment_data.php")
-  Future<dynamic> getPublicEquipmentBySchedaExercise(@Query("scheda_esercizi_id") int schedaEserciziId);
-
-  // ============================================================================
-  // WORKOUTS/ALLENAMENTI ENDPOINTS
-  // ============================================================================
-
-  @GET("/allenamenti.php")
-  Future<dynamic> getAllenamenti();
-
-  @GET("/allenamenti.php")
-  Future<dynamic> getAllenamentoById(@Query("id") int allenamentoId);
-
-  @POST("/allenamenti.php")
-  Future<dynamic> createAllenamento(@Body() Map<String, dynamic> allenamento);
-
-  @PUT("/allenamenti.php")
-  Future<dynamic> updateAllenamento(
-      @Query("id") int allenamentoId,
-      @Body() Map<String, dynamic> allenamento,
-      );
-
-  @DELETE("/allenamenti.php")
-  Future<dynamic> deleteAllenamento(@Query("id") int allenamentoId);
 
   // ============================================================================
   // ACTIVE WORKOUT ENDPOINTS
@@ -370,57 +225,6 @@ abstract class ApiClient {
 
   @POST("/serie_completate.php")
   Future<dynamic> createSerieCompletata(@Body() Map<String, dynamic> serie);
-
-  // ============================================================================
-  // SUBSCRIPTION ENDPOINTS
-  // ============================================================================
-
-  @GET("/subscription_api.php")
-  Future<dynamic> getCurrentSubscription(@Query("action") String action);
-
-  @GET("/subscription_api.php")
-  Future<dynamic> getSubscriptionPlans(@Query("action") String action);
-
-  @GET("/subscription_api.php")
-  Future<dynamic> checkSubscriptionLimits(
-      @Query("action") String action,
-      @Query("resource_type") String resourceType,
-      );
-
-  @GET("/subscription_api.php")
-  Future<dynamic> checkExpiredSubscriptions(@Query("action") String action);
-
-  @POST("/subscription_api.php")
-  Future<dynamic> updatePlan(
-      @Body() Map<String, dynamic> request,
-      @Query("action") String action,
-      );
-
-  @POST("/subscription_api.php")
-  Future<dynamic> recordDonation(
-      @Body() Map<String, dynamic> request,
-      @Query("action") String action,
-      );
-
-  // ============================================================================
-  // PAYMENT ENDPOINTS
-  // ============================================================================
-
-  @POST("/paypal_payment.php")
-  Future<dynamic> createPayPalPayment(@Body() Map<String, dynamic> request);
-
-  // ============================================================================
-  // GYM REQUEST ENDPOINTS
-  // ============================================================================
-
-  @POST("/gym_request.php")
-  Future<dynamic> submitGymRequest(@Body() Map<String, dynamic> request);
-
-  @GET("/gym_requests.php")
-  Future<dynamic> getGymRequests();
-
-  @POST("/update_gym_request.php")
-  Future<dynamic> updateGymRequest(@Body() Map<String, dynamic> request);
 
   // ============================================================================
   // FEEDBACK ENDPOINTS
