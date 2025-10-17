@@ -10,6 +10,8 @@ import 'dart:async';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../shared/widgets/recovery_timer_popup.dart';
+import '../../../../shared/widgets/enhanced_recovery_timer_popup.dart';
+import '../../../../shared/widgets/simple_recovery_timer.dart';
 import '../../../../shared/widgets/isometric_timer_popup.dart';
 import '../../../../shared/widgets/parameter_edit_dialog.dart';
 import '../../../../core/services/session_service.dart';
@@ -37,6 +39,13 @@ import '../../services/connectivity_service.dart';
 
 // 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
 import '../../models/exercise_group_models.dart';
+
+// 🎨 NUOVI WIDGET MODERNI (17 Ottobre 2025)
+import '../../../../shared/widgets/weight_reps_card.dart';
+import '../../../../shared/widgets/workout_header.dart';
+import '../../../../shared/widgets/superset_badge.dart';
+import '../../../../shared/widgets/exercise_card_layout_b.dart'; // 🔥 NUOVO LAYOUT B
+import '../../../../shared/theme/workout_design_system.dart';
 
 /// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION MINIMALE
 /// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration MINIMALE + 🔧 PERFORMANCE FIX
@@ -123,6 +132,49 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // 🆕 Dialog state
   bool _showExitDialog = false;
   bool _showCompleteDialog = false;
+
+  // ============================================================================
+  // 🚀 ENHANCED TIMER - Helper methods per superset detection
+  // ============================================================================
+
+  WorkoutExercise? _getCurrentExercise() {
+    final currentState = _activeWorkoutBloc.state;
+    if (currentState is WorkoutSessionActive) {
+      if (_exerciseGroups.isNotEmpty && 
+          _currentGroupIndex < _exerciseGroups.length &&
+          _currentExerciseInGroup < _exerciseGroups[_currentGroupIndex].length) {
+        return _exerciseGroups[_currentGroupIndex][_currentExerciseInGroup];
+      }
+    }
+    return null;
+  }
+
+  bool _isPartOfMultiExerciseGroup(WorkoutExercise? exercise) {
+    if (exercise == null) return false;
+    return _exerciseGroups.any((group) => 
+        group.length > 1 && group.any((e) => e.id == exercise.id));
+  }
+
+  bool _isLastExerciseInGroup(WorkoutExercise? exercise) {
+    if (exercise == null) return false;
+    for (var group in _exerciseGroups) {
+      if (group.length > 1 && group.any((e) => e.id == exercise.id)) {
+        return group.last.id == exercise.id;
+      }
+    }
+    return false;
+  }
+
+  String? _getCurrentWorkoutType() {
+    if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
+      final group = _exerciseGroups[_currentGroupIndex];
+      if (group.length > 1) {
+        // Default to Superset for multi-exercise groups
+        return 'Superset';
+      }
+    }
+    return null;
+  }
 
   // 🔧 FIX 2: PLATEAU - Gestione corretta con dismiss e single trigger
   bool _plateauAnalysisTriggered = false;
@@ -317,7 +369,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             restPauseSequence: exercise.restPauseReps ?? "10",
             restSeconds: exercise.restPauseRestSeconds,
             currentWeight: _getEffectiveWeight(exercise),
-            currentSeries: _getCompletedSeriesCount(state, exercise.schedaEsercizioId ?? exercise.id) + 1,
+            currentSeries: (_getCompletedSeriesCount(state, exercise.schedaEsercizioId ?? exercise.id) + 1).clamp(1, exercise.serie),
             totalSeries: exercise.serie,
             onCompleteAllMicroSeries: (data) {
               Navigator.of(context).pop();
@@ -537,7 +589,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         final currentState = _getCurrentState();
         if (currentState != null) {
           final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-          final currentSeriesNumber = completedSeriesCount + 1;
+          final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie);
 
           final seriesSpecificValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
           _cachedWeights[exerciseId] = seriesSpecificValues.weight;
@@ -573,7 +625,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final currentState = _getCurrentState();
     if (currentState != null) {
       final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+      final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie); // Prossima serie da fare
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
@@ -625,7 +677,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final currentState = _getCurrentState();
     if (currentState != null) {
       final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-      final currentSeriesNumber = completedSeriesCount + 1; // Prossima serie da fare
+      final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie); // Prossima serie da fare
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
@@ -822,9 +874,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
       _activeWorkoutBloc.cancelWorkout(currentState.activeWorkout.id);
-    } else {
-      Navigator.of(context).pop();
     }
+    
+    // 🔧 FIX: Torna alla dashboard con barra di navigazione
+    context.go('/dashboard');
   }
 
   void _handleCompleteConfirmed() {
@@ -901,91 +954,20 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // 🔧 FIX 3: SUPERSET PAUSE - Methods to detect linked exercises
   // ============================================================================
 
-  /// Verifica se l'esercizio è parte di un superset/circuit
-  bool _isPartOfMultiExerciseGroup(WorkoutExercise exercise) {
-    if (_exerciseGroups.isEmpty) return false;
 
-    for (final group in _exerciseGroups) {
-      if (group.contains(exercise) && group.length > 1) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Verifica se è l'ultimo esercizio del gruppo superset/circuit
-  bool _isLastExerciseInGroup(WorkoutExercise exercise) {
-    if (_exerciseGroups.isEmpty) return true;
-
-    for (final group in _exerciseGroups) {
-      if (group.contains(exercise)) {
-        final exerciseIndex = group.indexOf(exercise);
-        final currentState = _getCurrentState();
-
-        if (currentState != null && group.length > 1) {
-          // 🔧 FIX: Logica corretta per superset/circuit/giant set
-          // Il timer dovrebbe partire quando:
-          // 1. È l'ultimo esercizio nell'ordine del gruppo (sempre)
-          // 2. OPPURE tutti i prossimi esercizi hanno già fatto la serie corrente o più
-          // 3. OPPURE questo esercizio ha completato tutte le sue serie previste
-
-          final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-          final currentSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
-
-          // Caso 1: È l'ultimo nell'ordine fisico → Timer parte sempre
-          if (exerciseIndex == group.length - 1) {
-            //print("🔧 [TIMER FIX] ${exercise.nome} - Last in group order → Timer starts");
-            return true;
-          }
-
-          // Caso 3: Ha completato tutte le sue serie → Timer parte sempre
-          if (currentSeriesCount >= exercise.serie) {
-            //print("🔧 [TIMER FIX] ${exercise.nome} - Completed all series (${currentSeriesCount}/${exercise.serie}) → Timer starts");
-            return true;
-          }
-
-          // Caso 2: È l'ultimo a dover fare la serie corrente nel giro
-          bool isLastForCurrentRound = true;
-          for (int i = exerciseIndex + 1; i < group.length; i++) {
-            final nextExercise = group[i];
-            final nextExerciseId = nextExercise.schedaEsercizioId ?? nextExercise.id;
-            final nextSeriesCount = _getCompletedSeriesCount(currentState, nextExerciseId);
-
-            // Se un esercizio successivo deve ancora fare la serie corrente
-            if (nextSeriesCount <= currentSeriesCount) {
-              isLastForCurrentRound = false;
-              break;
-            }
-          }
-
-          //print("🔧 [TIMER FIX] ${exercise.nome} - Exercise index: $exerciseIndex/${group.length-1}");
-          //print("🔧 [TIMER FIX] ${exercise.nome} - Current series: $currentSeriesCount/${exercise.serie}");
-          //print("🔧 [TIMER FIX] ${exercise.nome} - Is last for current round: $isLastForCurrentRound");
-
-          return isLastForCurrentRound;
-        }
-
-        // Fallback: se è l'ultimo nell'ordine
-        return exerciseIndex == group.length - 1;
-      }
-    }
-    return true;
-  }
 
   /// 🔧 FIX 3: Verifica se dovrebbe partire il timer di recupero
   bool _shouldStartRecoveryTimer(WorkoutExercise exercise) {
     // Se non è parte di un gruppo multi-esercizio, sempre true
     if (!_isPartOfMultiExerciseGroup(exercise)) {
-      //print("🔧 [TIMER FIX] ${exercise.nome} - Single exercise, starting recovery timer");
+      print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (single exercise)");
       return true;
     }
 
-    // Se è parte di un gruppo, verifica se è l'ultimo del giro corrente
-    final isLastOfRound = _isLastExerciseInGroup(exercise);
-    //print("🔧 [TIMER FIX] ${exercise.nome} - Multi-exercise group, is last of round: $isLastOfRound");
-
-    // 🚀 NUOVO: Il timer parte sempre per l'ultimo del giro
-    return isLastOfRound;
+    // Per i gruppi multi-esercizio, usa la logica semplificata
+    // Il timer parte sempre per esercizi in gruppi
+    print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (multi-exercise group)");
+    return true;
   }
 
   // ============================================================================
@@ -1055,13 +1037,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _startRecoveryTimer(int seconds, String exerciseName) {
-    //print("🔄 [RECOVERY POPUP] Starting recovery timer: $seconds seconds for $exerciseName");
-
+    print("[TIMER] 🚀 _startRecoveryTimer called - seconds: $seconds, exercise: $exerciseName");
     setState(() {
       _isRecoveryTimerActive = true;
       _recoverySeconds = seconds;
       _currentRecoveryExerciseName = exerciseName;
     });
+    print("[TIMER] 🚀 Timer state updated - _isRecoveryTimerActive: $_isRecoveryTimerActive");
   }
 
   void _stopRecoveryTimer() {
@@ -1078,8 +1060,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onRecoveryTimerComplete() {
-    //print("✅ [RECOVERY POPUP] Recovery completed!");
-
     setState(() {
       _isRecoveryTimerActive = false;
       _recoverySeconds = 0;
@@ -1308,7 +1288,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedCount = _getCompletedSeriesCount(state, exerciseId);
 
+    print("[SERIE] 🚀 _handleCompleteSeries - exercise: ${exercise.nome}, completedCount: $completedCount, totalSeries: ${exercise.serie}");
+
     if (completedCount >= exercise.serie) {
+      print("[SERIE] 🚀 Esercizio già completato! Bloccando ulteriori serie.");
       CustomSnackbar.show(
         context,
         message: "Esercizio già completato!",
@@ -1317,7 +1300,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    //print("🚀 [SINGLE EXERCISE] Completing series ${completedCount + 1} for exercise: ${exercise.nome}");
+    print("[SERIE] 🚀 Completando serie ${completedCount + 1} per esercizio: ${exercise.nome}");
 
     final effectiveWeight = _getEffectiveWeight(exercise);
     final effectiveReps = _getEffectiveReps(exercise);
@@ -1336,6 +1319,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     );
 
     _activeWorkoutBloc.addLocalSeries(exerciseId, seriesData);
+
+    // Verifica se l'esercizio è completato dopo questa serie
+    final newCompletedCount = completedCount + 1;
+    if (newCompletedCount >= exercise.serie) {
+      print("[SERIE] 🚀 ESERCIZIO COMPLETATO! ${exercise.nome} - Serie completate: $newCompletedCount/${exercise.serie}");
+    }
 
     final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
     _activeWorkoutBloc.saveSeries(
@@ -1514,6 +1503,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
     return "Esercizio";
   }
+
 
   Color _getExerciseTypeColor(WorkoutExercise exercise) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -1811,9 +1801,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          Row(
+            children: [
+              Flexible( // 🔧 FIX: Evita overflow AppBar
+                child: Text(
             'Allenamento',
             style: TextStyle(fontSize: 18.sp),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 🎨 NUOVO: Badge superset (17 Ottobre 2025)
+              if (_getCurrentWorkoutType() != null) ...[
+                SizedBox(width: 8.w),
+                SupersetBadge.compact(_getCurrentWorkoutType()!),
+              ],
+            ],
           ),
           Text(
             _formatDuration(_elapsedTime),
@@ -1878,29 +1880,31 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildBody(ActiveWorkoutState state) {
-    return Stack(
+    return Column(
       children: [
-        _buildMainContent(state),
-
         // 🚀 NUOVO: Widget per stato offline
-        const Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: OfflineStatusWidget(),
-        ),
-
+        const OfflineStatusWidget(),
+        
+        // 🚀 TIMER SEMPLICE E VISIBILE
         if (_isRecoveryTimerActive)
-          RecoveryTimerPopup(
+          SimpleRecoveryTimer(
             initialSeconds: _recoverySeconds,
             isActive: _isRecoveryTimerActive,
             exerciseName: _currentRecoveryExerciseName,
             onTimerComplete: _onRecoveryTimerComplete,
-            onTimerStopped: _stopRecoveryTimer,
+            onTimerStopped: () {
+              if (mounted) _stopRecoveryTimer();
+            },
             onTimerDismissed: () {
-              _stopRecoveryTimer();
+              if (mounted) _stopRecoveryTimer();
             },
           ),
+        
+        // Contenuto principale
+        Expanded(
+          child: Stack(
+            children: [
+              _buildMainContent(state),
 
         if (_isIsometricTimerActive && _currentIsometricExerciseName != null)
           IsometricTimerPopup(
@@ -1924,6 +1928,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         // 🔧 FASE 1: Dialog per aggiungere esercizi (placeholder)
         if (false) // Temporaneamente disabilitato
           Container(), // Placeholder per il dialog
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -2100,12 +2107,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildSingleExercisePage(WorkoutSessionActive state, WorkoutExercise exercise) {
-    final colorScheme = Theme.of(context).colorScheme;
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedSeries = _getCompletedSeriesCount(state, exerciseId);
     final isCompleted = _isExerciseCompleted(state, exercise);
-    final exerciseType = _getExerciseTypeLabel(exercise);
-    final exerciseColor = _getExerciseTypeColor(exercise);
 
     // 🔧 PERFORMANCE FIX: Pre-carica cache per questo esercizio
     _updateCacheForExercise(exerciseId, exercise);
@@ -2114,286 +2118,39 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       padding: EdgeInsets.all(20.w),
       child: SlideTransition(
         position: _slideAnimation,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: exerciseColor.withValues(alpha:0.1),
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: exerciseColor.withValues(alpha:0.3)),
-              ),
-              child: Text(
-                '$exerciseType: ${exercise.nome}',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: exerciseColor,
-                ),
-              ),
-            ),
-
-            SizedBox(height: 32.h),
-
-            // 🎯 NUOVO LAYOUT A DUE COLONNE: Info a sinistra, immagine a destra
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // COLONNA SINISTRA: Nome esercizio e serie
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Nome esercizio
-                      Text(
-                        exercise.nome,
-                        style: TextStyle(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onBackground,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      SizedBox(height: 16.h),
-
-                      // 📱 CARD SERIE COMPATTA - Layout Verticale
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(10.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.shadow.withValues(alpha:0.08),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Label "Serie"
-                            Text(
-                              'Serie',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: colorScheme.onSurface.withValues(alpha:0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-
-                            SizedBox(height: 4.h),
-
-                            // Numero delle serie
-                            Text(
-                              '$completedSeries/${exercise.serie}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: isCompleted ? Colors.green : exerciseColor,
-                              ),
-                            ),
-
-                            SizedBox(height: 8.h),
-
-                            // Puntini indicatori in fila
-                            Row(
-                              children: List.generate(exercise.serie, (i) {
-                                return Container(
-                                  margin: EdgeInsets.only(right: i < exercise.serie - 1 ? 4.w : 0),
-                                  width: 6.w,
-                                  height: 6.w,
-                                  decoration: BoxDecoration(
-                                    color: i < completedSeries
-                                        ? exerciseColor
-                                        : colorScheme.surfaceVariant,
-                                    shape: BoxShape.circle,
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(width: 20.w),
-
-                // COLONNA DESTRA: Immagine esercizio
-                if (exercise.immagineNome != null) ...[
-                  Container(
-                    width: 160.w,
-                    height: 160.w,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.shadow.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      child: ImageService.buildGifImage(
-                        imageUrl: ImageService.getImageUrl(exercise.immagineNome),
-                        width: 160.w,
-                        height: 160.w,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  // Placeholder se non c'è immagine
-                  Container(
-                    width: 160.w,
-                    height: 160.w,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.fitness_center,
-                      size: 48.w,
-                      color: colorScheme.onSurface.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-        if (_isRestPauseExercise(exercise)) ...[
-    Container(
-    margin: EdgeInsets.only(bottom: 16.h),
-    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-    decoration: BoxDecoration(
-    color: Colors.deepPurple.withValues(alpha:0.1),
-    borderRadius: BorderRadius.circular(8.r),
-    border: Border.all(color: Colors.deepPurple, width: 1),
-    ),
-    child: Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-    Icon(Icons.flash_on, color: Colors.deepPurple, size: 16.w),
-    SizedBox(width: 4.w),
-    Text(
-    'REST-PAUSE: ${exercise.restPauseReps}',
-    style: TextStyle(
-    color: Colors.deepPurple,
-    fontSize: 12.sp,
-    fontWeight: FontWeight.w600,
-    ),
-    ),
-    ],
-    ),
-    ),
-        ],
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildParameterCard(
-                    'Peso',
-                    '${_getEffectiveWeight(exercise).toStringAsFixed(1)} kg',
-                    Icons.fitness_center,
-                    exerciseColor,
-                    onTap: () => _editExerciseParameters(exercise),
-                    isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildParameterCard(
-                    exercise.isIsometric ? 'Secondi' : 'Ripetizioni',
-                    '${_getEffectiveReps(exercise)}',
-                    exercise.isIsometric ? Icons.timer : Icons.repeat,
-                    exercise.isIsometric ? Colors.deepPurple : Colors.green,
-                    onTap: () => _editExerciseParameters(exercise),
-                    isModified: _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: isCompleted
-                    ? null
+        child: ExerciseCardLayoutB(
+          exerciseName: exercise.nome,
+          muscleGroups: exercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
+          exerciseImageUrl: exercise.imageUrl,
+          // [NEW_PROGR] Log URL immagine per esercizio singolo
+          // ignore: avoid_print
+          onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine singolo: $url, Errore: $error'),
+          weight: _getEffectiveWeight(exercise),
+          reps: _getEffectiveReps(exercise),
+          currentSeries: (completedSeries + 1).clamp(1, exercise.serie),
+          totalSeries: exercise.serie,
+          restSeconds: exercise.tempoRecupero,
+          isModified: _modifiedWeights.containsKey(exercise.schedaEsercizioId ?? exercise.id) ||
+                     _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
+          isCompleted: isCompleted, // 🚀 NUOVO: Stato completamento esercizio
+          isTimerActive: _isRecoveryTimerActive, // 🚀 NUOVO: Stato timer di recupero
+          onEditParameters: () => _editExerciseParameters(exercise),
+          onCompleteSeries: isCompleted
+              ? () {} // Disabilitato se completato
                     : exercise.isIsometric
                     ? () => _startIsometricTimer(exercise)
                     : _isRestPauseExercise(exercise)
-                    ? () => _handleRestPauseStart(state, exercise)  // 🚀 NUOVO: Handler REST-PAUSE
+              ? () => _handleRestPauseStart(state, exercise)
                     : () => _handleCompleteSeries(state, exercise),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted
-                      ? Colors.green
-                      : exercise.isIsometric
-                      ? Colors.deepPurple
-                      : exerciseColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  elevation: isCompleted ? 0 : 2,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (exercise.isIsometric && !isCompleted) ...[
-                      Icon(Icons.timer, size: 20.sp),
-                      SizedBox(width: 8.w),
-                    ],
-                    Text(
-                      isCompleted
-                          ? '✅ Esercizio Completato'
-                          : exercise.isIsometric
-                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(exercise)}s'
-                          : _isRestPauseExercise(exercise)  // 🚀 NUOVA CONDIZIONE
-                          ? '⚡ Avvia REST-PAUSE'           // 🚀 NUOVO TESTO
-                          : 'Completa Serie ${completedSeries + 1}',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 100.h),
-          ],
         ),
       ),
     );
   }
 
+  /// 🏋️ Superset/Circuit page with automatic group switching
+  /// 🏋️ Superset/Circuit page with automatic group switching
   Widget _buildMultiExercisePage(WorkoutSessionActive state, List<WorkoutExercise> group) {
-    final colorScheme = Theme.of(context).colorScheme;
     final groupType = group.first.setType;
-    final groupColor = _getExerciseTypeColor(group.first);
     final isGroupComplete = _isGroupCompleted(state, group);
 
     if (_currentExerciseInGroup >= group.length) {
@@ -2415,402 +2172,44 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: groupColor.withValues(alpha:0.1),
-                borderRadius: BorderRadius.circular(20.r),
-                border: Border.all(color: groupColor.withValues(alpha:0.3)),
-              ),
-              child: Text(
-                '${groupType.toUpperCase()}: ${group.length} esercizi',
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: groupColor,
-                ),
-              ),
-            ),
 
-            SizedBox(height: 24.h),
-
-            Container(
-              height: 50.h,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(25.r),
-              ),
-              child: Row(
-                children: group.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final exercise = entry.value;
-                  final isSelected = index == _currentExerciseInGroup;
-                  final exId = exercise.schedaEsercizioId ?? exercise.id;
-                  final exCompleted = _getCompletedSeriesCount(state, exId);
-                  final exIsCompleted = _isExerciseCompleted(state, exercise);
-
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _currentExerciseInGroup = index;
-                        });
-
-                        // 🔧 PERFORMANCE FIX: Invalida cache quando cambia esercizio
-                        _clearCache();
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: EdgeInsets.all(4.w),
-                        decoration: BoxDecoration(
-                          color: isSelected ? groupColor : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20.r),
-                          boxShadow: isSelected ? [
-                            BoxShadow(
-                              color: groupColor.withValues(alpha:0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ] : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  exIsCompleted
-                                      ? Icons.check_circle
-                                      : exercise.isIsometric
-                                      ? Icons.timer
-                                      : Icons.fitness_center,
-                                  color: isSelected ? Colors.white : groupColor,
-                                  size: 16.sp,
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  '${exCompleted}/${exercise.serie}',
-                                  style: TextStyle(
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : groupColor,
-                                  ),
-                                ),
-                                // 🎯 PLATEAU BADGE FOR TABS - Solo punto rosso discreto
-                                if (_hasPlateauForExercise(exId)) ...[
-                                  SizedBox(width: 2.w),
-                                  Container(
-                                    width: 6.w,
-                                    height: 6.w,
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(3.r),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            SizedBox(height: 2.h),
-                            Text(
-                              exercise.nome.length > 10
-                                  ? '${exercise.nome.substring(0, 10)}...'
-                                  : exercise.nome,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected ? Colors.white : colorScheme.onSurface,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            SizedBox(height: 32.h),
-
-            // 🎯 NUOVO LAYOUT A DUE COLONNE: Info a sinistra, immagine a destra
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // COLONNA SINISTRA: Nome esercizio e serie
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Nome esercizio
-                      Text(
-                        currentExercise.nome,
-                        style: TextStyle(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onBackground,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      SizedBox(height: 16.h),
-
-                      // 📱 CARD SERIE COMPATTA - Layout Verticale
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(10.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.shadow.withValues(alpha:0.08),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Label "Serie"
-                            Text(
-                              'Serie',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: colorScheme.onSurface.withValues(alpha:0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-
-                            SizedBox(height: 4.h),
-
-                            // Numero delle serie
-                            Text(
-                              '$completedSeries/${currentExercise.serie}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                                color: isCompleted ? Colors.green : groupColor,
-                              ),
-                            ),
-
-                            SizedBox(height: 8.h),
-
-                            // Puntini indicatori in fila
-                            Row(
-                              children: List.generate(currentExercise.serie, (i) {
-                                return Container(
-                                  margin: EdgeInsets.only(right: i < currentExercise.serie - 1 ? 4.w : 0),
-                                  width: 6.w,
-                                  height: 6.w,
-                                  decoration: BoxDecoration(
-                                    color: i < completedSeries
-                                        ? groupColor
-                                        : colorScheme.surfaceVariant,
-                                    shape: BoxShape.circle,
-                                  ),
-                                );
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(width: 20.w),
-
-                // COLONNA DESTRA: Immagine esercizio
-                if (currentExercise.immagineNome != null) ...[
-                  Container(
-                    width: 160.w,
-                    height: 160.w,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.shadow.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      child: ImageService.buildGifImage(
-                        imageUrl: ImageService.getImageUrl(currentExercise.immagineNome),
-                        width: 160.w,
-                        height: 160.w,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ] else ...[
-                  // Placeholder se non c'è immagine
-                  Container(
-                    width: 160.w,
-                    height: 160.w,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(AppConfig.radiusM),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.fitness_center,
-                      size: 48.w,
-                      color: colorScheme.onSurface.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-
-            if (_isRestPauseExercise(currentExercise)) ...[
-              Container(
-                margin: EdgeInsets.only(bottom: 16.h),
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.deepPurple, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.flash_on, color: Colors.deepPurple, size: 16.w),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'REST-PAUSE: ${currentExercise.restPauseReps}',
-                      style: TextStyle(
-                        color: Colors.deepPurple,
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: _buildParameterCard(
-                    'Peso',
-                    '${_getEffectiveWeight(currentExercise).toStringAsFixed(1)} kg',
-                    Icons.fitness_center,
-                    groupColor,
-                    onTap: () => _editExerciseParameters(currentExercise),
-                    isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: _buildParameterCard(
-                    currentExercise.isIsometric ? 'Secondi' : 'Ripetizioni',
-                    '${_getEffectiveReps(currentExercise)}',
-                    currentExercise.isIsometric ? Icons.timer : Icons.repeat,
-                    currentExercise.isIsometric ? Colors.deepPurple : groupColor,
-                    onTap: () => _editExerciseParameters(currentExercise),
-                    isModified: _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
-                    hasPlateauBadge: _hasPlateauForExercise(exerciseId),
-                    exerciseId: exerciseId,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 32.h),
-
-            SizedBox(
-              width: double.infinity,
-              height: 56.h,
-              child: ElevatedButton(
-                onPressed: isCompleted
-                    ? null
+            // 🔥 NUOVO LAYOUT B UNIFICATO - SUPERSET/CIRCUIT (17 Ottobre 2025)
+            ExerciseCardLayoutB(
+              exerciseName: currentExercise.nome,
+              muscleGroups: currentExercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
+              exerciseImageUrl: currentExercise.imageUrl,
+              // [NEW_PROGR] Log URL immagine per superset/circuit
+              // ignore: avoid_print
+              onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine superset: $url, Errore: $error'),
+              weight: _getEffectiveWeight(currentExercise),
+              reps: _getEffectiveReps(currentExercise),
+              currentSeries: (completedSeries + 1).clamp(1, currentExercise.serie),
+              totalSeries: currentExercise.serie,
+              restSeconds: currentExercise.tempoRecupero,
+              isModified: _modifiedWeights.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id) ||
+                         _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
+              isCompleted: _isExerciseCompleted(state, currentExercise), // 🚀 NUOVO: Stato completamento esercizio
+              isTimerActive: _isRecoveryTimerActive, // 🚀 NUOVO: Stato timer di recupero
+              onEditParameters: () => _editExerciseParameters(currentExercise),
+              onCompleteSeries: isCompleted
+                  ? () {} // Disabilitato se completato
                     : currentExercise.isIsometric
                     ? () => _startIsometricTimer(currentExercise)
                     : _isRestPauseExercise(currentExercise)
-                    ? () => _handleRestPauseStart(state, currentExercise)  // 🚀 NUOVO: Handler REST-PAUSE
+                  ? () => _handleRestPauseStart(state, currentExercise)
                     : () => _handleCompleteSeries(state, currentExercise),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCompleted
-                      ? Colors.green
-                      : currentExercise.isIsometric
-                      ? Colors.deepPurple
-                      : groupColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  elevation: isCompleted ? 0 : 2,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (currentExercise.isIsometric && !isCompleted) ...[
-                      Icon(Icons.timer, size: 20.sp),
-                      SizedBox(width: 8.w),
-                    ],
-                    Text(
-                      isCompleted
-                          ? '✅ Esercizio Completato'
-                          : currentExercise.isIsometric
-                          ? '🔥 Avvia Isometrico ${_getEffectiveReps(currentExercise)}s'
-                          : _isRestPauseExercise(currentExercise)  // 🚀 NUOVA CONDIZIONE
-                          ? '⚡ Avvia REST-PAUSE'                  // 🚀 NUOVO TESTO
-                          : 'Completa Serie ${completedSeries + 1}',
-                      style: TextStyle(
-                        fontSize: 16.sp,  // Nota: font size diverso per multi-exercise
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Superset/Circuit specific
+              groupType: groupType,
+              groupExerciseNames: group.map((ex) => ex.nome).toList(),
+              currentExerciseIndex: _currentExerciseInGroup,
+              showWarning: true, // Mostra warning per superset/circuit
             ),
-
-            SizedBox(height: 16.h),
-
-            if (isGroupComplete)
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(16.w),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: Colors.green),
-                ),
-                child: Text(
-                  '✅ ${groupType.toUpperCase()} COMPLETATO!',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-            SizedBox(height: 100.h),
           ],
         ),
       ),
     );
   }
+
 
   /// Parameter card with plateau badge
   Widget _buildParameterCard(

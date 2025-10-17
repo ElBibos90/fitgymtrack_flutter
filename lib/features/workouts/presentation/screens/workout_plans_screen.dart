@@ -82,6 +82,9 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
     // 🚀 NUOVO: Collega il controller allo state
     widget.controller?._attachState(this);
 
+    // 🔧 FIX: Forza il caricamento immediato quando si torna da un allenamento
+    _loadWorkoutPlans();
+    
     // 🚀 FIX: NON caricare automaticamente i workout qui!
     //print('[CONSOLE] [workout_plans_screen]🔧 WorkoutPlansScreen initialized - NOT loading data yet');
   }
@@ -171,7 +174,7 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
   /// 🔧 FIX: Metodo di caricamento ora privato e chiamato solo quando necessario
   Future<void> _loadWorkoutPlans() async {
     //print('[CONSOLE] [workout_plans_screen]📊 Loading workout plans...');
-
+    
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
       _workoutBloc.loadWorkoutPlans(userId);
@@ -238,6 +241,12 @@ class _WorkoutPlansScreenState extends State<WorkoutPlansScreen>
           ),
           body: BlocConsumer<WorkoutBloc, WorkoutState>(
         listener: (context, state) {
+          if (state is WorkoutPlansLoaded) {
+            // 🔧 FIX: Aggiorna i flag quando i dati vengono caricati
+            _hasLoadedData = true;
+            _isTabVisible = true;
+          }
+          
           // ✅ Gestione feedback per le operazioni
           if (state is WorkoutPlanDeleted) {
             CustomSnackbar.show(

@@ -218,8 +218,19 @@ class WorkoutExercise {
       if (baseUrl.endsWith('/')) {
         baseUrl = baseUrl.substring(0, baseUrl.length - 1);
       }
-      return '$baseUrl/serve_image.php?filename=$immagineNome';
+      
+      // 🔧 FIX: Estrai la parte root del baseUrl (rimuovi /api)
+      // Da http://192.168.1.113/api a http://192.168.1.113
+      String webRootUrl = baseUrl.replaceFirst('/api', '');
+      if (webRootUrl.endsWith('/')) {
+        webRootUrl = webRootUrl.substring(0, webRootUrl.length - 1);
+      }
+      
+      // 🔧 FIX: Path diretto alle immagini in /uploads/images/
+      final fullUrl = '$webRootUrl/uploads/images/$immagineNome';
+      return fullUrl;
     }
+    
     return null;
   }
 
