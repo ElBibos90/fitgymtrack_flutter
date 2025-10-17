@@ -25,7 +25,26 @@ class WorkoutDesignSystem {
   /// Success Colors (Completamento)
   static const Color success700 = Color(0xFF15803D); // Dark
   static const Color success600 = Color(0xFF16A34A); // Default
+  static const Color success500 = Color(0xFF22C55E); // Medium
+  static const Color success200 = Color(0xFF86EFAC); // Border
   static const Color success100 = Color(0xFFDCFCE7); // Light
+  static const Color success50 = Color(0xFFF0FDF4); // Background
+
+  /// Warning Colors (Attenzione)
+  static const Color warning700 = Color(0xFFB45309); // Dark
+  static const Color warning600 = Color(0xFFD97706); // Default
+  static const Color warning500 = Color(0xFFF59E0B); // Medium
+  static const Color warning200 = Color(0xFFFDE047); // Border
+  static const Color warning100 = Color(0xFFFEF3C7); // Light
+  static const Color warning50 = Color(0xFFFEFCE8); // Background
+
+  /// Error Colors (Errore)
+  static const Color error700 = Color(0xFFB91C1C); // Dark
+  static const Color error600 = Color(0xFFDC2626); // Default
+  static const Color error500 = Color(0xFFEF4444); // Medium
+  static const Color error200 = Color(0xFFFCA5A5); // Border
+  static const Color error100 = Color(0xFFFEE2E2); // Light
+  static const Color error50 = Color(0xFFFEF2F2); // Background
 
   /// Accent Colors (Timer, Alert)
   static const Color accent700 = Color(0xFFB91C1C); // Urgent
@@ -39,6 +58,14 @@ class WorkoutDesignSystem {
   static const Color gray200 = Color(0xFFE5E7EB); // Bordi
   static const Color gray100 = Color(0xFFF3F4F6); // Background cards
   static const Color gray50 = Color(0xFFF9FAFB); // Background
+
+  /// Neutral Colors (Extended)
+  static const Color neutral600 = Color(0xFF6B7280); // Text secondary
+  static const Color neutral500 = Color(0xFF9CA3AF); // Text disabled
+  static const Color neutral300 = Color(0xFFD1D5DB); // Border light
+  static const Color neutral200 = Color(0xFFE5E7EB); // Border
+  static const Color neutral100 = Color(0xFFF3F4F6); // Background light
+  static const Color neutral50 = Color(0xFFF9FAFB); // Background
 
   // 🌙 DARK MODE COLORS
   static const Color darkBackground = Color(0xFF0F0F0F); // Background principale
