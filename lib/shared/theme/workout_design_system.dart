@@ -96,6 +96,16 @@ class WorkoutDesignSystem {
   static const Color isometricBlue600 = Color(0xFF2563EB);
   static const Color isometricBlue50 = Color(0xFFEFF6FF);
 
+  /// Dropset Colors
+  static const Color dropsetGreen700 = Color(0xFF047857);
+  static const Color dropsetGreen600 = Color(0xFF059669);
+  static const Color dropsetGreen50 = Color(0xFFECFDF5);
+
+  /// Giant Set Colors
+  static const Color giantSetTeal700 = Color(0xFF0F766E);
+  static const Color giantSetTeal600 = Color(0xFF0D9488);
+  static const Color giantSetTeal50 = Color(0xFFF0FDFA);
+
   // ============================================================================
   // 📏 TYPOGRAPHY SCALE
   // ============================================================================
@@ -386,6 +396,14 @@ class WorkoutDesignSystem {
         backgroundColor = circuitOrange50;
         borderColor = circuitOrange600;
         break;
+      case 'dropset':
+        backgroundColor = dropsetGreen50;
+        borderColor = dropsetGreen600;
+        break;
+      case 'giant set':
+        backgroundColor = giantSetTeal50;
+        borderColor = giantSetTeal600;
+        break;
       case 'rest-pause':
         backgroundColor = restPauseRed50;
         borderColor = restPauseRed600;
@@ -412,6 +430,10 @@ class WorkoutDesignSystem {
         return supersetPurple600;
       case 'circuit':
         return circuitOrange600;
+      case 'dropset':
+        return dropsetGreen600;
+      case 'giant set':
+        return giantSetTeal600;
       case 'rest-pause':
         return restPauseRed600;
       case 'isometric':
@@ -464,6 +486,10 @@ class WorkoutDesignSystem {
         return '🔗';
       case 'circuit':
         return '🔄';
+      case 'dropset':
+        return '📉';
+      case 'giant set':
+        return '💪';
       case 'rest-pause':
         return '🔥';
       case 'isometric':

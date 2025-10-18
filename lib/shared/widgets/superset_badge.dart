@@ -83,6 +83,10 @@ class SupersetBadge extends StatelessWidget {
         return 'SUPERSET';
       case 'circuit':
         return 'CIRCUIT';
+      case 'dropset':
+        return 'DROPSET';
+      case 'giant set':
+        return 'GIANT SET';
       case 'rest-pause':
         return 'REST-PAUSE';
       case 'isometric':

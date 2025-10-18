@@ -396,8 +396,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (_exerciseGroups.isNotEmpty && _currentGroupIndex < _exerciseGroups.length) {
       final group = _exerciseGroups[_currentGroupIndex];
       if (group.length > 1) {
-        // Default to Superset for multi-exercise groups
-        return 'Superset';
+        // 🔧 FIX: Usa il setType reale del primo esercizio del gruppo
+        final groupType = group.first.setType;
+        switch (groupType) {
+          case 'superset':
+            return 'Superset';
+          case 'circuit':
+            return 'Circuit';
+          case 'dropset':
+            return 'Dropset';
+          case 'giant_set':
+            return 'Giant Set';
+          default:
+            // Fallback per tipi non riconosciuti
+            return 'Superset';
+        }
       }
     }
     return null;
