@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/workout_design_system.dart';
 import 'weight_reps_card.dart';
+import 'use_previous_data_toggle.dart';
 
 /// 🏋️ EXERCISE CARD - LAYOUT B (Side-by-side)
 /// Layout unificato per tutti gli esercizi
@@ -28,6 +29,12 @@ class ExerciseCardLayoutB extends StatelessWidget {
   final VoidCallback onEditParameters;
   final VoidCallback onCompleteSeries;
   final Function(String url, dynamic error)? onImageLoadError; // [NEW_PROGR] Callback per errori immagine
+  
+  // 🎯 FASE 5: Sistema "Usa Dati Precedenti"
+  final bool usePreviousData;
+  final ValueChanged<bool>? onUsePreviousDataChanged;
+  final bool isLoadingPreviousData;
+  final String? previousDataStatusMessage;
   
   // Superset/Circuit specific
   final String? groupType; // 'superset' o 'circuit'
@@ -51,6 +58,11 @@ class ExerciseCardLayoutB extends StatelessWidget {
     required this.onEditParameters,
     required this.onCompleteSeries,
     this.onImageLoadError,
+    // 🎯 FASE 5: Sistema "Usa Dati Precedenti"
+    this.usePreviousData = false,
+    this.onUsePreviousDataChanged,
+    this.isLoadingPreviousData = false,
+    this.previousDataStatusMessage,
     this.groupType,
     this.groupExerciseNames,
     this.currentExerciseIndex,
@@ -67,11 +79,11 @@ class ExerciseCardLayoutB extends StatelessWidget {
           SizedBox(height: WorkoutDesignSystem.spacingM.h),
         ],
         
-        // Warning (se superset/circuit)
-        if (showWarning) ...[
-          _buildWarning(context),
-          SizedBox(height: WorkoutDesignSystem.spacingM.h),
-        ],
+        // Warning (se superset/circuit) - 🎯 FASE 5: RIMOSSO per risparmiare spazio
+        // if (showWarning) ...[
+        //   _buildWarning(context),
+        //   SizedBox(height: WorkoutDesignSystem.spacingM.h),
+        // ],
 
         // Main exercise content
         _buildExerciseContent(context),
@@ -372,6 +384,17 @@ class ExerciseCardLayoutB extends StatelessWidget {
           ),
           
           SizedBox(height: WorkoutDesignSystem.spacingM.h),
+          
+          // 🎯 FASE 5: Toggle "Usa Dati Precedenti"
+          if (onUsePreviousDataChanged != null) ...[
+            UsePreviousDataToggle(
+              usePreviousData: usePreviousData,
+              onChanged: onUsePreviousDataChanged!,
+              isLoading: isLoadingPreviousData,
+              statusMessage: previousDataStatusMessage,
+            ),
+            SizedBox(height: WorkoutDesignSystem.spacingM.h),
+          ],
           
           // Parameters (Weight & Reps)
           Row(

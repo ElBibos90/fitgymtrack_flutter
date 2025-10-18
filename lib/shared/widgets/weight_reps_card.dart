@@ -20,6 +20,7 @@ class WeightRepsCard extends StatelessWidget {
   final bool hasPlateauBadge;
   final double? width;
   final double? height;
+  
 
   const WeightRepsCard({
     super.key,
@@ -125,7 +126,7 @@ class WeightRepsCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: WorkoutDesignSystem.animationNormal,
         width: width ?? WorkoutDesignSystem.weightRepsCardWidth.w,
-        height: height ?? WorkoutDesignSystem.weightRepsCardHeight.h,
+        height: height ?? 70.h, // 🔧 FIX: Altezza professionale per contenere tutto il contenuto
         decoration: BoxDecoration(
           gradient: _getCardGradient(context, isModified),
           borderRadius: WorkoutDesignSystem.borderRadiusM,
@@ -144,10 +145,10 @@ class WeightRepsCard extends StatelessWidget {
           children: [
             // Content principale
             Padding(
-              padding: EdgeInsets.all(WorkoutDesignSystem.spacingXS.w), // 🔧 FIX: Ridotto da S (12) a XS (8)
+              padding: EdgeInsets.all(8.w), // 🔧 FIX: Padding professionale per comfort visivo
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // 🔧 FIX: Min invece di max
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Label + edit icon
                   Row(
@@ -203,32 +204,37 @@ class WeightRepsCard extends StatelessWidget {
                   SizedBox(height: 2.h), // 🔧 FIX: Spacer rimosso, spacing fisso
 
                   // Valore grande
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 26.sp, // 🔧 FIX: Ridotto da 32 a 26 per fit mobile
-                          fontWeight: WorkoutDesignSystem.fontWeightBold,
-                          fontFamily: WorkoutDesignSystem.fontFamilyNumbers,
-                          color: isModified
-                              ? WorkoutDesignSystem.primary600
-                              : _getTextColor(context),
-                          height: 1.0,
+                  Flexible(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            value,
+                            style: TextStyle(
+                              fontSize: 20.sp, // 🔧 FIX: Font size professionale per leggibilità
+                              fontWeight: WorkoutDesignSystem.fontWeightBold,
+                              fontFamily: WorkoutDesignSystem.fontFamilyNumbers,
+                              color: isModified
+                                  ? WorkoutDesignSystem.primary600
+                                  : _getTextColor(context),
+                              height: 1.0,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        unit,
-                        style: TextStyle(
-                          fontSize: WorkoutDesignSystem.fontSizeCaption.sp,
-                          fontWeight: WorkoutDesignSystem.fontWeightMedium,
-                          color: _getTextColor(context, isSecondary: true),
+                        SizedBox(width: 4.w),
+                        Text(
+                          unit,
+                          style: TextStyle(
+                            fontSize: WorkoutDesignSystem.fontSizeCaption.sp,
+                            fontWeight: WorkoutDesignSystem.fontWeightMedium,
+                            color: _getTextColor(context, isSecondary: true),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   SizedBox(height: 2.h), // 🔧 FIX: Ridotto da 4 a 2
@@ -262,15 +268,6 @@ class WeightRepsCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ] else ...[
-                    // 🔧 FIX: Placeholder ridotto per evitare overflow
-                    Text(
-                      '(vs ultima)',
-                      style: TextStyle(
-                        fontSize: 10.sp, // 🔧 FIX: Ridotto
-                        color: _getTextColor(context, isSecondary: true),
                       ),
                     ),
                   ],

@@ -1,321 +1,193 @@
+// lib/shared/widgets/use_previous_data_toggle.dart
+// 🎯 TOGGLE "USA DATI PRECEDENTI" - Sistema Fase 5
+// Toggle switch per decidere se caricare automaticamente dati precedenti
+// Data: 17 Ottobre 2025
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/workout_design_system.dart';
 
-/// 🔄 Use Previous Data Toggle
-/// Toggle switch per abilitare/disabilitare l'uso dei dati precedenti
+/// 🎯 Toggle Switch per "Usa Dati Precedenti"
+/// Permette all'utente di decidere se caricare automaticamente peso/ripetizioni dell'ultimo allenamento
 class UsePreviousDataToggle extends StatelessWidget {
-  final bool value;
+  final bool usePreviousData;
   final ValueChanged<bool> onChanged;
-  final bool isEnabled;
-  final String? tooltip;
+  final bool isLoading;
+  final String? statusMessage;
 
   const UsePreviousDataToggle({
-    Key? key,
-    required this.value,
+    super.key,
+    required this.usePreviousData,
     required this.onChanged,
-    this.isEnabled = true,
-    this.tooltip,
-  }) : super(key: key);
+    this.isLoading = false,
+    this.statusMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: value 
-            ? WorkoutDesignSystem.primary50 
-            : WorkoutDesignSystem.neutral50,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: value 
-              ? WorkoutDesignSystem.primary200 
-              : WorkoutDesignSystem.neutral200,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Icona
-          Container(
-            width: 32.w,
-            height: 32.w,
-            decoration: BoxDecoration(
-              color: value 
-                  ? WorkoutDesignSystem.primary500 
-                  : WorkoutDesignSystem.neutral400,
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(
-              Icons.history,
-              color: Colors.white,
-              size: 16.sp,
-            ),
-          ),
-          
-          SizedBox(width: 12.w),
-          
-          // Testo e descrizione
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Usa dati precedenti',
-                  style: WorkoutDesignSystem.captionBold.copyWith(
-                    color: WorkoutDesignSystem.onSurfaceColor,
-                    fontSize: 12.sp,
-                  ),
-                ),
-                SizedBox(height: 2.h),
-                Text(
-                  value 
-                      ? 'Carica automaticamente peso e ripetizioni dell\'ultimo allenamento'
-                      : 'Inserisci manualmente peso e ripetizioni',
-                  style: WorkoutDesignSystem.caption.copyWith(
-                    color: WorkoutDesignSystem.onSurfaceColor.withOpacity(0.7),
-                    fontSize: 10.sp,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          SizedBox(width: 12.w),
-          
-          // Toggle switch
-          Transform.scale(
-            scale: 0.8,
-            child: Switch(
-              value: value,
-              onChanged: isEnabled ? onChanged : null,
-              activeColor: WorkoutDesignSystem.primary500,
-              activeTrackColor: WorkoutDesignSystem.primary200,
-              inactiveThumbColor: WorkoutDesignSystem.neutral300,
-              inactiveTrackColor: WorkoutDesignSystem.neutral200,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 🎯 Previous Data Status Badge
-/// Badge per mostrare lo stato dei dati precedenti
-class PreviousDataStatusBadge extends StatelessWidget {
-  final bool isUsingPreviousData;
-  final bool hasPreviousData;
-  final String? previousDataInfo;
-
-  const PreviousDataStatusBadge({
-    Key? key,
-    required this.isUsingPreviousData,
-    required this.hasPreviousData,
-    this.previousDataInfo,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    if (!isUsingPreviousData || !hasPreviousData) {
-      return SizedBox.shrink();
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: WorkoutDesignSystem.success50,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: WorkoutDesignSystem.success200,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.check_circle,
-            size: 12.sp,
-            color: WorkoutDesignSystem.success600,
-          ),
-          SizedBox(width: 4.w),
-          Text(
-            previousDataInfo ?? 'Dati precedenti caricati',
-            style: WorkoutDesignSystem.caption.copyWith(
-              color: WorkoutDesignSystem.success700,
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 📊 Previous Data Info Card
-/// Card per mostrare informazioni sui dati precedenti
-class PreviousDataInfoCard extends StatelessWidget {
-  final Map<int, CompletedSeries> lastWorkoutSeries;
-  final int currentSeries;
-  final VoidCallback? onViewHistory;
-
-  const PreviousDataInfoCard({
-    Key? key,
-    required this.lastWorkoutSeries,
-    required this.currentSeries,
-    this.onViewHistory,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final currentSeriesData = lastWorkoutSeries[currentSeries];
-    
-    if (currentSeriesData == null) {
-      return _buildNoDataCard();
-    }
-
-    return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: WorkoutDesignSystem.primary50,
-        borderRadius: BorderRadius.circular(8.r),
+        color: _getBackgroundColor(context),
+        borderRadius: WorkoutDesignSystem.borderRadiusM,
         border: Border.all(
-          color: WorkoutDesignSystem.primary200,
+          color: _getBorderColor(context),
           width: 1,
         ),
+        boxShadow: _getCardShadow(context),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header con icona e titolo
           Row(
             children: [
               Icon(
-                Icons.info_outline,
-                size: 16.sp,
-                color: WorkoutDesignSystem.primary600,
+                Icons.history,
+                size: 20.sp,
+                color: _getIconColor(context),
               ),
               SizedBox(width: 8.w),
               Text(
-                'Dati Serie $currentSeries',
-                style: WorkoutDesignSystem.captionBold.copyWith(
-                  color: WorkoutDesignSystem.primary700,
+                'Usa Dati Precedenti',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: WorkoutDesignSystem.fontWeightSemiBold,
+                  color: _getTextColor(context),
                 ),
               ),
               Spacer(),
-              if (onViewHistory != null)
-                GestureDetector(
-                  onTap: onViewHistory,
-                  child: Text(
-                    'Vedi storico',
-                    style: WorkoutDesignSystem.caption.copyWith(
-                      color: WorkoutDesignSystem.primary600,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
+              // Toggle switch
+              Switch(
+                value: usePreviousData,
+                onChanged: isLoading ? null : onChanged,
+                activeColor: WorkoutDesignSystem.primary600,
+                inactiveThumbColor: _getTextColor(context, isSecondary: true),
+                inactiveTrackColor: _getBorderColor(context),
+              ),
             ],
           ),
           
           SizedBox(height: 8.h),
           
-          Row(
-            children: [
-              // Peso
-              Expanded(
-                child: _buildDataItem(
-                  'Peso',
-                  '${currentSeriesData.formattedPeso}kg',
-                  Icons.fitness_center,
-                ),
-              ),
-              
-              SizedBox(width: 12.w),
-              
-              // Ripetizioni
-              Expanded(
-                child: _buildDataItem(
-                  'Reps',
-                  currentSeriesData.formattedRipetizioni,
-                  Icons.repeat,
-                ),
-              ),
-              
-              SizedBox(width: 12.w),
-              
-              // Data
-              Expanded(
-                child: _buildDataItem(
-                  'Data',
-                  currentSeriesData.formattedDate,
-                  Icons.calendar_today,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoDataCard() {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: WorkoutDesignSystem.neutral50,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(
-          color: WorkoutDesignSystem.neutral200,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 16.sp,
-            color: WorkoutDesignSystem.neutral500,
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Text(
-              'Nessun dato precedente per la serie $currentSeries',
-              style: WorkoutDesignSystem.caption.copyWith(
-                color: WorkoutDesignSystem.neutral600,
-              ),
+          // Descrizione
+          Text(
+            usePreviousData 
+                ? 'Carica automaticamente peso e ripetizioni dell\'ultimo allenamento'
+                : 'Mostra solo confronto con l\'ultimo allenamento',
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: _getTextColor(context, isSecondary: true),
+              height: 1.3,
             ),
           ),
+          
+          // Status message (se presente)
+          if (statusMessage != null) ...[
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: _getStatusBackgroundColor(context),
+                borderRadius: WorkoutDesignSystem.borderRadiusS,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getStatusIcon(),
+                    size: 14.sp,
+                    color: _getStatusColor(context),
+                  ),
+                  SizedBox(width: 6.w),
+                  Expanded(
+                    child: Text(
+                      statusMessage!,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: _getStatusColor(context),
+                        fontWeight: WorkoutDesignSystem.fontWeightMedium,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildDataItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 14.sp,
-          color: WorkoutDesignSystem.primary600,
+  // 🌙 DARK MODE HELPERS
+  bool _isDarkMode(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  Color _getBackgroundColor(BuildContext context) {
+    return _isDarkMode(context) 
+        ? WorkoutDesignSystem.darkSurface
+        : Colors.white;
+  }
+
+  Color _getBorderColor(BuildContext context) {
+    return _isDarkMode(context) 
+        ? WorkoutDesignSystem.darkBorder
+        : WorkoutDesignSystem.gray200;
+  }
+
+  Color _getTextColor(BuildContext context, {bool isSecondary = false}) {
+    if (_isDarkMode(context)) {
+      return isSecondary 
+          ? WorkoutDesignSystem.darkTextSecondary 
+          : WorkoutDesignSystem.darkTextPrimary;
+    }
+    return isSecondary 
+        ? WorkoutDesignSystem.neutral600 
+        : WorkoutDesignSystem.gray900;
+  }
+
+  Color _getIconColor(BuildContext context) {
+    return _isDarkMode(context) 
+        ? WorkoutDesignSystem.primary400
+        : WorkoutDesignSystem.primary600;
+  }
+
+  Color _getStatusBackgroundColor(BuildContext context) {
+    if (isLoading) {
+      return _isDarkMode(context) 
+          ? WorkoutDesignSystem.warning500.withValues(alpha: 0.2)
+          : WorkoutDesignSystem.warning100;
+    }
+    return _isDarkMode(context) 
+        ? WorkoutDesignSystem.success500.withValues(alpha: 0.2)
+        : WorkoutDesignSystem.success100;
+  }
+
+  Color _getStatusColor(BuildContext context) {
+    if (isLoading) {
+      return WorkoutDesignSystem.warning600;
+    }
+    return WorkoutDesignSystem.success600;
+  }
+
+  IconData _getStatusIcon() {
+    if (isLoading) {
+      return Icons.hourglass_empty;
+    }
+    return Icons.check_circle;
+  }
+
+  List<BoxShadow> _getCardShadow(BuildContext context) {
+    if (_isDarkMode(context)) {
+      return [
+        BoxShadow(
+          color: const Color(0x1A000000),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
         ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: WorkoutDesignSystem.caption.copyWith(
-            color: WorkoutDesignSystem.primary600,
-            fontSize: 9.sp,
-          ),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          value,
-          style: WorkoutDesignSystem.captionBold.copyWith(
-            color: WorkoutDesignSystem.primary700,
-            fontSize: 11.sp,
-          ),
-        ),
-      ],
-    );
+      ];
+    }
+    return WorkoutDesignSystem.shadowLevel1;
   }
 }

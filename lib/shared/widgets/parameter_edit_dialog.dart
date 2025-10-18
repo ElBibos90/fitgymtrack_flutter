@@ -187,30 +187,39 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
 
               SizedBox(height: 32.h),
 
-              // Weight Control
-              _buildParameterControl(
-                label: 'Peso (kg)',
-                value: _currentWeight.toStringAsFixed(1),
-                controller: _weightController,
-                onChanged: _onWeightChanged,
-                onIncrement: () => _updateWeight(0.5),
-                onDecrement: () => _updateWeight(-0.5),
-                icon: Icons.fitness_center,
-                color: colorScheme.primary,
-              ),
+              // 🔧 FIX: Layout orizzontale per peso e ripetizioni
+              Row(
+                children: [
+                  // Weight Control (sinistra)
+                  Expanded(
+                    child: _buildParameterControl(
+                      label: 'Peso',
+                      value: _currentWeight.toStringAsFixed(1),
+                      controller: _weightController,
+                      onChanged: _onWeightChanged,
+                      onIncrement: () => _updateWeight(0.5),
+                      onDecrement: () => _updateWeight(-0.5),
+                      icon: Icons.fitness_center,
+                      color: colorScheme.primary,
+                    ),
+                  ),
 
-              SizedBox(height: 24.h),
+                  SizedBox(width: 16.w),
 
-              // Reps/Seconds Control
-              _buildParameterControl(
-                label: widget.isIsometric ? 'Secondi' : 'Ripetizioni',
-                value: _currentReps.toString(),
-                controller: _repsController,
-                onChanged: _onRepsChanged,
-                onIncrement: () => _updateReps(1),
-                onDecrement: () => _updateReps(-1),
-                icon: widget.isIsometric ? Icons.timer : Icons.repeat,
-                color: widget.isIsometric ? Colors.deepPurple : Colors.green,
+                  // Reps/Seconds Control (destra)
+                  Expanded(
+                    child: _buildParameterControl(
+                      label: widget.isIsometric ? 'Sec' : 'Reps',
+                      value: _currentReps.toString(),
+                      controller: _repsController,
+                      onChanged: _onRepsChanged,
+                      onIncrement: () => _updateReps(1),
+                      onDecrement: () => _updateReps(-1),
+                      icon: widget.isIsometric ? Icons.timer : Icons.repeat,
+                      color: widget.isIsometric ? Colors.deepPurple : Colors.green,
+                    ),
+                  ),
+                ],
               ),
 
               SizedBox(height: 32.h),

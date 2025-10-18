@@ -128,10 +128,235 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   bool _isInitialized = false;
   String _currentStatus = "Inizializzazione...";
   int? _userId;
+  
+  // 🎯 FASE 5: Sistema "Usa Dati Precedenti" - DEFAULT ON per caricamento automatico
+  bool _usePreviousData = true;
+  bool _previousDataLoaded = false; // Flag per evitare caricamenti multipli
+  Map<int, double> _previousWeights = {}; // Cache dati precedenti
+  Map<int, int> _previousReps = {}; // Cache dati precedenti
+  Map<int, int> _previousSeriesNumber = {}; // Cache serie number precedenti
 
   // 🆕 Dialog state
   bool _showExitDialog = false;
   bool _showCompleteDialog = false;
+
+  // ============================================================================
+  // 🎯 FASE 5: Sistema "Usa Dati Precedenti"
+  // ============================================================================
+  
+  void _loadPreviousData(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    // print('[STORICO] Caricamento dati precedenti per esercizio ID: $exerciseId');
+    // print('[STORICO] Esercizio: ${exercise.nome}');
+    
+    // Calcola la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState == null) {
+      // print('[STORICO] ERRORE: Stato corrente nullo');
+      return;
+    }
+    
+    final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+    final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie);
+    
+    // print('[STORICO] Serie corrente: $currentSeriesNumber (completate: $completedSeriesCount)');
+    // print('[STORICO] Serie totali esercizio: ${exercise.serie}');
+    
+    // 🎯 FASE 5: Carica i dati per la serie corrente (quella che devi fare ora)
+    // print('[STORICO] Caricamento dati storici per serie corrente: $currentSeriesNumber');
+    
+    // 🎯 FASE 5: Verifica se il BLoC ha dati storici caricati
+    // print('[STORICO] 🔍 DEBUG: Verifica dati storici nel BLoC per esercizio $exerciseId, serie $currentSeriesNumber');
+    
+    // 🎯 FASE 5: Recupera dati reali dallo storico tramite BLoC
+    final historicValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+    
+    // print('[STORICO] 🔍 DEBUG: historicValues.isFromHistory = ${historicValues.isFromHistory}');
+    // print('[STORICO] 🔍 DEBUG: historicValues.weight = ${historicValues.weight}');
+    // print('[STORICO] 🔍 DEBUG: historicValues.reps = ${historicValues.reps}');
+    
+    final double lastWeight;
+    final int lastReps;
+    
+    if (historicValues.isFromHistory && historicValues.weight > 0) {
+      // Usa i dati storici reali dal database
+      lastWeight = historicValues.weight;
+      lastReps = historicValues.reps;
+      // print('[STORICO] ✅ Dati REALI dal database: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    } else {
+      // Fallback: usa i valori di default dell'esercizio
+      lastWeight = exercise.peso;
+      lastReps = exercise.ripetizioni;
+      // print('[STORICO] ⚠️ ATTENZIONE: Nessun dato storico trovato (isFromHistory=${historicValues.isFromHistory}, weight=${historicValues.weight})');
+      // print('[STORICO] ⚠️ Uso valori default dell\');
+    }
+    
+    setState(() {
+      _previousWeights[exerciseId] = lastWeight;
+      _previousReps[exerciseId] = lastReps;
+      _previousSeriesNumber[exerciseId] = currentSeriesNumber;
+    });
+    
+    // print('[STORICO] Dati precedenti caricati: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    // print('[STORICO] Cache aggiornata per esercizio $exerciseId');
+  }
+  
+  void _clearPreviousData(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    print('[PARAM] Pulizia dati precedenti per esercizio ID: $exerciseId');
+    
+    setState(() {
+      _previousWeights.remove(exerciseId);
+      _previousReps.remove(exerciseId);
+      _previousSeriesNumber.remove(exerciseId);
+    });
+    
+    print('[PARAM] Dati precedenti rimossi, tornando ai valori del DB');
+  }
+  
+  void _loadPreviousDataForComparison(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    // print('[STORICO] Caricamento dati precedenti per confronto - esercizio ID: $exerciseId');
+    // print('[STORICO] Esercizio: ${exercise.nome}');
+    
+    // Calcola la serie corrente
+    final currentState = _getCurrentState();
+    if (currentState == null) {
+      // print('[STORICO] ERRORE: Stato corrente nullo per confronto');
+      return;
+    }
+    
+    final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
+    final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie);
+    
+    // print('[STORICO] Serie corrente per confronto: $currentSeriesNumber (completate: $completedSeriesCount)');
+    // print('[STORICO] Serie totali esercizio: ${exercise.serie}');
+    
+    // 🎯 FASE 5: Carica i dati per la serie corrente (quella che devi fare ora)
+    // print('[STORICO] Caricamento dati storici per confronto serie corrente: $currentSeriesNumber');
+    
+    // 🎯 FASE 5: Recupera dati reali dallo storico tramite BLoC (per confronto)
+    final historicValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
+    
+    final double lastWeight;
+    final int lastReps;
+    
+    if (historicValues.isFromHistory && historicValues.weight > 0) {
+      // Usa i dati storici reali dal database
+      lastWeight = historicValues.weight;
+      lastReps = historicValues.reps;
+      // print('[STORICO] Dati REALI dal database per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    } else {
+      // Fallback: usa i valori di default dell'esercizio
+      lastWeight = exercise.peso;
+      lastReps = exercise.ripetizioni;
+      // print('[STORICO] ATTENZIONE: Nessun dato storico per confronto, uso valori default: $lastWeight kg x $lastReps reps');
+    }
+    
+    setState(() {
+      _previousWeights[exerciseId] = lastWeight;
+      _previousReps[exerciseId] = lastReps;
+      _previousSeriesNumber[exerciseId] = currentSeriesNumber;
+    });
+    
+    // print('[STORICO] Dati precedenti caricati per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    // print('[STORICO] Cache aggiornata per confronto esercizio $exerciseId');
+  }
+  
+  void _loadPreviousDataForComparisonIfNeeded() {
+    // print('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI ===');
+    // print('[STORICO] Toggle usePreviousData: $_usePreviousData');
+    
+    // Ottieni l'esercizio corrente dallo stato del BLoC
+    final state = _activeWorkoutBloc.state;
+    WorkoutExercise? currentExercise;
+    
+    if (state is WorkoutSessionActive) {
+      // print('[STORICO] Stato WorkoutSessionActive trovato con ${state.exercises.length} esercizi');
+      // Per esercizio singolo, usa il primo esercizio
+      if (state.exercises.isNotEmpty) {
+        currentExercise = state.exercises.first;
+        // print('[STORICO] Esercizio corrente: ${currentExercise.nome} (ID: ${currentExercise.schedaEsercizioId ?? currentExercise.id})');
+      } else {
+        // print('[STORICO] ERRORE: Nessun esercizio trovato nello stato');
+      }
+    } else {
+      // print('[STORICO] ERRORE: Stato non è WorkoutSessionActive: ${state.runtimeType}');
+    }
+    
+    if (currentExercise != null) {
+      final exerciseId = currentExercise.schedaEsercizioId ?? currentExercise.id;
+      // print('[STORICO] Esercizio ID: $exerciseId');
+      // print('[STORICO] Cache già presente: ${_previousWeights.containsKey(exerciseId)}');
+      
+      // Carica solo se non già caricato
+      if (!_previousWeights.containsKey(exerciseId)) {
+        if (_usePreviousData) {
+          // print('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
+          _loadPreviousData(currentExercise);
+        } else {
+          // print('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
+          _loadPreviousDataForComparison(currentExercise);
+        }
+      } else {
+        // print('[STORICO] Dati già presenti in cache, skip caricamento');
+      }
+    } else {
+      // print('[STORICO] ERRORE: Nessun esercizio corrente trovato');
+    }
+    
+    // print('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI ===');
+  }
+  
+  void _loadPreviousDataForAllExercises(WorkoutSessionActive state) {
+    // print('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
+    // print('[STORICO] Toggle usePreviousData: $_usePreviousData');
+    // print('[STORICO] Numero esercizi: ${state.exercises.length}');
+    
+    // ⏰ IMPORTANTE: Aspetta che il BLoC finisca di caricare lo storico
+    // Il BLoC carica lo storico in modo asincrono, quindi aspettiamo un po'
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      
+      // print('[STORICO] ⏰ Delay completato, ora carico i dati precedenti dal BLoC');
+      
+      for (int i = 0; i < state.exercises.length; i++) {
+        final exercise = state.exercises[i];
+        final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+        
+        // print('[STORICO] Esercizio ${i + 1}: ${exercise.nome} (ID: $exerciseId)');
+        
+        // Carica solo se non già caricato
+        if (!_previousWeights.containsKey(exerciseId)) {
+          if (_usePreviousData) {
+            // print('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
+            _loadPreviousData(exercise);
+          } else {
+            // print('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
+            _loadPreviousDataForComparison(exercise);
+          }
+        } else {
+          // print('[STORICO] Dati già presenti in cache per esercizio $exerciseId, skip');
+        }
+      }
+      
+      // print('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
+    });
+  }
+  
+  String _getPreviousDataText(WorkoutExercise exercise) {
+    final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+    
+    if (_previousWeights.containsKey(exerciseId) && _previousReps.containsKey(exerciseId) && _previousSeriesNumber.containsKey(exerciseId)) {
+      final weight = _previousWeights[exerciseId]!;
+      final reps = _previousReps[exerciseId]!;
+      final seriesNumber = _previousSeriesNumber[exerciseId]!;
+      return 'vs scorsa: $weight kg x $reps reps - Serie $seriesNumber';
+    }
+    
+    return 'vs scorsa';
+  }
+  
 
   // ============================================================================
   // 🚀 ENHANCED TIMER - Helper methods per superset detection
@@ -206,6 +431,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     
     _initializeAnimations();
     _initializeWorkout();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 🎯 FASE 5: Carica dati precedenti se toggle ON (default), o per confronto se OFF
+    // RIMOSSO: Causava loop infinito
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (mounted) {
+    //     _loadPreviousDataForComparisonIfNeeded();
+    //   }
+    // });
   }
 
   bool _isRestPauseExercise(WorkoutExercise exercise) {
@@ -609,6 +846,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   double _getEffectiveWeight(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // 🎯 FASE 5: PRIORITÀ MASSIMA - Dati precedenti se toggle ON
+    if (_usePreviousData && _previousWeights.containsKey(exerciseId)) {
+      // print('[STORICO] Usando peso precedente: ${_previousWeights[exerciseId]} kg per esercizio $exerciseId');
+      return _previousWeights[exerciseId]!;
+    }
+
     // 🔧 PERFORMANCE FIX: Usa cache se disponibile
     if (_cachedWeights.containsKey(exerciseId)) {
       return _cachedWeights[exerciseId]!;
@@ -660,6 +903,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   /// Ottiene ripetizioni efficaci con cache
   int _getEffectiveReps(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
+
+    // 🎯 FASE 5: PRIORITÀ MASSIMA - Dati precedenti se toggle ON
+    if (_usePreviousData && _previousReps.containsKey(exerciseId)) {
+      // print('[STORICO] Usando reps precedenti: ${_previousReps[exerciseId]} reps per esercizio $exerciseId');
+      return _previousReps[exerciseId]!;
+    }
 
     // 🔧 PERFORMANCE FIX: Usa cache se disponibile
     if (_cachedReps.containsKey(exerciseId)) {
@@ -808,6 +1057,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           _currentStatus = "Allenamento ripristinato";
         });
         _slideController.forward();
+        
+        // 🎯 FASE 5: Carica dati precedenti per tutti gli esercizi
+        // RIMOSSO: Ora gestito in _buildActiveContent per evitare duplicati
+        // if (_usePreviousData && currentState.exercises.isNotEmpty) {
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     if (mounted) {
+        //       _loadPreviousDataForAllExercises(currentState);
+        //     }
+        //   });
+        // }
       } else {
         //print('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
         // Avvia un nuovo allenamento solo se non ce n'è già uno attivo
@@ -957,17 +1216,18 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
 
   /// 🔧 FIX 3: Verifica se dovrebbe partire il timer di recupero
+  /// 🎯 FASE 5: Timer parte SOLO dopo l'ultimo esercizio del superset/circuit
   bool _shouldStartRecoveryTimer(WorkoutExercise exercise) {
     // Se non è parte di un gruppo multi-esercizio, sempre true
     if (!_isPartOfMultiExerciseGroup(exercise)) {
-      print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (single exercise)");
+      // print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (single exercise)");
       return true;
     }
 
-    // Per i gruppi multi-esercizio, usa la logica semplificata
-    // Il timer parte sempre per esercizi in gruppi
-    print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (multi-exercise group)");
-    return true;
+    // 🎯 FASE 5: Per superset/circuit, timer parte SOLO se è l'ultimo esercizio
+    final isLast = _isLastExerciseInGroup(exercise);
+    // print("[TIMER] 🚀 _shouldStartRecoveryTimer: ${isLast ? 'TRUE' : 'FALSE'} (multi-exercise group, isLast=$isLast, exercise=${exercise.nome})");
+    return isLast;
   }
 
   // ============================================================================
@@ -1037,13 +1297,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _startRecoveryTimer(int seconds, String exerciseName) {
-    print("[TIMER] 🚀 _startRecoveryTimer called - seconds: $seconds, exercise: $exerciseName");
+    // print("[TIMER] 🚀 _startRecoveryTimer called - seconds: $seconds, exercise: $exerciseName");
     setState(() {
       _isRecoveryTimerActive = true;
       _recoverySeconds = seconds;
       _currentRecoveryExerciseName = exerciseName;
     });
-    print("[TIMER] 🚀 Timer state updated - _isRecoveryTimerActive: $_isRecoveryTimerActive");
+    // print("[TIMER] 🚀 Timer state updated - _isRecoveryTimerActive: $_isRecoveryTimerActive");
   }
 
   void _stopRecoveryTimer() {
@@ -1338,6 +1598,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     // 🔧 PERFORMANCE FIX: Invalida cache dopo completamento serie
     _invalidateCacheForExercise(exerciseId);
+
+    // 🎯 FASE 5: Aggiorna dati precedenti per la prossima serie
+    // IMPORTANTE: Dobbiamo aspettare che il BLoC aggiorni lo stato prima di caricare i dati
+    // Usiamo un delay minimo per dare tempo al BLoC di processare l'aggiornamento
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        if (_usePreviousData) {
+          // print('[STORICO] Aggiornamento dati precedenti dopo completamento serie');
+          _loadPreviousData(exercise);
+        } else {
+          // print('[STORICO] Aggiornamento dati per confronto dopo completamento serie');
+          _loadPreviousDataForComparison(exercise);
+        }
+      }
+    });
 
     // 🔧 PERFORMANCE FIX: Rimosso messaggio di completamento serie per migliorare performance
     // CustomSnackbar.show(
@@ -1657,7 +1932,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Naviga alla home dopo un breve delay
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
-          Navigator.of(context).pop();
+          context.go('/dashboard');
         }
       });
     }
@@ -1680,7 +1955,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         isSuccess: false,
       );
 
-      Navigator.of(context).pop();
+      context.go('/dashboard');
     }
 
     if (state is ActiveWorkoutError) {
@@ -2048,6 +2323,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   Widget _buildActiveContent(WorkoutSessionActive state) {
+    // 🎯 FASE 5: Carica dati precedenti quando l'allenamento diventa attivo (solo una volta)
+    if (_usePreviousData && state.exercises.isNotEmpty && !_previousDataLoaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadPreviousDataForAllExercises(state);
+          _previousDataLoaded = true; // Marca come caricato
+        }
+      });
+    }
+    
     if (state.exercises.isEmpty) {
       return _buildNoExercisesContent();
     }
@@ -2135,6 +2420,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           isCompleted: isCompleted, // 🚀 NUOVO: Stato completamento esercizio
           isTimerActive: _isRecoveryTimerActive, // 🚀 NUOVO: Stato timer di recupero
           onEditParameters: () => _editExerciseParameters(exercise),
+          // 🎯 FASE 5: Sistema "Usa Dati Precedenti"
+          usePreviousData: _usePreviousData,
+              onUsePreviousDataChanged: (usePrevious) {
+                setState(() {
+                  _usePreviousData = usePrevious;
+                  _previousDataLoaded = false; // Reset flag per ricaricare
+                });
+                print('[PARAM] Toggle usePreviousData: $usePrevious');
+
+                if (usePrevious) {
+                  // 🎯 FASE 5: Carica dati precedenti
+                  print('[PARAM] Caricamento dati precedenti per esercizio: ${exercise.nome}');
+                  _loadPreviousData(exercise);
+                } else {
+                  // 🎯 FASE 5: Torna ai valori del DB ma mantieni dati per confronto
+                  print('[PARAM] Torno ai valori del DB per esercizio: ${exercise.nome}');
+                  _loadPreviousDataForComparison(exercise); // Carica dati per confronto
+                }
+              },
+          isLoadingPreviousData: false, // TODO: Implementare loading
+          previousDataStatusMessage: _usePreviousData ? null : _getPreviousDataText(exercise), // 🎯 FASE 5: Testo dinamico solo se toggle OFF
           onCompleteSeries: isCompleted
               ? () {} // Disabilitato se completato
                     : exercise.isIsometric

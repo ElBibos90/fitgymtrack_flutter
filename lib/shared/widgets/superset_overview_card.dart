@@ -108,69 +108,70 @@ class SupersetOverviewCard extends StatelessWidget {
 
           SizedBox(height: WorkoutDesignSystem.spacingS.h),
 
-          // Info importante: NO recupero
-          if (currentExerciseIndex < exercises.length - 1) ...[
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: WorkoutDesignSystem.spacingXS.w,
-                vertical: WorkoutDesignSystem.spacingXXS.h,
-              ),
-              decoration: BoxDecoration(
-                color: WorkoutDesignSystem.accent100,
-                borderRadius: WorkoutDesignSystem.borderRadiusS,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.warning_rounded,
-                    color: WorkoutDesignSystem.accent600,
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: WorkoutDesignSystem.spacingXXS.w),
-                  Text(
-                    'NO recupero tra esercizi linkati',
-                    style: TextStyle(
-                      fontSize: WorkoutDesignSystem.fontSizeSmall.sp,
-                      fontWeight: WorkoutDesignSystem.fontWeightMedium,
-                      color: WorkoutDesignSystem.accent700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            // Ultimo esercizio: SÌ recupero
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: WorkoutDesignSystem.spacingXS.w,
-                vertical: WorkoutDesignSystem.spacingXXS.h,
-              ),
-              decoration: BoxDecoration(
-                color: WorkoutDesignSystem.success100,
-                borderRadius: WorkoutDesignSystem.borderRadiusS,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: WorkoutDesignSystem.success600,
-                    size: 16.sp,
-                  ),
-                  SizedBox(width: WorkoutDesignSystem.spacingXXS.w),
-                  Text(
-                    'Recupero dopo questo esercizio',
-                    style: TextStyle(
-                      fontSize: WorkoutDesignSystem.fontSizeSmall.sp,
-                      fontWeight: WorkoutDesignSystem.fontWeightMedium,
-                      color: WorkoutDesignSystem.success700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          // 🎯 FASE 5: Info recupero rimossa per risparmiare spazio - comportamento gestito automaticamente
+          // // Info importante: NO recupero
+          // if (currentExerciseIndex < exercises.length - 1) ...[
+          //   Container(
+          //     padding: EdgeInsets.symmetric(
+          //       horizontal: WorkoutDesignSystem.spacingXS.w,
+          //       vertical: WorkoutDesignSystem.spacingXXS.h,
+          //     ),
+          //     decoration: BoxDecoration(
+          //       color: WorkoutDesignSystem.accent100,
+          //       borderRadius: WorkoutDesignSystem.borderRadiusS,
+          //     ),
+          //     child: Row(
+          //       mainAxisSize: MainAxisSize.min,
+          //       children: [
+          //         Icon(
+          //           Icons.warning_rounded,
+          //           color: WorkoutDesignSystem.accent600,
+          //           size: 16.sp,
+          //         ),
+          //         SizedBox(width: WorkoutDesignSystem.spacingXXS.w),
+          //         Text(
+          //           'NO recupero tra esercizi linkati',
+          //           style: TextStyle(
+          //             fontSize: WorkoutDesignSystem.fontSizeSmall.sp,
+          //             fontWeight: WorkoutDesignSystem.fontWeightMedium,
+          //             color: WorkoutDesignSystem.accent700,
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ] else ...[
+          //   // Ultimo esercizio: SÌ recupero
+          //   Container(
+          //     padding: EdgeInsets.symmetric(
+          //       horizontal: WorkoutDesignSystem.spacingXS.w,
+          //       vertical: WorkoutDesignSystem.spacingXXS.h,
+          //     ),
+          //     decoration: BoxDecoration(
+          //       color: WorkoutDesignSystem.success100,
+          //       borderRadius: WorkoutDesignSystem.borderRadiusS,
+          //     ),
+          //     child: Row(
+          //       mainAxisSize: MainAxisSize.min,
+          //       children: [
+          //         Icon(
+          //           Icons.check_circle_rounded,
+          //           color: WorkoutDesignSystem.success600,
+          //           size: 16.sp,
+          //         ),
+          //         SizedBox(width: WorkoutDesignSystem.spacingXXS.w),
+          //         Text(
+          //           'Recupero dopo questo esercizio',
+          //           style: TextStyle(
+          //             fontSize: WorkoutDesignSystem.fontSizeSmall.sp,
+          //             fontWeight: WorkoutDesignSystem.fontWeightMedium,
+          //             color: WorkoutDesignSystem.success700,
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ],
 
           // Progress bar
           SizedBox(height: WorkoutDesignSystem.spacingS.h),

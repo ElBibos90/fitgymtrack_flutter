@@ -7,7 +7,6 @@ import '../repository/workout_repository.dart';
 import '../services/workout_offline_service.dart';
 import '../models/active_workout_models.dart';
 import '../models/workout_plan_models.dart';
-import '../models/workout_history_models.dart' as workout_models;
 import '../../stats/models/user_stats_models.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../core/di/dependency_injection.dart';
@@ -16,7 +15,8 @@ import '../../auth/bloc/auth_bloc.dart';
 // 🛠️ Helper function for logging
 void _log(String message, {String name = 'ActiveWorkoutBloc'}) {
   if (kDebugMode) {
-    //print('[CONSOLE] [active_workout_bloc][$name] $message');
+    // 🎯 FASE 5: Log disabilitati per performance in produzione
+    // print('[CONSOLE] [active_workout_bloc][$name] $message');
   }
 }
 
@@ -754,10 +754,11 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       // STEP 1: Carica tutti gli allenamenti dell'utente
       final workoutHistoryResult = await _workoutRepository.getWorkoutHistory(userId);
 
-      List<workout_models.WorkoutHistory>? allWorkouts;
+      List<WorkoutHistory>? allWorkouts;
       workoutHistoryResult.fold(
         onSuccess: (workouts) {
-          allWorkouts = workouts.cast<workout_models.WorkoutHistory>();
+          // 🔧 FIX: Il tipo è già corretto dal repository (user_stats_models)
+          allWorkouts = workouts;
         },
         onFailure: (exception, message) {
           _log('⚠️ [HISTORY] Error loading workout history: $message');
@@ -806,7 +807,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
       _log('📚 [HISTORY] Processing ${sameSchemaWorkouts.length} candidate workouts for history data');
 
       // 🔧 FIX: STEP 3: Prova con gli allenamenti in ordine finché non trova uno con serie
-      workout_models.WorkoutHistory? workoutWithSeries;
+      WorkoutHistory? workoutWithSeries;
       List<CompletedSeriesData>? series;
 
       for (int i = 0; i < sameSchemaWorkouts.length && i < 3; i++) { // Prova max 3 allenamenti

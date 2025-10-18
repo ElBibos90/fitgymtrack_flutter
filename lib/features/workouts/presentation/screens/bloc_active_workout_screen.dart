@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -353,8 +354,7 @@ class _BlocActiveWorkoutScreenState extends State<BlocActiveWorkoutScreen> {
                 actions: [
                   TextButton(
                     onPressed: () async {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pop();
+                      context.go('/dashboard');
                     },
                     child: const Text('OK'),
                   ),
