@@ -44,6 +44,9 @@ WorkoutExercise _$WorkoutExerciseFromJson(Map<String, dynamic> json) =>
           ? 90
           : _parseIntSafe(json['tempo_recupero']),
       note: json['note'] as String?,
+      notes: (json['notes'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, e as String?),
+      ),
       setType: json['set_type'] as String? ?? 'normal',
       linkedToPreviousInt: json['linked_to_previous'] == null
           ? 0
@@ -86,6 +89,7 @@ Map<String, dynamic> _$WorkoutExerciseToJson(WorkoutExercise instance) =>
       'ordine': instance.ordine,
       'tempo_recupero': instance.tempoRecupero,
       'note': instance.note,
+      'notes': instance.notes,
       'set_type': instance.setType,
       'linked_to_previous': instance.linkedToPreviousInt,
       'is_isometric': instance.isIsometricInt,

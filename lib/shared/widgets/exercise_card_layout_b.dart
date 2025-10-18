@@ -10,6 +10,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/workout_design_system.dart';
 import 'weight_reps_card.dart';
 import 'use_previous_data_toggle.dart';
+import 'dual_notes_widget.dart';
 
 /// 🏋️ EXERCISE CARD - LAYOUT B (Side-by-side)
 /// Layout unificato per tutti gli esercizi
@@ -26,6 +27,7 @@ class ExerciseCardLayoutB extends StatelessWidget {
   final bool isModified;
   final bool isCompleted; // 🚀 NUOVO: Indica se l'esercizio è completato
   final bool isTimerActive; // 🚀 NUOVO: Indica se il timer di recupero è attivo
+  final bool isIsometric; // 🔥 NUOVO: Indica se l'esercizio è isometrico
   final VoidCallback onEditParameters;
   final VoidCallback onCompleteSeries;
   final Function(String url, dynamic error)? onImageLoadError; // [NEW_PROGR] Callback per errori immagine
@@ -35,6 +37,12 @@ class ExerciseCardLayoutB extends StatelessWidget {
   final ValueChanged<bool>? onUsePreviousDataChanged;
   final bool isLoadingPreviousData;
   final String? previousDataStatusMessage;
+  
+  // 🔥 FASE 6: Note Duali
+  final String? trainerNote;
+  final String? userNote;
+  final String? systemNote;
+  final Function(String)? onUserNoteChanged;
   
   // Superset/Circuit specific
   final String? groupType; // 'superset' o 'circuit'
@@ -55,6 +63,7 @@ class ExerciseCardLayoutB extends StatelessWidget {
     required this.isModified,
     required this.isCompleted, // 🚀 NUOVO: Parametro per esercizio completato
     required this.isTimerActive, // 🚀 NUOVO: Parametro per timer attivo
+    required this.isIsometric, // 🔥 NUOVO: Parametro per esercizio isometrico
     required this.onEditParameters,
     required this.onCompleteSeries,
     this.onImageLoadError,
@@ -63,6 +72,11 @@ class ExerciseCardLayoutB extends StatelessWidget {
     this.onUsePreviousDataChanged,
     this.isLoadingPreviousData = false,
     this.previousDataStatusMessage,
+    // 🔥 FASE 6: Note Duali
+    this.trainerNote,
+    this.userNote,
+    this.systemNote,
+    this.onUserNoteChanged,
     this.groupType,
     this.groupExerciseNames,
     this.currentExerciseIndex,
@@ -416,7 +430,7 @@ class ExerciseCardLayoutB extends StatelessWidget {
                   previousReps: null, // TODO: Implementare storico
                   isModified: isModified,
                   hasPlateauBadge: false, // TODO: Implementare plateau
-                  isIsometric: false, // TODO: Implementare isometric
+                  isIsometric: isIsometric, // 🔥 FIX: Usa il parametro reale
                 ),
               ),
             ],
@@ -450,6 +464,8 @@ class ExerciseCardLayoutB extends StatelessWidget {
                     ? 'Esercizio Completato' 
                     : isTimerActive
                     ? 'Timer di Recupero Attivo'
+                    : isIsometric
+                    ? 'Avvia Timer Esercizio'
                     : 'Completa Serie $currentSeries',
                 style: TextStyle(
                   fontSize: WorkoutDesignSystem.fontSizeH3.sp,
@@ -458,6 +474,17 @@ class ExerciseCardLayoutB extends StatelessWidget {
               ),
             ),
           ),
+          
+          // 🔥 FASE 6: Note Duali Widget
+          if (trainerNote != null || userNote != null || systemNote != null) ...[
+            SizedBox(height: WorkoutDesignSystem.spacingM.h),
+            DualNotesWidget(
+              trainerNote: trainerNote,
+              userNote: userNote,
+              systemNote: systemNote,
+              onUserNoteChanged: onUserNoteChanged ?? (value) {},
+            ),
+          ],
         ],
       ),
     );

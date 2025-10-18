@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wakelock_plus/wakelock_plus.dart'; // 🔧 FIX 1: ALWAYS ON
 import 'package:go_router/go_router.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 // Core imports
 import '../../../../shared/widgets/loading_overlay.dart';
@@ -807,6 +809,40 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
   // 🔧 PERFORMANCE FIX: METODI DI CACHING (unchanged)
   // ============================================================================
+
+  // 🔥 FASE 6: Note Duali - Aggiorna nota utente
+  void _updateUserNote(WorkoutExercise exercise, String note) async {
+    try {
+      // print('🔥 [NOTES] Aggiornamento nota utente per ${exercise.nome}: $note');
+      
+      final schedaEsercizioId = exercise.schedaEsercizioId ?? exercise.id;
+      
+      final response = await http.put(
+        Uri.parse('${AppConfig.baseUrl}/schede.php?action=update_notes&id=${widget.schedaId}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'scheda_esercizio_id': schedaEsercizioId,
+          'note_type': 'user',
+          'note_text': note,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          // print('🔥 [NOTES] Nota utente salvata con successo');
+        } else {
+          // print('🔥 [NOTES] Errore nel salvataggio: ${data['message']}');
+        }
+      } else {
+        // print('🔥 [NOTES] Errore HTTP: ${response.statusCode}');
+      }
+    } catch (e) {
+      // print('🔥 [NOTES] Errore nella chiamata API: $e');
+    }
+  }
 
   /// Aggiorna la cache locale per un esercizio specifico
   void _updateCacheForExercise(int exerciseId, WorkoutExercise exercise) {
@@ -2419,7 +2455,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                      _modifiedReps.containsKey(exercise.schedaEsercizioId ?? exercise.id),
           isCompleted: isCompleted, // 🚀 NUOVO: Stato completamento esercizio
           isTimerActive: _isRecoveryTimerActive, // 🚀 NUOVO: Stato timer di recupero
+          isIsometric: exercise.isIsometric, // 🔥 NUOVO: Stato isometrico esercizio
           onEditParameters: () => _editExerciseParameters(exercise),
+          // 🔥 FASE 6: Note Duali
+          trainerNote: exercise.notes?['trainer'],
+          userNote: exercise.notes?['user'],
+          systemNote: exercise.notes?['system'],
+          onUserNoteChanged: (note) => _updateUserNote(exercise, note),
           // 🎯 FASE 5: Sistema "Usa Dati Precedenti"
           usePreviousData: _usePreviousData,
               onUsePreviousDataChanged: (usePrevious) {
@@ -2496,7 +2538,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                          _modifiedReps.containsKey(currentExercise.schedaEsercizioId ?? currentExercise.id),
               isCompleted: _isExerciseCompleted(state, currentExercise), // 🚀 NUOVO: Stato completamento esercizio
               isTimerActive: _isRecoveryTimerActive, // 🚀 NUOVO: Stato timer di recupero
+              isIsometric: currentExercise.isIsometric, // 🔥 NUOVO: Stato isometrico esercizio
               onEditParameters: () => _editExerciseParameters(currentExercise),
+              // 🔥 FASE 6: Note Duali
+              trainerNote: currentExercise.notes?['trainer'],
+              userNote: currentExercise.notes?['user'],
+              systemNote: currentExercise.notes?['system'],
+              onUserNoteChanged: (note) => _updateUserNote(currentExercise, note),
               onCompleteSeries: isCompleted
                   ? () {} // Disabilitato se completato
                     : currentExercise.isIsometric

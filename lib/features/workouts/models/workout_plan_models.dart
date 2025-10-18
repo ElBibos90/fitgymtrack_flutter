@@ -126,6 +126,10 @@ class WorkoutExercise {
 
   final String? note;
 
+  // 🔥 FASE 6: Note Duali - Campo notes parsato dal JSON
+  @JsonKey(name: 'notes')
+  final Map<String, String?>? notes;
+
   @JsonKey(name: 'set_type')
   final String setType;
 
@@ -170,6 +174,7 @@ class WorkoutExercise {
     this.ordine = 0,
     this.tempoRecupero = 90,
     this.note,
+    this.notes, // 🔥 FASE 6: Note Duali
     this.setType = 'normal',
     this.linkedToPreviousInt = 0,
     this.isIsometricInt = 0,
@@ -250,6 +255,7 @@ class WorkoutExercise {
     int? ordine,
     int? tempoRecupero,
     String? note,
+    Map<String, String?>? notes, // 🔥 FASE 6: Note Duali
     String? setType,
     bool? linkedToPrevious,
     bool? isIsometric,
@@ -272,6 +278,7 @@ class WorkoutExercise {
       ordine: ordine ?? this.ordine,
       tempoRecupero: tempoRecupero ?? this.tempoRecupero,
       note: note ?? this.note,
+      notes: notes ?? this.notes, // 🔥 FASE 6: Note Duali
       setType: (setType ?? this.setType).isEmpty ? 'normal' : (setType ?? this.setType),
       linkedToPreviousInt: linkedToPrevious != null ? (linkedToPrevious ? 1 : 0) : this.linkedToPreviousInt,
       isIsometricInt: isIsometric != null ? (isIsometric ? 1 : 0) : this.isIsometricInt,

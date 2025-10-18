@@ -105,6 +105,7 @@ class WeightRepsCard extends StatelessWidget {
     }
 
     return WeightRepsCard(
+      key: ValueKey('reps_${isIsometric}_$reps'), // 🔥 FORCE REBUILD quando isIsometric cambia
       label: isIsometric ? 'SECONDI' : 'RIPETIZIONI',
       value: reps.toString(),
       unit: isIsometric ? 'sec' : 'reps',
