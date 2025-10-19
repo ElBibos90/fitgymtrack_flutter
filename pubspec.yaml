@@ -2,7 +2,7 @@ name: fitgymtrack
 description: "Cross-platform fitness tracking app for Android and iOS"
 publish_to: 'none'
 
-version: 1.0.65+65
+version: 1.0.66+66
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -116,6 +116,7 @@ flutter:
     - assets/audio/
     - assets/icon/        # ðŸ†• Per le icone personalizzate
     - assets/splash/      # ðŸ†• Per lo splash screen
+
 
 
 
