@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/workout_design_system.dart';
 import '../../features/workouts/models/workout_plan_models.dart';
 import '../../core/services/session_service.dart';
+import '../../core/config/app_config.dart';
 
 class ExerciseSubstitutionDialog extends StatefulWidget {
   final WorkoutExercise currentExercise;
@@ -68,10 +69,14 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
     
     try {
       // Recupera il token di autenticazione
+      print('[SUBSTITUTION] 🔑 Recupero token...');
       final sessionService = SessionService();
       final token = await sessionService.getAuthToken();
       
+      print('[SUBSTITUTION] 🔑 Token length: ${token?.length ?? 0}');
+      
       if (token == null) {
+        print('[SUBSTITUTION] ❌ Token non disponibile');
         setState(() {
           _loading = false;
         });
@@ -85,8 +90,11 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
         'muscles': _selectedMuscleGroups.join(','),
       };
       
-      final uri = Uri.parse('http://192.168.1.113/api/exercise_substitution_api.php')
+      final uri = Uri.parse('${AppConfig.baseUrl}exercise_substitution_api.php')
           .replace(queryParameters: queryParams);
+      
+      print('[SUBSTITUTION] 📡 Richiesta a: $uri');
+      print('[SUBSTITUTION] 🔍 Query: "${_searchController.text}", Muscles: ${_selectedMuscleGroups.join(", ")}');
       
       final response = await http.get(
         uri,
@@ -95,10 +103,21 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
           'Content-Type': 'application/json',
           'X-Platform': 'mobile',
         },
+      ).timeout(
+        Duration(seconds: 10),
+        onTimeout: () {
+          print('[SUBSTITUTION] ⏱️ Timeout dopo 10 secondi');
+          throw Exception('Timeout');
+        },
       );
+      
+      print('[SUBSTITUTION] 📥 Status Code: ${response.statusCode}');
+      print('[SUBSTITUTION] 📥 Response body length: ${response.body.length}');
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        
+        print('[SUBSTITUTION] 📦 Success: ${data['success']}, Exercises: ${data['exercises']?.length ?? 0}');
         
         if (data['success'] == true) {
           final exercisesList = (data['exercises'] as List);
@@ -108,10 +127,19 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
                 .map((e) => WorkoutExercise.fromJson(e))
                 .toList();
           });
+          
+          print('[SUBSTITUTION] ✅ Caricati ${_exercises.length} esercizi');
+        } else {
+          print('[SUBSTITUTION] ⚠️ API returned success: false');
+          print('[SUBSTITUTION] ⚠️ Full response: ${response.body.substring(0, 200)}');
         }
+      } else {
+        print('[SUBSTITUTION] ❌ Errore HTTP: ${response.statusCode}');
+        print('[SUBSTITUTION] ❌ Response body: ${response.body.substring(0, 200)}');
       }
-    } catch (e) {
-      print('Errore ricerca esercizi: $e');
+    } catch (e, stackTrace) {
+      print('[SUBSTITUTION] 💥 Errore ricerca esercizi: $e');
+      print('[SUBSTITUTION] 💥 StackTrace: ${stackTrace.toString().substring(0, 200)}');
     } finally {
       setState(() {
         _loading = false;
@@ -133,7 +161,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
   String? _getImageUrl(WorkoutExercise exercise) {
     // Se c'è immagine_url, usala
     if (exercise.immagineNome != null && exercise.immagineNome!.isNotEmpty) {
-      return 'http://192.168.1.113/api/serve_image.php?filename=${exercise.immagineNome}';
+      return '${AppConfig.baseUrl}serve_image.php?filename=${exercise.immagineNome}';
     }
     return null;
   }
