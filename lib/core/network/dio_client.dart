@@ -4,14 +4,18 @@ import '../config/environment.dart';
 import '../services/session_service.dart';
 import 'auth_interceptor.dart';
 import 'error_interceptor.dart';
+import '../di/dependency_injection.dart';
 
 class DioClient {
   static Dio? _instance;
   static SessionService? _sessionService;
 
   static Dio getInstance({SessionService? sessionService}) {
-    if (_instance == null || sessionService != _sessionService) {
-      _sessionService = sessionService;
+    // ✅ Se non viene passato SessionService, ottienilo da GetIt
+    final currentSessionService = sessionService ?? getIt<SessionService>();
+    
+    if (_instance == null || currentSessionService != _sessionService) {
+      _sessionService = currentSessionService;
       _instance = _createDio();
     }
     return _instance!;

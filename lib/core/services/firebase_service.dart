@@ -219,7 +219,7 @@ class FirebaseService {
           data: {
             'fcm_token': _fcmToken!,
             'platform': defaultTargetPlatform.name,
-            'user_id': userId, // Aggiungiamo l'user_id per associare il token
+            // ❌ RIMOSSO: user_id non più necessario (preso dal JWT token)
           },
         );
         
@@ -441,7 +441,7 @@ class FirebaseService {
           'https://fitgymtrack.com/api/firebase/clear_token.php',
           data: {
             'fcm_token': _fcmToken!,
-            'user_id': userId,
+            // ❌ RIMOSSO: user_id non più necessario (preso dal JWT token)
           },
         );
         
