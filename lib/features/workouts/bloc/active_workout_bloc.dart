@@ -223,6 +223,26 @@ class RestorePendingWorkout extends ActiveWorkoutEvent {
   List<Object> get props => [pendingWorkout];
 }
 
+/// Evento per sostituire un esercizio durante l'allenamento
+class SubstituteExerciseEvent extends ActiveWorkoutEvent {
+  final int originalExerciseId;
+  final WorkoutExercise substitutedExercise;
+  final int newSeries;
+  final int newReps;
+  final double newWeight;
+
+  const SubstituteExerciseEvent({
+    required this.originalExerciseId,
+    required this.substitutedExercise,
+    required this.newSeries,
+    required this.newReps,
+    required this.newWeight,
+  });
+
+  @override
+  List<Object> get props => [originalExerciseId, substitutedExercise, newSeries, newReps, newWeight];
+}
+
 // ============================================================================
 // ACTIVE WORKOUT STATES (invariati)
 // ============================================================================
@@ -573,6 +593,7 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
     on<SaveOfflineState>(_onSaveOfflineState); // 🚀 NUOVO
     on<CheckPendingWorkout>(_onCheckPendingWorkout); // 🌐 NUOVO
     on<RestorePendingWorkout>(_onRestorePendingWorkout); // 🌐 NUOVO
+    on<SubstituteExerciseEvent>(_onSubstituteExercise); // 🔄 FASE 7: NUOVO
 
     _log('✅ [INIT] ActiveWorkoutBloc event handlers registered');
   }
@@ -2016,6 +2037,89 @@ class ActiveWorkoutBloc extends Bloc<ActiveWorkoutEvent, ActiveWorkoutState> {
         message: 'Errore nel controllo degli allenamenti in sospeso: $e',
         exception: e is Exception ? e : Exception(e.toString()),
       ));
+    }
+  }
+
+  /// 🔄 FASE 7: Handler per sostituzione esercizio
+  Future<void> _onSubstituteExercise(
+    SubstituteExerciseEvent event,
+    Emitter<ActiveWorkoutState> emit,
+  ) async {
+    _log('🔄 [EVENT] SubstituteExercise received - Original: ${event.originalExerciseId}, New: ${event.substitutedExercise.nome}');
+
+    final currentState = state;
+    if (currentState is! WorkoutSessionActive) {
+      _log('⚠️ [SUBSTITUTE] Cannot substitute - workout not active');
+      return;
+    }
+
+    try {
+      _log('🔍 [SUBSTITUTE] Looking for exercise with ID: ${event.originalExerciseId}');
+      _log('🔍 [SUBSTITUTE] Total exercises: ${currentState.exercises.length}');
+      
+      for (int i = 0; i < currentState.exercises.length; i++) {
+        final ex = currentState.exercises[i];
+        final exId = ex.schedaEsercizioId ?? ex.id;
+        _log('🔍 [SUBSTITUTE] Exercise $i: ${ex.nome} (ID: $exId)');
+      }
+      
+      // Trova l'indice dell'esercizio da sostituire
+      final exerciseIndex = currentState.exercises.indexWhere(
+        (ex) => (ex.schedaEsercizioId ?? ex.id) == event.originalExerciseId,
+      );
+
+      if (exerciseIndex == -1) {
+        _log('❌ [SUBSTITUTE] Exercise not found: ${event.originalExerciseId}');
+        return;
+      }
+
+      _log('✅ [SUBSTITUTE] Found exercise at index: $exerciseIndex');
+
+      // Crea nuova lista esercizi con l'esercizio sostituito
+      final updatedExercises = List<WorkoutExercise>.from(currentState.exercises);
+      
+      // 🔥 PRESERVA SETTYPE: Mantieni le proprietà originali dell'esercizio
+      final originalExercise = currentState.exercises[exerciseIndex];
+      final substitutedWithOriginalProperties = WorkoutExercise(
+        id: event.substitutedExercise.id,
+        schedaEsercizioId: event.substitutedExercise.schedaEsercizioId,
+        nome: event.substitutedExercise.nome,
+        gruppoMuscolare: event.substitutedExercise.gruppoMuscolare,
+        attrezzatura: event.substitutedExercise.attrezzatura,
+        descrizione: event.substitutedExercise.descrizione,
+        immagineNome: event.substitutedExercise.immagineNome,
+        isIsometricInt: event.substitutedExercise.isIsometricInt,
+        // 🔥 PRESERVA PROPRIETÀ ORIGINALI
+        serie: event.newSeries,
+        ripetizioni: event.newReps,
+        peso: event.newWeight,
+        ordine: originalExercise.ordine,
+        tempoRecupero: originalExercise.tempoRecupero,
+        setType: originalExercise.setType, // 🔥 MANTIENI SETTYPE ORIGINALE
+        linkedToPreviousInt: originalExercise.linkedToPreviousInt, // 🔥 MANTIENI LINK ORIGINALE
+        notes: originalExercise.notes, // 🔥 MANTIENI NOTE ORIGINALI
+        note: originalExercise.note, // 🔥 MANTIENI NOTE ORIGINALE
+        isRestPauseInt: originalExercise.isRestPauseInt, // 🔥 MANTIENI REST-PAUSE ORIGINALE
+      );
+      
+      updatedExercises[exerciseIndex] = substitutedWithOriginalProperties;
+
+      // Aggiorna i valori dell'esercizio
+      final updatedExerciseValues = Map<int, ExerciseValues>.from(currentState.exerciseValues);
+      updatedExerciseValues[event.substitutedExercise.schedaEsercizioId ?? event.substitutedExercise.id] = ExerciseValues(
+        weight: event.newWeight,
+        reps: event.newReps,
+      );
+
+      // Emetti nuovo stato usando copyWith
+      emit(currentState.copyWith(
+        exercises: updatedExercises,
+        exerciseValues: updatedExerciseValues,
+      ));
+
+      _log('✅ [SUBSTITUTE] Exercise substituted successfully: ${event.substitutedExercise.nome}');
+    } catch (e) {
+      _log('💥 [SUBSTITUTE] Exception in substitute exercise: $e');
     }
   }
 

@@ -11,6 +11,8 @@ import '../theme/workout_design_system.dart';
 import 'weight_reps_card.dart';
 import 'use_previous_data_toggle.dart';
 import 'dual_notes_widget.dart';
+import 'exercise_substitution_dialog.dart';
+import '../../features/workouts/models/workout_plan_models.dart';
 
 /// 🏋️ EXERCISE CARD - LAYOUT B (Side-by-side)
 /// Layout unificato per tutti gli esercizi
@@ -43,6 +45,10 @@ class ExerciseCardLayoutB extends StatelessWidget {
   final String? userNote;
   final String? systemNote;
   final Function(String)? onUserNoteChanged;
+  
+  // 🔄 FASE 7: Sostituzione Esercizio
+  final WorkoutExercise? currentExercise;
+  final Function(WorkoutExercise, int, int, double)? onExerciseSubstituted;
   
   // Superset/Circuit specific
   final String? groupType; // 'superset' o 'circuit'
@@ -77,11 +83,28 @@ class ExerciseCardLayoutB extends StatelessWidget {
     this.userNote,
     this.systemNote,
     this.onUserNoteChanged,
+    // 🔄 FASE 7: Sostituzione Esercizio
+    this.currentExercise,
+    this.onExerciseSubstituted,
     this.groupType,
     this.groupExerciseNames,
     this.currentExerciseIndex,
     this.showWarning = false,
   });
+
+  void _showSubstitutionDialog(BuildContext context) {
+    if (currentExercise == null || onExerciseSubstituted == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => ExerciseSubstitutionDialog(
+        currentExercise: currentExercise!,
+        onSubstitute: (substitutedExercise, newSeries, newReps, newWeight) {
+          onExerciseSubstituted!(substitutedExercise, newSeries, newReps, newWeight);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -474,6 +497,50 @@ class ExerciseCardLayoutB extends StatelessWidget {
               ),
             ),
           ),
+          
+          // 🔄 FASE 7: Bottone Sostituzione Esercizio
+          if (currentExercise != null && onExerciseSubstituted != null) ...[
+            SizedBox(height: WorkoutDesignSystem.spacingM.h),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                // 🔒 DISABILITA se l'esercizio è già iniziato (serie > 1)
+                onPressed: currentSeries > 1 
+                  ? null 
+                  : () => _showSubstitutionDialog(context),
+                icon: Icon(
+                  Icons.swap_horiz,
+                  size: 20.sp,
+                ),
+                label: Text(
+                  currentSeries > 1 
+                    ? 'Sostituzione non disponibile' 
+                    : 'Sostituisci Esercizio',
+                  style: TextStyle(
+                    fontSize: WorkoutDesignSystem.fontSizeBody.sp,
+                    fontWeight: WorkoutDesignSystem.fontWeightMedium,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: currentSeries > 1 
+                    ? WorkoutDesignSystem.gray400 
+                    : WorkoutDesignSystem.primary600,
+                  side: BorderSide(
+                    color: currentSeries > 1 
+                      ? WorkoutDesignSystem.gray400.withOpacity(0.3)
+                      : WorkoutDesignSystem.primary600.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    vertical: WorkoutDesignSystem.spacingM.h,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: WorkoutDesignSystem.borderRadiusM,
+                  ),
+                ),
+              ),
+            ),
+          ],
           
           // 🔥 FASE 6: Note Duali Widget
           if (trainerNote != null || userNote != null || systemNote != null) ...[

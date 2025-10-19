@@ -1543,6 +1543,149 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   // ============================================================================
+  // 🔄 FASE 7: SOSTITUZIONE ESERCIZIO
+  // ============================================================================
+  
+  /// Ricarica i gruppi di esercizi dal BLoC dopo una sostituzione
+  void _loadExerciseGroups() {
+    final state = _activeWorkoutBloc.state;
+    if (state is WorkoutSessionActive) {
+      print('[SOST] 🔄 Ricaricamento gruppi esercizi dal BLoC');
+      
+      // Ricostruisci i gruppi di esercizi
+      _exerciseGroups = _buildExerciseGroups(state.exercises);
+      
+      print('[SOST] ✅ Gruppi ricaricati: ${_exerciseGroups.length} gruppi');
+      for (int i = 0; i < _exerciseGroups.length; i++) {
+        print('[SOST] Gruppo $i: ${_exerciseGroups[i].map((e) => e.nome).join(', ')}');
+      }
+    }
+  }
+  
+  /// Costruisce i gruppi di esercizi basandosi sui setType
+  List<List<WorkoutExercise>> _buildExerciseGroups(List<WorkoutExercise> exercises) {
+    List<List<WorkoutExercise>> groups = [];
+    List<WorkoutExercise> currentGroup = [];
+    
+    print('[SOST] 🔍 Costruzione gruppi da ${exercises.length} esercizi');
+    
+    for (int i = 0; i < exercises.length; i++) {
+      final exercise = exercises[i];
+      print('[SOST] 🔍 Esercizio $i: ${exercise.nome} (setType: ${exercise.setType}, linkedToPrevious: ${exercise.linkedToPreviousInt})');
+      
+      // Se è il primo esercizio o non è linkato al precedente, inizia un nuovo gruppo
+      if (i == 0 || exercise.linkedToPreviousInt != 1) {
+        if (currentGroup.isNotEmpty) {
+          groups.add(List.from(currentGroup));
+          print('[SOST] ✅ Gruppo completato: ${currentGroup.map((e) => e.nome).join(', ')}');
+          currentGroup.clear();
+        }
+      }
+      
+      currentGroup.add(exercise);
+    }
+    
+    // Aggiungi l'ultimo gruppo
+    if (currentGroup.isNotEmpty) {
+      groups.add(currentGroup);
+      print('[SOST] ✅ Ultimo gruppo: ${currentGroup.map((e) => e.nome).join(', ')}');
+    }
+    
+    print('[SOST] ✅ Totale gruppi creati: ${groups.length}');
+    return groups;
+  }
+  
+  /// Gestisce la sostituzione di un esercizio durante l'allenamento
+  void _handleExerciseSubstitution(
+    WorkoutExercise originalExercise,
+    WorkoutExercise substitutedExercise,
+    int newSeries,
+    int newReps,
+    double newWeight,
+  ) async {
+    try {
+      print('[SOST] 🔄 Inizio sostituzione: ${originalExercise.nome} -> ${substitutedExercise.nome}');
+      print('[SOST] 🔍 Original ID: ${originalExercise.schedaEsercizioId ?? originalExercise.id}');
+      print('[SOST] 🔍 New ID: ${substitutedExercise.schedaEsercizioId ?? substitutedExercise.id}');
+      
+      final originalExerciseId = originalExercise.schedaEsercizioId ?? originalExercise.id;
+      final newExerciseId = substitutedExercise.schedaEsercizioId ?? substitutedExercise.id;
+      
+      // Aggiorna l'esercizio nel BLoC
+      _activeWorkoutBloc.add(SubstituteExerciseEvent(
+        originalExerciseId: originalExerciseId,
+        substitutedExercise: substitutedExercise,
+        newSeries: newSeries,
+        newReps: newReps,
+        newWeight: newWeight,
+      ));
+      
+      // Aspetta che il BLoC emetta il nuovo stato
+      await _activeWorkoutBloc.stream.firstWhere(
+        (state) => state is WorkoutSessionActive && 
+                   state.exercises.any((ex) => ex.id == substitutedExercise.id),
+        orElse: () => _activeWorkoutBloc.state,
+      ).timeout(
+        Duration(seconds: 2),
+        onTimeout: () {
+          print('[SOST] ⚠️ Timeout in attesa del nuovo stato');
+          return _activeWorkoutBloc.state;
+        },
+      );
+      
+      // Aggiorna cache locale per il nuovo esercizio
+      _cachedWeights[newExerciseId] = newWeight;
+      _cachedReps[newExerciseId] = newReps;
+      
+      // Rimuovi cache dell'esercizio originale
+      _cachedWeights.remove(originalExerciseId);
+      _cachedReps.remove(originalExerciseId);
+      
+      print('[SOST] ✅ Sostituzione completata, cache aggiornata');
+      
+      // 🔥 FORZA REBUILD AGGIUNTIVO: Ricarica i gruppi di esercizi
+      _loadExerciseGroups();
+      
+      // Mostra feedback
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Esercizio sostituito: ${substitutedExercise.nome}'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // 🔥 FORZA REBUILD MULTIPLO: Prova diversi approcci
+        setState(() {});
+        
+        // Aspetta un po' e forza di nuovo
+        Future.delayed(Duration(milliseconds: 100), () {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+        
+        // Aspetta ancora e forza di nuovo
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+      
+    } catch (e) {
+      print('Errore sostituzione esercizio: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Errore durante la sostituzione: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ============================================================================
   // WORKOUT LOGIC (updated with fixes)
   // ============================================================================
 
@@ -2503,6 +2646,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     : _isRestPauseExercise(exercise)
               ? () => _handleRestPauseStart(state, exercise)
                     : () => _handleCompleteSeries(state, exercise),
+          // 🔄 FASE 7: Sostituzione Esercizio
+          currentExercise: exercise,
+          onExerciseSubstituted: (substitutedExercise, newSeries, newReps, newWeight) {
+            _handleExerciseSubstitution(exercise, substitutedExercise, newSeries, newReps, newWeight);
+          },
         ),
       ),
     );
@@ -2565,6 +2713,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                     : _isRestPauseExercise(currentExercise)
                   ? () => _handleRestPauseStart(state, currentExercise)
                     : () => _handleCompleteSeries(state, currentExercise),
+              // 🔄 FASE 7: Sostituzione Esercizio
+              currentExercise: currentExercise,
+              onExerciseSubstituted: (substitutedExercise, newSeries, newReps, newWeight) {
+                _handleExerciseSubstitution(currentExercise, substitutedExercise, newSeries, newReps, newWeight);
+              },
               // Superset/Circuit specific
               groupType: groupType,
               groupExerciseNames: group.map((ex) => ex.nome).toList(),
