@@ -132,8 +132,8 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
       child: SlideTransition(
         position: _slideAnimation,
         child: Container(
-          margin: EdgeInsets.all(20.w),
-          padding: EdgeInsets.all(24.w),
+          margin: EdgeInsets.all(16.w),
+          padding: EdgeInsets.all(20.w),
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20.r),
@@ -154,9 +154,9 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                   Icon(
                     Icons.edit,
                     color: colorScheme.primary,
-                    size: 24.sp,
+                    size: 20.sp,
                   ),
-                  SizedBox(width: 12.w),
+                  SizedBox(width: 8.w),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +164,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                         Text(
                           'Modifica Parametri',
                           style: TextStyle(
-                            fontSize: 18.sp,
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
@@ -173,7 +173,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                         Text(
                           widget.exerciseName,
                           style: TextStyle(
-                            fontSize: 14.sp,
+                            fontSize: 12.sp,
                             color: colorScheme.onSurface.withValues(alpha:0.7),
                           ),
                           maxLines: 1,
@@ -185,44 +185,42 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                 ],
               ),
 
-              SizedBox(height: 32.h),
+              SizedBox(height: 24.h),
 
-              // 🔧 FIX: Layout orizzontale per peso e ripetizioni
-              Row(
+              // 🔧 FIX: Layout verticale per evitare overflow
+              Column(
                 children: [
-                  // Weight Control (sinistra)
-                  Expanded(
-                    child: _buildParameterControl(
-                      label: 'Peso',
-                      value: _currentWeight.toStringAsFixed(1),
-                      controller: _weightController,
-                      onChanged: _onWeightChanged,
-                      onIncrement: () => _updateWeight(0.5),
-                      onDecrement: () => _updateWeight(-0.5),
-                      icon: Icons.fitness_center,
-                      color: colorScheme.primary,
-                    ),
+                  // Weight Control
+                  _buildCompactParameterControl(
+                    label: 'Peso',
+                    value: _currentWeight.toStringAsFixed(1),
+                    controller: _weightController,
+                    onChanged: _onWeightChanged,
+                    onIncrement: () => _updateWeight(0.5),
+                    onDecrement: () => _updateWeight(-0.5),
+                    icon: Icons.fitness_center,
+                    color: colorScheme.primary,
+                    unit: 'kg',
                   ),
 
-                  SizedBox(width: 16.w),
+                  SizedBox(height: 16.h),
 
-                  // Reps/Seconds Control (destra)
-                  Expanded(
-                    child: _buildParameterControl(
-                      label: widget.isIsometric ? 'Sec' : 'Reps',
-                      value: _currentReps.toString(),
-                      controller: _repsController,
-                      onChanged: _onRepsChanged,
-                      onIncrement: () => _updateReps(1),
-                      onDecrement: () => _updateReps(-1),
-                      icon: widget.isIsometric ? Icons.timer : Icons.repeat,
-                      color: widget.isIsometric ? Colors.deepPurple : Colors.green,
-                    ),
+                  // Reps/Seconds Control
+                  _buildCompactParameterControl(
+                    label: widget.isIsometric ? 'Secondi' : 'Ripetizioni',
+                    value: _currentReps.toString(),
+                    controller: _repsController,
+                    onChanged: _onRepsChanged,
+                    onIncrement: () => _updateReps(1),
+                    onDecrement: () => _updateReps(-1),
+                    icon: widget.isIsometric ? Icons.timer : Icons.repeat,
+                    color: widget.isIsometric ? Colors.deepPurple : Colors.green,
+                    unit: widget.isIsometric ? 'sec' : 'rep',
                   ),
                 ],
               ),
 
-              SizedBox(height: 32.h),
+              SizedBox(height: 24.h),
 
               // Buttons
               Row(
@@ -239,13 +237,13 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                       child: Text(
                         'Annulla',
                         style: TextStyle(
-                          fontSize: 16.sp,
+                          fontSize: 14.sp,
                           color: colorScheme.onSurface.withValues(alpha:0.7),
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 16.w),
+                  SizedBox(width: 12.w),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _save,
@@ -260,7 +258,7 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                       child: Text(
                         'Salva',
                         style: TextStyle(
-                          fontSize: 16.sp,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -275,7 +273,8 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
     );
   }
 
-  Widget _buildParameterControl({
+  /// 🔧 Nuovo metodo compatto per evitare overflow
+  Widget _buildCompactParameterControl({
     required String label,
     required String value,
     required TextEditingController controller,
@@ -284,14 +283,15 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
     required VoidCallback onDecrement,
     required IconData icon,
     required Color color,
+    required String unit,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
         color: color.withValues(alpha:0.05),
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: color.withValues(alpha:0.2),
           width: 1,
@@ -306,13 +306,13 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
               Icon(
                 icon,
                 color: color,
-                size: 20.sp,
+                size: 16.sp,
               ),
-              SizedBox(width: 8.w),
+              SizedBox(width: 6.w),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 14.sp,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   color: color,
                 ),
@@ -320,39 +320,39 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
             ],
           ),
 
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h),
 
-          // Control row
+          // Control row - Layout orizzontale compatto
           Row(
             children: [
               // Decrement button
               Container(
-                width: 48.w,
-                height: 48.w,
+                width: 36.w,
+                height: 36.w,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: IconButton(
                   onPressed: onDecrement,
                   icon: Icon(
                     Icons.remove,
                     color: color,
-                    size: 20.sp,
+                    size: 16.sp,
                   ),
                   padding: EdgeInsets.zero,
                 ),
               ),
 
-              SizedBox(width: 12.w),
+              SizedBox(width: 8.w),
 
-              // Text input
+              // Text input - più compatto
               Expanded(
                 child: Container(
-                  height: 48.h,
+                  height: 36.h,
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12.r),
+                    borderRadius: BorderRadius.circular(8.r),
                     border: Border.all(
                       color: color.withValues(alpha:0.3),
                       width: 1,
@@ -364,37 +364,42 @@ class _ParameterEditDialogState extends State<ParameterEditDialog>
                     textAlign: TextAlign.center,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     style: TextStyle(
-                      fontSize: 18.sp,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 12.h,
+                        horizontal: 8.w,
+                        vertical: 8.h,
+                      ),
+                      suffixText: unit,
+                      suffixStyle: TextStyle(
+                        fontSize: 10.sp,
+                        color: color.withValues(alpha:0.6),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              SizedBox(width: 12.w),
+              SizedBox(width: 8.w),
 
               // Increment button
               Container(
-                width: 48.w,
-                height: 48.w,
+                width: 36.w,
+                height: 36.w,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: IconButton(
                   onPressed: onIncrement,
                   icon: Icon(
                     Icons.add,
                     color: color,
-                    size: 20.sp,
+                    size: 16.sp,
                   ),
                   padding: EdgeInsets.zero,
                 ),

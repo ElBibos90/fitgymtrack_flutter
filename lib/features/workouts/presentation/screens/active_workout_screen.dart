@@ -895,22 +895,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   double _getEffectiveWeight(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // 🔧 FIX: PRIORITÀ ASSOLUTA - Valori modificati dall'utente (sopra TUTTO)
+    if (_modifiedWeights.containsKey(exerciseId)) {
+      final weight = _modifiedWeights[exerciseId]!;
+      _cachedWeights[exerciseId] = weight;
+      return weight;
+    }
+
     // 🎯 FASE 5: PRIORITÀ MASSIMA - Dati precedenti se toggle ON
     if (_usePreviousData && _previousWeights.containsKey(exerciseId)) {
-      // print('[STORICO] Usando peso precedente: ${_previousWeights[exerciseId]} kg per esercizio $exerciseId');
       return _previousWeights[exerciseId]!;
     }
 
     // 🔧 PERFORMANCE FIX: Usa cache se disponibile
     if (_cachedWeights.containsKey(exerciseId)) {
       return _cachedWeights[exerciseId]!;
-    }
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedWeights.containsKey(exerciseId)) {
-      final weight = _modifiedWeights[exerciseId]!;
-      _cachedWeights[exerciseId] = weight;
-      return weight;
     }
 
     // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
@@ -953,22 +952,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   int _getEffectiveReps(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
 
+    // 🔧 FIX: PRIORITÀ ASSOLUTA - Valori modificati dall'utente (sopra TUTTO)
+    if (_modifiedReps.containsKey(exerciseId)) {
+      final reps = _modifiedReps[exerciseId]!;
+      _cachedReps[exerciseId] = reps;
+      return reps;
+    }
+
     // 🎯 FASE 5: PRIORITÀ MASSIMA - Dati precedenti se toggle ON
     if (_usePreviousData && _previousReps.containsKey(exerciseId)) {
-      // print('[STORICO] Usando reps precedenti: ${_previousReps[exerciseId]} reps per esercizio $exerciseId');
       return _previousReps[exerciseId]!;
     }
 
     // 🔧 PERFORMANCE FIX: Usa cache se disponibile
     if (_cachedReps.containsKey(exerciseId)) {
       return _cachedReps[exerciseId]!;
-    }
-
-    // 1. PRIORITÀ MASSIMA: Valori modificati dall'utente
-    if (_modifiedReps.containsKey(exerciseId)) {
-      final reps = _modifiedReps[exerciseId]!;
-      _cachedReps[exerciseId] = reps;
-      return reps;
     }
 
     // 2. SERIE-SPECIFIC: Valori storici per la serie corrente
@@ -1477,15 +1475,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     _invalidateCacheForExercise(exerciseId);
 
     context.read<ActiveWorkoutBloc>().updateExerciseValues(exerciseId, weight, reps);
-
-  //  print("✏️ [EDIT] Modified parameters for ${exercise.nome}: ${weight}kg, $reps ${exercise.isIsometric ? 'seconds' : 'reps'}");
-
-    // 🔧 PERFORMANCE FIX: Rimosso messaggio di aggiornamento parametri per migliorare performance
-    // CustomSnackbar.show(
-    //   context,
-    //   message: "Parametri aggiornati: ${weight.toStringAsFixed(1)}kg, $reps ${exercise.isIsometric ? 'secondi' : 'ripetizioni'}",
-    //   isSuccess: true,
-    // );
 
     // 🔧 FIX 2: PLATEAU - Trigger analysis SOLO se non già analizzato o dismissed
     _triggerPlateauAnalysisIfNeeded(exercise);
@@ -2595,15 +2584,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       padding: EdgeInsets.all(20.w),
       child: SlideTransition(
         position: _slideAnimation,
-        child: ExerciseCardLayoutB(
-          exerciseName: exercise.nome,
-          muscleGroups: exercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
-          exerciseImageUrl: exercise.imageUrl,
-          // [NEW_PROGR] Log URL immagine per esercizio singolo
-          // ignore: avoid_print
-          onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine singolo: $url, Errore: $error'),
-          weight: _getEffectiveWeight(exercise),
-          reps: _getEffectiveReps(exercise),
+        child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
+          builder: (context, blocState) {
+            // 🔧 FIX: Ricalcola i valori quando lo stato del BLoC cambia
+            final currentWeight = _getEffectiveWeight(exercise);
+            final currentReps = _getEffectiveReps(exercise);
+            
+            return ExerciseCardLayoutB(
+              exerciseName: exercise.nome,
+              muscleGroups: exercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
+              exerciseImageUrl: exercise.imageUrl,
+              // [NEW_PROGR] Log URL immagine per esercizio singolo
+              // ignore: avoid_print
+              onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine singolo: $url, Errore: $error'),
+              weight: currentWeight,
+              reps: currentReps,
           currentSeries: (completedSeries + 1).clamp(1, exercise.serie),
           totalSeries: exercise.serie,
           restSeconds: exercise.tempoRecupero,
@@ -2651,6 +2646,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
           onExerciseSubstituted: (substitutedExercise, newSeries, newReps, newWeight) {
             _handleExerciseSubstitution(exercise, substitutedExercise, newSeries, newReps, newWeight);
           },
+            );
+          },
         ),
       ),
     );
@@ -2678,20 +2675,26 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       padding: EdgeInsets.all(20.w),
       child: SlideTransition(
         position: _slideAnimation,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+        child: BlocBuilder<ActiveWorkoutBloc, ActiveWorkoutState>(
+          builder: (context, blocState) {
+            // 🔧 FIX: Ricalcola i valori quando lo stato del BLoC cambia
+            final currentWeight = _getEffectiveWeight(currentExercise);
+            final currentReps = _getEffectiveReps(currentExercise);
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
 
-            // 🔥 NUOVO LAYOUT B UNIFICATO - SUPERSET/CIRCUIT (17 Ottobre 2025)
-            ExerciseCardLayoutB(
-              exerciseName: currentExercise.nome,
-              muscleGroups: currentExercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
-              exerciseImageUrl: currentExercise.imageUrl,
-              // [NEW_PROGR] Log URL immagine per superset/circuit
-              // ignore: avoid_print
-              onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine superset: $url, Errore: $error'),
-              weight: _getEffectiveWeight(currentExercise),
-              reps: _getEffectiveReps(currentExercise),
+                // 🔥 NUOVO LAYOUT B UNIFICATO - SUPERSET/CIRCUIT (17 Ottobre 2025)
+                ExerciseCardLayoutB(
+                  exerciseName: currentExercise.nome,
+                  muscleGroups: currentExercise.gruppoMuscolare?.split(',').map((m) => m.trim()).toList() ?? [],
+                  exerciseImageUrl: currentExercise.imageUrl,
+                  // [NEW_PROGR] Log URL immagine per superset/circuit
+                  // ignore: avoid_print
+                  onImageLoadError: (url, error) => print('[NEW_PROGR] Errore caricamento immagine superset: $url, Errore: $error'),
+                  weight: currentWeight,
+                  reps: currentReps,
               currentSeries: (completedSeries + 1).clamp(1, currentExercise.serie),
               totalSeries: currentExercise.serie,
               restSeconds: currentExercise.tempoRecupero,
@@ -2723,8 +2726,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               groupExerciseNames: group.map((ex) => ex.nome).toList(),
               currentExerciseIndex: _currentExerciseInGroup,
               showWarning: true, // Mostra warning per superset/circuit
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
