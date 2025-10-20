@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:io' show Platform;
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
@@ -28,16 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isAutofillComplete = false;
-  
-  // 🔧 AUTOFILL: Storage per credenziali iOS
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
 
   // 🔐 BIOMETRIC: Variabili per autenticazione biometrica
   bool _biometricAvailable = false;
@@ -67,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
     _checkBiometricAvailability();  // 🔐 BIOMETRIC
   }
 
@@ -85,36 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // 🔧 AUTOFILL: Carica credenziali salvate
-  Future<void> _loadSavedCredentials() async {
-    if (Platform.isIOS) {
-      try {
-        final savedUsername = await _secureStorage.read(key: 'saved_username');
-        final savedPassword = await _secureStorage.read(key: 'saved_password');
-        
-        if (savedUsername != null && savedPassword != null) {
-          setState(() {
-            _usernameController.text = savedUsername;
-            _passwordController.text = savedPassword;
-          });
-        }
-      } catch (e) {
-        // Gestione silenziosa degli errori
-      }
-    }
-  }
-
-  // 🔧 AUTOFILL: Salva credenziali
-  Future<void> _saveCredentials() async {
-    if (Platform.isIOS) {
-      try {
-        await _secureStorage.write(key: 'saved_username', value: _usernameController.text.trim());
-        await _secureStorage.write(key: 'saved_password', value: _passwordController.text);
-      } catch (e) {
-        // Gestione silenziosa degli errori
-      }
-    }
-  }
+  // ❌ RIMOSSO: iOS Keychain AutoFill (ridondante con biometrico)
+  // Il biometrico già salva le credenziali in modo sicuro
 
   // 🔧 AUTOFILL: Gestione submit autofill migliorata per iOS
   void _handleLogin() {
@@ -184,14 +144,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _biometricType = type;
       });
 
-      // ✅ Auto-login all'apertura se biometrico abilitato
-      // Se l'utente non vuole, può premere cancel
-      if (_biometricEnabled && mounted) {
-        //debugPrint('[LOGIN] ✅ Biometric enabled, trying auto-login...');
-        await _tryBiometricLogin();
-      } else {
-        //debugPrint('[LOGIN] ℹ️ Biometric not enabled, normal login flow');
-      }
+      // ❌ RIMOSSO: Auto-login all'apertura
+      // PROBLEMA: Con Face ID, il login si attiva automaticamente quando l'utente guarda lo schermo
+      // SOLUZIONE: L'utente deve cliccare il pulsante biometrico per fare login
+      //debugPrint('[LOGIN] ℹ️ Biometric check complete. User must click button to login.');
     } catch (e) {
       //debugPrint('[LOGIN] ❌ Error checking biometric: $e');
     }
@@ -378,13 +334,8 @@ class _LoginScreenState extends State<LoginScreen> {
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
             //debugPrint('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
             
-            // 🔧 AUTOFILL: Salva credenziali per il prossimo login
-            // Su iOS, salva le credenziali nel Keychain
-            if (Platform.isIOS) {
-              _saveCredentials();
-              // Su iOS, chiama finishAutofillContext sempre dopo un login riuscito
-              TextInput.finishAutofillContext();
-            } else if (Platform.isAndroid) {
+            // 🔧 AUTOFILL: Finalize autofill context
+            if (Platform.isAndroid) {
               TextInput.finishAutofillContext();
             }
 
@@ -504,7 +455,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     SizedBox(height: 24.h),
 
-                    // 🔐 BIOMETRIC: Pulsante biometrico compatto
+                    // 🔐 BIOMETRIC: Pulsante biometrico compatto (icona + testo cliccabili)
                     if (_biometricAvailable) ...[
                       GestureDetector(
                         onTap: _biometricEnabled 
@@ -518,35 +469,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 );
                               },
-                        child: Container(
-                          width: 64.w,
-                          height: 64.w,
-                          decoration: BoxDecoration(
-                            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                              width: 2,
+                        child: Column(
+                          children: [
+                            // Icona biometrica
+                            Container(
+                              width: 64.w,
+                              height: 64.w,
+                              decoration: BoxDecoration(
+                                color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                _biometricIcon,
+                                size: 36.sp,
+                                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                              ),
                             ),
-                          ),
-                          child: Icon(
-                            _biometricIcon,
-                            size: 36.sp,
-                            color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
-                          ),
-                        ),
-                      ),
-                      
-                      SizedBox(height: 8.h),
-                      
-                      Text(
-                        _biometricEnabled 
-                            ? 'Accedi con $_biometricDisplayName'
-                            : 'Abilita $_biometricDisplayName',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                            
+                            SizedBox(height: 8.h),
+                            
+                            // Testo "Accedi con..."
+                            Text(
+                              _biometricEnabled 
+                                  ? 'Accedi con $_biometricDisplayName'
+                                  : 'Abilita $_biometricDisplayName',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       
