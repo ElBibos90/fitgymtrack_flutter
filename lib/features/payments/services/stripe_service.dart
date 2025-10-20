@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 import '../../../core/config/stripe_config.dart';
-import '../models/stripe_models.dart';
 import '../../../core/utils/result.dart';
 
 /// Servizio per gestire le operazioni Stripe nel client - VERSIONE FINALE CORRETTA

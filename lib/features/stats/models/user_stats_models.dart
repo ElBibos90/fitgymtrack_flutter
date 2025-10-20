@@ -1,6 +1,5 @@
 // lib/features/stats/models/user_stats_models.dart
 import 'package:json_annotation/json_annotation.dart';
-import '../../exercises/models/muscle_group.dart';
 
 part 'user_stats_models.g.dart';
 

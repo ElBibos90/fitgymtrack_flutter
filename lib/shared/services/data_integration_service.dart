@@ -3,11 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/auth/bloc/auth_bloc.dart';
-import '../../features/auth/models/login_response.dart';
 import '../../features/workouts/bloc/workout_history_bloc.dart';
 import '../../features/subscription/bloc/subscription_bloc.dart';
-import '../../features/stats/bloc/stats_bloc.dart';
-import '../../core/di/dependency_injection.dart';
 
 /// 🔧 FIX: Service completo per gestire l'integrazione con i dati reali
 /// Risolve problemi di timing durante l'inizializzazione + mantiene funzionalità originali

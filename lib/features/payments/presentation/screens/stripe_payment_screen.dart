@@ -10,7 +10,6 @@ import '../../../../shared/theme/app_colors.dart';
 
 // Feature imports
 import '../../bloc/stripe_bloc.dart';
-import '../../models/stripe_models.dart';
 import '../widgets/stripe_widgets.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 

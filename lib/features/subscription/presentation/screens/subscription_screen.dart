@@ -8,16 +8,13 @@ import 'package:go_router/go_router.dart';
 
 // App imports
 import '../../../../shared/theme/app_colors.dart';
-import '../../../../shared/widgets/custom_snackbar.dart';
 
 // Feature imports - subscription
 import '../../bloc/subscription_bloc.dart';
 import '../../models/subscription_models.dart';
-import '../widgets/subscription_widgets.dart';
 
 // Feature imports - payments
 import '../../../payments/bloc/stripe_bloc.dart' as stripe_bloc;
-import '../../../payments/models/stripe_models.dart';
 import '../../../../core/config/stripe_config.dart';
 
 /// 🚀 SubscriptionScreen - FIXED: Overlay Loading Cleanup

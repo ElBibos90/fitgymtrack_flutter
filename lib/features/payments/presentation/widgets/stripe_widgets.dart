@@ -1,9 +1,7 @@
 // lib/features/payments/presentation/widgets/stripe_widgets.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/theme/app_colors.dart';
-import '../../../../core/config/stripe_config.dart';
 import '../../bloc/stripe_bloc.dart';
 import '../../models/stripe_models.dart';
 

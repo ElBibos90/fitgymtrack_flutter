@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/utils/api_request_debouncer.dart';
 import '../../../../core/services/session_service.dart';
+import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 import 'dart:async';
 import 'package:get_it/get_it.dart';
@@ -703,6 +704,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _handleLogout() {
+    // 🔐 BIOMETRIC: NON disabilitare biometrico al logout
+    // Il biometrico rimane attivo, ma il token viene invalidato
+    // Al prossimo login biometrico, se il token è scaduto, farà login normale
+    
     context.read<AuthBloc>().add(const AuthLogoutRequested());
     // 🧹 Cache cleanup ora gestito automaticamente da SessionService.clearSession()
   }

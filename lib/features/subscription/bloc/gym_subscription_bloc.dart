@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../repository/gym_subscription_repository.dart';
 import '../models/gym_subscription.dart';
-import '../../../core/utils/result.dart';
 
 // ============================================================================
 // EVENTS

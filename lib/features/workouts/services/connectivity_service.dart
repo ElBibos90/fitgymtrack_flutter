@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/active_workout_bloc.dart';
 
 /// 🚀 Servizio per monitorare la connessione e sincronizzare automaticamente

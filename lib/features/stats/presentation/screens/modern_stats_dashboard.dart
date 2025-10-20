@@ -2,13 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/theme/stats_theme.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../models/simple_stats_models.dart';
 import '../widgets/modern_kpi_card.dart';
 import '../widgets/smart_insight_card.dart';
-import '../widgets/achievement_card.dart';
 
 /// 📊 Modern Stats Dashboard - Dashboard Statistiche Moderna
 class ModernStatsDashboard extends StatefulWidget {

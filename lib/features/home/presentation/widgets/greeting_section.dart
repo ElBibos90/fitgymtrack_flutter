@@ -6,7 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/services/data_integration_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../../auth/bloc/auth_bloc.dart';
-import '../../../auth/models/login_response.dart';
 import '../../../gym/services/gym_logo_service.dart';
 import '../../../gym/widgets/gym_logo_widget.dart';
 import '../../services/dashboard_service.dart';

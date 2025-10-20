@@ -89,5 +89,8 @@
 	<false/>
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- 🔐 BIOMETRIC AUTHENTICATION: Face ID usage description -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Usiamo Face ID per consentirti di accedere rapidamente e in modo sicuro all'app FitGymTrack</string>
 </dict>
 </plist>

@@ -3,7 +3,6 @@
 import '../models/plateau_models.dart';
 import '../models/active_workout_models.dart';
 import '../models/workout_plan_models.dart';
-import '../models/workout_response_types.dart';
 
 /// 🎯 STEP 6: Servizio per il rilevamento plateau
 /// 🔧 FIX CRITICO: Logica serie-per-serie ESATTA + confronto IDENTICO (tolleranza ZERO)

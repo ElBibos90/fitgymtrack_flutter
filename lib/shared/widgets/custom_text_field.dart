@@ -3,7 +3,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dart:io' show Platform;
 import '../theme/app_colors.dart';
 
 class CustomTextField extends StatefulWidget {

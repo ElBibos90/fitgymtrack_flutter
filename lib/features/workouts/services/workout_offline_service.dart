@@ -1,12 +1,10 @@
 // lib/features/workouts/services/workout_offline_service.dart
 
 import 'dart:convert';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/active_workout_models.dart';
 import '../bloc/active_workout_bloc.dart';
-import '../models/series_request_models.dart';
 import '../repository/workout_repository.dart';
 
 /// 🚀 NUOVO: Servizio per gestione offline degli allenamenti

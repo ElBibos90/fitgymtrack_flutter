@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/di/dependency_injection.dart';
+import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../features/auth/bloc/auth_bloc.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/legal_documents_screen.dart';
@@ -72,6 +71,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Gestisci il tuo profilo utente',
                   Icons.person,
                   () => _navigateToProfile(context),
+                  isDarkMode,
+                ),
+                _buildSettingTile(
+                  context,
+                  'Sicurezza',
+                  'Password e autenticazione biometrica',
+                  Icons.security,
+                  () => context.push('/settings/security'),
                   isDarkMode,
                 ),
                 _buildSettingTile(
@@ -635,6 +642,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _performLogout(BuildContext context) {
+    // 🔐 BIOMETRIC: NON disabilitare biometrico al logout
+    // Il biometrico rimane attivo, ma il token viene invalidato
+    // Al prossimo login biometrico, se il token è scaduto, farà login normale
+    
     // Esegue il logout tramite AuthBloc
     final authBloc = getIt<AuthBloc>();
     authBloc.logout();

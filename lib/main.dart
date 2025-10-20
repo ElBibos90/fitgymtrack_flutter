@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import 'core/di/dependency_injection.dart';
 import 'core/services/audio_settings_service.dart';
@@ -11,22 +10,17 @@ import 'core/services/background_timer_service.dart';
 import 'core/services/global_connectivity_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/router/app_router.dart';
-import 'core/navigation/navigator_key.dart';
 import 'core/utils/api_request_debouncer.dart';
-import 'core/services/app_update_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/workouts/bloc/plateau_bloc.dart';
 import 'features/subscription/bloc/subscription_bloc.dart';
 import 'features/payments/bloc/stripe_bloc.dart';
 import 'shared/theme/app_theme.dart';
-import 'shared/theme/app_colors.dart';
 import 'features/workouts/bloc/workout_blocs.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'features/stats/bloc/stats_bloc.dart';
 import 'features/templates/bloc/template_bloc.dart';
 import 'features/notifications/bloc/notification_bloc.dart';
-import 'core/config/app_config.dart';
-import 'features/payments/services/stripe_service.dart';
 import 'core/config/stripe_config.dart';
 
 void main() async {

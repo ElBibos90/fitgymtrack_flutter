@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/widgets.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -13,10 +12,8 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/services/user_role_service.dart';
 import '../../../../core/di/dependency_injection.dart';
-import '../../../auth/models/login_response.dart';
 
 import '../../bloc/workout_bloc.dart';
-import '../../models/workout_plan_models.dart';
 import '../widgets/workout_widgets.dart';
 import '../../../auth/bloc/auth_bloc.dart';
 

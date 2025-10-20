@@ -12,6 +12,9 @@ import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../bloc/auth_bloc.dart';
+import '../../../../core/services/biometric_auth_service.dart';
+import '../../../../core/services/session_service.dart';
+import '../../../../core/di/dependency_injection.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,10 +40,43 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
+  // 🔐 BIOMETRIC: Variabili per autenticazione biometrica
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+  String _biometricType = 'Biometric';
+  bool _biometricChecked = false; // Flag per evitare controlli duplicati
+  final BiometricAuthService _biometricService = getIt<BiometricAuthService>();
+  
+  // Helper per ottenere testo user-friendly
+  String get _biometricDisplayName {
+    if (_biometricType.toLowerCase().contains('face')) {
+      return 'Face ID';
+    } else if (_biometricType.toLowerCase().contains('finger')) {
+      return 'Impronta';
+    }
+    return 'Sblocco biometrico';
+  }
+  
+  // Helper per ottenere icona corretta
+  IconData get _biometricIcon {
+    if (_biometricType.toLowerCase().contains('face')) {
+      return Icons.face;
+    }
+    return Icons.fingerprint;
+  }
+
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+    _checkBiometricAvailability();  // 🔐 BIOMETRIC
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reset flag quando si torna alla login screen
+    _biometricChecked = false;
   }
 
   @override
@@ -122,6 +158,209 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // 🔐 BIOMETRIC: Verifica disponibilità biometrico
+  Future<void> _checkBiometricAvailability() async {
+    // Evita controlli duplicati
+    if (_biometricChecked) {
+      print('[LOGIN] ⚠️ Biometric already checked, skipping...');
+      return;
+    }
+    
+    try {
+      print('[LOGIN] 🔍 Checking biometric availability...');
+      _biometricChecked = true; // Marca come controllato
+      
+      final available = await _biometricService.isBiometricAvailable();
+      final enabled = await _biometricService.isBiometricEnabled();
+      final type = await _biometricService.getBiometricType();
+      
+      print('[LOGIN] 📊 Biometric status:');
+      print('[LOGIN]   - Available: $available');
+      print('[LOGIN]   - Enabled: $enabled');
+      print('[LOGIN]   - Type: $type');
+      
+      setState(() {
+        _biometricAvailable = available;
+        _biometricEnabled = enabled;
+        _biometricType = type;
+      });
+
+      // ✅ Auto-login all'apertura se biometrico abilitato
+      // Se l'utente non vuole, può premere cancel
+      if (_biometricEnabled && mounted) {
+        print('[LOGIN] ✅ Biometric enabled, trying auto-login...');
+        await _tryBiometricLogin();
+      } else {
+        print('[LOGIN] ℹ️ Biometric not enabled, normal login flow');
+      }
+    } catch (e) {
+      print('[LOGIN] ❌ Error checking biometric: $e');
+    }
+  }
+
+  // RIMOSSO: Il campo username serve SOLO per login normale
+  // Il biometrico si attiva SOLO dal pulsante dedicato
+
+  // 🔐 BIOMETRIC: Tenta login biometrico
+  Future<void> _tryBiometricLogin() async {
+    try {
+      // Piccolo delay per evitare "auth_in_progress"
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Autentica con biometrico
+      final authenticated = await _biometricService.authenticateWithBiometrics(
+        reason: 'Accedi a FitGymTrack',
+      );
+
+      if (!authenticated) {
+        return;
+      }
+
+      print('[LOGIN] ✅ Biometric authentication successful');
+      setState(() => _isLoading = true);
+
+      // Recupera credenziali salvate (username e password)
+      final credentials = await _biometricService.getSavedCredentials();
+      if (credentials == null) {
+        print('[LOGIN] ❌ No saved credentials found');
+        setState(() {
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Credenziali non trovate. Effettua il login.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      final username = credentials['username']!;
+      final password = credentials['password']!;
+      
+      print('[LOGIN] 🔑 Credentials retrieved, logging in with username: $username');
+
+      // Fa login normale con le credenziali recuperate
+      // Questo genererà un nuovo token dal server
+      if (mounted) {
+        context.read<AuthBloc>().add(
+          AuthLoginRequested(
+            username: username,
+            password: password,
+          ),
+        );
+      }
+
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print('[Login] ❌ Biometric login error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore login biometrico: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // 🔐 BIOMETRIC: Mostra dialog per abilitare biometrico
+  Future<void> _showEnableBiometricDialog() async {
+    print('[LOGIN] 🔐 _showEnableBiometricDialog called');
+    print('[LOGIN]   - Available: $_biometricAvailable');
+    print('[LOGIN]   - Enabled: $_biometricEnabled');
+    
+    if (!_biometricAvailable) {
+      print('[LOGIN] ⚠️ Biometric not available, skipping dialog');
+      return;
+    }
+    
+    if (_biometricEnabled) {
+      print('[LOGIN] ℹ️ Biometric already enabled, skipping dialog');
+      return;
+    }
+    
+    print('[LOGIN] 📱 Showing enable biometric dialog...');
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          title:             Row(
+            children: [
+              Icon(
+                _biometricIcon,
+                color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                size: 32.sp,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  'Abilita $_biometricDisplayName',
+                  style: TextStyle(fontSize: 20.sp),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Vuoi abilitare l\'accesso rapido con $_biometricDisplayName? '
+            'Potrai accedere senza inserire username e password.',
+            style: TextStyle(fontSize: 16.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('No grazie'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
+              ),
+              child: const Text('Abilita'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      try {
+        // Salva username e password per login biometrico futuro
+        final username = _usernameController.text.trim();
+        final password = _passwordController.text;
+        
+        await _biometricService.enableBiometric(username, password);
+        setState(() => _biometricEnabled = true);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$_biometricDisplayName abilitato con successo!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Errore: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -138,6 +377,8 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
+            print('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
+            
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
             // Su iOS, salva le credenziali nel Keychain
             if (Platform.isIOS) {
@@ -147,6 +388,21 @@ class _LoginScreenState extends State<LoginScreen> {
             } else if (Platform.isAndroid) {
               TextInput.finishAutofillContext();
             }
+
+            // 🔐 BIOMETRIC: Proponi abilitazione biometrico dopo login riuscito
+            final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
+            print('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
+            
+            // Mostra dialog biometrico (solo se non già abilitato)
+            Future.delayed(const Duration(milliseconds: 500), () {
+              print('[LOGIN] ⏰ Dialog delay completed, showing dialog...');
+              if (mounted) {
+                _showEnableBiometricDialog();
+              } else {
+                print('[LOGIN] ⚠️ Widget not mounted, skipping dialog');
+              }
+            });
+            
             context.go('/dashboard');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -248,6 +504,77 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     SizedBox(height: 48.h),
+
+                    // 🔐 BIOMETRIC: Pulsante biometrico (se disponibile e abilitato)
+                    if (_biometricAvailable) ...[
+                      // Pulsante grande biometrico sempre visibile
+                      GestureDetector(
+                        onTap: _biometricEnabled 
+                            ? _tryBiometricLogin 
+                            : () {
+                                // Se non abilitato, mostra messaggio
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Effettua prima il login per abilitare il biometrico'),
+                                    backgroundColor: Colors.orange,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                        child: Container(
+                          width: 80.w,
+                          height: 80.w,
+                          decoration: BoxDecoration(
+                            color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            _biometricIcon,
+                            size: 48.sp,
+                            color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                          ),
+                        ),
+                      ),
+                      
+                      SizedBox(height: 12.h),
+                      
+                      Text(
+                        _biometricEnabled 
+                            ? 'Accedi con $_biometricDisplayName'
+                            : 'Abilita $_biometricDisplayName',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
+                        ),
+                      ),
+                      
+                      SizedBox(height: 24.h),
+                      
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: isDark ? Colors.grey[700] : Colors.grey[400])),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: Text(
+                              'oppure',
+                              style: TextStyle(
+                                color: isDark ? Colors.grey[500] : Colors.grey[600],
+                                fontSize: 14.sp,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: isDark ? Colors.grey[700] : Colors.grey[400])),
+                        ],
+                      ),
+                      
+                      SizedBox(height: 24.h),
+                    ],
 
                     // 🔧 AUTOFILL: AutofillGroup per gestire le credenziali
                     AutofillGroup(

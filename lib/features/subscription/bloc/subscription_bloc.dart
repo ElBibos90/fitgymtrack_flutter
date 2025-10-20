@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 
 import '../repository/subscription_repository.dart';
 import '../models/subscription_models.dart';
-import '../../../core/utils/result.dart';
 import '../../../core/utils/api_request_debouncer.dart';
 import '../../../core/services/session_service.dart';
 import '../../../core/di/dependency_injection.dart';

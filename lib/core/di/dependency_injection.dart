@@ -7,6 +7,7 @@ import '../services/session_service.dart';
 import '../services/audio_settings_service.dart';
 import '../services/background_timer_service.dart';
 import '../services/global_connectivity_service.dart';
+import '../services/biometric_auth_service.dart';
 import '../../features/workouts/services/workout_schede_cache_service.dart';
 import '../network/dio_client.dart';
 import '../network/api_client.dart';
@@ -94,6 +95,9 @@ class DependencyInjection {
     getIt.registerLazySingleton<GymLogoService>(() => GymLogoService(
       DioClient.getInstance(sessionService: getIt<SessionService>()),
     ));
+
+    // 🔐 Biometric Authentication Service
+    getIt.registerLazySingleton<BiometricAuthService>(() => BiometricAuthService());
 
     // ============================================================================
     // ROUTE OBSERVER

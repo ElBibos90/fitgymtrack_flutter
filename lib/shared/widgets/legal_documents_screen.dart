@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../core/config/app_config.dart';
 import '../../shared/theme/app_colors.dart';
 
 class LegalDocumentsScreen extends StatelessWidget {

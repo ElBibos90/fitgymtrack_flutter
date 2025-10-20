@@ -2,7 +2,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/utils/result.dart';
 import '../../../core/network/api_client.dart';
-import '../models/subscription_models.dart';
 import '../models/gym_subscription.dart';
 
 /// Repository per la gestione degli abbonamenti palestra

@@ -6,7 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../bloc/notification_bloc.dart';
 import '../../models/notification_models.dart' as models;
-import 'notification_popup.dart';
 import 'notification_message_widget.dart';
 
 /// 🔔 Popup overlay per notifiche stile moderno

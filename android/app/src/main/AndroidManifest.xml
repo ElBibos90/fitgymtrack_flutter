@@ -17,6 +17,10 @@ File: android/app/src/main/AndroidManifest.xml
     <!-- 💳 STRIPE: Permessi opzionali per migliore UX -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- 🔐 BIOMETRIC AUTHENTICATION: Permessi per autenticazione biometrica -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+
     <!-- 📎 FEEDBACK FIX: Hardware features per camera (richiesto quando usi CAMERA permission) -->
     <uses-feature
         android:name="android.hardware.camera"
