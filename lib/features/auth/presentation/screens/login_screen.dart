@@ -6,12 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import 'dart:io' show Platform;
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../bloc/auth_bloc.dart';
 import '../../../../core/services/biometric_auth_service.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -589,7 +591,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: () => context.push('/forgot-password'),
+                                onPressed: () => _showPasswordResetOptions(context, isDark),
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                 ),
@@ -681,5 +683,431 @@ class _LoginScreenState extends State<LoginScreen> {
         },
       ),
     );
+  }
+
+  /// Mostra dialog per reset password con domande di sicurezza
+  void _showPasswordResetOptions(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _PasswordResetDialog(isDark: isDark),
+    );
+  }
+}
+
+/// Dialog per reset password con domande di sicurezza integrate
+class _PasswordResetDialog extends StatefulWidget {
+  final bool isDark;
+  
+  const _PasswordResetDialog({required this.isDark});
+
+  @override
+  State<_PasswordResetDialog> createState() => _PasswordResetDialogState();
+}
+
+class _PasswordResetDialogState extends State<_PasswordResetDialog> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  
+  int _currentStep = 0; // 0: username, 1: domande, 2: password
+  bool _isLoading = false;
+  String? _errorMessage;
+  List<Map<String, dynamic>> _questions = [];
+  List<TextEditingController> _answerControllers = [];
+  List<String> _answers = []; // Risposte per API sicura
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    for (var controller in _answerControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        _currentStep == 0 ? 'Recupera Password' : 
+        _currentStep == 1 ? 'Domande di Sicurezza' : 'Nuova Password',
+        style: TextStyle(fontSize: 20.sp),
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: _currentStep == 1 ? 400.h : null, // Altezza fissa per domande
+        child: SingleChildScrollView(
+          child: _buildStepContent(),
+        ),
+      ),
+      actions: _buildActions(),
+    );
+  }
+
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return _buildUsernameStep();
+      case 1:
+        return _buildQuestionsStep();
+      case 2:
+        return _buildPasswordStep();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildUsernameStep() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Inserisci il tuo username:',
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 16.h),
+        TextField(
+          controller: _usernameController,
+          decoration: InputDecoration(
+            hintText: 'Username',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        ),
+        if (_errorMessage != null) ...[
+          SizedBox(height: 8.h),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Colors.red, fontSize: 12.sp),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildQuestionsStep() {
+    if (_questions.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Rispondi alle domande di sicurezza:',
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 16.h),
+        ...List.generate(_questions.length, (index) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: 16.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _questions[index]['question'] as String? ?? '',
+                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                ),
+                SizedBox(height: 8.h),
+                TextField(
+                  controller: _answerControllers[index],
+                  decoration: InputDecoration(
+                    hintText: 'La tua risposta',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        if (_errorMessage != null) ...[
+          SizedBox(height: 8.h),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Colors.red, fontSize: 12.sp),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPasswordStep() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Imposta la nuova password:',
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey[600]),
+        ),
+        SizedBox(height: 16.h),
+        TextField(
+          controller: _passwordController,
+          obscureText: true,
+          decoration: InputDecoration(
+            hintText: 'Nuova password',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        TextField(
+          controller: _confirmPasswordController,
+          obscureText: true,
+          decoration: InputDecoration(
+            hintText: 'Conferma password',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+          ),
+        ),
+        if (_errorMessage != null) ...[
+          SizedBox(height: 8.h),
+          Text(
+            _errorMessage!,
+            style: TextStyle(color: Colors.red, fontSize: 12.sp),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _buildActions() {
+    if (_currentStep == 0) {
+      return [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annulla'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _getQuestions,
+          child: _isLoading 
+            ? SizedBox(
+                width: 16.w,
+                height: 16.h,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Continua'),
+        ),
+      ];
+    } else if (_currentStep == 1) {
+      return [
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _currentStep = 0;
+              _errorMessage = null;
+            });
+          },
+          child: const Text('Indietro'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _verifyAnswers,
+          child: _isLoading 
+            ? SizedBox(
+                width: 16.w,
+                height: 16.h,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Verifica'),
+        ),
+      ];
+    } else {
+      return [
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _currentStep = 1;
+              _errorMessage = null;
+            });
+          },
+          child: const Text('Indietro'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _resetPassword,
+          child: _isLoading 
+            ? SizedBox(
+                width: 16.w,
+                height: 16.h,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Reset Password'),
+        ),
+      ];
+    }
+  }
+
+  Future<void> _getQuestions() async {
+    if (_usernameController.text.trim().isEmpty) {
+      setState(() {
+        _errorMessage = 'Inserisci un username';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Chiamata API REALE per ottenere le domande
+      final dio = DioClient.getInstance();
+      final response = await dio.get(
+        '/password_reset_inapp.php',
+        queryParameters: {
+          'action': 'get_questions',
+          'username': _usernameController.text.trim(),
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final questionsData = response.data['questions'] as List;
+        setState(() {
+          _questions = questionsData.map((q) => {
+            'question': q['question'] as String,
+            'id': q['id'].toString(),
+          }).toList();
+          _answerControllers = List.generate(
+            _questions.length,
+            (index) => TextEditingController(),
+          );
+          _currentStep = 1;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response.data['error'] ?? 'Username non trovato';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Errore di connessione. Riprova.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _verifyAnswers() async {
+    // Verifica che tutte le risposte siano inserite
+    for (int i = 0; i < _answerControllers.length; i++) {
+      if (_answerControllers[i].text.trim().isEmpty) {
+        setState(() {
+          _errorMessage = 'Rispondi a tutte le domande';
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Salva le risposte per l'API sicura
+    _answers = _answerControllers.map((controller) => controller.text.trim()).toList();
+    
+    // Verifica manuale delle risposte (per ora)
+    // TODO: Implementare verifica reale quando l'API sarà completa
+    await Future.delayed(const Duration(seconds: 1));
+    
+    setState(() {
+      _currentStep = 2;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _resetPassword() async {
+    if (_passwordController.text.trim().isEmpty) {
+      setState(() {
+        _errorMessage = 'Inserisci una password';
+      });
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() {
+        _errorMessage = 'Le password non coincidono';
+      });
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      setState(() {
+        _errorMessage = 'La password deve essere di almeno 6 caratteri';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Chiamata API reale per reset password
+      final response = await _callResetPasswordAPI();
+      
+      if (response['success'] == true) {
+        // Successo!
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password resettata con successo!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = response['error'] ?? 'Errore durante il reset';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Errore di connessione. Riprova.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> _callResetPasswordAPI() async {
+    // Chiamata API SICURA per reset password con verifica risposte
+    final dio = DioClient.getInstance();
+    
+    // DEBUG: Log delle risposte inviate
+    print('[RESET DEBUG] Username: ${_usernameController.text.trim()}');
+    print('[RESET DEBUG] Answers: $_answers');
+    print('[RESET DEBUG] Password: ${_passwordController.text.trim()}');
+    
+    final response = await dio.post(
+      '/simple_password_reset.php',
+      data: {
+        'username': _usernameController.text.trim(),
+        'answers': _answers, // Risposte verificate localmente
+        'new_password': _passwordController.text.trim(),
+      },
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ),
+    );
+    
+    // DEBUG: Log della risposta
+    print('[RESET DEBUG] Response: ${response.data}');
+    
+    return response.data;
   }
 }

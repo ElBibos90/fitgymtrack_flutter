@@ -14,6 +14,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/auth/presentation/screens/password_reset_inapp_screen.dart';
+import '../../features/settings/presentation/screens/security_questions_setup_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
@@ -102,6 +104,21 @@ class AppRouter {
             final token = state.pathParameters['token'] ?? '';
             return ResetPasswordScreen(token: token);
           },
+        ),
+
+        GoRoute(
+          path: '/password-reset-inapp',
+          name: 'password-reset-inapp',
+          builder: (context, state) => const PasswordResetInAppScreen(),
+        ),
+
+        GoRoute(
+          path: '/security-questions-setup',
+          name: 'security-questions-setup',
+          builder: (context, state) => const AuthWrapper(
+            authenticatedChild: SecurityQuestionsSetupScreen(),
+            unauthenticatedChild: LoginScreen(),
+          ),
         ),
 
         // ============================================================================

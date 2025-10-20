@@ -258,6 +258,25 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   
                   SizedBox(height: 24.h),
                   
+                  // Sezione Recupero Password
+                  _buildSection(
+                    context,
+                    'Recupero Password',
+                    [
+                      _buildSettingTile(
+                        context,
+                        'Domande di Sicurezza',
+                        'Configura domande per recuperare la password',
+                        Icons.help_outline,
+                        () => Navigator.pushNamed(context, '/security-questions-setup'),
+                        isDarkMode,
+                      ),
+                    ],
+                    isDarkMode,
+                  ),
+                  
+                  SizedBox(height: 24.h),
+                  
                   // Info sul biometrico
                   if (_biometricAvailable)
                     _buildInfoCard(isDarkMode),
