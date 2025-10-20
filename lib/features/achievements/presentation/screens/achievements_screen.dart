@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_shimmer_widgets.dart';
-import '../../../../shared/widgets/error_handling_widgets.dart';
 import '../../models/achievement_models.dart';
 import '../../services/achievement_service.dart';
 import '../widgets/achievement_card.dart';

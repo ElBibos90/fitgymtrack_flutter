@@ -1,5 +1,4 @@
 // lib/core/config/stripe_config.dart
-import 'package:flutter/foundation.dart';
 
 /// Configurazione Stripe per FitGymTrack - AGGIORNATA con supporto Recurring/OneTime
 class StripeConfig {
@@ -197,37 +196,37 @@ class StripeConfig {
 
   /// Stampa informazioni di configurazione per debug
   static void printTestingInfo() {
-    //print('[CONSOLE] [stripe_config]');
-    //print('[CONSOLE] [stripe_config]🔍 STRIPE CONFIGURATION STATUS');
-    //print('[CONSOLE] [stripe_config]=====================================');
+    //debugPrint('[CONSOLE] [stripe_config]');
+    //debugPrint('[CONSOLE] [stripe_config]🔍 STRIPE CONFIGURATION STATUS');
+    //debugPrint('[CONSOLE] [stripe_config]=====================================');
 
     for (final check in configurationChecks) {
-      //print('[CONSOLE] [stripe_config]$check');
+      //debugPrint('[CONSOLE] [stripe_config]$check');
     }
 
-    //print('[CONSOLE] [stripe_config]');
+    //debugPrint('[CONSOLE] [stripe_config]');
 
     if (isReadyForTesting) {
-      //print('[CONSOLE] [stripe_config]✅ READY FOR TESTING');
-      //print('[CONSOLE] [stripe_config]');
-      //print('[CONSOLE] [stripe_config]🚀 TEST FLOW:');
-      //print('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
-      //print('[CONSOLE] [stripe_config]   2. Subscription Screen → Scegli tipo pagamento');
-      //print('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
-      //print('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
+      //debugPrint('[CONSOLE] [stripe_config]✅ READY FOR TESTING');
+      //debugPrint('[CONSOLE] [stripe_config]');
+      //debugPrint('[CONSOLE] [stripe_config]🚀 TEST FLOW:');
+      //debugPrint('[CONSOLE] [stripe_config]   1. Dashboard → "Vai all\'Abbonamento"');
+      //debugPrint('[CONSOLE] [stripe_config]   2. Subscription Screen → Scegli tipo pagamento');
+      //debugPrint('[CONSOLE] [stripe_config]   3. Payment Flow → Use test card: ${testCards['success']}');
+      //debugPrint('[CONSOLE] [stripe_config]   4. Verify success and return to dashboard');
     } else {
-      print('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
-      print('[CONSOLE] [stripe_config]');
-      print('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
+      //debugPrint('[CONSOLE] [stripe_config]❌ NOT READY FOR TESTING');
+      //debugPrint('[CONSOLE] [stripe_config]');
+      //debugPrint('[CONSOLE] [stripe_config]🔧 ISSUES TO FIX:');
       for (final check in configurationChecks) {
         if (check.startsWith('❌') || check.startsWith('⚠️')) {
-          print('[CONSOLE] [stripe_config]   $check');
+          //debugPrint('[CONSOLE] [stripe_config]   $check');
         }
       }
     }
 
-    print('[CONSOLE] [stripe_config]=========================================');
-    print('[CONSOLE] [stripe_config]');
+    //debugPrint('[CONSOLE] [stripe_config]=========================================');
+    //debugPrint('[CONSOLE] [stripe_config]');
   }
 
   // ============================================================================

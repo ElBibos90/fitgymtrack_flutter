@@ -89,10 +89,10 @@ class _AuthDebugWidgetState extends State<AuthDebugWidget> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(
-                  color: AppColors.error.withOpacity(0.3),
+                  color: AppColors.error.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -140,13 +140,13 @@ class _AuthDebugWidgetState extends State<AuthDebugWidget> {
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: isAuthenticated 
-                ? AppColors.success.withOpacity(0.1)
-                : AppColors.error.withOpacity(0.1),
+                ? AppColors.success.withValues(alpha: 0.1)
+                : AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(
               color: isAuthenticated 
-                  ? AppColors.success.withOpacity(0.3)
-                  : AppColors.error.withOpacity(0.3),
+                  ? AppColors.success.withValues(alpha: 0.3)
+                  : AppColors.error.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -346,11 +346,11 @@ class _AuthDebugWidgetState extends State<AuthDebugWidget> {
       final token = await sessionService.getAuthToken();
       final isAuthenticated = await sessionService.isAuthenticated();
       
-      //print('🔍 AuthDebugWidget: Token locale presente: ${token != null && token.isNotEmpty}');
-      //print('🔍 AuthDebugWidget: IsAuthenticated: $isAuthenticated');
+      //debugPrint('🔍 AuthDebugWidget: Token locale presente: ${token != null && token.isNotEmpty}');
+      //debugPrint('🔍 AuthDebugWidget: IsAuthenticated: $isAuthenticated');
       
       if (token != null) {
-        //print('🔍 AuthDebugWidget: Token (primi 20 caratteri): ${token.substring(0, 20)}...');
+        //debugPrint('🔍 AuthDebugWidget: Token (primi 20 caratteri): ${token.substring(0, 20)}...');
       }
 
       // Test 2: Verifica con server
@@ -370,7 +370,7 @@ class _AuthDebugWidgetState extends State<AuthDebugWidget> {
       setState(() {
         _error = 'Errore: $e';
       });
-      print('❌ AuthDebugWidget: Errore nel test: $e');
+      //debugPrint('❌ AuthDebugWidget: Errore nel test: $e');
     } finally {
       setState(() {
         _isLoading = false;

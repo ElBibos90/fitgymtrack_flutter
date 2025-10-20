@@ -9,10 +9,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 // Core imports
-import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
-import '../../../../shared/widgets/recovery_timer_popup.dart';
-import '../../../../shared/widgets/enhanced_recovery_timer_popup.dart';
 import '../../../../shared/widgets/simple_recovery_timer.dart';
 import '../../../../shared/widgets/isometric_timer_popup.dart';
 import '../../../../shared/widgets/parameter_edit_dialog.dart';
@@ -30,24 +27,14 @@ import '../../bloc/plateau_bloc.dart';
 import '../../models/plateau_models.dart';
 import '../../../../shared/widgets/plateau_widgets.dart';
 
-import '../../../../shared/widgets/rest_pause_timer_popup.dart';
 import '../../../../shared/widgets/rest_pause_data_manager.dart';
-import '../../../../shared/widgets/exercise_selection_dialog.dart';
-import '../../../exercises/models/exercises_response.dart';
-import '../../../exercises/services/image_service.dart';
 import '../../../../core/config/app_config.dart';
 import '../widgets/offline_status_widget.dart';
 import '../../services/connectivity_service.dart';
 
-// 🔧 FIX 2: IMPORT FOR SUPERSET DETECTION
-import '../../models/exercise_group_models.dart';
-
 // 🎨 NUOVI WIDGET MODERNI (17 Ottobre 2025)
-import '../../../../shared/widgets/weight_reps_card.dart';
-import '../../../../shared/widgets/workout_header.dart';
 import '../../../../shared/widgets/superset_badge.dart';
 import '../../../../shared/widgets/exercise_card_layout_b.dart'; // 🔥 NUOVO LAYOUT B
-import '../../../../shared/theme/workout_design_system.dart';
 
 /// 🚀 ActiveWorkoutScreen - SINGLE EXERCISE FOCUSED WITH SUPERSET/CIRCUIT GROUPING + 🎯 PLATEAU DETECTION MINIMALE
 /// ✅ STEP 7 COMPLETATO + Dark Theme + Dialogs + Complete Button + Plateau Integration MINIMALE + 🔧 PERFORMANCE FIX
@@ -148,34 +135,34 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   
   void _loadPreviousData(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    // print('[STORICO] Caricamento dati precedenti per esercizio ID: $exerciseId');
-    // print('[STORICO] Esercizio: ${exercise.nome}');
+    // //debugPrint('[STORICO] Caricamento dati precedenti per esercizio ID: $exerciseId');
+    // //debugPrint('[STORICO] Esercizio: ${exercise.nome}');
     
     // Calcola la serie corrente
     final currentState = _getCurrentState();
     if (currentState == null) {
-      // print('[STORICO] ERRORE: Stato corrente nullo');
+      // //debugPrint('[STORICO] ERRORE: Stato corrente nullo');
       return;
     }
     
     final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
     final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie);
     
-    // print('[STORICO] Serie corrente: $currentSeriesNumber (completate: $completedSeriesCount)');
-    // print('[STORICO] Serie totali esercizio: ${exercise.serie}');
+    // //debugPrint('[STORICO] Serie corrente: $currentSeriesNumber (completate: $completedSeriesCount)');
+    // //debugPrint('[STORICO] Serie totali esercizio: ${exercise.serie}');
     
     // 🎯 FASE 5: Carica i dati per la serie corrente (quella che devi fare ora)
-    // print('[STORICO] Caricamento dati storici per serie corrente: $currentSeriesNumber');
+    // //debugPrint('[STORICO] Caricamento dati storici per serie corrente: $currentSeriesNumber');
     
     // 🎯 FASE 5: Verifica se il BLoC ha dati storici caricati
-    // print('[STORICO] 🔍 DEBUG: Verifica dati storici nel BLoC per esercizio $exerciseId, serie $currentSeriesNumber');
+    // //debugPrint('[STORICO] 🔍 DEBUG: Verifica dati storici nel BLoC per esercizio $exerciseId, serie $currentSeriesNumber');
     
     // 🎯 FASE 5: Recupera dati reali dallo storico tramite BLoC
     final historicValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
     
-    // print('[STORICO] 🔍 DEBUG: historicValues.isFromHistory = ${historicValues.isFromHistory}');
-    // print('[STORICO] 🔍 DEBUG: historicValues.weight = ${historicValues.weight}');
-    // print('[STORICO] 🔍 DEBUG: historicValues.reps = ${historicValues.reps}');
+    // //debugPrint('[STORICO] 🔍 DEBUG: historicValues.isFromHistory = ${historicValues.isFromHistory}');
+    // //debugPrint('[STORICO] 🔍 DEBUG: historicValues.weight = ${historicValues.weight}');
+    // //debugPrint('[STORICO] 🔍 DEBUG: historicValues.reps = ${historicValues.reps}');
     
     final double lastWeight;
     final int lastReps;
@@ -184,13 +171,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Usa i dati storici reali dal database
       lastWeight = historicValues.weight;
       lastReps = historicValues.reps;
-      // print('[STORICO] ✅ Dati REALI dal database: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+      // //debugPrint('[STORICO] ✅ Dati REALI dal database: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
     } else {
       // Fallback: usa i valori di default dell'esercizio
       lastWeight = exercise.peso;
       lastReps = exercise.ripetizioni;
-      // print('[STORICO] ⚠️ ATTENZIONE: Nessun dato storico trovato (isFromHistory=${historicValues.isFromHistory}, weight=${historicValues.weight})');
-      // print('[STORICO] ⚠️ Uso valori default dell\');
+      // //debugPrint('[STORICO] ⚠️ ATTENZIONE: Nessun dato storico trovato (isFromHistory=${historicValues.isFromHistory}, weight=${historicValues.weight})');
+      // //debugPrint('[STORICO] ⚠️ Uso valori default dell\');
     }
     
     setState(() {
@@ -199,13 +186,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _previousSeriesNumber[exerciseId] = currentSeriesNumber;
     });
     
-    // print('[STORICO] Dati precedenti caricati: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
-    // print('[STORICO] Cache aggiornata per esercizio $exerciseId');
+    // //debugPrint('[STORICO] Dati precedenti caricati: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    // //debugPrint('[STORICO] Cache aggiornata per esercizio $exerciseId');
   }
   
   void _clearPreviousData(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    print('[PARAM] Pulizia dati precedenti per esercizio ID: $exerciseId');
+    //debugPrint('[PARAM] Pulizia dati precedenti per esercizio ID: $exerciseId');
     
     setState(() {
       _previousWeights.remove(exerciseId);
@@ -213,29 +200,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _previousSeriesNumber.remove(exerciseId);
     });
     
-    print('[PARAM] Dati precedenti rimossi, tornando ai valori del DB');
+    //debugPrint('[PARAM] Dati precedenti rimossi, tornando ai valori del DB');
   }
   
   void _loadPreviousDataForComparison(WorkoutExercise exercise) {
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
-    // print('[STORICO] Caricamento dati precedenti per confronto - esercizio ID: $exerciseId');
-    // print('[STORICO] Esercizio: ${exercise.nome}');
+    // //debugPrint('[STORICO] Caricamento dati precedenti per confronto - esercizio ID: $exerciseId');
+    // //debugPrint('[STORICO] Esercizio: ${exercise.nome}');
     
     // Calcola la serie corrente
     final currentState = _getCurrentState();
     if (currentState == null) {
-      // print('[STORICO] ERRORE: Stato corrente nullo per confronto');
+      // //debugPrint('[STORICO] ERRORE: Stato corrente nullo per confronto');
       return;
     }
     
     final completedSeriesCount = _getCompletedSeriesCount(currentState, exerciseId);
     final currentSeriesNumber = (completedSeriesCount + 1).clamp(1, exercise.serie);
     
-    // print('[STORICO] Serie corrente per confronto: $currentSeriesNumber (completate: $completedSeriesCount)');
-    // print('[STORICO] Serie totali esercizio: ${exercise.serie}');
+    // //debugPrint('[STORICO] Serie corrente per confronto: $currentSeriesNumber (completate: $completedSeriesCount)');
+    // //debugPrint('[STORICO] Serie totali esercizio: ${exercise.serie}');
     
     // 🎯 FASE 5: Carica i dati per la serie corrente (quella che devi fare ora)
-    // print('[STORICO] Caricamento dati storici per confronto serie corrente: $currentSeriesNumber');
+    // //debugPrint('[STORICO] Caricamento dati storici per confronto serie corrente: $currentSeriesNumber');
     
     // 🎯 FASE 5: Recupera dati reali dallo storico tramite BLoC (per confronto)
     final historicValues = _activeWorkoutBloc.getValuesForSeries(exerciseId, currentSeriesNumber);
@@ -247,12 +234,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Usa i dati storici reali dal database
       lastWeight = historicValues.weight;
       lastReps = historicValues.reps;
-      // print('[STORICO] Dati REALI dal database per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+      // //debugPrint('[STORICO] Dati REALI dal database per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
     } else {
       // Fallback: usa i valori di default dell'esercizio
       lastWeight = exercise.peso;
       lastReps = exercise.ripetizioni;
-      // print('[STORICO] ATTENZIONE: Nessun dato storico per confronto, uso valori default: $lastWeight kg x $lastReps reps');
+      // //debugPrint('[STORICO] ATTENZIONE: Nessun dato storico per confronto, uso valori default: $lastWeight kg x $lastReps reps');
     }
     
     setState(() {
@@ -261,88 +248,88 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _previousSeriesNumber[exerciseId] = currentSeriesNumber;
     });
     
-    // print('[STORICO] Dati precedenti caricati per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
-    // print('[STORICO] Cache aggiornata per confronto esercizio $exerciseId');
+    // //debugPrint('[STORICO] Dati precedenti caricati per confronto: $lastWeight kg x $lastReps reps (Serie $currentSeriesNumber)');
+    // //debugPrint('[STORICO] Cache aggiornata per confronto esercizio $exerciseId');
   }
   
   void _loadPreviousDataForComparisonIfNeeded() {
-    // print('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI ===');
-    // print('[STORICO] Toggle usePreviousData: $_usePreviousData');
+    // //debugPrint('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI ===');
+    // //debugPrint('[STORICO] Toggle usePreviousData: $_usePreviousData');
     
     // Ottieni l'esercizio corrente dallo stato del BLoC
     final state = _activeWorkoutBloc.state;
     WorkoutExercise? currentExercise;
     
     if (state is WorkoutSessionActive) {
-      // print('[STORICO] Stato WorkoutSessionActive trovato con ${state.exercises.length} esercizi');
+      // //debugPrint('[STORICO] Stato WorkoutSessionActive trovato con ${state.exercises.length} esercizi');
       // Per esercizio singolo, usa il primo esercizio
       if (state.exercises.isNotEmpty) {
         currentExercise = state.exercises.first;
-        // print('[STORICO] Esercizio corrente: ${currentExercise.nome} (ID: ${currentExercise.schedaEsercizioId ?? currentExercise.id})');
+        // //debugPrint('[STORICO] Esercizio corrente: ${currentExercise.nome} (ID: ${currentExercise.schedaEsercizioId ?? currentExercise.id})');
       } else {
-        // print('[STORICO] ERRORE: Nessun esercizio trovato nello stato');
+        // //debugPrint('[STORICO] ERRORE: Nessun esercizio trovato nello stato');
       }
     } else {
-      // print('[STORICO] ERRORE: Stato non è WorkoutSessionActive: ${state.runtimeType}');
+      // //debugPrint('[STORICO] ERRORE: Stato non è WorkoutSessionActive: ${state.runtimeType}');
     }
     
     if (currentExercise != null) {
       final exerciseId = currentExercise.schedaEsercizioId ?? currentExercise.id;
-      // print('[STORICO] Esercizio ID: $exerciseId');
-      // print('[STORICO] Cache già presente: ${_previousWeights.containsKey(exerciseId)}');
+      // //debugPrint('[STORICO] Esercizio ID: $exerciseId');
+      // //debugPrint('[STORICO] Cache già presente: ${_previousWeights.containsKey(exerciseId)}');
       
       // Carica solo se non già caricato
       if (!_previousWeights.containsKey(exerciseId)) {
         if (_usePreviousData) {
-          // print('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
+          // //debugPrint('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
           _loadPreviousData(currentExercise);
         } else {
-          // print('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
+          // //debugPrint('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
           _loadPreviousDataForComparison(currentExercise);
         }
       } else {
-        // print('[STORICO] Dati già presenti in cache, skip caricamento');
+        // //debugPrint('[STORICO] Dati già presenti in cache, skip caricamento');
       }
     } else {
-      // print('[STORICO] ERRORE: Nessun esercizio corrente trovato');
+      // //debugPrint('[STORICO] ERRORE: Nessun esercizio corrente trovato');
     }
     
-    // print('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI ===');
+    // //debugPrint('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI ===');
   }
   
   void _loadPreviousDataForAllExercises(WorkoutSessionActive state) {
-    // print('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
-    // print('[STORICO] Toggle usePreviousData: $_usePreviousData');
-    // print('[STORICO] Numero esercizi: ${state.exercises.length}');
+    // //debugPrint('[STORICO] === INIZIO CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
+    // //debugPrint('[STORICO] Toggle usePreviousData: $_usePreviousData');
+    // //debugPrint('[STORICO] Numero esercizi: ${state.exercises.length}');
     
     // ⏰ IMPORTANTE: Aspetta che il BLoC finisca di caricare lo storico
     // Il BLoC carica lo storico in modo asincrono, quindi aspettiamo un po'
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       
-      // print('[STORICO] ⏰ Delay completato, ora carico i dati precedenti dal BLoC');
+      // //debugPrint('[STORICO] ⏰ Delay completato, ora carico i dati precedenti dal BLoC');
       
       for (int i = 0; i < state.exercises.length; i++) {
         final exercise = state.exercises[i];
         final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
         
-        // print('[STORICO] Esercizio ${i + 1}: ${exercise.nome} (ID: $exerciseId)');
+        // //debugPrint('[STORICO] Esercizio ${i + 1}: ${exercise.nome} (ID: $exerciseId)');
         
         // Carica solo se non già caricato
         if (!_previousWeights.containsKey(exerciseId)) {
           if (_usePreviousData) {
-            // print('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
+            // //debugPrint('[STORICO] Toggle ON: Caricamento dati precedenti per uso diretto');
             _loadPreviousData(exercise);
           } else {
-            // print('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
+            // //debugPrint('[STORICO] Toggle OFF: Caricamento dati per confronto "vs scorsa"');
             _loadPreviousDataForComparison(exercise);
           }
         } else {
-          // print('[STORICO] Dati già presenti in cache per esercizio $exerciseId, skip');
+          // //debugPrint('[STORICO] Dati già presenti in cache per esercizio $exerciseId, skip');
         }
       }
       
-      // print('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
+      // //debugPrint('[STORICO] === FINE CARICAMENTO DATI PRECEDENTI PER TUTTI GLI ESERCIZI ===');
     });
   }
   
@@ -433,7 +420,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   @override
   void initState() {
     super.initState();
-    //print("🚀 [SINGLE EXERCISE + ALL FIXES] initState - Scheda: ${widget.schedaId}");
+    //debugPrint("🚀 [SINGLE EXERCISE + ALL FIXES] initState - Scheda: ${widget.schedaId}");
 
     // 🔧 FIX 4: APP LIFECYCLE - Observer registration
     WidgetsBinding.instance.addObserver(this);
@@ -469,16 +456,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   /// 🚀 STEP 1: Helper per parsare sequenza ripetizioni
   List<int> _parseRestPauseSequence(String? sequence) {
     if (sequence == null || sequence.isEmpty) {
-      //print('⚠️ [REST-PAUSE] Empty sequence, returning empty list');
+      //debugPrint('⚠️ [REST-PAUSE] Empty sequence, returning empty list');
       return [];
     }
 
     try {
       final parsed = sequence.split('+').map((s) => int.tryParse(s.trim()) ?? 0).toList();
-      //print('🔥 [REST-PAUSE] Parsed sequence "$sequence" -> $parsed');
+      //debugPrint('🔥 [REST-PAUSE] Parsed sequence "$sequence" -> $parsed');
       return parsed.where((n) => n > 0).toList(); // Rimuovi valori invalidi
     } catch (e) {
-      //print('💥 [REST-PAUSE] Error parsing sequence "$sequence": $e');
+      //debugPrint('💥 [REST-PAUSE] Error parsing sequence "$sequence": $e');
       return [];
     }
   }
@@ -488,13 +475,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         sequence.length >= 2 &&
         sequence.every((n) => n > 0 && n <= 50); // Massimo 50 reps per micro-serie
 
-    //print('🔥 [REST-PAUSE] Sequence validation: $sequence -> $isValid');
+    //debugPrint('🔥 [REST-PAUSE] Sequence validation: $sequence -> $isValid');
     return isValid;
   }
 
   @override
   void dispose() {
-    //print("🚀 [SINGLE EXERCISE + ALL FIXES] dispose");
+    //debugPrint("🚀 [SINGLE EXERCISE + ALL FIXES] dispose");
 
     // 🔧 FIX 1: ALWAYS ON - Disable wakelock on dispose
     _disableWakeLock();
@@ -524,12 +511,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    //print("🔧 [APP LIFECYCLE] State changed to: $state");
+    //debugPrint("🔧 [APP LIFECYCLE] State changed to: $state");
 
     switch (state) {
       case AppLifecycleState.resumed:
         if (_isAppInBackground) {
-          //print("🔧 [APP LIFECYCLE] App resumed from background - refreshing workout state");
+          //debugPrint("🔧 [APP LIFECYCLE] App resumed from background - refreshing workout state");
           _isAppInBackground = false;
           _handleAppResume();
         }
@@ -537,7 +524,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         _isAppInBackground = true;
-        //print("🔧 [APP LIFECYCLE] App going to background");
+        //debugPrint("🔧 [APP LIFECYCLE] App going to background");
         break;
       case AppLifecycleState.detached:
         _disableWakeLock();
@@ -552,7 +539,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Evita schermo azzurro verificando stato corrente
     final currentState = _activeWorkoutBloc.state;
     if (currentState is WorkoutSessionActive) {
-      //print("🔧 [APP LIFECYCLE] Valid workout state found - continuing");
+      //debugPrint("🔧 [APP LIFECYCLE] Valid workout state found - continuing");
       // Riavvia timer se necessario
       if (_workoutTimer == null && _startTime != null) {
         _startWorkoutTimer();
@@ -560,7 +547,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // Riabilita wake lock
       _enableWakeLock();
     } else {
-      //print("🔧 [APP LIFECYCLE] Invalid state detected - refreshing");
+      //debugPrint("🔧 [APP LIFECYCLE] Invalid state detected - refreshing");
       setState(() {
         _currentStatus = "Ripristinando allenamento...";
       });
@@ -579,11 +566,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       final hasOfflineWorkout = stats['has_offline_workout'] == true;
       
       if (hasOfflineWorkout) {
-        //print('[CONSOLE] [active_workout_screen] 📱 Found offline workout, attempting restore...');
+        //debugPrint('[CONSOLE] [active_workout_screen] 📱 Found offline workout, attempting restore...');
         _activeWorkoutBloc.restoreOfflineWorkout();
       }
     } catch (e) {
-      print('[CONSOLE] [active_workout_screen] ❌ Error checking offline workout: $e');
+      //debugPrint('[CONSOLE] [active_workout_screen] ❌ Error checking offline workout: $e');
     }
   }
 
@@ -591,23 +578,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   Future<void> _enableWakeLock() async {
     try {
       await WakelockPlus.enable();
-      //print("🔧 [ALWAYS ON] WakeLock enabled successfully");
+      //debugPrint("🔧 [ALWAYS ON] WakeLock enabled successfully");
     } catch (e) {
-      //print("🔧 [ALWAYS ON] Error enabling WakeLock: $e");
+      //debugPrint("🔧 [ALWAYS ON] Error enabling WakeLock: $e");
     }
   }
 
   Future<void> _disableWakeLock() async {
     try {
       await WakelockPlus.disable();
-      //print("🔧 [ALWAYS ON] WakeLock disabled successfully");
+      //debugPrint("🔧 [ALWAYS ON] WakeLock disabled successfully");
     } catch (e) {
-      //print("🔧 [ALWAYS ON] Error disabling WakeLock: $e");
+      //debugPrint("🔧 [ALWAYS ON] Error disabling WakeLock: $e");
     }
   }
 
   void _handleRestPauseStart(WorkoutSessionActive state, WorkoutExercise exercise) {
-    //print('🔥 [REST-PAUSE] Opening REST-PAUSE widget for: ${exercise.nome}');
+    //debugPrint('🔥 [REST-PAUSE] Opening REST-PAUSE widget for: ${exercise.nome}');
 
     showDialog(
       context: context,
@@ -659,11 +646,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
               //   duration: const Duration(seconds: 4),
               // );
 
-              //print("🚀 [REST-PAUSE] Series saved with data:");
-              //print("🚀 [REST-PAUSE]   - isRestPause: 1");
-              //print("🚀 [REST-PAUSE]   - restPauseReps: '${data.actualSequence}'");
-              //print("🚀 [REST-PAUSE]   - restPauseRestSeconds: ${data.restSeconds}");
-              //print("🚀 [REST-PAUSE]   - ripetizioni: ${data.totalActualReps}");
+              //debugPrint("🚀 [REST-PAUSE] Series saved with data:");
+              //debugPrint("🚀 [REST-PAUSE]   - isRestPause: 1");
+              //debugPrint("🚀 [REST-PAUSE]   - restPauseReps: '${data.actualSequence}'");
+              //debugPrint("🚀 [REST-PAUSE]   - restPauseRestSeconds: ${data.restSeconds}");
+              //debugPrint("🚀 [REST-PAUSE]   - ripetizioni: ${data.totalActualReps}");
 
               // 🔧 FIX: Aggiungi logica auto-rotation per REST-PAUSE
               final updatedState = _getCurrentState();
@@ -672,7 +659,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 if (exercise.tempoRecupero > 0 && _shouldStartRecoveryTimer(exercise)) {
                   _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
                 } else if (_isPartOfMultiExerciseGroup(exercise)) {
-                  //print("🔧 [REST-PAUSE SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
+                  //debugPrint("🔧 [REST-PAUSE SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
                 }
 
                 // 🚀 AUTO-ROTAZIONE: Passa al prossimo esercizio se in un gruppo
@@ -685,12 +672,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   }
                 });
               } else {
-                //print("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
+                //debugPrint("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
               }
             },
             onCompleteMicroSeries: (data, index, reps) {
-              //print('🔥 [REST-PAUSE] Micro-serie ${index + 1} completata: $reps reps');
-              //print('🔥 [REST-PAUSE] Progresso attuale: ${data.actualSequence}');
+              //debugPrint('🔥 [REST-PAUSE] Micro-serie ${index + 1} completata: $reps reps');
+              //debugPrint('🔥 [REST-PAUSE] Progresso attuale: ${data.actualSequence}');
             },
           ),
         ),
@@ -715,12 +702,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    //print("🚀 [REST-PAUSE] Completing REST-PAUSE series ${completedCount + 1} for exercise: ${exercise.nome}");
-    //print("🚀 [REST-PAUSE] Data: ${restPauseData.toString()}");
+    //debugPrint("🚀 [REST-PAUSE] Completing REST-PAUSE series ${completedCount + 1} for exercise: ${exercise.nome}");
+    //debugPrint("🚀 [REST-PAUSE] Data: ${restPauseData.toString()}");
 
     // Validazione dati REST-PAUSE
     if (!restPauseData.isValid() || !restPauseData.isCompleted) {
-      //print("❌ [REST-PAUSE] Invalid or incomplete data");
+      //debugPrint("❌ [REST-PAUSE] Invalid or incomplete data");
       CustomSnackbar.show(
         context,
         message: "Errore nei dati REST-PAUSE",
@@ -769,27 +756,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // );
 
     // Log dettagliato per debug
-    //print("🚀 [REST-PAUSE] Series saved:");
-    //print("🚀 [REST-PAUSE]   - Weight: ${restPauseData.weight}kg");
-    //print("🚀 [REST-PAUSE]   - Total reps: ${restPauseData.totalActualReps}");
-    //print("🚀 [REST-PAUSE]   - Sequence: ${restPauseData.actualSequence}");
-    //print("🚀 [REST-PAUSE]   - Rest seconds: ${restPauseData.restSeconds}");
-    //print("🚀 [REST-PAUSE]   - Duration: ${restPauseData.totalDuration?.inSeconds ?? 0}s");
+    //debugPrint("🚀 [REST-PAUSE] Series saved:");
+    //debugPrint("🚀 [REST-PAUSE]   - Weight: ${restPauseData.weight}kg");
+    //debugPrint("🚀 [REST-PAUSE]   - Total reps: ${restPauseData.totalActualReps}");
+    //debugPrint("🚀 [REST-PAUSE]   - Sequence: ${restPauseData.actualSequence}");
+    //debugPrint("🚀 [REST-PAUSE]   - Rest seconds: ${restPauseData.restSeconds}");
+    //debugPrint("🚀 [REST-PAUSE]   - Duration: ${restPauseData.totalDuration?.inSeconds ?? 0}s");
 
     // Gestione completamento esercizio e recupero normale
     final newCompletedCount = completedCount + 1;
     if (newCompletedCount >= exercise.serie) {
-      //print("🎉 [REST-PAUSE] Esercizio ${exercise.nome} completato!");
+      //debugPrint("🎉 [REST-PAUSE] Esercizio ${exercise.nome} completato!");
     } else {
       // Avvia timer di recupero normale tra serie (se esiste il metodo)
       try {
         // Usa il metodo esistente per recovery timer se disponibile
         if (exercise.tempoRecupero > 0) {
-          //print("🔄 [REST-PAUSE] Starting recovery timer: ${exercise.tempoRecupero}s");
+          //debugPrint("🔄 [REST-PAUSE] Starting recovery timer: ${exercise.tempoRecupero}s");
           // TODO: Implementare timer recovery se necessario
         }
       } catch (e) {
-        //print("⚠️ [REST-PAUSE] Recovery timer not available: $e");
+        //debugPrint("⚠️ [REST-PAUSE] Recovery timer not available: $e");
       }
     }
   }
@@ -797,22 +784,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   bool _validateRestPauseData(RestPauseExecutionData data) {
     if (!data.isValid()) {
-      //print("❌ [REST-PAUSE] Data validation failed: invalid data");
+      //debugPrint("❌ [REST-PAUSE] Data validation failed: invalid data");
       return false;
     }
 
     if (!data.isCompleted) {
-      //print("❌ [REST-PAUSE] Data validation failed: not completed");
+      //debugPrint("❌ [REST-PAUSE] Data validation failed: not completed");
       return false;
     }
 
     if (data.totalActualReps <= 0) {
-      //print("❌ [REST-PAUSE] Data validation failed: no reps completed");
+      //debugPrint("❌ [REST-PAUSE] Data validation failed: no reps completed");
       return false;
     }
 
     if (data.actualSequence.isEmpty) {
-      //print("❌ [REST-PAUSE] Data validation failed: empty sequence");
+      //debugPrint("❌ [REST-PAUSE] Data validation failed: empty sequence");
       return false;
     }
 
@@ -826,7 +813,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // 🔥 FASE 6: Note Duali - Aggiorna nota utente
   void _updateUserNote(WorkoutExercise exercise, String note) async {
     try {
-      // print('🔥 [NOTES] Aggiornamento nota utente per ${exercise.nome}: $note');
+      // //debugPrint('🔥 [NOTES] Aggiornamento nota utente per ${exercise.nome}: $note');
       
       final schedaEsercizioId = exercise.schedaEsercizioId ?? exercise.id;
       
@@ -845,15 +832,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-          // print('🔥 [NOTES] Nota utente salvata con successo');
+          // //debugPrint('🔥 [NOTES] Nota utente salvata con successo');
         } else {
-          // print('🔥 [NOTES] Errore nel salvataggio: ${data['message']}');
+          // //debugPrint('🔥 [NOTES] Errore nel salvataggio: ${data['message']}');
         }
       } else {
-        // print('🔥 [NOTES] Errore HTTP: ${response.statusCode}');
+        // //debugPrint('🔥 [NOTES] Errore HTTP: ${response.statusCode}');
       }
     } catch (e) {
-      // print('🔥 [NOTES] Errore nella chiamata API: $e');
+      // //debugPrint('🔥 [NOTES] Errore nella chiamata API: $e');
     }
   }
 
@@ -920,7 +907,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        //print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        //debugPrint('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting weight for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -977,7 +964,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
       // 🔧 PERFORMANCE FIX: Log ridotto
       if (DateTime.now().millisecondsSinceEpoch % 5000 < 100) {
-        //print('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
+        //debugPrint('[CONSOLE] [active_workout_screen]🔧 [PERF] Getting reps for exercise $exerciseId, series $currentSeriesNumber (completed: $completedSeriesCount)');
       }
 
       // Usa il metodo serie-specifico del BLoC
@@ -1009,14 +996,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _invalidateCacheForExercise(int exerciseId) {
     _cachedWeights.remove(exerciseId);
     _cachedReps.remove(exerciseId);
-    //print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
+    //debugPrint('[CONSOLE] [active_workout_screen]🔧 [CACHE] Invalidated cache for exercise $exerciseId');
   }
 
   /// 🔧 PERFORMANCE FIX: Pulisce tutta la cache
   void _clearCache() {
     _cachedWeights.clear();
     _cachedReps.clear();
-    //print('[CONSOLE] [active_workout_screen]🔧 [CACHE] Cache cleared');
+    //debugPrint('[CONSOLE] [active_workout_screen]🔧 [CACHE] Cache cleared');
   }
 
   // ============================================================================
@@ -1097,7 +1084,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       // 🆕 NUOVO: Controlla se c'è già un allenamento attivo
       final currentState = _activeWorkoutBloc.state;
       if (currentState is WorkoutSessionActive) {
-        //print('[CONSOLE] [active_workout_screen] ✅ Found existing active workout, using it');
+        //debugPrint('[CONSOLE] [active_workout_screen] ✅ Found existing active workout, using it');
         // Usa l'allenamento esistente invece di avviarne uno nuovo
         setState(() {
           _isInitialized = true;
@@ -1115,7 +1102,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
         //   });
         // }
       } else {
-        //print('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
+        //debugPrint('[CONSOLE] [active_workout_screen] 🚀 No active workout found, starting new one');
         // Avvia un nuovo allenamento solo se non ce n'è già uno attivo
         _activeWorkoutBloc.startWorkout(_userId!, widget.schedaId);
       }
@@ -1132,7 +1119,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
 
     } catch (e) {
-      //print("🚀 [SINGLE EXERCISE + ALL FIXES] Error initializing: $e");
+      //debugPrint("🚀 [SINGLE EXERCISE + ALL FIXES] Error initializing: $e");
       setState(() {
         _currentStatus = "Errore inizializzazione: $e";
       });
@@ -1175,7 +1162,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
 
   void _handleExitConfirmed() {
-    //print("🚪 [EXIT] User confirmed exit - cancelling workout");
+    //debugPrint("🚪 [EXIT] User confirmed exit - cancelling workout");
 
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
@@ -1187,7 +1174,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleCompleteConfirmed() {
-    //print("✅ [COMPLETE] User confirmed completion");
+    //debugPrint("✅ [COMPLETE] User confirmed completion");
 
     final currentState = context.read<ActiveWorkoutBloc>().state;
     if (currentState is WorkoutSessionActive) {
@@ -1221,9 +1208,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       groups.add(currentGroup);
     }
 
-    //print("🚀 [GROUPING] Created ${groups.length} exercise groups:");
+    //debugPrint("🚀 [GROUPING] Created ${groups.length} exercise groups:");
     for (int i = 0; i < groups.length; i++) {
-      //print("  Group $i: ${groups[i].map((e) => e.nome).join(', ')}");
+      //debugPrint("  Group $i: ${groups[i].map((e) => e.nome).join(', ')}");
     }
 
     return groups;
@@ -1267,13 +1254,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   bool _shouldStartRecoveryTimer(WorkoutExercise exercise) {
     // Se non è parte di un gruppo multi-esercizio, sempre true
     if (!_isPartOfMultiExerciseGroup(exercise)) {
-      // print("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (single exercise)");
+      // //debugPrint("[TIMER] 🚀 _shouldStartRecoveryTimer: TRUE (single exercise)");
       return true;
     }
 
     // 🎯 FASE 5: Per superset/circuit, timer parte SOLO se è l'ultimo esercizio
     final isLast = _isLastExerciseInGroup(exercise);
-    // print("[TIMER] 🚀 _shouldStartRecoveryTimer: ${isLast ? 'TRUE' : 'FALSE'} (multi-exercise group, isLast=$isLast, exercise=${exercise.nome})");
+    // //debugPrint("[TIMER] 🚀 _shouldStartRecoveryTimer: ${isLast ? 'TRUE' : 'FALSE'} (multi-exercise group, isLast=$isLast, exercise=${exercise.nome})");
     return isLast;
   }
 
@@ -1344,17 +1331,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   // ============================================================================
 
   void _startRecoveryTimer(int seconds, String exerciseName) {
-    // print("[TIMER] 🚀 _startRecoveryTimer called - seconds: $seconds, exercise: $exerciseName");
+    // //debugPrint("[TIMER] 🚀 _startRecoveryTimer called - seconds: $seconds, exercise: $exerciseName");
     setState(() {
       _isRecoveryTimerActive = true;
       _recoverySeconds = seconds;
       _currentRecoveryExerciseName = exerciseName;
     });
-    // print("[TIMER] 🚀 Timer state updated - _isRecoveryTimerActive: $_isRecoveryTimerActive");
+    // //debugPrint("[TIMER] 🚀 Timer state updated - _isRecoveryTimerActive: $_isRecoveryTimerActive");
   }
 
   void _stopRecoveryTimer() {
-    //print("⏹️ [RECOVERY POPUP] Recovery timer stopped");
+    //debugPrint("⏹️ [RECOVERY POPUP] Recovery timer stopped");
 
     // 🔧 FIX: Controlla se il widget è ancora montato prima di chiamare setState
     if (mounted) {
@@ -1388,7 +1375,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _startIsometricTimer(WorkoutExercise exercise) {
     final seconds = _getEffectiveReps(exercise);
 
-  //  print("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
+  //  //debugPrint("🔥 [ISOMETRIC] Starting isometric timer: $seconds seconds for ${exercise.nome}");
 
     setState(() {
       _isIsometricTimerActive = true;
@@ -1399,7 +1386,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onIsometricTimerComplete() {
-    //print("✅ [ISOMETRIC] Isometric timer completed!");
+    //debugPrint("✅ [ISOMETRIC] Isometric timer completed!");
 
     if (_pendingIsometricExercise != null) {
       final state = _getCurrentState();
@@ -1424,7 +1411,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _onIsometricTimerCancelled() {
-    //print("❌ [ISOMETRIC] Isometric timer cancelled");
+    //debugPrint("❌ [ISOMETRIC] Isometric timer cancelled");
 
     setState(() {
       _isIsometricTimerActive = false;
@@ -1491,14 +1478,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Non triggare se già analizzato o dismissed
     if (_plateauAnalyzedExercises.contains(exerciseId) ||
         _dismissedPlateauExercises.contains(exerciseId)) {
-      //print("🔧 [PLATEAU FIX] Skipping analysis for exercise $exerciseId - already analyzed or dismissed");
+      //debugPrint("🔧 [PLATEAU FIX] Skipping analysis for exercise $exerciseId - already analyzed or dismissed");
       return;
     }
 
     final weight = _getEffectiveWeight(exercise);
     final reps = _getEffectiveReps(exercise);
 
-    //print("🔧 [PLATEAU FIX] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
+    //debugPrint("🔧 [PLATEAU FIX] Triggering analysis for ${exercise.nome}: ${weight}kg x $reps");
 
     _plateauAnalyzedExercises.add(exerciseId);
     _plateauBloc.analyzeExercisePlateau(exerciseId, exercise.nome, weight, reps);
@@ -1506,7 +1493,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   /// 🔧 FIX 2: Auto-trigger plateau SOLO UNA VOLTA per tutti gli esercizi
   void _triggerPlateauAnalysisForAllExercises(WorkoutSessionActive state) {
-    //print("🔧 [PLATEAU FIX] Starting SINGLE plateau analysis for all exercises");
+    //debugPrint("🔧 [PLATEAU FIX] Starting SINGLE plateau analysis for all exercises");
 
     for (final exercise in state.exercises) {
       _triggerPlateauAnalysisIfNeeded(exercise);
@@ -1539,14 +1526,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   void _loadExerciseGroups() {
     final state = _activeWorkoutBloc.state;
     if (state is WorkoutSessionActive) {
-      print('[SOST] 🔄 Ricaricamento gruppi esercizi dal BLoC');
+      //debugPrint('[SOST] 🔄 Ricaricamento gruppi esercizi dal BLoC');
       
       // Ricostruisci i gruppi di esercizi
       _exerciseGroups = _buildExerciseGroups(state.exercises);
       
-      print('[SOST] ✅ Gruppi ricaricati: ${_exerciseGroups.length} gruppi');
+      //debugPrint('[SOST] ✅ Gruppi ricaricati: ${_exerciseGroups.length} gruppi');
       for (int i = 0; i < _exerciseGroups.length; i++) {
-        print('[SOST] Gruppo $i: ${_exerciseGroups[i].map((e) => e.nome).join(', ')}');
+        //debugPrint('[SOST] Gruppo $i: ${_exerciseGroups[i].map((e) => e.nome).join(', ')}');
       }
     }
   }
@@ -1556,17 +1543,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     List<List<WorkoutExercise>> groups = [];
     List<WorkoutExercise> currentGroup = [];
     
-    print('[SOST] 🔍 Costruzione gruppi da ${exercises.length} esercizi');
+    //debugPrint('[SOST] 🔍 Costruzione gruppi da ${exercises.length} esercizi');
     
     for (int i = 0; i < exercises.length; i++) {
       final exercise = exercises[i];
-      print('[SOST] 🔍 Esercizio $i: ${exercise.nome} (setType: ${exercise.setType}, linkedToPrevious: ${exercise.linkedToPreviousInt})');
+      //debugPrint('[SOST] 🔍 Esercizio $i: ${exercise.nome} (setType: ${exercise.setType}, linkedToPrevious: ${exercise.linkedToPreviousInt})');
       
       // Se è il primo esercizio o non è linkato al precedente, inizia un nuovo gruppo
       if (i == 0 || exercise.linkedToPreviousInt != 1) {
         if (currentGroup.isNotEmpty) {
           groups.add(List.from(currentGroup));
-          print('[SOST] ✅ Gruppo completato: ${currentGroup.map((e) => e.nome).join(', ')}');
+          //debugPrint('[SOST] ✅ Gruppo completato: ${currentGroup.map((e) => e.nome).join(', ')}');
           currentGroup.clear();
         }
       }
@@ -1577,10 +1564,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Aggiungi l'ultimo gruppo
     if (currentGroup.isNotEmpty) {
       groups.add(currentGroup);
-      print('[SOST] ✅ Ultimo gruppo: ${currentGroup.map((e) => e.nome).join(', ')}');
+      //debugPrint('[SOST] ✅ Ultimo gruppo: ${currentGroup.map((e) => e.nome).join(', ')}');
     }
     
-    print('[SOST] ✅ Totale gruppi creati: ${groups.length}');
+    //debugPrint('[SOST] ✅ Totale gruppi creati: ${groups.length}');
     return groups;
   }
   
@@ -1593,9 +1580,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     double newWeight,
   ) async {
     try {
-      print('[SOST] 🔄 Inizio sostituzione: ${originalExercise.nome} -> ${substitutedExercise.nome}');
-      print('[SOST] 🔍 Original ID: ${originalExercise.schedaEsercizioId ?? originalExercise.id}');
-      print('[SOST] 🔍 New ID: ${substitutedExercise.schedaEsercizioId ?? substitutedExercise.id}');
+      //debugPrint('[SOST] 🔄 Inizio sostituzione: ${originalExercise.nome} -> ${substitutedExercise.nome}');
+      //debugPrint('[SOST] 🔍 Original ID: ${originalExercise.schedaEsercizioId ?? originalExercise.id}');
+      //debugPrint('[SOST] 🔍 New ID: ${substitutedExercise.schedaEsercizioId ?? substitutedExercise.id}');
       
       final originalExerciseId = originalExercise.schedaEsercizioId ?? originalExercise.id;
       final newExerciseId = substitutedExercise.schedaEsercizioId ?? substitutedExercise.id;
@@ -1617,7 +1604,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       ).timeout(
         Duration(seconds: 2),
         onTimeout: () {
-          print('[SOST] ⚠️ Timeout in attesa del nuovo stato');
+          //debugPrint('[SOST] ⚠️ Timeout in attesa del nuovo stato');
           return _activeWorkoutBloc.state;
         },
       );
@@ -1630,7 +1617,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       _cachedWeights.remove(originalExerciseId);
       _cachedReps.remove(originalExerciseId);
       
-      print('[SOST] ✅ Sostituzione completata, cache aggiornata');
+      //debugPrint('[SOST] ✅ Sostituzione completata, cache aggiornata');
       
       // 🔥 FORZA REBUILD AGGIUNTIVO: Ricarica i gruppi di esercizi
       _loadExerciseGroups();
@@ -1664,7 +1651,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
       
     } catch (e) {
-      print('Errore sostituzione esercizio: $e');
+      //debugPrint('Errore sostituzione esercizio: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('❌ Errore durante la sostituzione: $e'),
@@ -1729,10 +1716,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final exerciseId = exercise.schedaEsercizioId ?? exercise.id;
     final completedCount = _getCompletedSeriesCount(state, exerciseId);
 
-    print("[SERIE] 🚀 _handleCompleteSeries - exercise: ${exercise.nome}, completedCount: $completedCount, totalSeries: ${exercise.serie}");
+    //debugPrint("[SERIE] 🚀 _handleCompleteSeries - exercise: ${exercise.nome}, completedCount: $completedCount, totalSeries: ${exercise.serie}");
 
     if (completedCount >= exercise.serie) {
-      print("[SERIE] 🚀 Esercizio già completato! Bloccando ulteriori serie.");
+      //debugPrint("[SERIE] 🚀 Esercizio già completato! Bloccando ulteriori serie.");
       CustomSnackbar.show(
         context,
         message: "Esercizio già completato!",
@@ -1741,7 +1728,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       return;
     }
 
-    print("[SERIE] 🚀 Completando serie ${completedCount + 1} per esercizio: ${exercise.nome}");
+    //debugPrint("[SERIE] 🚀 Completando serie ${completedCount + 1} per esercizio: ${exercise.nome}");
 
     final effectiveWeight = _getEffectiveWeight(exercise);
     final effectiveReps = _getEffectiveReps(exercise);
@@ -1764,7 +1751,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     // Verifica se l'esercizio è completato dopo questa serie
     final newCompletedCount = completedCount + 1;
     if (newCompletedCount >= exercise.serie) {
-      print("[SERIE] 🚀 ESERCIZIO COMPLETATO! ${exercise.nome} - Serie completate: $newCompletedCount/${exercise.serie}");
+      //debugPrint("[SERIE] 🚀 ESERCIZIO COMPLETATO! ${exercise.nome} - Serie completate: $newCompletedCount/${exercise.serie}");
     }
 
     final requestId = 'req_${DateTime.now().millisecondsSinceEpoch}';
@@ -1786,10 +1773,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         if (_usePreviousData) {
-          // print('[STORICO] Aggiornamento dati precedenti dopo completamento serie');
+          // //debugPrint('[STORICO] Aggiornamento dati precedenti dopo completamento serie');
           _loadPreviousData(exercise);
         } else {
-          // print('[STORICO] Aggiornamento dati per confronto dopo completamento serie');
+          // //debugPrint('[STORICO] Aggiornamento dati per confronto dopo completamento serie');
           _loadPreviousDataForComparison(exercise);
         }
       }
@@ -1811,14 +1798,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (exercise.tempoRecupero > 0 && _shouldStartRecoveryTimer(exercise)) {
       _startRecoveryTimer(exercise.tempoRecupero, exercise.nome);
     } else if (_isPartOfMultiExerciseGroup(exercise)) {
-      //print("🔧 [SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
+      //debugPrint("🔧 [SUPERSET FIX] Skipping recovery timer for ${exercise.nome} - part of multi-exercise group");
     }
 
     final updatedState = _getCurrentState();
     if (updatedState != null) {
       _handleAutoRotation(updatedState);
     } else {
-      //print("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
+      //debugPrint("⚠️ [REST-PAUSE] Could not get updated state for auto-rotation");
     }
 
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -1908,7 +1895,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       }
     }
 
-    //print("🎉 [AUTO-ROTATION] All exercises in group are completed!");
+    //debugPrint("🎉 [AUTO-ROTATION] All exercises in group are completed!");
     return isNewGroup ? 0 : _currentExerciseInGroup;
   }
 
@@ -1918,7 +1905,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
   }
 
   void _handleCompleteWorkout(WorkoutSessionActive state) {
-    print("🚀 [SINGLE EXERCISE] Completing workout");
+    //debugPrint("🚀 [SINGLE EXERCISE] Completing workout");
 
     _stopWorkoutTimer();
     _completeButtonController.stop();
@@ -2007,7 +1994,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             return Stack(
               children: [
                 Scaffold(
-                  backgroundColor: Theme.of(context).colorScheme.background,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                   appBar: _buildAppBar(state),
                   body: _buildBody(state),
                 ),
@@ -2034,7 +2021,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
   void _handleBlocStateChanges(BuildContext context, ActiveWorkoutState state) {
     if (state is WorkoutSessionStarted) {
-      //print("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
+      //debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout session started");
       _startWorkoutTimer();
 
       // 🔧 PERFORMANCE FIX: Rimosso messaggio di avvio allenamento per migliorare performance
@@ -2046,7 +2033,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionActive) {
-      //print("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
+      //debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Active session with ${state.exercises.length} exercises");
 
       if (_workoutTimer == null) {
         _startWorkoutTimer();
@@ -2062,7 +2049,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionCompleted) {
-      //print("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
+      //debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout completed");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2091,7 +2078,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
 
     // 🌐 NUOVO: Gestione completamento offline
     if (state is WorkoutSessionCompletedOffline) {
-      print("🌐 [OFFLINE] Workout completed offline");
+      //debugPrint("🌐 [OFFLINE] Workout completed offline");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2119,7 +2106,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is WorkoutSessionCancelled) {
-      //print("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
+      //debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Workout cancelled");
       _stopWorkoutTimer();
       _stopRecoveryTimer();
       _completeButtonController.stop();
@@ -2140,7 +2127,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     }
 
     if (state is ActiveWorkoutError) {
-      //print("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
+      //debugPrint("🚀 [SINGLE EXERCISE MINIMALE] Error: ${state.message}");
 
       CustomSnackbar.show(
         context,
@@ -2155,7 +2142,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     if (state is PlateauDetected) {
       final activePlateaus = state.activePlateaus;
       if (activePlateaus.isNotEmpty) {
-        //print("🔧 [PLATEAU FIX] Plateau rilevati: ${activePlateaus.length}");
+        //debugPrint("🔧 [PLATEAU FIX] Plateau rilevati: ${activePlateaus.length}");
 
         // 🔧 PERFORMANCE FIX: Rimosso messaggio di plateau per migliorare performance
         // CustomSnackbar.show(
@@ -2170,13 +2157,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
       for (final plateau in state.plateaus) {
         if (plateau.isDismissed) {
           _dismissedPlateauExercises.add(plateau.exerciseId);
-          //print("🔧 [PLATEAU FIX] Exercise ${plateau.exerciseId} dismissed - won't retrigger");
+          //debugPrint("🔧 [PLATEAU FIX] Exercise ${plateau.exerciseId} dismissed - won't retrigger");
         }
       }
     }
 
     if (state is PlateauError) {
-      //print("🔧 [PLATEAU FIX] Error: ${state.message}");
+      //debugPrint("🔧 [PLATEAU FIX] Error: ${state.message}");
       // Don't show error to user - plateau is optional feature
     }
   }
@@ -2189,7 +2176,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('Caricamento...'),
         backgroundColor: colorScheme.surface,
@@ -2228,7 +2215,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
             SizedBox(
               width: 200.w,
               child: LinearProgressIndicator(
-                backgroundColor: colorScheme.surfaceVariant,
+                backgroundColor: colorScheme.surfaceContainerHighest,
                 valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
               ),
             ),
@@ -2620,15 +2607,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                   _usePreviousData = usePrevious;
                   _previousDataLoaded = false; // Reset flag per ricaricare
                 });
-                print('[PARAM] Toggle usePreviousData: $usePrevious');
+                //debugPrint('[PARAM] Toggle usePreviousData: $usePrevious');
 
                 if (usePrevious) {
                   // 🎯 FASE 5: Carica dati precedenti
-                  print('[PARAM] Caricamento dati precedenti per esercizio: ${exercise.nome}');
+                  //debugPrint('[PARAM] Caricamento dati precedenti per esercizio: ${exercise.nome}');
                   _loadPreviousData(exercise);
                 } else {
                   // 🎯 FASE 5: Torna ai valori del DB ma mantieni dati per confronto
-                  print('[PARAM] Torno ai valori del DB per esercizio: ${exercise.nome}');
+                  //debugPrint('[PARAM] Torno ai valori del DB per esercizio: ${exercise.nome}');
                   _loadPreviousDataForComparison(exercise); // Carica dati per confronto
                 }
               },
@@ -2872,7 +2859,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 child: ElevatedButton(
                   onPressed: canPrev ? _goToPreviousGroup : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceVariant,
+                    backgroundColor: canPrev ? colorScheme.secondary : colorScheme.surfaceContainerHighest,
                     foregroundColor: canPrev ? colorScheme.onSecondary : colorScheme.onSurfaceVariant,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
@@ -2903,7 +2890,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
                 child: ElevatedButton(
                   onPressed: canNext ? _goToNextGroup : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceVariant,
+                    backgroundColor: canNext ? colorScheme.primary : colorScheme.surfaceContainerHighest,
                     foregroundColor: canNext ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
@@ -2932,7 +2919,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withValues(alpha: 0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Row(

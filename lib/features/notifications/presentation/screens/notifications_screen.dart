@@ -6,8 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../bloc/notification_bloc.dart';
 import '../../models/notification_models.dart' as models;
-import '../../repositories/notification_repository.dart';
-import '../../../../core/config/app_config.dart';
 import '../widgets/notification_popup.dart';
 import '../widgets/notification_message_widget.dart';
 
@@ -222,18 +220,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         margin: EdgeInsets.only(bottom: 12.h),
         decoration: BoxDecoration(
           color: notification.isUnread 
-              ? (isDark ? AppColors.indigo600.withOpacity(0.2) : AppColors.indigo50)
+              ? (isDark ? AppColors.indigo600.withValues(alpha: 0.2) : AppColors.indigo50)
               : (isDark ? AppColors.surfaceDark : Colors.white),
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: notification.isUnread 
-                ? AppColors.indigo600.withOpacity(0.2)
-                : Colors.grey.withOpacity(0.2),
+                ? AppColors.indigo600.withValues(alpha: 0.2)
+                : Colors.grey.withValues(alpha: 0.2),
             width: notification.isUnread ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -257,7 +255,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       width: 40.w,
                       height: 40.w,
                       decoration: BoxDecoration(
-                        color: _getPriorityColor(notification.priority).withOpacity(0.1),
+                        color: _getPriorityColor(notification.priority).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8.r),
                       ),
                       child: Center(
@@ -325,7 +323,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                       decoration: BoxDecoration(
-                        color: _getPriorityColor(notification.priority).withOpacity(0.1),
+                        color: _getPriorityColor(notification.priority).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12.r),
                       ),
                       child: Text(
@@ -354,7 +352,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Icon(
             Icons.notifications_none,
             size: 64.w,
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.grey.withValues(alpha: 0.5),
           ),
           SizedBox(height: 16.h),
           Text(
@@ -386,7 +384,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Icon(
             Icons.error_outline,
             size: 64.w,
-            color: Colors.red.withOpacity(0.5),
+            color: Colors.red.withValues(alpha: 0.5),
           ),
           SizedBox(height: 16.h),
           Text(

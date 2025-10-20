@@ -110,7 +110,7 @@ class MuscleBadge extends StatelessWidget {
         vertical: compact ? 3 : 5,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(compact ? 8 : 12),
         border: Border.all(
           color: color,
@@ -139,10 +139,10 @@ class MuscleBadge extends StatelessWidget {
         vertical: compact ? 2 : 4,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(compact ? 6 : 8),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -154,7 +154,7 @@ class MuscleBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: compact ? 10 : 11,
               fontWeight: FontWeight.w500,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
             ),
           ),
           Text(
@@ -162,7 +162,7 @@ class MuscleBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: compact ? 10 : 11,
               fontWeight: FontWeight.w500,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -173,7 +173,7 @@ class MuscleBadge extends StatelessWidget {
               style: TextStyle(
                 fontSize: 9,
                 fontWeight: FontWeight.w400,
-                color: color.withOpacity(0.7),
+                color: color.withValues(alpha: 0.7),
               ),
             ),
           ],

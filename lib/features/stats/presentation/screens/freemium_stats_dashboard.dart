@@ -421,7 +421,7 @@ class _FreemiumStatsDashboardState extends State<FreemiumStatsDashboard> {
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(StatsTheme.radiusLarge.r),
                   ),
                   child: Center(
@@ -457,7 +457,7 @@ class _FreemiumStatsDashboardState extends State<FreemiumStatsDashboard> {
                         Text(
                           'Sblocca grafici avanzati con Premium',
                           style: StatsTheme.bodyMedium.copyWith(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                           textAlign: TextAlign.center,
                         ),

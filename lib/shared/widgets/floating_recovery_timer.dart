@@ -73,8 +73,6 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
   late AnimationController _dragController;
 
   // Animations
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
   late Animation<double> _minimizeAnimation;
   late Animation<double> _dragAnimation;
@@ -116,7 +114,7 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
         ),
       ));
     } catch (e) {
-      print("🔊 [FLOATING TIMER] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [FLOATING TIMER] Error configuring AudioContext: $e");
     }
   }
 
@@ -139,27 +137,11 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
       vsync: this,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
     // Pulse animation per attirare attenzione negli ultimi secondi
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.08,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
 
     // Progress animation per la barra circolare
     _progressController = AnimationController(
@@ -216,7 +198,7 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
       await _audioPlayer.setVolume(volume);
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [FLOATING TIMER] Error playing countdown beep: $e");
+      //debugPrint("🔊 [FLOATING TIMER] Error playing countdown beep: $e");
     }
   }
 
@@ -230,7 +212,7 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
         await Future.delayed(const Duration(milliseconds: 900));
       }
     } catch (e) {
-      print("🔊 [FLOATING TIMER] Error playing completion sound: $e");
+      //debugPrint("🔊 [FLOATING TIMER] Error playing completion sound: $e");
     }
   }
 
@@ -407,7 +389,7 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
   }
 
   Widget _buildMinimizedTimer() {
-    print("[TIMER] 🚀 _buildMinimizedTimer called - dragPosition: $_dragPosition");
+    //debugPrint("[TIMER] 🚀 _buildMinimizedTimer called - dragPosition: $_dragPosition");
     return Positioned(
       left: _dragPosition.dx,
       top: _dragPosition.dy,
@@ -506,7 +488,7 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
   }
 
   Widget _buildFullTimer() {
-    print("[TIMER] 🚀 _buildFullTimer called - dragPosition: $_dragPosition");
+    //debugPrint("[TIMER] 🚀 _buildFullTimer called - dragPosition: $_dragPosition");
     return Positioned(
       left: _dragPosition.dx,
       top: _dragPosition.dy,
@@ -747,16 +729,16 @@ class _FloatingRecoveryTimerState extends State<FloatingRecoveryTimer>
 
   @override
   Widget build(BuildContext context) {
-    print("[TIMER] 🚀 FloatingRecoveryTimer build - isDismissed: $_isDismissed, isMinimized: $_isMinimized, remainingSeconds: $_remainingSeconds");
+    //debugPrint("[TIMER] 🚀 FloatingRecoveryTimer build - isDismissed: $_isDismissed, isMinimized: $_isMinimized, remainingSeconds: $_remainingSeconds");
     
     if (_isDismissed) return const SizedBox.shrink();
 
     // Return the appropriate timer widget directly
     if (_isMinimized) {
-      print("[TIMER] 🚀 Returning minimized timer");
+      //debugPrint("[TIMER] 🚀 Returning minimized timer");
       return _buildMinimizedTimer();
     } else {
-      print("[TIMER] 🚀 Returning full timer");
+      //debugPrint("[TIMER] 🚀 Returning full timer");
       return _buildFullTimer();
     }
   }

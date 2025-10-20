@@ -197,7 +197,7 @@ class AdvancedCharts extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         StatsTheme.primaryBlue,
-                        StatsTheme.primaryBlue.withOpacity(0.3),
+                        StatsTheme.primaryBlue.withValues(alpha: 0.3),
                       ],
                     ),
                     barWidth: 3,
@@ -217,8 +217,8 @@ class AdvancedCharts extends StatelessWidget {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          StatsTheme.primaryBlue.withOpacity(0.3),
-                          StatsTheme.primaryBlue.withOpacity(0.1),
+                          StatsTheme.primaryBlue.withValues(alpha: 0.3),
+                          StatsTheme.primaryBlue.withValues(alpha: 0.1),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -573,7 +573,7 @@ class AdvancedCharts extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 StatsTheme.successGreen,
-                StatsTheme.successGreen.withOpacity(0.7),
+                StatsTheme.successGreen.withValues(alpha: 0.7),
               ],
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
@@ -672,7 +672,7 @@ class AdvancedCharts extends StatelessWidget {
       StatsTheme.warningOrange,
       StatsTheme.warningRed,
       StatsTheme.infoCyan,
-      StatsTheme.primaryBlue.withOpacity(0.7),
+      StatsTheme.primaryBlue.withValues(alpha: 0.7),
     ];
     
     // Calcola il volume totale per le percentuali

@@ -35,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: BlocConsumer<RegisterBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthRegisterSuccess) {

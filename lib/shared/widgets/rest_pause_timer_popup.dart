@@ -62,7 +62,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   @override
   void initState() {
     super.initState();
-    //print('⚡ [REST-PAUSE TIMER] Starting timer: ${widget.initialSeconds}s');
+    //debugPrint('⚡ [REST-PAUSE TIMER] Starting timer: ${widget.initialSeconds}s');
 
     _remainingSeconds = widget.initialSeconds;
     _audioPlayer = AudioPlayer();
@@ -93,9 +93,9 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
           },
         ),
       ));
-      print("🔊 [REST PAUSE AUDIO] AudioContext configured for ducking");
+      //debugPrint("🔊 [REST PAUSE AUDIO] AudioContext configured for ducking");
     } catch (e) {
-      print("🔊 [REST PAUSE AUDIO] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Error configuring AudioContext: $e");
     }
   }
 
@@ -123,9 +123,9 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       // Force a brief pause to let the system process the audio context change
       await Future.delayed(const Duration(milliseconds: 200));
       
-      print("🔊 [REST PAUSE AUDIO] Audio session restored - ducking disabled");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Audio session restored - ducking disabled");
     } catch (e) {
-      print("🔊 [REST PAUSE AUDIO] Error restoring audio session: $e");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Error restoring audio session: $e");
     }
   }
 
@@ -185,10 +185,10 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
       await _audioPlayer.setVolume(volume);
 
-      print("🔊 [REST PAUSE AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [REST PAUSE AUDIO] Error playing countdown beep: $e");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Error playing countdown beep: $e");
     }
   }
 
@@ -200,7 +200,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
           return; // Audio disabilitato
         }
 
-        print("🔊 [REST PAUSE AUDIO] Playing completion sound");
+        //debugPrint("🔊 [REST PAUSE AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
         // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
@@ -213,10 +213,10 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
         // Piccolo delay extra per sicurezza
         await Future.delayed(const Duration(milliseconds: 900));
 
-        print("🔊 [REST PAUSE AUDIO] Completion sound finished");
+        //debugPrint("🔊 [REST PAUSE AUDIO] Completion sound finished");
       }
     } catch (e) {
-      print("🔊 [REST PAUSE AUDIO] Error playing completion sound: $e");
+      //debugPrint("🔊 [REST PAUSE AUDIO] Error playing completion sound: $e");
     }
   }
 
@@ -263,7 +263,7 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
   }
 
   void _completeTimer() {
-    //print('⚡ [REST-PAUSE TIMER] Timer completed');
+    //debugPrint('⚡ [REST-PAUSE TIMER] Timer completed');
 
     setState(() {
       _isFinished = true;
@@ -303,12 +303,12 @@ class _RestPauseTimerPopupState extends State<RestPauseTimerPopup>
       _breathController.repeat(reverse: true);
     }
 
-    //print('⚡ [REST-PAUSE TIMER] Timer ${_isPaused ? "paused" : "resumed"}');
+    //debugPrint('⚡ [REST-PAUSE TIMER] Timer ${_isPaused ? "paused" : "resumed"}');
     widget.onPause?.call();
   }
 
   void _skipTimer() {
-    //print('⚡ [REST-PAUSE TIMER] Timer skipped');
+    //debugPrint('⚡ [REST-PAUSE TIMER] Timer skipped');
 
     _timer?.cancel();
     widget.onSkip?.call();

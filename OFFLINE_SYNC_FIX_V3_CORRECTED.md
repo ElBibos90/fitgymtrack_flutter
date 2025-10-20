@@ -102,16 +102,16 @@ void _showPendingWorkoutDialog(BuildContext context, PendingWorkoutPrompt state)
 /// 🌐 NUOVO: Avvia l'allenamento in sospeso
 void _startPendingWorkout(Map<String, dynamic> pendingWorkout) async {
   try {
-    print('[CONSOLE] [home_screen] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
+    '[CONSOLE] [home_screen] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
     
     final activeWorkoutBloc = context.read<ActiveWorkoutBloc>();
     
     // Avvia l'allenamento in sospeso dal database
     activeWorkoutBloc.add(RestorePendingWorkout(pendingWorkout));
     
-    print('[CONSOLE] [home_screen] ✅ Pending workout started successfully');
+    '[CONSOLE] [home_screen] ✅ Pending workout started successfully');
   } catch (e) {
-    print('[CONSOLE] [home_screen] ❌ Error starting pending workout: $e');
+    '[CONSOLE] [home_screen] ❌ Error starting pending workout: $e');
   }
 }
 ```

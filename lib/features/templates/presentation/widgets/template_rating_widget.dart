@@ -247,10 +247,10 @@ class TemplateRatingWidgetState extends State<TemplateRatingWidget> {
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: AppColors.backgroundLight.withOpacity(0.5),
+        color: AppColors.backgroundLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: AppColors.borderColor.withOpacity(0.5),
+          color: AppColors.borderColor.withValues(alpha: 0.5),
           width: 1,
         ),
       ),

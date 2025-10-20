@@ -187,7 +187,7 @@ I log FCM sono abilitati solo in modalità debug (`kDebugMode`). Per disabilitar
 ```dart
 // Disabilita temporaneamente
 if (false && kDebugMode) {
-  print('[CONSOLE] [FCM] ...');
+  '[CONSOLE] [FCM] ...');
 }
 ```
 

@@ -64,9 +64,9 @@ if (offlineWorkout != null) {
   // Rimuovi solo se scaduto o se l'allenamento è stato completato
   if (isExpired) {
     await clearOfflineWorkout();
-    print('[CONSOLE] [offline_service] 🧹 Offline workout expired and cleared');
+    '[CONSOLE] [offline_service] 🧹 Offline workout expired and cleared');
   } else {
-    print('[CONSOLE] [offline_service] ✅ Offline workout still active, keeping for restore');
+    '[CONSOLE] [offline_service] ✅ Offline workout still active, keeping for restore');
   }
 }
 ```
@@ -79,7 +79,7 @@ bool _isSyncing = false; // 🔧 FIX: Flag per evitare sincronizzazioni multiple
 
 // 🔧 FIX: Evita sincronizzazioni multiple simultanee
 if (_isSyncing) {
-  print('[CONSOLE] [connectivity_service] ⏳ Sync already in progress, skipping...');
+  '[CONSOLE] [connectivity_service] ⏳ Sync already in progress, skipping...');
   return;
 }
 
@@ -94,7 +94,7 @@ bool _isSyncing = false; // 🔧 FIX: Flag per evitare sincronizzazioni multiple
 
 // 🔧 FIX: Evita sincronizzazioni multiple simultanee
 if (_isSyncing) {
-  print('[CONSOLE] [global_connectivity] ⏳ Global sync already in progress, skipping...');
+  '[CONSOLE] [global_connectivity] ⏳ Global sync already in progress, skipping...');
   return;
 }
 

@@ -130,7 +130,7 @@ SELECT * FROM user_fcm_tokens WHERE is_active = 1;
 ### **Verifica Token:**
 ```dart
 // Nel FirebaseService
-print('📱 FCM Token: $_fcmToken');
+'📱 FCM Token: $_fcmToken');
 ```
 
 ---

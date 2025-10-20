@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/loading_shimmer_widgets.dart';
 import '../../../../shared/widgets/error_handling_widgets.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../bloc/courses_bloc.dart';
-import '../../models/course_models_clean.dart';
 import '../../bloc/courses_event.dart';
 import '../../bloc/courses_state.dart';
 import '../widgets/course_card.dart';

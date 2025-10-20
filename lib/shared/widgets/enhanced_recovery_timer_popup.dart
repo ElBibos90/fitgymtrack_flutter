@@ -116,7 +116,7 @@ class _EnhancedRecoveryTimerPopupState extends State<EnhancedRecoveryTimerPopup>
         ),
       ));
     } catch (e) {
-      print("🔊 [ENHANCED TIMER] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [ENHANCED TIMER] Error configuring AudioContext: $e");
     }
   }
 
@@ -216,7 +216,7 @@ class _EnhancedRecoveryTimerPopupState extends State<EnhancedRecoveryTimerPopup>
       await _audioPlayer.setVolume(volume);
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [ENHANCED TIMER] Error playing countdown beep: $e");
+      //debugPrint("🔊 [ENHANCED TIMER] Error playing countdown beep: $e");
     }
   }
 
@@ -230,7 +230,7 @@ class _EnhancedRecoveryTimerPopupState extends State<EnhancedRecoveryTimerPopup>
         await Future.delayed(const Duration(milliseconds: 900));
       }
     } catch (e) {
-      print("🔊 [ENHANCED TIMER] Error playing completion sound: $e");
+      //debugPrint("🔊 [ENHANCED TIMER] Error playing completion sound: $e");
     }
   }
 

@@ -33,7 +33,7 @@ class NotificationPopup extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -60,7 +60,7 @@ class NotificationPopup extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: _getPriorityColor(notification.priority).withOpacity(0.1),
+        color: _getPriorityColor(notification.priority).withValues(alpha: 0.1),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16.r),
           topRight: Radius.circular(16.r),
@@ -73,7 +73,7 @@ class NotificationPopup extends StatelessWidget {
             width: 50.w,
             height: 50.w,
             decoration: BoxDecoration(
-              color: _getPriorityColor(notification.priority).withOpacity(0.2),
+              color: _getPriorityColor(notification.priority).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Center(
@@ -117,7 +117,7 @@ class NotificationPopup extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             decoration: BoxDecoration(
-              color: _getPriorityColor(notification.priority).withOpacity(0.2),
+              color: _getPriorityColor(notification.priority).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Text(

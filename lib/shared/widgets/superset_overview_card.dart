@@ -198,7 +198,7 @@ class SupersetOverviewCard extends StatelessWidget {
         vertical: WorkoutDesignSystem.spacingXXS.h,
       ),
       decoration: BoxDecoration(
-        color: isCurrent ? color.withOpacity(0.1) : Colors.transparent,
+        color: isCurrent ? color.withValues(alpha: 0.1) : Colors.transparent,
         borderRadius: WorkoutDesignSystem.borderRadiusS,
         border: isCurrent
             ? Border.all(color: color, width: 1.5)

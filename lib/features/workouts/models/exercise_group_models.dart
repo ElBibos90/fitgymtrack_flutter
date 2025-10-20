@@ -1,6 +1,5 @@
 // lib/features/workouts/models/exercise_group_models.dart
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart';
 import 'workout_plan_models.dart';
 import 'active_workout_models.dart';
 

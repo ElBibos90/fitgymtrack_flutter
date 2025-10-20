@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import '../../../../shared/theme/app_colors.dart';
 import '../../models/feedback_models.dart' as feedback_models;
 
 class FeedbackCard extends StatelessWidget {

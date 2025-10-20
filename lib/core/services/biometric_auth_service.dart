@@ -36,32 +36,32 @@ class BiometricAuthService {
   /// Verifica se il dispositivo supporta autenticazione biometrica
   Future<bool> isBiometricAvailable() async {
     try {
-      print('[LOGIN] 🔍 Checking biometric availability...');
+      //debugPrint('[LOGIN] 🔍 Checking biometric availability...');
       
       // 1. Verifica se il dispositivo ha hardware biometrico
       final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
-      print('[LOGIN]   - canCheckBiometrics: $canCheckBiometrics');
+      //debugPrint('[LOGIN]   - canCheckBiometrics: $canCheckBiometrics');
       
       // 2. Verifica se il dispositivo è supportato
       final bool isDeviceSupported = await _localAuth.isDeviceSupported();
-      print('[LOGIN]   - isDeviceSupported: $isDeviceSupported');
+      //debugPrint('[LOGIN]   - isDeviceSupported: $isDeviceSupported');
       
       if (!canCheckBiometrics || !isDeviceSupported) {
-        print('[LOGIN] ⚠️ Biometric not available (hardware or support issue)');
+        //debugPrint('[LOGIN] ⚠️ Biometric not available (hardware or support issue)');
         return false;
       }
 
       // 3. Verifica se almeno un tipo di biometrico è disponibile
       final List<BiometricType> availableBiometrics = 
           await _localAuth.getAvailableBiometrics();
-      print('[LOGIN]   - availableBiometrics: $availableBiometrics');
+      //debugPrint('[LOGIN]   - availableBiometrics: $availableBiometrics');
       
       final isAvailable = availableBiometrics.isNotEmpty;
-      print('[LOGIN] ✅ Biometric available: $isAvailable');
+      //debugPrint('[LOGIN] ✅ Biometric available: $isAvailable');
       
       return isAvailable;
     } catch (e) {
-      print('[LOGIN] ❌ Error checking biometric availability: $e');
+      //debugPrint('[LOGIN] ❌ Error checking biometric availability: $e');
       return false;
     }
   }
@@ -104,14 +104,14 @@ class BiometricAuthService {
       );
 
       if (didAuthenticate) {
-        print('[LOGIN] ✅ Authentication successful');
+        //debugPrint('[LOGIN] ✅ Authentication successful');
       } else {
-        print('[LOGIN] ❌ Authentication failed');
+        //debugPrint('[LOGIN] ❌ Authentication failed');
       }
 
       return didAuthenticate;
     } on PlatformException catch (e) {
-      print('[LOGIN] ❌ Platform exception: ${e.code} - ${e.message}');
+      //debugPrint('[LOGIN] ❌ Platform exception: ${e.code} - ${e.message}');
       
       // Handle specific error codes
       if (e.code == 'NotAvailable') {
@@ -130,7 +130,7 @@ class BiometricAuthService {
       
       return false;
     } catch (e) {
-      print('[LOGIN] ❌ Unexpected error: $e');
+      //debugPrint('[LOGIN] ❌ Unexpected error: $e');
       return false;
     }
   }
@@ -140,9 +140,9 @@ class BiometricAuthService {
     try {
       await _secureStorage.write(key: _biometricUsernameKey, value: username);
       await _secureStorage.write(key: _biometricPasswordKey, value: password);
-      print('[LOGIN] ✅ Credentials saved securely');
+      //debugPrint('[LOGIN] ✅ Credentials saved securely');
     } catch (e) {
-      print('[LOGIN] ❌ Error saving credentials: $e');
+      //debugPrint('[LOGIN] ❌ Error saving credentials: $e');
       throw BiometricException('Impossibile salvare credenziali in modo sicuro');
     }
   }
@@ -154,14 +154,14 @@ class BiometricAuthService {
       final password = await _secureStorage.read(key: _biometricPasswordKey);
       
       if (username != null && password != null) {
-        print('[LOGIN] ✅ Credentials retrieved successfully');
+        //debugPrint('[LOGIN] ✅ Credentials retrieved successfully');
         return {'username': username, 'password': password};
       }
       
-      print('[LOGIN] ⚠️ No saved credentials found');
+      //debugPrint('[LOGIN] ⚠️ No saved credentials found');
       return null;
     } catch (e) {
-      print('[LOGIN] ❌ Error reading credentials: $e');
+      //debugPrint('[LOGIN] ❌ Error reading credentials: $e');
       return null;
     }
   }
@@ -172,7 +172,7 @@ class BiometricAuthService {
       final enabled = await _secureStorage.read(key: _biometricEnabledKey);
       return enabled == 'true';
     } catch (e) {
-      print('[LOGIN] ❌ Error checking if enabled: $e');
+      //debugPrint('[LOGIN] ❌ Error checking if enabled: $e');
       return false;
     }
   }
@@ -198,9 +198,9 @@ class BiometricAuthService {
       await saveCredentialsSecurely(username, password);
       await _secureStorage.write(key: _biometricEnabledKey, value: 'true');
       
-      print('[LOGIN] ✅ Biometric authentication enabled');
+      //debugPrint('[LOGIN] ✅ Biometric authentication enabled');
     } catch (e) {
-      print('[LOGIN] ❌ Error enabling biometric: $e');
+      //debugPrint('[LOGIN] ❌ Error enabling biometric: $e');
       rethrow;
     }
   }
@@ -213,9 +213,9 @@ class BiometricAuthService {
       await _secureStorage.delete(key: _biometricPasswordKey);
       await _secureStorage.delete(key: _biometricEnabledKey);
       
-      print('[LOGIN] ✅ Biometric authentication disabled');
+      //debugPrint('[LOGIN] ✅ Biometric authentication disabled');
     } catch (e) {
-      print('[LOGIN] ❌ Error disabling biometric: $e');
+      //debugPrint('[LOGIN] ❌ Error disabling biometric: $e');
       rethrow;
     }
   }
@@ -237,9 +237,9 @@ class BiometricAuthService {
       await _secureStorage.delete(key: _biometricPasswordKey);
       await _secureStorage.delete(key: _biometricEnabledKey);
       
-      print('[LOGIN] ✅ Biometric authentication disabled with confirmation');
+      //debugPrint('[LOGIN] ✅ Biometric authentication disabled with confirmation');
     } catch (e) {
-      print('[LOGIN] ❌ Error disabling biometric: $e');
+      //debugPrint('[LOGIN] ❌ Error disabling biometric: $e');
       rethrow;
     }
   }
@@ -250,9 +250,9 @@ class BiometricAuthService {
       await _secureStorage.delete(key: _biometricUsernameKey);
       await _secureStorage.delete(key: _biometricPasswordKey);
       await _secureStorage.delete(key: _biometricEnabledKey);
-      print('[LOGIN] ✅ All biometric data cleared');
+      //debugPrint('[LOGIN] ✅ All biometric data cleared');
     } catch (e) {
-      print('[LOGIN] ❌ Error clearing data: $e');
+      //debugPrint('[LOGIN] ❌ Error clearing data: $e');
     }
   }
 }

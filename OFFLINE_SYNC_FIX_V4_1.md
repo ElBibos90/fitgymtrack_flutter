@@ -51,7 +51,7 @@ void _listenToWorkoutStateChanges() {
     _workoutSubscription = activeWorkoutBloc.stream.listen((workoutState) {
       // 🔧 FIX: Se l'allenamento diventa attivo, chiudi il dialogo e naviga
       if (workoutState is WorkoutSessionActive && _isDialogShown) {
-        print('[CONSOLE] [auth_wrapper] 🎯 Workout session active detected, closing dialog and navigating...');
+        '[CONSOLE] [auth_wrapper] 🎯 Workout session active detected, closing dialog and navigating...');
         
         // 🔧 FIX: Usa un delay per assicurarsi che il dialogo sia completamente chiuso
         Future.delayed(const Duration(milliseconds: 100), () {
@@ -68,9 +68,9 @@ void _listenToWorkoutStateChanges() {
       }
     });
     
-    print('[CONSOLE] [auth_wrapper] ✅ Listening to ActiveWorkoutBloc state changes');
+    '[CONSOLE] [auth_wrapper] ✅ Listening to ActiveWorkoutBloc state changes');
   } catch (e) {
-    print('[CONSOLE] [auth_wrapper] ❌ Error setting up workout state listener: $e');
+    '[CONSOLE] [auth_wrapper] ❌ Error setting up workout state listener: $e');
   }
 }
 ```
@@ -127,7 +127,7 @@ void _showPendingWorkoutDialog() {
 void _navigateToActiveWorkout(BuildContext context) {
   try {
     // 🔧 FIX: Usa GoRouter per navigare alla schermata dell'allenamento attivo
-    print('[CONSOLE] [auth_wrapper] 🧭 Navigating to active workout screen...');
+    '[CONSOLE] [auth_wrapper] 🧭 Navigating to active workout screen...');
     
     // Estrai il schedaId dall'allenamento in sospeso
     final schedaId = widget.pendingWorkoutPrompt.pendingWorkout['scheda_id'] as int;
@@ -135,9 +135,9 @@ void _navigateToActiveWorkout(BuildContext context) {
     // Naviga alla schermata dell'allenamento attivo con il schedaId corretto
     context.go('/workouts/$schedaId/start');
     
-    print('[CONSOLE] [auth_wrapper] ✅ Navigation to active workout screen completed with schedaId: $schedaId');
+    '[CONSOLE] [auth_wrapper] ✅ Navigation to active workout screen completed with schedaId: $schedaId');
   } catch (e) {
-    print('[CONSOLE] [auth_wrapper] ❌ Error navigating to active workout: $e');
+    '[CONSOLE] [auth_wrapper] ❌ Error navigating to active workout: $e');
   }
 }
 ```

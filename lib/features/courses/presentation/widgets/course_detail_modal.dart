@@ -241,7 +241,7 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
     final isSelected = _selectedMonth == month;
     return GestureDetector(
        onTap: () {
-         print('[DEBUG] 📅 Modal: Pulsante "$label" cliccato con month=$month');
+         //debugPrint('[DEBUG] 📅 Modal: Pulsante "$label" cliccato con month=$month');
          setState(() {
            _selectedMonth = month;
          });
@@ -350,7 +350,7 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
   String _getCurrentMonth() {
     final now = DateTime.now();
     final month = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-    print('[DEBUG] 📅 Modal: _getCurrentMonth() restituisce $month');
+    //debugPrint('[DEBUG] 📅 Modal: _getCurrentMonth() restituisce $month');
     return month;
   }
 
@@ -394,20 +394,20 @@ class _CourseDetailModalState extends State<CourseDetailModal> {
         actions: [
           TextButton(
             onPressed: () {
-              //print('[DEBUG] 🚫 Modal Dialog: Pulsante Annulla cliccato');
+              //debugPrint('[DEBUG] 🚫 Modal Dialog: Pulsante Annulla cliccato');
               Navigator.of(context).pop();
             },
             child: const Text('Annulla'),
           ),
            ElevatedButton(
              onPressed: () {
-               print('[DEBUG] 🚫 Modal Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
+               //debugPrint('[DEBUG] 🚫 Modal Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
                Navigator.of(context).pop();
                
                // Disdici l'iscrizione alla sessione
-               print('[DEBUG] 🚫 Modal Dialog: Chiamata _coursesBloc.add()');
+               //debugPrint('[DEBUG] 🚫 Modal Dialog: Chiamata _coursesBloc.add()');
                _coursesBloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
-               print('[DEBUG] 🚫 Modal Dialog: Evento aggiunto al BLoC');
+               //debugPrint('[DEBUG] 🚫 Modal Dialog: Evento aggiunto al BLoC');
              },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

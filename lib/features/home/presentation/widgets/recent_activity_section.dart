@@ -83,7 +83,7 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
   // ============================================================================
 
   Widget _buildStateHandler(WorkoutHistoryState state, BuildContext context) {
-    print('[CONSOLE] [recent_activity]🔍 Current state: ${state.runtimeType}');
+    //debugPrint('[CONSOLE] [recent_activity]🔍 Current state: ${state.runtimeType}');
 
     // 🔧 FIX: Gestione stato Loading
     if (state is WorkoutHistoryLoading) {
@@ -139,7 +139,7 @@ class _RecentActivitySectionState extends State<RecentActivitySection> {
   }
 
   Widget _buildErrorState(WorkoutHistoryError state, BuildContext context) {
-    print('[CONSOLE] [recent_activity]❌ Error state: ${state.message}');
+    //debugPrint('[CONSOLE] [recent_activity]❌ Error state: ${state.message}');
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 20.w),

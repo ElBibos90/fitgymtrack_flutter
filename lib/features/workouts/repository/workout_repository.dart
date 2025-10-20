@@ -31,23 +31,23 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutPlan>>> getWorkoutPlans(int userId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository] Getting workout plans for user: $userId');
+      //debugPrint('[CONSOLE] [workout_repository] Getting workout plans for user: $userId');
 
       // 🌐 NUOVO: Verifica connessione prima di tentare l'API
       final connectivity = await Connectivity().checkConnectivity();
       final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
       if (!isOnline) {
-        print('[CONSOLE] [workout_repository] 📡 No internet connection, trying cache...');
+        //debugPrint('[CONSOLE] [workout_repository] 📡 No internet connection, trying cache...');
         
         // Prova a caricare dal cache
         final cachedSchede = await _schedeCache.getCachedSchede();
         if (cachedSchede != null && cachedSchede.isNotEmpty) {
-          //print('[CONSOLE] [workout_repository] ✅ Loaded ${cachedSchede.length} schede from cache (offline mode)');
+          //debugPrint('[CONSOLE] [workout_repository] ✅ Loaded ${cachedSchede.length} schede from cache (offline mode)');
           // 🌐 NUOVO: In modalità offline, restituisci le schede senza esercizi per evitare errori
           return cachedSchede;
         } else {
-          print('[CONSOLE] [workout_repository] ❌ No cached schede available');
+          //debugPrint('[CONSOLE] [workout_repository] ❌ No cached schede available');
           throw Exception('Connessione internet non disponibile e nessuna scheda in cache');
         }
       }
@@ -65,7 +65,7 @@ class WorkoutRepository {
               .map((json) => WorkoutPlan.fromJson(json))
               .toList();
 
-          //print('[CONSOLE] [workout_repository]Basic workout plans loaded: ${workoutPlansBasic.length}');
+          //debugPrint('[CONSOLE] [workout_repository]Basic workout plans loaded: ${workoutPlansBasic.length}');
 
           final List<WorkoutPlan> completeWorkoutPlans = [];
 
@@ -77,10 +77,10 @@ class WorkoutRepository {
               exercisesResult.fold(
                 onSuccess: (fetchedExercises) {
                   exercises = fetchedExercises;
-                  //print('[CONSOLE] [workout_repository]Loaded ${exercises.length} exercises for plan ${basicPlan.nome}');
+                  //debugPrint('[CONSOLE] [workout_repository]Loaded ${exercises.length} exercises for plan ${basicPlan.nome}');
                 },
                 onFailure: (exception, message) {
-                  //print('[CONSOLE] [workout_repository]Failed to load exercises for plan ${basicPlan.nome}: $message');
+                  //debugPrint('[CONSOLE] [workout_repository]Failed to load exercises for plan ${basicPlan.nome}: $message');
                   exercises = [];
                 },
               );
@@ -89,23 +89,23 @@ class WorkoutRepository {
               completeWorkoutPlans.add(completePlan);
 
             } catch (e) {
-              //print('[CONSOLE] [workout_repository]Error loading exercises for plan ${basicPlan.nome}: $e');
+              //debugPrint('[CONSOLE] [workout_repository]Error loading exercises for plan ${basicPlan.nome}: $e');
               completeWorkoutPlans.add(basicPlan);
             }
           }
 
-          //print('[CONSOLE] [workout_repository]Successfully loaded ${completeWorkoutPlans.length} complete workout plans');
+          //debugPrint('[CONSOLE] [workout_repository]Successfully loaded ${completeWorkoutPlans.length} complete workout plans');
 
           for (final plan in completeWorkoutPlans) {
-            //print('[CONSOLE] [workout_repository]Plan "${plan.nome}": ${plan.esercizi.length} exercises');
+            //debugPrint('[CONSOLE] [workout_repository]Plan "${plan.nome}": ${plan.esercizi.length} exercises');
           }
 
           // 🌐 NUOVO: Salva nel cache per uso futuro offline
           try {
             await _schedeCache.cacheSchede(completeWorkoutPlans);
-            print('[CONSOLE] [workout_repository] 💾 Schede cached for offline use');
+            //debugPrint('[CONSOLE] [workout_repository] 💾 Schede cached for offline use');
           } catch (e) {
-            print('[CONSOLE] [workout_repository] ⚠️ Error caching schede: $e');
+            //debugPrint('[CONSOLE] [workout_repository] ⚠️ Error caching schede: $e');
           }
 
           return completeWorkoutPlans;
@@ -120,14 +120,14 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutExercise>>> getWorkoutExercises(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository] Getting exercises for workout: $schedaId');
+      //debugPrint('[CONSOLE] [workout_repository] Getting exercises for workout: $schedaId');
 
       // 🌐 NUOVO: Verifica connessione prima di tentare l'API
       final connectivity = await Connectivity().checkConnectivity();
       final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
       if (!isOnline) {
-        print('[CONSOLE] [workout_repository] 📡 No internet connection for exercises, cannot load');
+        //debugPrint('[CONSOLE] [workout_repository] 📡 No internet connection for exercises, cannot load');
         throw Exception('Connessione internet non disponibile per caricare gli esercizi');
       }
 
@@ -143,7 +143,7 @@ class WorkoutRepository {
               .map((json) => WorkoutExercise.fromJson(json))
               .toList();
 
-          //print('[CONSOLE]Successfully loaded ${exercises.length} exercises');
+          //debugPrint('[CONSOLE]Successfully loaded ${exercises.length} exercises');
           return exercises;
         } else {
           throw Exception(response['message'] ?? 'Errore nel caricamento degli esercizi');
@@ -160,7 +160,7 @@ class WorkoutRepository {
 
   Future<Result<DeleteWorkoutPlanResponse>> deleteWorkoutPlan(int schedaId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE]Deleting workout plan: $schedaId');
+      //debugPrint('[CONSOLE]Deleting workout plan: $schedaId');
 
       // ✅ NUOVO: Richiesta POST per eliminazione
       final response = await _dio.post(
@@ -174,7 +174,7 @@ class WorkoutRepository {
         ),
       );
 
-      //print('[CONSOLE]POST DELETE response: ${response.data}');
+      //debugPrint('[CONSOLE]POST DELETE response: ${response.data}');
 
       // ✅ FIX: Gestione risposta null o vuota
       if (response.data == null) {
@@ -205,28 +205,28 @@ class WorkoutRepository {
 
   Future<Result<UpdateWorkoutPlanResponse>> updateWorkoutPlan(UpdateWorkoutPlanRequest request) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE]Updating workout plan: ${request.schedaId}');
+      //debugPrint('[CONSOLE]Updating workout plan: ${request.schedaId}');
 
       final requestJson = request.toJson();
 
-      //print('[CONSOLE]Update Request JSON: ${jsonEncode(requestJson)}');
-      //print('[CONSOLE]Scheda ID: ${request.schedaId}');
-      //print('[CONSOLE]User ID: ${request.userId}');
-      //print('[CONSOLE]Nome: ${request.nome}');
-      //print('[CONSOLE]Numero esercizi: ${request.esercizi.length}');
+      //debugPrint('[CONSOLE]Update Request JSON: ${jsonEncode(requestJson)}');
+      //debugPrint('[CONSOLE]Scheda ID: ${request.schedaId}');
+      //debugPrint('[CONSOLE]User ID: ${request.userId}');
+      //debugPrint('[CONSOLE]Nome: ${request.nome}');
+      //debugPrint('[CONSOLE]Numero esercizi: ${request.esercizi.length}');
 
       // ✅ NUOVO: Log degli esercizi da rimuovere
       if (request.rimuovi != null && request.rimuovi!.isNotEmpty) {
-        //print('[CONSOLE] [workout_repository]Esercizi da rimuovere: ${request.rimuovi!.length}');
+        //debugPrint('[CONSOLE] [workout_repository]Esercizi da rimuovere: ${request.rimuovi!.length}');
         for (final toRemove in request.rimuovi!) {
-          //print('[CONSOLE] [workout_repository]Rimuovi esercizio ID: ${toRemove.id} (questo è esercizio_id, non scheda_esercizio_id)');
+          //debugPrint('[CONSOLE] [workout_repository]Rimuovi esercizio ID: ${toRemove.id} (questo è esercizio_id, non scheda_esercizio_id)');
         }
       }
 
       final eserciziJson = requestJson['esercizi'] as List<dynamic>;
       for (int i = 0; i < eserciziJson.length; i++) {
         final esercizioJson = eserciziJson[i] as Map<String, dynamic>;
-        //print('[CONSOLE] [workout_repository]Esercizio $i JSON: ${jsonEncode(esercizioJson)}');
+        //debugPrint('[CONSOLE] [workout_repository]Esercizio $i JSON: ${jsonEncode(esercizioJson)}');
       }
 
       final response = await _apiClient.updateWorkoutStandalone(requestJson, action: "update");
@@ -254,10 +254,10 @@ class WorkoutRepository {
 
   Future<Result<CreateWorkoutPlanResponse>> createWorkoutPlan(CreateWorkoutPlanRequest request) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Creating workout plan: ${request.nome}');
+      //debugPrint('[CONSOLE] [workout_repository]Creating workout plan: ${request.nome}');
 
       final requestJson = request.toJson();
-      //print('[CONSOLE] [workout_repository]Create Request JSON: ${jsonEncode(requestJson)}');
+      //debugPrint('[CONSOLE] [workout_repository]Create Request JSON: ${jsonEncode(requestJson)}');
 
       final response = await _apiClient.createWorkoutStandalone(requestJson);
 
@@ -309,14 +309,14 @@ class WorkoutRepository {
 
   Future<Result<StartWorkoutResponse>> startWorkout(int userId, int schedaId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository] Starting workout for user: $userId, scheda: $schedaId');
+      //debugPrint('[CONSOLE] [workout_repository] Starting workout for user: $userId, scheda: $schedaId');
 
       // 🌐 NUOVO: Verifica connessione prima di avviare l'allenamento
       final connectivity = await Connectivity().checkConnectivity();
       final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
       if (!isOnline) {
-        //print('[CONSOLE] [workout_repository] 📡 No internet connection, cannot start workout online');
+        //debugPrint('[CONSOLE] [workout_repository] 📡 No internet connection, cannot start workout online');
         throw Exception('Connessione internet non disponibile. Non è possibile avviare un nuovo allenamento offline.');
       }
 
@@ -340,7 +340,7 @@ class WorkoutRepository {
 
   Future<Result<List<CompletedSeriesData>>> getCompletedSeries(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting completed series for workout: $allenamentoId');
+      //debugPrint('[CONSOLE] [workout_repository]Getting completed series for workout: $allenamentoId');
 
       final response = await _apiClient.getCompletedSeries(allenamentoId);
 
@@ -354,7 +354,7 @@ class WorkoutRepository {
               .map((json) => CompletedSeriesData.fromJson(json))
               .toList();
 
-          //print('[CONSOLE] [workout_repository]Successfully loaded ${completedSeries.length} completed series');
+          //debugPrint('[CONSOLE] [workout_repository]Successfully loaded ${completedSeries.length} completed series');
           return completedSeries;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
@@ -371,7 +371,7 @@ class WorkoutRepository {
       String requestId,
       ) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Saving completed series for workout: $allenamentoId');
+      //debugPrint('[CONSOLE] [workout_repository]Saving completed series for workout: $allenamentoId');
 
       final request = SaveCompletedSeriesRequest(
         allenamentoId: allenamentoId,
@@ -392,14 +392,14 @@ class WorkoutRepository {
   /// 🌐 NUOVO: Controlla se ci sono allenamenti in sospeso per l'utente
   Future<Result<Map<String, dynamic>?>> checkPendingWorkout(int userId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository] Checking for pending workouts for user: $userId');
+      //debugPrint('[CONSOLE] [workout_repository] Checking for pending workouts for user: $userId');
 
       // 🌐 NUOVO: Verifica connessione prima di controllare il database
       final connectivity = await Connectivity().checkConnectivity();
       final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
       if (!isOnline) {
-        //print('[CONSOLE] [workout_repository] 📡 No internet connection, cannot check pending workouts');
+        //debugPrint('[CONSOLE] [workout_repository] 📡 No internet connection, cannot check pending workouts');
         return null; // Non possiamo controllare offline
       }
 
@@ -412,18 +412,18 @@ class WorkoutRepository {
           final hasPending = response['has_pending'] as bool? ?? false;
           if (hasPending) {
             final pendingData = response['pending_workout'] as Map<String, dynamic>?;
-            //print('[CONSOLE] [workout_repository] ✅ Found pending workout: ${pendingData?['allenamento_id']}');
+            //debugPrint('[CONSOLE] [workout_repository] ✅ Found pending workout: ${pendingData?['allenamento_id']}');
             return pendingData;
           } else {
-            //print('[CONSOLE] [workout_repository] ℹ️ No pending workouts found');
+            //debugPrint('[CONSOLE] [workout_repository] ℹ️ No pending workouts found');
             return null;
           }
         } else {
-          print('[CONSOLE] [workout_repository] ❌ Error checking pending workouts: ${response['message']}');
+          //debugPrint('[CONSOLE] [workout_repository] ❌ Error checking pending workouts: ${response['message']}');
           return null;
         }
       } else {
-        print('[CONSOLE] [workout_repository] ❌ Invalid response format');
+        //debugPrint('[CONSOLE] [workout_repository] ❌ Invalid response format');
         return null;
       }
     });
@@ -435,14 +435,14 @@ class WorkoutRepository {
         String? note,
       }) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Completing workout: $allenamentoId, duration: $durataTotale');
+      //debugPrint('[CONSOLE] [workout_repository]Completing workout: $allenamentoId, duration: $durataTotale');
 
       // 🌐 NUOVO: Verifica connessione prima del completamento
       final connectivity = await Connectivity().checkConnectivity();
       final isOnline = connectivity.isNotEmpty && connectivity.first != ConnectivityResult.none;
 
       if (!isOnline) {
-        print('[CONSOLE] [workout_repository] 📡 Offline mode: Cannot complete workout online');
+        //debugPrint('[CONSOLE] [workout_repository] 📡 Offline mode: Cannot complete workout online');
         throw Exception('Connessione internet non disponibile. L\'allenamento verrà completato quando tornerai online.');
       }
 
@@ -469,7 +469,7 @@ class WorkoutRepository {
 
   Future<Result<List<WorkoutHistory>>> getWorkoutHistory(int userId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting workout history for user: $userId');
+      //debugPrint('[CONSOLE] [workout_repository]Getting workout history for user: $userId');
 
       final response = await _apiClient.getWorkoutHistory(userId);
 
@@ -484,7 +484,7 @@ class WorkoutRepository {
               .map((json) => WorkoutHistory.fromMap(json))
               .toList();
 
-          //print('[CONSOLE] [workout_repository]Successfully loaded ${workoutHistory.length} workout history entries');
+          //debugPrint('[CONSOLE] [workout_repository]Successfully loaded ${workoutHistory.length} workout history entries');
           return workoutHistory;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero della cronologia allenamenti');
@@ -497,7 +497,7 @@ class WorkoutRepository {
 
   Future<Result<List<CompletedSeriesData>>> getWorkoutSeriesDetail(int allenamentoId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting series details for workout: $allenamentoId');
+      //debugPrint('[CONSOLE] [workout_repository]Getting series details for workout: $allenamentoId');
 
       // Aggiungiamo un timeout personalizzato per evitare caricamenti infiniti
       final response = await _apiClient.getWorkoutSeriesDetail(allenamentoId)
@@ -508,14 +508,14 @@ class WorkoutRepository {
             },
           );
 
-      //print('[DEBUG] [workout_repository] Response: $response');
+      //debugPrint('[DEBUG] [workout_repository] Response: $response');
 
       if (response != null && response is Map<String, dynamic>) {
         final success = response['success'] as bool? ?? false;
 
         if (success) {
           final serieList = response['serie'] as List<dynamic>? ?? [];
-          //print('[DEBUG] [workout_repository] Serie list: $serieList');
+          //debugPrint('[DEBUG] [workout_repository] Serie list: $serieList');
           
           final seriesDetails = serieList
               .cast<Map<String, dynamic>>()
@@ -523,14 +523,14 @@ class WorkoutRepository {
                 try {
                   return CompletedSeriesData.fromJson(json);
                 } catch (e) {
-                  //print('[DEBUG] [workout_repository] Error parsing series data: $e');
-                  //print('[DEBUG] [workout_repository] JSON: $json');
+                  //debugPrint('[DEBUG] [workout_repository] Error parsing series data: $e');
+                  //debugPrint('[DEBUG] [workout_repository] JSON: $json');
                   rethrow;
                 }
               })
               .toList();
 
-          //print('[DEBUG] [workout_repository] Successfully loaded ${seriesDetails.length} series details');
+          //debugPrint('[DEBUG] [workout_repository] Successfully loaded ${seriesDetails.length} series details');
           return seriesDetails;
         } else {
           throw Exception(response['message'] ?? 'Errore nel recupero delle serie completate');
@@ -543,7 +543,7 @@ class WorkoutRepository {
 
   Future<Result<bool>> deleteCompletedSeries(String seriesId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Deleting completed series: $seriesId');
+      //debugPrint('[CONSOLE] [workout_repository]Deleting completed series: $seriesId');
 
       final request = DeleteSeriesRequest(serieId: seriesId);
       final response = await _apiClient.deleteCompletedSeries(request.toJson());
@@ -565,7 +565,7 @@ class WorkoutRepository {
         String? notes,
       }) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Updating completed series: $seriesId');
+      //debugPrint('[CONSOLE] [workout_repository]Updating completed series: $seriesId');
 
       final request = UpdateSeriesRequest(
         serieId: seriesId,
@@ -588,7 +588,7 @@ class WorkoutRepository {
 
   Future<Result<bool>> deleteWorkout(int workoutId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Deleting workout: $workoutId');
+      //debugPrint('[CONSOLE] [workout_repository]Deleting workout: $workoutId');
 
       final response = await _apiClient.deleteWorkoutFromHistory({
         'allenamento_id': workoutId,
@@ -609,7 +609,7 @@ class WorkoutRepository {
 
   Future<Result<UserStats>> getUserStats(int userId) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting user stats for: $userId');
+      //debugPrint('[CONSOLE] [workout_repository]Getting user stats for: $userId');
 
       final response = await _apiClient.getUserStats();
 
@@ -631,7 +631,7 @@ class WorkoutRepository {
 
   Future<Result<PeriodStats>> getPeriodStats(String period) async {
     return await Result.tryCallAsync(() async {
-      //print('[CONSOLE] [workout_repository]Getting period stats for: $period');
+      //debugPrint('[CONSOLE] [workout_repository]Getting period stats for: $period');
 
       final response = await _apiClient.getPeriodStats(period);
 

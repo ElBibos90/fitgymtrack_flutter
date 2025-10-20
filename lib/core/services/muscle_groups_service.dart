@@ -61,7 +61,7 @@ class MuscleGroupsService {
 
       return [];
     } catch (e) {
-      print('❌ Errore durante il fetch dei muscoli: $e');
+      //debugPrint('❌ Errore durante il fetch dei muscoli: $e');
       // Se c'è un errore ma abbiamo cache, restituiamo quella
       if (_cachedMuscles != null) {
         return _cachedMuscles!;
@@ -100,7 +100,7 @@ class MuscleGroupsService {
 
       return [];
     } catch (e) {
-      print('❌ Errore durante il fetch dei muscoli per categoria $category: $e');
+      //debugPrint('❌ Errore durante il fetch dei muscoli per categoria $category: $e');
       // Fallback: filtra dalla cache locale se disponibile
       if (_cachedMuscles != null) {
         return _cachedMuscles!

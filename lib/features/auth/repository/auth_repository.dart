@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/session_service.dart';
@@ -31,7 +29,7 @@ class AuthRepository {
 
   Future<Result<LoginResponse>> login(String username, String password) async {
     try {
-      ////print('[CONSOLE] [auth_repository]Tentativo di login per: $username');
+      //debugPrint('[CONSOLE] [auth_repository]Tentativo di login per: $username');
 
       final loginRequest = LoginRequest(
         username: username,
@@ -40,7 +38,7 @@ class AuthRepository {
 
       final response = await _apiClient.login('login', loginRequest);
 
-      ////print('[CONSOLE] [auth_repository]Risposta login: ${response.toJson()}');
+      //debugPrint('[CONSOLE] [auth_repository]Risposta login: ${response.toJson()}');
 
       if (response.token != null && response.user != null) {
         await sessionService.saveSession(response.token!, response.user!);
@@ -48,7 +46,7 @@ class AuthRepository {
 
       return Result.success(response);
     } catch (e) {
-      ////print('[CONSOLE] [auth_repository]Errore login: ${e.toString()}');
+      //debugPrint('[CONSOLE] [auth_repository]Errore login: ${e.toString()}');
       return Result.error(_handleApiError(e).toString(), _handleApiError(e));
     }
   }
@@ -117,17 +115,17 @@ class AuthRepository {
       // Prima controlla se c'è un token
       final hasToken = await sessionService.isAuthenticated();
       if (!hasToken) {
-        print('[CONSOLE] [auth_repository]❌ No token found');
+        //debugPrint('[CONSOLE] [auth_repository]❌ No token found');
         return false;
       }
 
       // Poi valida il token in modo intelligente
       final isValid = await sessionService.validateTokenIntelligently();
-      //print('[CONSOLE] [auth_repository]🔍 Token validation result: $isValid');
+      //debugPrint('[CONSOLE] [auth_repository]🔍 Token validation result: $isValid');
       return isValid;
       
     } catch (e) {
-      print('[CONSOLE] [auth_repository]❌ Authentication check failed: $e');
+      //debugPrint('[CONSOLE] [auth_repository]❌ Authentication check failed: $e');
       return false;
     }
   }
@@ -136,7 +134,7 @@ class AuthRepository {
     try {
     return await sessionService.getUserData();
     } catch (e) {
-      print('[CONSOLE] [auth_repository]❌ Error getting current user: $e');
+      //debugPrint('[CONSOLE] [auth_repository]❌ Error getting current user: $e');
       return null;
     }
   }

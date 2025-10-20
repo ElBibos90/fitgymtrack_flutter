@@ -19,7 +19,6 @@ import '../../../auth/bloc/auth_bloc.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
 import '../../../exercises/models/exercises_response.dart';
-import '../../../../shared/widgets/exercise_editor.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
   final int? workoutId; // null per creazione, valorizzato per modifica

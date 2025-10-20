@@ -23,14 +23,14 @@ class ApiRequestDebouncer {
   }) async {
     // 1. Controlla se c'è una richiesta già attiva
     if (_activeRequests[key] == true) {
-      debugPrint('🚫 [DEBOUNCER] Request blocked - already active: $key');
+      //debugPrint('🚫 [DEBOUNCER] Request blocked - already active: $key');
       return null;
     }
 
     // 2. Controlla cache
     final cacheResult = _getCachedResult<T>(key, cacheDuration);
     if (cacheResult != null) {
-      debugPrint('⚡ [DEBOUNCER] Cache hit for: $key');
+      //debugPrint('⚡ [DEBOUNCER] Cache hit for: $key');
       return cacheResult;
     }
 
@@ -43,13 +43,13 @@ class ApiRequestDebouncer {
     // 5. Crea nuovo timer
     _timers[key] = Timer(delay, () async {
       if (_activeRequests[key] == true) {
-        debugPrint('🚫 [DEBOUNCER] Request blocked - race condition: $key');
+        //debugPrint('🚫 [DEBOUNCER] Request blocked - race condition: $key');
         completer.complete(null);
         return;
       }
 
       _activeRequests[key] = true;
-      debugPrint('🚀 [DEBOUNCER] Executing request: $key');
+      //debugPrint('🚀 [DEBOUNCER] Executing request: $key');
 
       try {
         final result = await request();
@@ -58,10 +58,10 @@ class ApiRequestDebouncer {
         _requestCache[key] = result;
         _cacheTimestamps[key] = DateTime.now();
 
-        debugPrint('✅ [DEBOUNCER] Request completed: $key');
+        //debugPrint('✅ [DEBOUNCER] Request completed: $key');
         completer.complete(result);
       } catch (e) {
-        debugPrint('❌ [DEBOUNCER] Request failed: $key - $e');
+        //debugPrint('❌ [DEBOUNCER] Request failed: $key - $e');
         completer.completeError(e);
       } finally {
         _activeRequests[key] = false;
@@ -95,14 +95,14 @@ class ApiRequestDebouncer {
   static void clearCache(String key) {
     _requestCache.remove(key);
     _cacheTimestamps.remove(key);
-    debugPrint('🗑️ [DEBOUNCER] Cache cleared for: $key');
+    //debugPrint('🗑️ [DEBOUNCER] Cache cleared for: $key');
   }
 
   /// Cancella tutta la cache
   static void clearAllCache() {
     _requestCache.clear();
     _cacheTimestamps.clear();
-    debugPrint('🗑️ [DEBOUNCER] All cache cleared');
+    //debugPrint('🗑️ [DEBOUNCER] All cache cleared');
   }
 
   /// Cancella timer attivi
@@ -112,7 +112,7 @@ class ApiRequestDebouncer {
     }
     _timers.clear();
     _activeRequests.clear();
-    debugPrint('🧹 [DEBOUNCER] Disposed all timers');
+    //debugPrint('🧹 [DEBOUNCER] Disposed all timers');
   }
 
   /// Statistiche per debugging

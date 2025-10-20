@@ -63,7 +63,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadCoursesEvent event,
     Emitter<CoursesState> emit,
   ) async {
-    print('[COURSES_DEBUG] 🔍 _onLoadCourses: INIZIATO');
+    //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourses: INIZIATO');
     try {
       emit(const CoursesLoadingState());
       
@@ -90,7 +90,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       }
       
       if (response != null && response.success) {
-        print('[COURSES_DEBUG] 🔍 _onLoadCourses: Caricati ${response.courses.length} corsi');
+        //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourses: Caricati ${response.courses.length} corsi');
         emit(CoursesLoadedState(
           courses: response.courses,
           filteredCourses: response.courses,
@@ -196,12 +196,12 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadCourseDetailsEvent event,
     Emitter<CoursesState> emit,
   ) async {
-    print('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: INIZIATO per courseId=${event.courseId}');
+    //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: INIZIATO per courseId=${event.courseId}');
     try {
       emit(const CourseDetailsLoadingState());
       
       final course = await _repository.getCourseDetails(event.courseId);
-      print('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: Corso caricato - id=${course.id}, title=${course.title}');
+      //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourseDetails: Corso caricato - id=${course.id}, title=${course.title}');
       
       emit(CourseDetailsLoadedState(
         course: course,
@@ -225,12 +225,12 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     }
     
     try {
-      print('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: INIZIATO per courseId=${event.courseId}, month=${event.month}');
+      //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: INIZIATO per courseId=${event.courseId}, month=${event.month}');
       final response = event.month != null
           ? await _repository.getSessionsForMonth(event.month!, courseId: event.courseId)
           : await _repository.getCurrentMonthSessions(courseId: event.courseId);
       
-      print('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: Caricate ${response.sessions.length} sessioni');
+      //debugPrint('[COURSES_DEBUG] 🔍 _onLoadCourseSessions: Caricate ${response.sessions.length} sessioni');
       
       
       if (response.success) {
@@ -333,7 +333,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     LoadMyEnrollmentsEvent event,
     Emitter<CoursesState> emit,
   ) async {
-    print('[COURSES_DEBUG] 🔍 _onLoadMyEnrollments: INIZIATO');
+    //debugPrint('[COURSES_DEBUG] 🔍 _onLoadMyEnrollments: INIZIATO');
     try {
       emit(const MyEnrollmentsLoadingState());
       
@@ -361,9 +361,9 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       
       if (response != null && response.success) {
         // DEBUG: Log per verificare i dati ricevuti
-        print('[COURSES_DEBUG] 🔍 MyEnrollments: Ricevute ${response.enrollments.length} iscrizioni');
+        //debugPrint('[COURSES_DEBUG] 🔍 MyEnrollments: Ricevute ${response.enrollments.length} iscrizioni');
         if (response.enrollments.isNotEmpty) {
-          print('[COURSES_DEBUG] 🔍 MyEnrollments: Prima iscrizione - enrollment_id: ${response.enrollments.first.enrollmentId}');
+          //debugPrint('[COURSES_DEBUG] 🔍 MyEnrollments: Prima iscrizione - enrollment_id: ${response.enrollments.first.enrollmentId}');
         }
         
         emit(MyEnrollmentsLoadedState(
@@ -508,7 +508,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     Emitter<CoursesState> emit,
   ) async {
     try {
-      print('[DEBUG] 🚫 BLoC: _onCancelSessionEnrollment INIZIATO per sessionId: ${event.sessionId}');
+      //debugPrint('[DEBUG] 🚫 BLoC: _onCancelSessionEnrollment INIZIATO per sessionId: ${event.sessionId}');
       
       // Salva lo stato precedente
       final previousState = state;
@@ -519,16 +519,16 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       ));
       
       // Prima otteniamo l'enrollmentId per questa sessione
-      print('[DEBUG] 🚫 Recupero iscrizioni utente...');
+      //debugPrint('[DEBUG] 🚫 Recupero iscrizioni utente...');
       final enrollmentsResponse = await _repository.getMyCourseEnrollments();
       
-      print('[DEBUG] 🚫 Risposta iscrizioni: success=${enrollmentsResponse.success}, count=${enrollmentsResponse.enrollments.length}');
+      //debugPrint('[DEBUG] 🚫 Risposta iscrizioni: success=${enrollmentsResponse.success}, count=${enrollmentsResponse.enrollments.length}');
       
       // Debug: stampa il primo enrollment per vedere la struttura
-      if (enrollmentsResponse.enrollments.isNotEmpty) {
-        final firstEnrollment = enrollmentsResponse.enrollments.first;
-        print('[DEBUG] 🚫 Primo enrollment: enrollmentId=${firstEnrollment.enrollmentId}, sessionId=${firstEnrollment.sessionId}, status=${firstEnrollment.enrollmentStatus}');
-      }
+      // if (enrollmentsResponse.enrollments.isNotEmpty) {
+      //   final firstEnrollment = enrollmentsResponse.enrollments.first;
+      //   //debugPrint('[DEBUG] 🚫 Primo enrollment: enrollmentId=${firstEnrollment.enrollmentId}, sessionId=${firstEnrollment.sessionId}, status=${firstEnrollment.enrollmentStatus}');
+      // }
       
       if (enrollmentsResponse.success) {
         // Cerchiamo l'iscrizione per questa sessione
@@ -536,17 +536,17 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
             .where((e) => e.sessionId == event.sessionId)
             .firstOrNull;
         
-        print('[DEBUG] 🚫 Iscrizione trovata: ${enrollment != null}');
+        //debugPrint('[DEBUG] 🚫 Iscrizione trovata: ${enrollment != null}');
         if (enrollment != null) {
-          print('[DEBUG] 🚫 EnrollmentId: ${enrollment.enrollmentId}, SessionId: ${enrollment.sessionId}');
+          //debugPrint('[DEBUG] 🚫 EnrollmentId: ${enrollment.enrollmentId}, SessionId: ${enrollment.sessionId}');
         }
         
         if (enrollment != null) {
           // Ora possiamo cancellare l'iscrizione
-          print('[DEBUG] 🚫 Chiamata API per cancellare enrollmentId: ${enrollment.enrollmentId}');
+          //debugPrint('[DEBUG] 🚫 Chiamata API per cancellare enrollmentId: ${enrollment.enrollmentId}');
           final response = await _repository.cancelCourseEnrollment(enrollment.enrollmentId);
           
-          print('[DEBUG] 🚫 Risposta cancellazione: success=${response.success}, message=${response.message}');
+          //debugPrint('[DEBUG] 🚫 Risposta cancellazione: success=${response.success}, message=${response.message}');
           
           if (response.success) {
             emit(CourseOperationSuccessState(
@@ -571,21 +571,21 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
             ));
           }
         } else {
-          print('[DEBUG] 🚫 ERRORE: Iscrizione non trovata per sessionId: ${event.sessionId}');
+          //debugPrint('[DEBUG] 🚫 ERRORE: Iscrizione non trovata per sessionId: ${event.sessionId}');
           emit(CourseOperationErrorState(
             message: 'Iscrizione non trovata per questa sessione',
             operation: 'Disiscrizione',
           ));
         }
       } else {
-        print('[DEBUG] 🚫 ERRORE: Fallimento nel recupero iscrizioni');
+        //debugPrint('[DEBUG] 🚫 ERRORE: Fallimento nel recupero iscrizioni');
         emit(CourseOperationErrorState(
           message: 'Errore nel recupero delle iscrizioni',
           operation: 'Disiscrizione',
         ));
       }
     } catch (e) {
-      print('[DEBUG] 🚫 ERRORE: Exception durante disiscrizione: $e');
+      //debugPrint('[DEBUG] 🚫 ERRORE: Exception durante disiscrizione: $e');
       emit(CourseOperationErrorState(
         message: 'Errore di connessione: ${e.toString()}',
         operation: 'Disiscrizione',

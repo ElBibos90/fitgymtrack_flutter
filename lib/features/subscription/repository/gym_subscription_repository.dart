@@ -1,23 +1,19 @@
 // lib/features/subscription/repository/gym_subscription_repository.dart
 import 'package:dio/dio.dart';
 import '../../../core/utils/result.dart';
-import '../../../core/network/api_client.dart';
 import '../models/gym_subscription.dart';
 
 /// Repository per la gestione degli abbonamenti palestra
 class GymSubscriptionRepository {
-  final ApiClient _apiClient;
   final Dio _dio;
 
   GymSubscriptionRepository({
-    required ApiClient apiClient,
     required Dio dio,
-  })  : _apiClient = apiClient,
-        _dio = dio;
+  })  : _dio = dio;
 
   /// Recupera l'abbonamento palestra dell'utente
   Future<Result<GymSubscription>> getGymSubscription(int userId) async {
-    //print('[CONSOLE] [gym_subscription_repository] 🏋️ Recupero abbonamento palestra per utente: $userId');
+    //debugPrint('[CONSOLE] [gym_subscription_repository] 🏋️ Recupero abbonamento palestra per utente: $userId');
 
     return Result.tryCallAsync(() async {
       try {
@@ -27,15 +23,15 @@ class GymSubscriptionRepository {
           'client_id': userId.toString(),
         });
 
-        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Status code: ${response.statusCode}');
-        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Response headers: ${response.headers}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Status code: ${response.statusCode}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Response headers: ${response.headers}');
         
         final data = response.data;
       
         // 🔍 DEBUG: Log della risposta completa
-        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Risposta API completa: $data');
-        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}');
-        //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - subscription: ${data['subscription']}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - Risposta API completa: $data');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - subscription: ${data['subscription']}');
 
         if (data['success'] == true && data['subscription'] != null) {
           final subscriptionData = data['subscription'];
@@ -62,19 +58,19 @@ class GymSubscriptionRepository {
             currency: subscriptionData['currency'] ?? 'EUR',
           );
 
-          //print('[CONSOLE] [gym_subscription_repository] ✅ Abbonamento palestra recuperato: ${gymSubscription.gymName} - ${gymSubscription.planName}');
+          //debugPrint('[CONSOLE] [gym_subscription_repository] ✅ Abbonamento palestra recuperato: ${gymSubscription.gymName} - ${gymSubscription.planName}');
           return gymSubscription;
         } else {
-          //print('[CONSOLE] [gym_subscription_repository] ℹ️ Nessun abbonamento attivo per l\'utente');
-          //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}, subscription: ${data['subscription']}');
-          //print('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - message: ${data['message']}');
+          //debugPrint('[CONSOLE] [gym_subscription_repository] ℹ️ Nessun abbonamento attivo per l\'utente');
+          //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - success: ${data['success']}, subscription: ${data['subscription']}');
+          //debugPrint('[CONSOLE] [gym_subscription_repository] 🔍 DEBUG - message: ${data['message']}');
           throw Exception(data['message'] ?? 'Nessun abbonamento attivo');
         }
       } on DioException catch (e) {
-        print('[CONSOLE] [gym_subscription_repository] ❌ DioException: ${e.type}');
-        print('[CONSOLE] [gym_subscription_repository] ❌ DioException message: ${e.message}');
-        print('[CONSOLE] [gym_subscription_repository] ❌ DioException response: ${e.response?.data}');
-        print('[CONSOLE] [gym_subscription_repository] ❌ DioException statusCode: ${e.response?.statusCode}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ DioException: ${e.type}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ DioException message: ${e.message}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ DioException response: ${e.response?.data}');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ DioException statusCode: ${e.response?.statusCode}');
         
         // Se c'è una risposta, proviamo a parsarla
         if (e.response?.data != null) {
@@ -84,13 +80,13 @@ class GymSubscriptionRepository {
               throw Exception(data['error']);
             }
           } catch (parseError) {
-            print('[CONSOLE] [gym_subscription_repository] ❌ Parse error: $parseError');
+            //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ Parse error: $parseError');
           }
         }
         
         rethrow;
       } catch (e) {
-        print('[CONSOLE] [gym_subscription_repository] ❌ Generic Error: $e');
+        //debugPrint('[CONSOLE] [gym_subscription_repository] ❌ Generic Error: $e');
         rethrow;
       }
     });

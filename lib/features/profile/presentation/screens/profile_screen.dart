@@ -50,13 +50,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// ✅ Carica il profilo reale dal database
   void _loadProfile() {
-    //print('[CONSOLE] [profile_screen] 📡 Loading real profile from database...');
+    //debugPrint('[CONSOLE] [profile_screen] 📡 Loading real profile from database...');
     context.read<ProfileBloc>().add(const LoadUserProfile());
   }
 
   /// 🔧 FIX: Popola i controller con setState per aggiornare l'UI
   void _populateControllers(UserProfile profile) {
-    //print('[CONSOLE] [profile_screen] 📝 Populating controllers with profile data...');
+    //debugPrint('[CONSOLE] [profile_screen] 📝 Populating controllers with profile data...');
 
     // 🔧 FIX: Usa setState per aggiornare l'UI
     setState(() {
@@ -75,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _selectedGoal = profile.fitnessGoals != null ? FitnessGoal.fromString(profile.fitnessGoals!) : null;
     });
 
-    //print('[CONSOLE] [profile_screen] ✅ Controllers populated: Gender=${_selectedGender?.displayName}, Experience=${_selectedExperience.displayName}, Goal=${_selectedGoal?.displayName}');
+    //debugPrint('[CONSOLE] [profile_screen] ✅ Controllers populated: Gender=${_selectedGender?.displayName}, Experience=${_selectedExperience.displayName}, Goal=${_selectedGoal?.displayName}');
   }
 
   @override
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// ✅ Gestisce gli stati del ProfileBloc
   void _handleProfileState(BuildContext context, ProfileState state) {
     if (state is ProfileUpdateSuccess) {
-      //print('[CONSOLE] [profile_screen] ✅ Profile updated successfully!');
+      //debugPrint('[CONSOLE] [profile_screen] ✅ Profile updated successfully!');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -143,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _populateControllers(state.profile);
 
     } else if (state is ProfileError && state.message.contains('aggiornamento')) {
-      print('[CONSOLE] [profile_screen] ❌ Profile update failed: ${state.message}');
+      //debugPrint('[CONSOLE] [profile_screen] ❌ Profile update failed: ${state.message}');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -165,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           color: isDarkMode ? Colors.white : AppColors.textPrimary,
         ),
         onPressed: () {
-          //print('[CONSOLE] [profile_screen] ⬅️ Navigating back to dashboard');
+          //debugPrint('[CONSOLE] [profile_screen] ⬅️ Navigating back to dashboard');
           context.go('/dashboard');
         },
       ),
@@ -185,7 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: isDarkMode ? Colors.white70 : AppColors.textSecondary,
             ),
             onPressed: () {
-              //print('[CONSOLE] [profile_screen] ✏️ Entering edit mode');
+              //debugPrint('[CONSOLE] [profile_screen] ✏️ Entering edit mode');
               setState(() {
                 _isEditing = true;
               });
@@ -738,7 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _createProfile() {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
-      //print('[CONSOLE] [profile_screen] 🆕 Creating default profile for user ${authState.user.id}');
+      //debugPrint('[CONSOLE] [profile_screen] 🆕 Creating default profile for user ${authState.user.id}');
       context.read<ProfileBloc>().add(CreateDefaultProfile(userId: authState.user.id));
     }
   }
@@ -746,7 +746,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// ✅ Salva le modifiche reali nel database!
   void _saveProfile() {
     if (_userProfile == null) {
-      print('[CONSOLE] [profile_screen] ❌ Cannot save: _userProfile is null');
+      //debugPrint('[CONSOLE] [profile_screen] ❌ Cannot save: _userProfile is null');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Errore: profilo non caricato'),
@@ -756,7 +756,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    //print('[CONSOLE] [profile_screen] 💾 Saving profile changes to database...');
+    //debugPrint('[CONSOLE] [profile_screen] 💾 Saving profile changes to database...');
 
     final updatedProfile = _userProfile!.copyWith(
       height: _heightController.text.isNotEmpty ? int.tryParse(_heightController.text) : null,
@@ -768,7 +768,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       notes: _notesController.text.isNotEmpty ? _notesController.text : null,
     );
 
-    //print('[CONSOLE] [profile_screen] 📤 Sending updated profile to ProfileBloc...');
+    //debugPrint('[CONSOLE] [profile_screen] 📤 Sending updated profile to ProfileBloc...');
 
     // ✅ Invia al ProfileBloc per salvare nel database reale!
     context.read<ProfileBloc>().add(UpdateUserProfile(profile: updatedProfile));

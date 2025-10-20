@@ -33,7 +33,7 @@ class AchievementCard extends StatelessWidget {
                 : StatsTheme.shadowSmall,
             border: Border.all(
               color: achievement.isUnlocked 
-                  ? _getCategoryColor().withOpacity(0.3)
+                  ? _getCategoryColor().withValues(alpha: 0.3)
                   : StatsTheme.neutral300,
               width: achievement.isUnlocked ? 2 : 1,
             ),
@@ -169,7 +169,7 @@ class AchievementCard extends StatelessWidget {
                   vertical: 2.h,
                 ),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor().withOpacity(0.1),
+                  color: _getCategoryColor().withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(StatsTheme.radiusSmall.r),
                 ),
                 child: Row(
@@ -344,7 +344,7 @@ class AchievementsGrid extends StatelessWidget {
         vertical: StatsTheme.space1.h,
       ),
       decoration: BoxDecoration(
-        color: StatsTheme.successGreen.withOpacity(0.1),
+        color: StatsTheme.successGreen.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(StatsTheme.radiusSmall.r),
       ),
       child: Text(

@@ -118,12 +118,12 @@ class Environment {
 
   /// Mostra informazioni di configurazione per debug
   static void printConfiguration() {
-    print('🔧 [ENV] Environment Configuration:');
-    print('🔧 [ENV] Mode: ${kDebugMode ? "🟡 DEBUG" : "🟢 RELEASE"}');
-    print('🔧 [ENV] Base URL: $baseUrl');
-    print('🔧 [ENV] Is Debug: $isDebug');
-    print('🔧 [ENV] Is Production: $isProduction');
-    print('🔧 [ENV] App Version: $fullVersion');
+    //debugPrint('🔧 [ENV] Environment Configuration:');
+    //debugPrint('🔧 [ENV] Mode: ${kDebugMode ? "🟡 DEBUG" : "🟢 RELEASE"}');
+    //debugPrint('🔧 [ENV] Base URL: $baseUrl');
+    //debugPrint('🔧 [ENV] Is Debug: $isDebug');
+    //debugPrint('🔧 [ENV] Is Production: $isProduction');
+    //debugPrint('🔧 [ENV] App Version: $fullVersion');
   }
 
   /// Valida la configurazione dell'ambiente
@@ -131,22 +131,22 @@ class Environment {
     final currentUrl = baseUrl;
     
     if (currentUrl.isEmpty) {
-      print('❌ [ENV] ERROR: Base URL is empty');
+      //debugPrint('❌ [ENV] ERROR: Base URL is empty');
       return false;
     }
 
     if (!currentUrl.startsWith('http')) {
-      print('❌ [ENV] ERROR: Base URL must start with http/https');
+      //debugPrint('❌ [ENV] ERROR: Base URL must start with http/https');
       return false;
     }
 
     // In debug mode è OK usare URL locale
     if (isProduction && (currentUrl.contains('localhost') || currentUrl.contains('192.168'))) {
-      print('⚠️ [ENV] WARNING: Production mode but using local URL');
+      //debugPrint('⚠️ [ENV] WARNING: Production mode but using local URL');
       return false;
     }
 
-    print('✅ [ENV] Configuration is valid');
+    //debugPrint('✅ [ENV] Configuration is valid');
     return true;
   }
 }

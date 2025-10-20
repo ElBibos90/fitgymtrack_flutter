@@ -37,7 +37,7 @@ class MuscleTag extends StatelessWidget {
         borderRadius: WorkoutDesignSystem.borderRadiusS,
         border: Border.all(
           color: isPrimary
-              ? WorkoutDesignSystem.primary600.withOpacity(0.3)
+              ? WorkoutDesignSystem.primary600.withValues(alpha: 0.3)
               : WorkoutDesignSystem.gray200,
         ),
       ),

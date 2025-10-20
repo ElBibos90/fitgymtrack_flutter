@@ -25,7 +25,7 @@ class ConnectivityService {
         _handleConnectivityChange(result);
       },
       onError: (error) {
-        print('[CONSOLE] [connectivity_service] ❌ Connectivity monitoring error: $error');
+        //debugPrint('[CONSOLE] [connectivity_service] ❌ Connectivity monitoring error: $error');
       },
     );
   }
@@ -34,11 +34,11 @@ class ConnectivityService {
   void _handleConnectivityChange(ConnectivityResult result) {
     final isOnline = result != ConnectivityResult.none;
     
-    //print('[CONSOLE] [connectivity_service] 📡 Connectivity changed: ${result.name}');
+    //debugPrint('[CONSOLE] [connectivity_service] 📡 Connectivity changed: ${result.name}');
 
     // Se eravamo offline e ora siamo online, sincronizza
     if (_wasOffline && isOnline) {
-      //print('[CONSOLE] [connectivity_service] 🔄 Connection restored, syncing offline data...');
+      //debugPrint('[CONSOLE] [connectivity_service] 🔄 Connection restored, syncing offline data...');
       _syncOfflineData();
     }
 
@@ -50,7 +50,7 @@ class ConnectivityService {
     try {
       // 🔧 FIX: Evita sincronizzazioni multiple simultanee
       if (_isSyncing) {
-        //print('[CONSOLE] [connectivity_service] ⏳ Sync already in progress, skipping...');
+        //debugPrint('[CONSOLE] [connectivity_service] ⏳ Sync already in progress, skipping...');
         return;
       }
 
@@ -62,13 +62,13 @@ class ConnectivityService {
                             stats['pending_series_count'] > 0;
 
       if (hasPendingData) {
-        //print('[CONSOLE] [connectivity_service] 🔄 Found ${stats['pending_series_count']} pending series, syncing...');
+        //debugPrint('[CONSOLE] [connectivity_service] 🔄 Found ${stats['pending_series_count']} pending series, syncing...');
         _workoutBloc.syncOfflineData();
       } else {
-        //print('[CONSOLE] [connectivity_service] ✅ No pending data to sync');
+        //debugPrint('[CONSOLE] [connectivity_service] ✅ No pending data to sync');
       }
     } catch (e) {
-      print('[CONSOLE] [connectivity_service] ❌ Error syncing offline data: $e');
+      //debugPrint('[CONSOLE] [connectivity_service] ❌ Error syncing offline data: $e');
     } finally {
       // 🔧 FIX: Reset flag dopo un delay per permettere retry se necessario
       Future.delayed(const Duration(seconds: 5), () {
@@ -84,7 +84,7 @@ class ConnectivityService {
       final result = results.isNotEmpty ? results.first : ConnectivityResult.none;
       return result != ConnectivityResult.none;
     } catch (e) {
-      print('[CONSOLE] [connectivity_service] ❌ Error checking connectivity: $e');
+      //debugPrint('[CONSOLE] [connectivity_service] ❌ Error checking connectivity: $e');
       return false;
     }
   }

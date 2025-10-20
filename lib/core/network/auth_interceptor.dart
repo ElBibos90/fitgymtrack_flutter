@@ -23,12 +23,12 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      print('[CONSOLE] [auth_interceptor]🔐 401 Unauthorized - clearing session');
+      //debugPrint('[CONSOLE] [auth_interceptor]🔐 401 Unauthorized - clearing session');
       await _sessionService.clearSession();
       
       // 🔧 FIX: Non propagare l'errore 401 per evitare loop infiniti
       // L'AuthBloc gestirà il logout automatico
-      print('[CONSOLE] [auth_interceptor]✅ Session cleared, error handled');
+      //debugPrint('[CONSOLE] [auth_interceptor]✅ Session cleared, error handled');
     }
 
     handler.next(err);

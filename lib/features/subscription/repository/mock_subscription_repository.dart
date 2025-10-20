@@ -51,12 +51,12 @@ class MockSubscriptionRepository {
 
   /// Recupera l'abbonamento corrente (MOCK)
   Future<Result<Subscription>> getCurrentSubscription() async {
-    ////print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] getCurrentSubscription chiamato');
+    ////debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] getCurrentSubscription chiamato');
 
     // Simula delay di rete
     await Future.delayed(const Duration(milliseconds: 500));
 
-    /*print(
+    /*//debugPrint(
       '🎯 [MOCK] Ritornando subscription: ${_currentSubscription.planName} - €${_currentSubscription.price}'
     );*/
 
@@ -65,21 +65,21 @@ class MockSubscriptionRepository {
 
   /// Controlla le subscription scadute (MOCK)
   Future<Result<ExpiredCheckResponse>> checkExpiredSubscriptions() async {
-    ////print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] checkExpiredSubscriptions chiamato');
+    ////debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] checkExpiredSubscriptions chiamato');
 
     await Future.delayed(const Duration(milliseconds: 200));
 
     // Simula che non ci sono subscription scadute
     const response = ExpiredCheckResponse(updatedCount: 0);
 
-    ////print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Nessuna subscription scaduta trovata');
+    ////debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Nessuna subscription scaduta trovata');
 
     return Result.success(response);
   }
 
   /// Verifica i limiti di utilizzo (MOCK)
   Future<Result<ResourceLimits>> checkResourceLimits(String resourceType) async {
-    ////print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] checkResourceLimits chiamato per: $resourceType');
+    ////debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] checkResourceLimits chiamato per: $resourceType');
 
     await Future.delayed(const Duration(milliseconds: 300));
 
@@ -114,16 +114,16 @@ class MockSubscriptionRepository {
       );
     }
 
-    print(
-      '🎯 [MOCK] Limiti per $resourceType: ${limits.currentCount}/${limits.maxAllowed}'
-    );
+    // print(
+    //   '🎯 [MOCK] Limiti per $resourceType: ${limits.currentCount}/${limits.maxAllowed}'
+    // );
 
     return Result.success(limits);
   }
 
   /// Aggiorna il piano di abbonamento (MOCK)
   Future<Result<UpdatePlanResponse>> updatePlan(int planId) async {
-    ////print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] updatePlan chiamato per planId: $planId');
+    // print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] updatePlan chiamato per planId: $planId');
 
     await Future.delayed(const Duration(milliseconds: 1000));
 
@@ -151,7 +151,7 @@ class MockSubscriptionRepository {
       planName: plan.name,
     );
 
-    /*print(
+    /*//debugPrint(
       '🎯 [MOCK] Piano aggiornato a: ${_currentSubscription.planName}'
     );*/
 
@@ -160,11 +160,11 @@ class MockSubscriptionRepository {
 
   /// Ottiene i piani disponibili (MOCK)
   Future<Result<List<SubscriptionPlan>>> getAvailablePlans() async {
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] getAvailablePlans chiamato');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] getAvailablePlans chiamato');
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    /*print(
+    /*//debugPrint(
       '🎯 [MOCK] Ritornando ${_availablePlans.length} piani disponibili'
     );*/
 
@@ -173,14 +173,14 @@ class MockSubscriptionRepository {
 
   /// Verifica se l'utente può creare una nuova scheda (MOCK)
   Future<Result<bool>> canCreateWorkout() async {
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] canCreateWorkout chiamato');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] canCreateWorkout chiamato');
 
     await Future.delayed(const Duration(milliseconds: 100));
 
     final canCreate = _currentSubscription.maxWorkouts == null ||
         _currentSubscription.currentCount < _currentSubscription.maxWorkouts!;
 
-    /*print(
+    /*//debugPrint(
       '🎯 [MOCK] Può creare scheda: $canCreate (${_currentSubscription.currentCount}/${_currentSubscription.maxWorkouts})'
     );*/
 
@@ -189,14 +189,14 @@ class MockSubscriptionRepository {
 
   /// Verifica se l'utente può creare un nuovo esercizio personalizzato (MOCK)
   Future<Result<bool>> canCreateCustomExercise() async {
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] canCreateCustomExercise chiamato');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] canCreateCustomExercise chiamato');
 
     await Future.delayed(const Duration(milliseconds: 100));
 
     final canCreate = _currentSubscription.maxCustomExercises == null ||
         _currentSubscription.currentCustomExercises < _currentSubscription.maxCustomExercises!;
 
-    /*print(
+    /*//debugPrint(
       '🎯 [MOCK] Può creare esercizio: $canCreate (${_currentSubscription.currentCustomExercises}/${_currentSubscription.maxCustomExercises})'
     );*/
 
@@ -219,7 +219,7 @@ class MockSubscriptionRepository {
       cloudBackup: true,
       noAds: true,
     );
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato upgrade a Premium');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato upgrade a Premium');
   }
 
   /// Simula downgrade a Free per testing
@@ -234,7 +234,7 @@ class MockSubscriptionRepository {
       cloudBackup: false,
       noAds: false,
     );
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato downgrade a Free');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato downgrade a Free');
   }
 
   /// Simula subscription scaduta per testing
@@ -246,7 +246,7 @@ class MockSubscriptionRepository {
       computedStatus: 'expired',
       daysRemaining: 0,
     );
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulata subscription scaduta');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulata subscription scaduta');
   }
 
   /// Simula limite raggiunto per testing
@@ -254,7 +254,7 @@ class MockSubscriptionRepository {
     _currentSubscription = _currentSubscription.copyWith(
       currentCount: _currentSubscription.maxWorkouts ?? 3,
     );
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato limite schede raggiunto');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Simulato limite schede raggiunto');
   }
 
   /// Reset ai valori di default
@@ -278,6 +278,6 @@ class MockSubscriptionRepository {
       daysRemaining: null,
       computedStatus: 'active',
     );
-    //print('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Reset ai valori di default');
+    //debugPrint('[CONSOLE] [mock_subscription_repository]🎯 [MOCK] Reset ai valori di default');
   }
 }

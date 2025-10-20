@@ -246,7 +246,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       Emitter<SubscriptionState> emit,
       ) async {
     try {
-      print('[CONSOLE] [subscription_bloc]💳 Loading subscription...');
+      //debugPrint('[CONSOLE] [subscription_bloc]💳 Loading subscription...');
 
       // 🧹 NUOVO: Controlla se l'utente è autenticato prima di usare la cache
       try {
@@ -254,18 +254,18 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         final isAuthenticated = await sessionService.isAuthenticated();
         
         if (!isAuthenticated) {
-          print('[CONSOLE] [subscription_bloc]❌ User not authenticated, clearing cache and skipping load');
+          //debugPrint('[CONSOLE] [subscription_bloc]❌ User not authenticated, clearing cache and skipping load');
           _invalidateCache();
           emit(const SubscriptionInitial());
           return;
         }
       } catch (e) {
-        print('[CONSOLE] [subscription_bloc]⚠️ Error checking authentication: $e');
+        //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Error checking authentication: $e');
       }
 
       // 🚀 PERFORMANCE: Controlla cache se non è force refresh
       if (!event.forceRefresh && _isSubscriptionCacheValid()) {
-        print('[CONSOLE] [subscription_bloc]⚡ Using cached subscription data');
+        //debugPrint('[CONSOLE] [subscription_bloc]⚡ Using cached subscription data');
         emit(SubscriptionLoaded(
           subscription: _cachedSubscription!,
           availablePlans: _cachedPlans ?? [],
@@ -276,7 +276,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
 
       // 🚀 PERFORMANCE: Evita carichi multipli simultanei
       if (_isLoadingSubscription) {
-        //print('[CONSOLE] [subscription_bloc]⏳ Subscription loading already in progress');
+        //debugPrint('[CONSOLE] [subscription_bloc]⏳ Subscription loading already in progress');
         return;
       }
 
@@ -311,15 +311,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
             loadedAt: _lastSubscriptionUpdate!,
           ));
 
-          //print('[CONSOLE] [subscription_bloc]✅ Subscription loaded successfully');
+          //debugPrint('[CONSOLE] [subscription_bloc]✅ Subscription loaded successfully');
         },
         onFailure: (exception, message) {
-          print('[CONSOLE] [subscription_bloc]❌ Error loading subscription: $message');
+          //debugPrint('[CONSOLE] [subscription_bloc]❌ Error loading subscription: $message');
           
           // 🔧 FIX: Se l'errore è 401 (token scaduto), non mostrare errore subscription
           // L'AuthInterceptor dovrebbe già aver gestito il logout
           if (exception is DioException && exception.response?.statusCode == 401) {
-            print('[CONSOLE] [subscription_bloc]🔐 Token expired (401), subscription will be retried after re-auth');
+            //debugPrint('[CONSOLE] [subscription_bloc]🔐 Token expired (401), subscription will be retried after re-auth');
             // Non emettere errore, la subscription verrà ricaricata dopo il re-login
             return;
           }
@@ -332,7 +332,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       );
 
     } catch (e) {
-      print('[CONSOLE] [subscription_bloc]❌ Error loading subscription: $e');
+      //debugPrint('[CONSOLE] [subscription_bloc]❌ Error loading subscription: $e');
       emit(SubscriptionError(
         message: 'Errore nel caricamento dell\'abbonamento',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -348,17 +348,17 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       Emitter<SubscriptionState> emit,
       ) async {
     try {
-      //print('[CONSOLE] [subscription_bloc]📋 Loading plans...');
+      //debugPrint('[CONSOLE] [subscription_bloc]📋 Loading plans...');
 
       // 🚀 PERFORMANCE: Controlla cache
       if (!event.forceRefresh && _isPlansCacheValid()) {
-        //print('[CONSOLE] [subscription_bloc]⚡ Using cached plans data');
+        //debugPrint('[CONSOLE] [subscription_bloc]⚡ Using cached plans data');
         return;
       }
 
       // 🚀 PERFORMANCE: Evita carichi multipli
       if (_isLoadingPlans) {
-        //print('[CONSOLE] [subscription_bloc]⏳ Plans loading already in progress');
+        //debugPrint('[CONSOLE] [subscription_bloc]⏳ Plans loading already in progress');
         return;
       }
 
@@ -390,11 +390,11 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           ));
         }
 
-        //print('[CONSOLE] [subscription_bloc]✅ Plans loaded successfully: ${result.length} plans');
+        //debugPrint('[CONSOLE] [subscription_bloc]✅ Plans loaded successfully: ${result.length} plans');
       }
 
     } catch (e) {
-      print('[CONSOLE] [subscription_bloc]❌ Error loading plans: $e');
+      //debugPrint('[CONSOLE] [subscription_bloc]❌ Error loading plans: $e');
       emit(SubscriptionError(
         message: 'Errore nel caricamento dei piani',
         exception: e is Exception ? e : Exception(e.toString()),
@@ -411,22 +411,22 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         if (_isLoadingPlans) return;
 
         _isLoadingPlans = true;
-        //print('[CONSOLE] [subscription_bloc]🔄 Loading plans in background...');
+        //debugPrint('[CONSOLE] [subscription_bloc]🔄 Loading plans in background...');
 
         final plansResult = await _repository.getAvailablePlans();
         plansResult.fold(
           onSuccess: (plans) {
             _cachedPlans = plans;
             _lastPlansUpdate = DateTime.now();
-            //print('[CONSOLE] [subscription_bloc]✅ Background plans load completed');
+            //debugPrint('[CONSOLE] [subscription_bloc]✅ Background plans load completed');
           },
           onFailure: (exception, message) {
-            print('[CONSOLE] [subscription_bloc]❌ Background plans load error: $message');
+            //debugPrint('[CONSOLE] [subscription_bloc]❌ Background plans load error: $message');
           },
         );
 
       } catch (e) {
-        print('[CONSOLE] [subscription_bloc]❌ Background plans load error: $e');
+        //debugPrint('[CONSOLE] [subscription_bloc]❌ Background plans load error: $e');
       } finally {
         _isLoadingPlans = false;
       }
@@ -442,17 +442,17 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           final result = await _repository.checkExpiredSubscriptions();
           result.fold(
             onSuccess: (expiredCount) {
-              //print('[CONSOLE] [subscription_bloc]✅ Check expired completed: $expiredCount expired');
+              //debugPrint('[CONSOLE] [subscription_bloc]✅ Check expired completed: $expiredCount expired');
             },
             onFailure: (exception, message) {
-              //print('[CONSOLE] [subscription_bloc]⚠️ Check expired error: $message');
+              //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Check expired error: $message');
             },
           );
         },
         delay: const Duration(milliseconds: 1000), // Delay più lungo per check expired
       );
     } catch (e) {
-      //print('[CONSOLE] [subscription_bloc]⚠️ Check expired error: $e');
+      //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Check expired error: $e');
       // Non bloccare il flow principale per errori di check expired
     }
   }
@@ -622,7 +622,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
   bool _isSubscriptionCacheValid() {
     // Controlli base esistenti
     if (_cachedSubscription == null || _lastSubscriptionUpdate == null) {
-      //print('[CONSOLE] [subscription_bloc]🔍 Cache invalid: missing data');
+      //debugPrint('[CONSOLE] [subscription_bloc]🔍 Cache invalid: missing data');
       return false;
     }
 
@@ -633,15 +633,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         final now = DateTime.now();
 
         if (now.isAfter(endDate)) {
-          //print('[CONSOLE] [subscription_bloc]⚠️ Cached subscription expired logically (${_cachedSubscription!.endDate}), forcing refresh');
-          //print('[CONSOLE] [subscription_bloc]📊 Now: ${now.toIso8601String()}, EndDate: ${endDate.toIso8601String()}');
+          //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Cached subscription expired logically (${_cachedSubscription!.endDate}), forcing refresh');
+          //debugPrint('[CONSOLE] [subscription_bloc]📊 Now: ${now.toIso8601String()}, EndDate: ${endDate.toIso8601String()}');
           return false; // Cache NON valida anche se temporalmente recente
         }
 
         // 🔍 OPTIONAL: Log per abbonamenti che scadono presto (solo per debug)
         final daysToExpiry = endDate.difference(now).inDays;
         if (daysToExpiry <= 7 && daysToExpiry >= 0) {
-          //print('[CONSOLE] [subscription_bloc]📅 Subscription expires in $daysToExpiry days');
+          //debugPrint('[CONSOLE] [subscription_bloc]📅 Subscription expires in $daysToExpiry days');
         }
 
         // ✅ Log positivo per abbonamenti validi (solo occasionale)
@@ -649,12 +649,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           // Log solo ogni tanto per non spammare
           final shouldLog = DateTime.now().millisecondsSinceEpoch % 300000 < 5000; // ~ogni 5min
           if (shouldLog) {
-            //print('[CONSOLE] [subscription_bloc]✅ Subscription valid for $daysToExpiry more days');
+            //debugPrint('[CONSOLE] [subscription_bloc]✅ Subscription valid for $daysToExpiry more days');
           }
         }
 
       } catch (e) {
-        //print('[CONSOLE] [subscription_bloc]⚠️ Error parsing endDate: "${_cachedSubscription!.endDate}" - $e');
+        //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Error parsing endDate: "${_cachedSubscription!.endDate}" - $e');
         // Se non riusciamo a parsare la data, usiamo la logica di cache normale
         // Questo permette compatibilità con formati di data diversi o valori null
       }
@@ -665,12 +665,12 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     final isTimeValid = cacheAge < _subscriptionCacheDuration;
 
     if (!isTimeValid) {
-      //print('[CONSOLE] [subscription_bloc]⏰ Cache expired by time (${cacheAge.inMinutes}min > ${_subscriptionCacheDuration.inMinutes}min)');
+      //debugPrint('[CONSOLE] [subscription_bloc]⏰ Cache expired by time (${cacheAge.inMinutes}min > ${_subscriptionCacheDuration.inMinutes}min)');
     } else {
       // ⚡ Log cache hit (molto ridotto per performance)
       final shouldLogCacheHit = DateTime.now().millisecondsSinceEpoch % 180000 < 3000; // ~ogni 3min
       if (shouldLogCacheHit) {
-        //print('[CONSOLE] [subscription_bloc]⚡ Using cached subscription (age: ${cacheAge.inMinutes}min)');
+        //debugPrint('[CONSOLE] [subscription_bloc]⚡ Using cached subscription (age: ${cacheAge.inMinutes}min)');
       }
     }
 
@@ -686,7 +686,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       final endDate = DateTime.parse(subscription.endDate!);
       return DateTime.now().isAfter(endDate);
     } catch (e) {
-      print('[CONSOLE] [subscription_bloc]⚠️ Error checking expiration for endDate: "${subscription.endDate}" - $e');
+      //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Error checking expiration for endDate: "${subscription.endDate}" - $e');
       return false; // In caso di errore, assumiamo non scaduto
     }
   }
@@ -701,7 +701,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       final difference = endDate.difference(DateTime.now());
       return difference.inDays;
     } catch (e) {
-      print('[CONSOLE] [subscription_bloc]⚠️ Error calculating days until expiration: $e');
+      //debugPrint('[CONSOLE] [subscription_bloc]⚠️ Error calculating days until expiration: $e');
       return null;
     }
   }
@@ -718,7 +718,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     _lastSubscriptionUpdate = null;
     _lastPlansUpdate = null;
     ApiRequestDebouncer.clearCache('subscription');
-    //print('[CONSOLE] [subscription_bloc]🗑️ Cache invalidated');
+    //debugPrint('[CONSOLE] [subscription_bloc]🗑️ Cache invalidated');
   }
 
   /// 🧹 NUOVO: Reset completo del bloc (per logout)
@@ -726,7 +726,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
       ResetSubscriptionBlocEvent event,
       Emitter<SubscriptionState> emit,
       ) async {
-    //print('[CONSOLE] [subscription_bloc]🧹 Resetting subscription bloc...');
+    //debugPrint('[CONSOLE] [subscription_bloc]🧹 Resetting subscription bloc...');
     
     // Pulisci cache interna
     _invalidateCache();
@@ -738,7 +738,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     // Emetti stato iniziale
     emit(const SubscriptionInitial());
     
-    //print('[CONSOLE] [subscription_bloc]✅ Subscription bloc reset completed');
+    //debugPrint('[CONSOLE] [subscription_bloc]✅ Subscription bloc reset completed');
   }
 
   @override

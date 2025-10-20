@@ -153,7 +153,7 @@ class GymSubscriptionSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-            color: (isActive ? Colors.green : Colors.red).withOpacity(0.3),
+            color: (isActive ? Colors.green : Colors.red).withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -168,7 +168,7 @@ class GymSubscriptionSection extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(8.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: Icon(
@@ -194,7 +194,7 @@ class GymSubscriptionSection extends StatelessWidget {
                       sub.formattedPlanName,
                       style: TextStyle(
                         fontSize: 14.sp,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -203,7 +203,7 @@ class GymSubscriptionSection extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
@@ -257,7 +257,7 @@ class GymSubscriptionSection extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               size: 14.w,
             ),
             SizedBox(width: 4.w),
@@ -265,7 +265,7 @@ class GymSubscriptionSection extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12.sp,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
           ],

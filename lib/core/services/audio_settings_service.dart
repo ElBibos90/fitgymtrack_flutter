@@ -3,7 +3,6 @@
 // ✅ Gestisce mute/unmute, volume, audio ducking
 // ✅ Persistenza con SharedPreferences
 
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 🎵 Audio Settings Service
@@ -12,8 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - Volume beep (0-100%)
 /// - Audio ducking (on/off)
 class AudioSettingsService {
-  static const String _prefsKey = 'audio_settings';
-  
   // Chiavi per le singole impostazioni
   static const String _keyTimerSoundsEnabled = 'timer_sounds_enabled';
   static const String _keyBeepVolume = 'beep_volume';

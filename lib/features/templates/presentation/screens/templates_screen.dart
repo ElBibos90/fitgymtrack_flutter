@@ -38,13 +38,13 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   @override
   void initState() {
     super.initState();
-    //print('🔍 TemplatesScreen.initState: Initializing screen');
+    //debugPrint('🔍 TemplatesScreen.initState: Initializing screen');
     _scrollController.addListener(_onScroll);
     
     // Carica template iniziali
-    //print('🔍 TemplatesScreen.initState: Dispatching LoadTemplates event');
+    //debugPrint('🔍 TemplatesScreen.initState: Dispatching LoadTemplates event');
     context.read<TemplateBloc>().add(const LoadTemplates(refresh: true));
-    //print('🔍 TemplatesScreen.initState: Dispatching LoadCategories event');
+    //debugPrint('🔍 TemplatesScreen.initState: Dispatching LoadCategories event');
     context.read<TemplateBloc>().add(const LoadCategories(includeAll: true));
   }
 
@@ -144,17 +144,17 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       ),
       body: BlocConsumer<TemplateBloc, TemplateState>(
         listener: (context, state) {
-          //print('🔍 TemplatesScreen.BlocConsumer.listener: Received state: ${state.runtimeType}');
+          //debugPrint('🔍 TemplatesScreen.BlocConsumer.listener: Received state: ${state.runtimeType}');
           
           if (state is TemplateError) {
-            print('❌ TemplatesScreen.BlocConsumer.listener: TemplateError - ${state.message}');
+            //debugPrint('❌ TemplatesScreen.BlocConsumer.listener: TemplateError - ${state.message}');
             CustomSnackbar.show(
               context,
               message: state.message,
               isSuccess: false,
             );
           } else if (state is TemplatesLoaded) {
-            //print('🔍 TemplatesScreen.BlocConsumer.listener: TemplatesLoaded - ${state.templates.length} templates');
+            //debugPrint('🔍 TemplatesScreen.BlocConsumer.listener: TemplatesLoaded - ${state.templates.length} templates');
             setState(() {
               _isLoadingMore = false;
               // Memorizza i template per evitarli di perderli quando riceve CategoriesLoaded
@@ -162,22 +162,22 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
               _cachedUserPremium = state.userPremium;
             });
           } else if (state is TemplateLoading) {
-            //print('🔍 TemplatesScreen.BlocConsumer.listener: TemplateLoading');
+            //debugPrint('🔍 TemplatesScreen.BlocConsumer.listener: TemplateLoading');
           }
         },
         builder: (context, state) {
-          //print('🔍 TemplatesScreen.BlocConsumer.builder: Building with state: ${state.runtimeType}');
+          //debugPrint('🔍 TemplatesScreen.BlocConsumer.builder: Building with state: ${state.runtimeType}');
           
           if (state is TemplateLoading) {
             // 🔧 FIX: Mostra loading solo se non abbiamo template memorizzati (caricamento iniziale)
             if (_cachedTemplates.isEmpty) {
-              //print('🔍 TemplatesScreen.BlocConsumer.builder: Showing loading overlay (initial load)');
+              //debugPrint('🔍 TemplatesScreen.BlocConsumer.builder: Showing loading overlay (initial load)');
               return const LoadingOverlay(
                 isLoading: true,
                 child: SizedBox.shrink(),
               );
             } else {
-              //print('🔍 TemplatesScreen.BlocConsumer.builder: Refresh in background (keeping cached templates)');
+              //debugPrint('🔍 TemplatesScreen.BlocConsumer.builder: Refresh in background (keeping cached templates)');
               // Non mostrare loading overlay durante il refresh, mantieni i template esistenti
             }
           }
@@ -284,10 +284,10 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

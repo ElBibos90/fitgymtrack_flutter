@@ -471,7 +471,7 @@ class _ExerciseSelectionDialogState extends State<ExerciseSelectionDialog> {
                 width: 60.w,
                 height: 60.w,
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceVariant,
+                  color: colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(AppConfig.radiusS),
                   border: Border.all(
                     color: colorScheme.outline.withValues(alpha: 0.3),

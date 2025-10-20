@@ -263,20 +263,20 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento cronologia...'));
 
-    ////print('[CONSOLE] [workout_history_bloc]Loading workout history for user: ${event.userId}');
+    ////debugPrint('[CONSOLE] [workout_history_bloc]Loading workout history for user: ${event.userId}');
 
     final result = await _workoutRepository.getWorkoutHistory(event.userId);
 
     result.fold(
       onSuccess: (workoutHistory) {
-        ////print('[CONSOLE] [workout_history_bloc]Successfully loaded ${workoutHistory.length} workout history entries');
+        ////debugPrint('[CONSOLE] [workout_history_bloc]Successfully loaded ${workoutHistory.length} workout history entries');
         emit(WorkoutHistoryLoaded(
           workoutHistory: workoutHistory,
           userId: event.userId,
         ));
       },
       onFailure: (exception, message) {
-        ////print('[CONSOLE] [workout_history_bloc]Error loading workout history: $message');
+        ////debugPrint('[CONSOLE] [workout_history_bloc]Error loading workout history: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento della cronologia allenamenti',
           exception: exception,
@@ -292,23 +292,23 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento dettagli serie...'));
 
-    //print('[DEBUG] [workout_history_bloc] Loading series details for workout: ${event.allenamentoId}');
-    //print('[DEBUG] [workout_history_bloc] BLoC instance: ${this.hashCode}');
+    //debugPrint('[DEBUG] [workout_history_bloc] Loading series details for workout: ${event.allenamentoId}');
+    //debugPrint('[DEBUG] [workout_history_bloc] BLoC instance: ${this.hashCode}');
 
     final result = await _workoutRepository.getWorkoutSeriesDetail(event.allenamentoId);
 
     result.fold(
       onSuccess: (seriesDetails) {
-        print('[DEBUG] [workout_history_bloc] Successfully loaded ${seriesDetails.length} series details');
-        //print('[DEBUG] [workout_history_bloc] About to emit WorkoutSeriesDetailLoaded');
+        //debugPrint('[DEBUG] [workout_history_bloc] Successfully loaded ${seriesDetails.length} series details');
+        //debugPrint('[DEBUG] [workout_history_bloc] About to emit WorkoutSeriesDetailLoaded');
         emit(WorkoutSeriesDetailLoaded(
           seriesDetails: seriesDetails,
           allenamentoId: event.allenamentoId,
         ));
-        //print('[DEBUG] [workout_history_bloc] Emitted WorkoutSeriesDetailLoaded');
+        //debugPrint('[DEBUG] [workout_history_bloc] Emitted WorkoutSeriesDetailLoaded');
       },
       onFailure: (exception, message) {
-        //print('[DEBUG] [workout_history_bloc] Error loading series details: $message');
+        //debugPrint('[DEBUG] [workout_history_bloc] Error loading series details: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento dei dettagli delle serie',
           exception: exception,
@@ -324,14 +324,14 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Eliminazione serie...'));
 
-    ////print('[CONSOLE] [workout_history_bloc]Deleting completed series: ${event.seriesId}');
+    ////debugPrint('[CONSOLE] [workout_history_bloc]Deleting completed series: ${event.seriesId}');
 
     final result = await _workoutRepository.deleteCompletedSeries(event.seriesId);
 
     result.fold(
       onSuccess: (success) {
         if (success) {
-          //print('[CONSOLE] [workout_history_bloc]Successfully deleted completed series');
+          //debugPrint('[CONSOLE] [workout_history_bloc]Successfully deleted completed series');
 
           emit(const WorkoutHistoryOperationSuccess(
             message: 'Serie eliminata con successo',
@@ -347,7 +347,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
         }
       },
       onFailure: (exception, message) {
-        //print('[CONSOLE] [workout_history_bloc]Error deleting completed series: $message');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Error deleting completed series: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nell\'eliminazione della serie',
           exception: exception,
@@ -363,7 +363,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Aggiornamento serie...'));
 
-    //print('[CONSOLE] [workout_history_bloc]Updating completed series: ${event.seriesId}');
+    //debugPrint('[CONSOLE] [workout_history_bloc]Updating completed series: ${event.seriesId}');
 
     final result = await _workoutRepository.updateCompletedSeries(
       event.seriesId,
@@ -376,7 +376,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
     result.fold(
       onSuccess: (success) {
         if (success) {
-          //print('[CONSOLE] [workout_history_bloc]Successfully updated completed series');
+          //debugPrint('[CONSOLE] [workout_history_bloc]Successfully updated completed series');
 
           emit(const WorkoutHistoryOperationSuccess(
             message: 'Serie aggiornata con successo',
@@ -392,7 +392,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
         }
       },
       onFailure: (exception, message) {
-        //print('[CONSOLE] [workout_history_bloc]Error updating completed series: $message');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Error updating completed series: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nell\'aggiornamento della serie',
           exception: exception,
@@ -408,14 +408,14 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Eliminazione allenamento...'));
 
-    //print('[CONSOLE] [workout_history_bloc]Deleting workout from history: ${event.workoutId}');
+    //debugPrint('[CONSOLE] [workout_history_bloc]Deleting workout from history: ${event.workoutId}');
 
     final result = await _workoutRepository.deleteWorkout(event.workoutId);
 
     result.fold(
       onSuccess: (success) {
         if (success) {
-          //print('[CONSOLE] [workout_history_bloc]Successfully deleted workout from history');
+          //debugPrint('[CONSOLE] [workout_history_bloc]Successfully deleted workout from history');
 
           emit(const WorkoutHistoryOperationSuccess(
             message: 'Allenamento eliminato con successo',
@@ -431,7 +431,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
         }
       },
       onFailure: (exception, message) {
-        //print('[CONSOLE] [workout_history_bloc]Error deleting workout from history: $message');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Error deleting workout from history: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nell\'eliminazione dell\'allenamento',
           exception: exception,
@@ -447,20 +447,20 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento statistiche...'));
 
-    //print('[CONSOLE] [workout_history_bloc]Loading user stats for user: ${event.userId}');
+    //debugPrint('[CONSOLE] [workout_history_bloc]Loading user stats for user: ${event.userId}');
 
     final result = await _workoutRepository.getUserStats(event.userId);
 
     result.fold(
       onSuccess: (userStats) {
-        //print('[CONSOLE] [workout_history_bloc]Successfully loaded user stats');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Successfully loaded user stats');
         emit(UserStatsLoaded(
           userStats: userStats,
           userId: event.userId,
         ));
       },
       onFailure: (exception, message) {
-        //print('[CONSOLE] [workout_history_bloc]Error loading user stats: $message');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Error loading user stats: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento delle statistiche',
           exception: exception,
@@ -476,20 +476,20 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ) async {
     emit(const WorkoutHistoryLoading(message: 'Caricamento statistiche periodo...'));
 
-    //print('[CONSOLE] [workout_history_bloc]Loading period stats for period: ${event.period}');
+    //debugPrint('[CONSOLE] [workout_history_bloc]Loading period stats for period: ${event.period}');
 
     final result = await _workoutRepository.getPeriodStats(event.period);
 
     result.fold(
       onSuccess: (periodStats) {
-        //print('[CONSOLE] [workout_history_bloc]Successfully loaded period stats');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Successfully loaded period stats');
         emit(PeriodStatsLoaded(
           periodStats: periodStats,
           period: event.period,
         ));
       },
       onFailure: (exception, message) {
-        //print('[CONSOLE] [workout_history_bloc]Error loading period stats: $message');
+        //debugPrint('[CONSOLE] [workout_history_bloc]Error loading period stats: $message');
         emit(WorkoutHistoryError(
           message: message ?? 'Errore nel caricamento delle statistiche del periodo',
           exception: exception,
@@ -516,7 +516,7 @@ class WorkoutHistoryBloc extends Bloc<WorkoutHistoryEvent, WorkoutHistoryState> 
       ResetWorkoutHistoryState event,
       Emitter<WorkoutHistoryState> emit,
       ) async {
-    //print('[CONSOLE] [workout_history_bloc]Resetting workout history state');
+    //debugPrint('[CONSOLE] [workout_history_bloc]Resetting workout history state');
     emit(const WorkoutHistoryInitial());
   }
 

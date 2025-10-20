@@ -168,7 +168,7 @@ class _NotificationMenuOverlayState extends State<_NotificationMenuOverlay> {
       child: GestureDetector(
         onTap: _closeMenu,
         child: Container(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           child: Center(
             child: GestureDetector(
               onTap: () {}, // Previene la chiusura quando si clicca sul menu
@@ -185,7 +185,7 @@ class _NotificationMenuOverlayState extends State<_NotificationMenuOverlay> {
                       borderRadius: BorderRadius.circular(20.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 30,
                           offset: const Offset(0, 15),
                         ),
@@ -406,18 +406,18 @@ class _NotificationMenuOverlayState extends State<_NotificationMenuOverlay> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: notification.isUnread 
-            ? (isDark ? AppColors.indigo600.withOpacity(0.2) : AppColors.indigo50)
+            ? (isDark ? AppColors.indigo600.withValues(alpha: 0.2) : AppColors.indigo50)
             : (isDark ? AppColors.backgroundDark : AppColors.backgroundLight),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: notification.isUnread 
-              ? AppColors.indigo600.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.2),
+              ? AppColors.indigo600.withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.2),
           width: notification.isUnread ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -441,7 +441,7 @@ class _NotificationMenuOverlayState extends State<_NotificationMenuOverlay> {
                   width: 40.w,
                   height: 40.w,
                   decoration: BoxDecoration(
-                    color: _getPriorityColor(notification.priority).withOpacity(0.1),
+                    color: _getPriorityColor(notification.priority).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Center(
@@ -528,7 +528,7 @@ class _NotificationMenuOverlayState extends State<_NotificationMenuOverlay> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: _getPriorityColor(notification.priority).withOpacity(0.1),
+                    color: _getPriorityColor(notification.priority).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(

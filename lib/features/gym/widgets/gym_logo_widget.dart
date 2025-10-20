@@ -28,20 +28,20 @@ class GymLogoWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
-    print('[LOGO] 🎨 [GymLogoWidget] Building logo widget');
-    print('[LOGO] 🎨 [GymLogoWidget] gymLogo: $gymLogo');
-    print('[LOGO] 🎨 [GymLogoWidget] hasCustomLogo: ${gymLogo?.hasCustomLogo}');
-    print('[LOGO] 🎨 [GymLogoWidget] logoUrl: ${gymLogo?.logoUrl}');
+    //debugPrint('[LOGO] 🎨 [GymLogoWidget] Building logo widget');
+    //debugPrint('[LOGO] 🎨 [GymLogoWidget] gymLogo: $gymLogo');
+    //debugPrint('[LOGO] 🎨 [GymLogoWidget] hasCustomLogo: ${gymLogo?.hasCustomLogo}');
+    //debugPrint('[LOGO] 🎨 [GymLogoWidget] logoUrl: ${gymLogo?.logoUrl}');
     
     // Se non c'è logo o non ha logo personalizzato, mostra fallback
     if (gymLogo == null || !gymLogo!.hasCustomLogo) {
-      print('[LOGO] 🔄 [GymLogoWidget] Showing fallback logo');
+      //debugPrint('[LOGO] 🔄 [GymLogoWidget] Showing fallback logo');
       return showFallback 
         ? _buildFallbackLogo(context, colorScheme)
         : const SizedBox.shrink();
     }
     
-    print('[LOGO] 🖼️ [GymLogoWidget] Showing custom logo: ${gymLogo!.logoUrl}');
+    //debugPrint('[LOGO] 🖼️ [GymLogoWidget] Showing custom logo: ${gymLogo!.logoUrl}');
     return GestureDetector(
       onTap: onTap,
       child: _buildCustomLogo(context, colorScheme),
@@ -53,7 +53,7 @@ class GymLogoWidget extends StatelessWidget {
     final isSvg = gymLogo!.logoFilename?.toLowerCase().endsWith('.svg') ?? false;
     
     if (isSvg) {
-      print('[LOGO] 🎨 [GymLogoWidget] SVG detected, using SvgPicture.network');
+      //debugPrint('[LOGO] 🎨 [GymLogoWidget] SVG detected, using SvgPicture.network');
       return Container(
         width: width ?? 200.w,  // Aumentato da 120.w
         height: height ?? 50.h, // Aumentato da 32.h
@@ -91,8 +91,8 @@ class GymLogoWidget extends StatelessWidget {
         gymLogo!.logoUrl,
         fit: BoxFit.cover, // Cambiato da contain a cover per riempire meglio
         errorBuilder: (context, error, stackTrace) {
-          print('[LOGO] ❌ [GymLogoWidget] Error loading logo: $error');
-          print('[LOGO] ❌ [GymLogoWidget] StackTrace: $stackTrace');
+          //debugPrint('[LOGO] ❌ [GymLogoWidget] Error loading logo: $error');
+          //debugPrint('[LOGO] ❌ [GymLogoWidget] StackTrace: $stackTrace');
           return showFallback 
             ? _buildFallbackLogo(context, colorScheme)
             : const SizedBox.shrink();
@@ -201,7 +201,7 @@ class _GymLogoWidgetWithLoadingState extends State<GymLogoWidgetWithLoading> {
         
         // Error state - mostra fallback
         if (snapshot.hasError) {
-          print('[GymLogoWidgetWithLoading] ❌ Error loading gym logo: ${snapshot.error}');
+          //debugPrint('[GymLogoWidgetWithLoading] ❌ Error loading gym logo: ${snapshot.error}');
           return GymLogoWidget(
             gymLogo: null,
             width: widget.width,

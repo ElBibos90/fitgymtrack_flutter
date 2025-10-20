@@ -62,9 +62,9 @@ class BackgroundTimerService {
       // Inizializza AudioSettingsService
       _audioSettings = getIt<AudioSettingsService>();
 
-      print("🚀 [BACKGROUND TIMER] Service initialized successfully");
+      //debugPrint("🚀 [BACKGROUND TIMER] Service initialized successfully");
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error initializing service: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error initializing service: $e");
     }
   }
 
@@ -145,9 +145,9 @@ class BackgroundTimerService {
       // Crea notifica di inizio timer
       await _showTimerStartedNotification();
 
-      print("🚀 [BACKGROUND TIMER] Started timer: $type for $durationSeconds seconds");
+      //debugPrint("🚀 [BACKGROUND TIMER] Started timer: $type for $durationSeconds seconds");
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error starting timer: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error starting timer: $e");
     }
   }
 
@@ -195,9 +195,9 @@ class BackgroundTimerService {
       // Pulisci stato
       await _clearTimerState();
 
-      print("✅ [BACKGROUND TIMER] Timer completed: $_timerType");
+      //debugPrint("✅ [BACKGROUND TIMER] Timer completed: $_timerType");
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error completing timer: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error completing timer: $e");
     }
   }
 
@@ -214,9 +214,9 @@ class BackgroundTimerService {
       // Pulisci stato
       await _clearTimerState();
 
-      print("⏹️ [BACKGROUND TIMER] Timer stopped");
+      //debugPrint("⏹️ [BACKGROUND TIMER] Timer stopped");
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error stopping timer: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error stopping timer: $e");
     }
   }
 
@@ -226,7 +226,7 @@ class BackgroundTimerService {
       _backgroundTimer?.cancel();
       _backgroundTimer = null;
       await _saveTimerState();
-      print("⏸️ [BACKGROUND TIMER] Timer paused");
+      //debugPrint("⏸️ [BACKGROUND TIMER] Timer paused");
     }
   }
 
@@ -234,7 +234,7 @@ class BackgroundTimerService {
   Future<void> resumeTimer() async {
     if (_isTimerActive && _backgroundTimer == null) {
       _startBackgroundTimer();
-      print("▶️ [BACKGROUND TIMER] Timer resumed");
+      //debugPrint("▶️ [BACKGROUND TIMER] Timer resumed");
     }
   }
 
@@ -260,14 +260,14 @@ class BackgroundTimerService {
           // Avvia timer con tempo rimanente
           _startBackgroundTimer();
 
-          print("🔄 [BACKGROUND TIMER] Timer restored with $remaining seconds remaining");
+          //debugPrint("🔄 [BACKGROUND TIMER] Timer restored with $remaining seconds remaining");
         } else {
           // Timer scaduto, pulisci stato
           await _clearTimerState();
         }
       }
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error restoring timer: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error restoring timer: $e");
     }
   }
 
@@ -287,7 +287,7 @@ class BackgroundTimerService {
         await _prefs!.setString(_timerStateKey, jsonEncode(state));
       }
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error saving timer state: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error saving timer state: $e");
     }
   }
 
@@ -301,7 +301,7 @@ class BackgroundTimerService {
         }
       }
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error loading timer state: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error loading timer state: $e");
     }
     return null;
   }
@@ -322,7 +322,7 @@ class BackgroundTimerService {
         await _prefs!.remove(_timerStateKey);
       }
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error clearing timer state: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error clearing timer state: $e");
     }
   }
 
@@ -351,7 +351,7 @@ class BackgroundTimerService {
         ),
       );
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error showing start notification: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error showing start notification: $e");
     }
   }
 
@@ -380,7 +380,7 @@ class BackgroundTimerService {
         ),
       );
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error showing completion notification: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error showing completion notification: $e");
     }
   }
 
@@ -393,14 +393,14 @@ class BackgroundTimerService {
         // HapticFeedback.heavyImpact();
       }
     } catch (e) {
-      print("💥 [BACKGROUND TIMER] Error playing completion sound: $e");
+      //debugPrint("💥 [BACKGROUND TIMER] Error playing completion sound: $e");
     }
   }
 
   /// Gestisce il tap sulla notifica
   void _onNotificationTapped(NotificationResponse response) {
     // Gestisce il tap sulla notifica
-    print("🔔 [BACKGROUND TIMER] Notification tapped: ${response.payload}");
+    //debugPrint("🔔 [BACKGROUND TIMER] Notification tapped: ${response.payload}");
   }
 
   /// Restituisce il titolo di default per tipo timer

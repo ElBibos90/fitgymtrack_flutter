@@ -174,7 +174,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withValues(alpha:0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(alpha:0.5),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Column(
@@ -382,7 +382,7 @@ class PlateauSuggestionDialog extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha:0.5),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha:0.5),
                 borderRadius: BorderRadius.circular(8.r),
               ),
               child: Text(

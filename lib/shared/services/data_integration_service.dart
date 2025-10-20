@@ -17,12 +17,12 @@ class DataIntegrationService {
   static void initializeUserData(BuildContext context, int userId) {
     // 🔧 FIX: Evita inizializzazioni multiple simultanee
     if (_initializingUsers.contains(userId)) {
-      print('[CONSOLE] [data_integration_service] ⚠️ Already initializing for user: $userId');
+      //debugPrint('[CONSOLE] [data_integration_service] ⚠️ Already initializing for user: $userId');
       return;
     }
 
     _initializingUsers.add(userId);
-    //print('[CONSOLE] [data_integration_service] 🚀 Initializing data for user: $userId');
+    //debugPrint('[CONSOLE] [data_integration_service] 🚀 Initializing data for user: $userId');
 
     try {
       // Carica subscription data
@@ -37,7 +37,7 @@ class DataIntegrationService {
         }
       });
 
-      //print('[CONSOLE] [data_integration_service] ✅ Data initialization completed for user: $userId');
+      //debugPrint('[CONSOLE] [data_integration_service] ✅ Data initialization completed for user: $userId');
     } finally {
       // 🔧 FIX: Pulisci flag dopo delay per permettere retry se necessario
       Future.delayed(const Duration(seconds: 3), () {
@@ -48,7 +48,7 @@ class DataIntegrationService {
 
   /// Pulisce tutti i dati quando l'utente fa logout
   static void clearUserData(BuildContext context) {
-    //print('[CONSOLE] [data_integration_service] 🧹 Clearing user data');
+    //debugPrint('[CONSOLE] [data_integration_service] 🧹 Clearing user data');
 
     // 🔧 FIX: Pulisci flag inizializzazioni
     _initializingUsers.clear();
@@ -62,18 +62,18 @@ class DataIntegrationService {
     if (context.mounted) {
       try {
         context.read<SubscriptionBloc>().add(const ResetSubscriptionBlocEvent());
-        //print('[CONSOLE] [data_integration_service] ✅ Subscription bloc reset');
+        //debugPrint('[CONSOLE] [data_integration_service] ✅ Subscription bloc reset');
       } catch (e) {
-        print('[CONSOLE] [data_integration_service] ⚠️ Error resetting subscription bloc: $e');
+        //debugPrint('[CONSOLE] [data_integration_service] ⚠️ Error resetting subscription bloc: $e');
       }
     }
 
-    //print('[CONSOLE] [data_integration_service] ✅ User data cleared');
+    //debugPrint('[CONSOLE] [data_integration_service] ✅ User data cleared');
   }
 
   /// Ricarica tutti i dati (per pull-to-refresh)
   static Future<void> refreshAllData(BuildContext context) async {
-    //print('[CONSOLE] [data_integration_service] 🔄 Refreshing all data');
+    //debugPrint('[CONSOLE] [data_integration_service] 🔄 Refreshing all data');
 
     if (!context.mounted) return;
 
@@ -97,7 +97,7 @@ class DataIntegrationService {
       // Delay per UX
       await Future.delayed(const Duration(milliseconds: 500));
 
-      //print('[CONSOLE] [data_integration_service] ✅ All data refreshed for user: $userId');
+      //debugPrint('[CONSOLE] [data_integration_service] ✅ All data refreshed for user: $userId');
     }
   }
 
@@ -115,7 +115,7 @@ class DataIntegrationService {
         workoutHistoryState is WorkoutHistoryInitial ||
         workoutHistoryState is WorkoutHistoryLoading);
 
-    //print('[CONSOLE] [data_integration_service] 🔍 Data ready check: Auth=$isAuthOk, Sub=$isSubscriptionOk, Workout=$isWorkoutOk');
+    //debugPrint('[CONSOLE] [data_integration_service] 🔍 Data ready check: Auth=$isAuthOk, Sub=$isSubscriptionOk, Workout=$isWorkoutOk');
 
     return isAuthOk && isSubscriptionOk && isWorkoutOk;
   }
@@ -174,7 +174,7 @@ class DataIntegrationService {
         lastWorkoutDate: lastWorkout,
       );
     } catch (e) {
-      print('[CONSOLE] [data_integration_service] ❌ Error calculating dashboard data: $e');
+      //debugPrint('[CONSOLE] [data_integration_service] ❌ Error calculating dashboard data: $e');
       return _getDefaultDashboardData();
     }
   }
@@ -185,7 +185,7 @@ class DataIntegrationService {
 
   static void _loadSubscriptionData(BuildContext context) {
     if (context.mounted) {
-      //print('[CONSOLE] [data_integration_service] 📋 Loading subscription data');
+      //debugPrint('[CONSOLE] [data_integration_service] 📋 Loading subscription data');
       context.read<SubscriptionBloc>().add(
         const LoadSubscriptionEvent(checkExpired: true),
       );
@@ -194,7 +194,7 @@ class DataIntegrationService {
 
   static void _loadWorkoutHistory(BuildContext context, int userId) {
     if (context.mounted) {
-      //print('[CONSOLE] [data_integration_service] 📊 Loading workout history for userId: $userId');
+      //debugPrint('[CONSOLE] [data_integration_service] 📊 Loading workout history for userId: $userId');
       context.read<WorkoutHistoryBloc>().add(
         GetWorkoutHistory(userId: userId),
       );
@@ -203,7 +203,7 @@ class DataIntegrationService {
 
   static void _loadUserStats(BuildContext context, int userId) {
     if (context.mounted) {
-      //print('[CONSOLE] [data_integration_service] 📈 Loading user stats for userId: $userId');
+      //debugPrint('[CONSOLE] [data_integration_service] 📈 Loading user stats for userId: $userId');
       context.read<WorkoutHistoryBloc>().add(
         GetUserStats(userId: userId),
       );

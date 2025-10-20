@@ -1,7 +1,6 @@
 // lib/features/workouts/presentation/widgets/workout_plan_card.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter/scheduler.dart';
 
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_card.dart';

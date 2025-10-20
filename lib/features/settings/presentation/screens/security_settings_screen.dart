@@ -2,9 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/services/biometric_auth_service.dart';
-import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 import '../../../../shared/theme/app_colors.dart';
 
@@ -17,7 +15,6 @@ class SecuritySettingsScreen extends StatefulWidget {
 
 class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   final BiometricAuthService _biometricService = getIt<BiometricAuthService>();
-  final SessionService _sessionService = getIt<SessionService>();
   
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
@@ -43,7 +40,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('[SecuritySettings] ❌ Error loading status: $e');
+      //debugPrint('[SecuritySettings] ❌ Error loading status: $e');
       setState(() => _isLoading = false);
     }
   }

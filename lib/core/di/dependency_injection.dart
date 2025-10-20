@@ -2,7 +2,6 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/session_service.dart';
 import '../services/audio_settings_service.dart';
 import '../services/background_timer_service.dart';
@@ -58,14 +57,14 @@ class DependencyInjection {
   /// Inizializzazione dei servizi di dependency injection
   /// Ora usa SOLO repository reali - niente più mock
   static Future<void> init() async {
-    //print('[CONSOLE] [dependency_injection]🚨 DEPENDENCY INJECTION STARTED (REAL REPOSITORIES ONLY + STRIPE)');
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Starting dependency injection initialization...');
+    //debugPrint('[CONSOLE] [dependency_injection]🚨 DEPENDENCY INJECTION STARTED (REAL REPOSITORIES ONLY + STRIPE)');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Starting dependency injection initialization...');
 
     // ============================================================================
     // CORE SERVICES
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering core services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering core services...');
     getIt.registerLazySingleton<SessionService>(() => SessionService());
 
     // 🎵 Audio Settings Service
@@ -109,7 +108,7 @@ class DependencyInjection {
     // REPOSITORIES (SOLO REALI)
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering repositories...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering repositories...');
 
     // Auth Repository
     getIt.registerLazySingleton<AuthRepository>(() => AuthRepository(
@@ -118,13 +117,13 @@ class DependencyInjection {
     ));
 
     // 🔧 FIX: Workout Repository - SOLO REAL
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering REAL WorkoutRepository...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering REAL WorkoutRepository...');
     getIt.registerLazySingleton<WorkoutRepository>(() => WorkoutRepository(
       apiClient: getIt<ApiClient>(),
       dio: getIt<Dio>(),
     ));
 
-    print('[CONSOLE] [dependency_injection]🔧 [DI] Registering feedback repository...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering feedback repository...');
 
     getIt.registerLazySingleton<FeedbackRepository>(() {
       return FeedbackRepository(
@@ -159,10 +158,10 @@ class DependencyInjection {
     // WORKOUT BLOCS (SINGLETONS)
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering workout BLoCs as singletons...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering workout BLoCs as singletons...');
 
     getIt.registerLazySingleton<WorkoutBloc>(() {
-      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating WorkoutBloc instance...');
+      //debugPrint('[CONSOLE] [dependency_injection]🏗️ [DI] Creating WorkoutBloc instance...');
       return WorkoutBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
@@ -177,7 +176,7 @@ class DependencyInjection {
     });
 
     getIt.registerLazySingleton<ActiveWorkoutBloc>(() {
-      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ActiveWorkoutBloc instance...');
+      //debugPrint('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ActiveWorkoutBloc instance...');
       return ActiveWorkoutBloc(
         workoutRepository: getIt<WorkoutRepository>(),
         offlineService: getIt<WorkoutOfflineService>(),
@@ -185,21 +184,21 @@ class DependencyInjection {
     });
 
     getIt.registerLazySingleton<WorkoutHistoryBloc>(() {
-      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating WorkoutHistoryBloc instance...');
+      //debugPrint('[CONSOLE] [dependency_injection]🏗️ [DI] Creating WorkoutHistoryBloc instance...');
       return WorkoutHistoryBloc(
         workoutRepository: getIt<WorkoutRepository>(),
       );
     });
 
     getIt.registerLazySingleton<ProfileBloc>(() {
-      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ProfileBloc instance...');
+      //debugPrint('[CONSOLE] [dependency_injection]🏗️ [DI] Creating ProfileBloc instance...');
       return ProfileBloc(
         repository: getIt<ProfileRepository>(),
       );
     });
 
     getIt.registerLazySingleton<StatsBloc>(() {
-      //print('[CONSOLE] [dependency_injection]🏗️ [DI] Creating StatsBloc instance...');
+      //debugPrint('[CONSOLE] [dependency_injection]🏗️ [DI] Creating StatsBloc instance...');
       return StatsBloc(
         getIt<StatsRepository>(),
       );
@@ -209,7 +208,7 @@ class DependencyInjection {
     // AUTH BLOCS (FACTORIES)
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering auth BLoCs as factories...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering auth BLoCs as factories...');
 
     getIt.registerFactory<AuthBloc>(() => AuthBloc(
       authRepository: getIt<AuthRepository>(),
@@ -227,20 +226,20 @@ class DependencyInjection {
     // 🎯 PLATEAU SERVICES (STEP 7)
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering plateau services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering plateau services...');
     PlateauDependencyInjection.registerPlateauServices();
 
     // ============================================================================
     // 💳 SUBSCRIPTION SERVICES
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering subscription services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering subscription services...');
     try {
       // 🔧 FIX: Subscription services con repository reali
       SubscriptionDependencyInjection.registerSubscriptionServices();
-      //print('[CONSOLE] [dependency_injection]✅ [DI] Subscription services registered successfully!');
+      //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] Subscription services registered successfully!');
     } catch (e) {
-      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering subscription services: $e');
+      //debugPrint('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering subscription services: $e');
       rethrow;
     }
 
@@ -248,12 +247,12 @@ class DependencyInjection {
     // 💳 STRIPE PAYMENT SERVICES
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering Stripe payment services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering Stripe payment services...');
     try {
       StripeDependencyInjection.registerStripeServices();
-      //print('[CONSOLE] [dependency_injection]✅ [DI] Stripe services registered successfully!');
+      //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] Stripe services registered successfully!');
     } catch (e) {
-      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Stripe services: $e');
+      //debugPrint('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Stripe services: $e');
       rethrow;
     }
 
@@ -261,7 +260,7 @@ class DependencyInjection {
     // 📋 TEMPLATE SERVICES
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering Template services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering Template services...');
     try {
       // Template Service
       getIt.registerLazySingleton<TemplateService>(() => TemplateService());
@@ -271,9 +270,9 @@ class DependencyInjection {
         templateService: getIt<TemplateService>(),
       ));
       
-      //print('[CONSOLE] [dependency_injection]✅ [DI] Template services registered successfully!');
+      //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] Template services registered successfully!');
     } catch (e) {
-      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Template services: $e');
+      //debugPrint('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Template services: $e');
       rethrow;
     }
 
@@ -281,7 +280,7 @@ class DependencyInjection {
     // 🔔 NOTIFICATION SERVICES
     // ============================================================================
 
-    //print('[CONSOLE] [dependency_injection]🔧 [DI] Registering Notification services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔧 [DI] Registering Notification services...');
     try {
       // Notification Bloc
       getIt.registerLazySingleton<NotificationBloc>(() => NotificationBloc(
@@ -295,13 +294,13 @@ class DependencyInjection {
         repository: getIt<CoursesRepository>(),
       ));
       
-      //print('[CONSOLE] [dependency_injection]✅ [DI] Notification services registered successfully!');
+      //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] Notification services registered successfully!');
     } catch (e) {
-      //print('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Notification services: $e');
+      //debugPrint('[CONSOLE] [dependency_injection]❌ [DI] ERROR registering Notification services: $e');
       rethrow;
     }
 
-    //print('[CONSOLE] [dependency_injection]✅ [DI] Dependency injection completed successfully!');
+    //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] Dependency injection completed successfully!');
 
     // ============================================================================
     // DIAGNOSTIC INFO
@@ -312,18 +311,18 @@ class DependencyInjection {
 
   /// Stampa informazioni diagnostiche sui servizi registrati
   static void _printDiagnosticInfo() {
-    //print('[CONSOLE] [dependency_injection]');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] DIAGNOSTIC INFO:');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] ════════════════════════════════════════');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Core services registered: ${_countCoreServices()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Repository services: ${_countRepositories()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] BLoC services: ${_countBlocs()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Plateau services: ${PlateauDependencyInjection.arePlateauServicesRegistered()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Subscription services: ${SubscriptionDependencyInjection.areSubscriptionServicesRegistered()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Stripe services: ${StripeDependencyInjection.areStripeServicesRegistered()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] Total services registered: ${_getTotalServicesCount()}');
-    //print('[CONSOLE] [dependency_injection]🔍 [DI] ════════════════════════════════════════');
-    //print('[CONSOLE] [dependency_injection]');
+    //debugPrint('[CONSOLE] [dependency_injection]');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] DIAGNOSTIC INFO:');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] ════════════════════════════════════════');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Core services registered: ${_countCoreServices()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Repository services: ${_countRepositories()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] BLoC services: ${_countBlocs()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Plateau services: ${PlateauDependencyInjection.arePlateauServicesRegistered()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Subscription services: ${SubscriptionDependencyInjection.areSubscriptionServicesRegistered()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Stripe services: ${StripeDependencyInjection.areStripeServicesRegistered()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] Total services registered: ${_getTotalServicesCount()}');
+    //debugPrint('[CONSOLE] [dependency_injection]🔍 [DI] ════════════════════════════════════════');
+    //debugPrint('[CONSOLE] [dependency_injection]');
   }
 
   static int _countCoreServices() {
@@ -385,15 +384,15 @@ class DependencyInjection {
       final subscriptionHealthy = SubscriptionDependencyInjection.areSubscriptionServicesRegistered();
       final stripeHealthy = StripeDependencyInjection.areStripeServicesRegistered();
 
-      //print('[CONSOLE] [dependency_injection]✅ [DI] System health check passed');
-      //print('[CONSOLE] [dependency_injection]🎯 [DI] Plateau system: ${plateauHealthy ? "✅" : "❌"}');
-      //print('[CONSOLE] [dependency_injection]🎯 [DI] Subscription system: ${subscriptionHealthy ? "✅" : "❌"}');
-      //print('[CONSOLE] [dependency_injection]🎯 [DI] Stripe system: ${stripeHealthy ? "✅" : "❌"}');
+      //debugPrint('[CONSOLE] [dependency_injection]✅ [DI] System health check passed');
+      //debugPrint('[CONSOLE] [dependency_injection]🎯 [DI] Plateau system: ${plateauHealthy ? "✅" : "❌"}');
+      //debugPrint('[CONSOLE] [dependency_injection]🎯 [DI] Subscription system: ${subscriptionHealthy ? "✅" : "❌"}');
+      //debugPrint('[CONSOLE] [dependency_injection]🎯 [DI] Stripe system: ${stripeHealthy ? "✅" : "❌"}');
 
       return plateauHealthy && subscriptionHealthy && stripeHealthy;
 
     } catch (e) {
-      //print('[CONSOLE] [dependency_injection]❌ [DI] System health check failed: $e');
+      //debugPrint('[CONSOLE] [dependency_injection]❌ [DI] System health check failed: $e');
       return false;
     }
   }
@@ -415,13 +414,13 @@ class DependencyInjection {
 
   /// Reset completo di GetIt
   static void reset() {
-    //print('[CONSOLE] [dependency_injection]🔄 [DI] Resetting GetIt completely...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔄 [DI] Resetting GetIt completely...');
     getIt.reset();
   }
 
   /// Reinizializza con repository reali
   static Future<void> reinitialize() async {
-    //print('[CONSOLE] [dependency_injection]🔄 [DI] Reinitializing with real repositories and Stripe...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔄 [DI] Reinitializing with real repositories and Stripe...');
     reset();
     await Future.delayed(const Duration(milliseconds: 200));
     await init();
@@ -429,13 +428,13 @@ class DependencyInjection {
 
   /// Reset selettivo solo dei servizi Stripe (per testing)
   static void resetStripeOnly() {
-    //print('[CONSOLE] [dependency_injection]🔄 [DI] Resetting only Stripe services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔄 [DI] Resetting only Stripe services...');
     StripeDependencyInjection.resetStripeServices();
   }
 
   /// Reinizializza solo i servizi Stripe
   static Future<void> reinitializeStripeOnly() async {
-    //print('[CONSOLE] [dependency_injection]🔄 [DI] Reinitializing only Stripe services...');
+    //debugPrint('[CONSOLE] [dependency_injection]🔄 [DI] Reinitializing only Stripe services...');
     await StripeDependencyInjection.reinitializeStripeServices();
   }
 }

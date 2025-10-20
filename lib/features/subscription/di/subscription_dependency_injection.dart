@@ -29,7 +29,6 @@ class SubscriptionDependencyInjection {
     getIt.registerLazySingleton<SubscriptionRepository>(() {
       //print('[CONSOLE] [subscription_dependency_injection]🏗️ [DI] Creating REAL SubscriptionRepository instance...');
       return SubscriptionRepository(
-        apiClient: getIt<ApiClient>(),
         dio: getIt<Dio>(),
       );
     });
@@ -38,7 +37,6 @@ class SubscriptionDependencyInjection {
     getIt.registerLazySingleton<GymSubscriptionRepository>(() {
       //print('[CONSOLE] [subscription_dependency_injection]🏗️ [DI] Creating REAL GymSubscriptionRepository instance...');
       return GymSubscriptionRepository(
-        apiClient: getIt<ApiClient>(),
         dio: getIt<Dio>(),
       );
     });

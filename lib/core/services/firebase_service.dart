@@ -1,11 +1,9 @@
 // lib/core/services/firebase_service.dart
 
 import 'dart:async';
-import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,12 +45,12 @@ class FirebaseService {
       await _getFCMToken();
       
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 🔥 Firebase initialized successfully');
-        //print('[CONSOLE] [FCM] 📱 FCM Token: $_fcmToken');
+        //debugPrint('[CONSOLE] [FCM] 🔥 Firebase initialized successfully');
+        //debugPrint('[CONSOLE] [FCM] 📱 FCM Token: $_fcmToken');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Firebase initialization error: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Firebase initialization error: $e');
       }
       rethrow;
     }
@@ -85,7 +83,7 @@ class FirebaseService {
   /// Configura Firebase Messaging
   Future<void> _setupFirebaseMessaging() async {
     // Richiedi permessi
-    NotificationSettings settings = await _messaging.requestPermission(
+    await _messaging.requestPermission(
       alert: true,
       announcement: false,
       badge: true,
@@ -96,13 +94,13 @@ class FirebaseService {
     );
 
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Notification permission status: ${settings.authorizationStatus}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Notification permission requested');
     }
 
     // 🔥 NUOVO: Listener per refresh automatico token FCM
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] 🔄 Token refreshed automatically: ${newToken.substring(0, 20)}...');
+        //debugPrint('[CONSOLE] [FCM] 🔄 Token refreshed automatically: ${newToken.substring(0, 20)}...');
       }
       
       // Aggiorna token locale
@@ -116,12 +114,12 @@ class FirebaseService {
         if (currentUser != null) {
           await registerTokenForUser(currentUser.id);
           if (kDebugMode) {
-            print('[CONSOLE] [FCM] ✅ New token registered for user ${currentUser.id}');
+            //debugPrint('[CONSOLE] [FCM] ✅ New token registered for user ${currentUser.id}');
           }
         }
       } catch (e) {
         if (kDebugMode) {
-          print('[CONSOLE] [FCM] ❌ Error registering refreshed token: $e');
+          //debugPrint('[CONSOLE] [FCM] ❌ Error registering refreshed token: $e');
         }
       }
     });
@@ -147,7 +145,7 @@ class FirebaseService {
   Future<void> _getFCMToken() async {
     try {
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 Attempting to get FCM token...');
+        //debugPrint('[CONSOLE] [FCM] 📱 Attempting to get FCM token...');
       }
       
       // Prova a ottenere l'FCM token direttamente
@@ -159,24 +157,24 @@ class FirebaseService {
         await prefs.setString('fcm_token', _fcmToken!);
         
         if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 FCM Token obtained and saved locally');
-          //print('[CONSOLE] [FCM] 📱 Token: ${_fcmToken!.substring(0, 20)}...');
+          //debugPrint('[CONSOLE] [FCM] 📱 FCM Token obtained and saved locally');
+          //debugPrint('[CONSOLE] [FCM] 📱 Token: ${_fcmToken!.substring(0, 20)}...');
         }
       } else {
         if (kDebugMode) {
-          print('[CONSOLE] [FCM] ❌ FCM token is null');
+          //debugPrint('[CONSOLE] [FCM] ❌ FCM token is null');
         }
         
         // Su iOS, se l'FCM token è null, proviamo a ottenere l'APNs token
         if (defaultTargetPlatform == TargetPlatform.iOS) {
           if (kDebugMode) {
-            //print('[CONSOLE] [FCM] 📱 Trying to get APNs token for iOS...');
+            //debugPrint('[CONSOLE] [FCM] 📱 Trying to get APNs token for iOS...');
           }
           
           final apnsToken = await _messaging.getAPNSToken();
           if (apnsToken != null) {
             if (kDebugMode) {
-              //print('[CONSOLE] [FCM] 📱 APNs token obtained, retrying FCM token...');
+              //debugPrint('[CONSOLE] [FCM] 📱 APNs token obtained, retrying FCM token...');
             }
             
             // Aspetta un po' e riprova l'FCM token
@@ -187,19 +185,19 @@ class FirebaseService {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString('fcm_token', _fcmToken!);
               if (kDebugMode) {
-                //print('[CONSOLE] [FCM] 📱 FCM Token obtained after APNs token');
+                //debugPrint('[CONSOLE] [FCM] 📱 FCM Token obtained after APNs token');
               }
             }
           } else {
             if (kDebugMode) {
-              print('[CONSOLE] [FCM] ❌ APNs token also null');
+              //debugPrint('[CONSOLE] [FCM] ❌ APNs token also null');
             }
           }
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error getting FCM token: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error getting FCM token: $e');
       }
     }
   }
@@ -224,16 +222,16 @@ class FirebaseService {
         );
         
         if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 FCM Token registered for user $userId');
+          //debugPrint('[CONSOLE] [FCM] 📱 FCM Token registered for user $userId');
         }
       } else {
         if (kDebugMode) {
-          print('[CONSOLE] [FCM] ⚠️ Cannot register token - FCM token is null');
+          //debugPrint('[CONSOLE] [FCM] ⚠️ Cannot register token - FCM token is null');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error registering token for user $userId: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error registering token for user $userId: $e');
       }
     }
   }
@@ -241,9 +239,9 @@ class FirebaseService {
   /// Gestisce notifiche in foreground
   void _handleForegroundMessage(RemoteMessage message) {
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Foreground message received: ${message.notification?.title}');
-      //print('[CONSOLE] [FCM] 📱 Message data: ${message.data}');
-      //print('[CONSOLE] [FCM] 📱 Platform: ${defaultTargetPlatform}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Foreground message received: ${message.notification?.title}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Message data: ${message.data}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Platform: ${defaultTargetPlatform}');
     }
 
     // Mostra notifica locale
@@ -251,7 +249,7 @@ class FirebaseService {
     
     // Aggiorna il BLoC delle notifiche
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBlocImmediate...');
+      //debugPrint('[CONSOLE] [FCM] 📱 Calling _updateNotificationBlocImmediate...');
     }
     
     // Forza aggiornamento immediato del BLoC
@@ -261,7 +259,7 @@ class FirebaseService {
   /// Gestisce notifiche in background
   void _handleBackgroundMessage(RemoteMessage message) {
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Background message received: ${message.notification?.title}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Background message received: ${message.notification?.title}');
     }
 
     // Naviga alla schermata notifiche
@@ -269,7 +267,7 @@ class FirebaseService {
     
     // Aggiorna il BLoC delle notifiche
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Calling _updateNotificationBloc...');
+      //debugPrint('[CONSOLE] [FCM] 📱 Calling _updateNotificationBloc...');
     }
     _updateNotificationBloc();
   }
@@ -304,9 +302,9 @@ class FirebaseService {
     final notificationId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
     
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Showing local notification with ID: $notificationId');
-      //print('[CONSOLE] [FCM] 📱 Title: ${message.notification?.title}');
-      //print('[CONSOLE] [FCM] 📱 Body: ${message.notification?.body}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Showing local notification with ID: $notificationId');
+      //debugPrint('[CONSOLE] [FCM] 📱 Title: ${message.notification?.title}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Body: ${message.notification?.body}');
     }
     
     await _localNotifications.show(
@@ -321,7 +319,7 @@ class FirebaseService {
   /// Gestisce tap su notifica
   void _onNotificationTapped(NotificationResponse response) {
     if (kDebugMode) {
-      //print('[CONSOLE] [FCM] 📱 Notification tapped: ${response.payload}');
+      //debugPrint('[CONSOLE] [FCM] 📱 Notification tapped: ${response.payload}');
     }
 
     // Naviga alla schermata notifiche
@@ -338,31 +336,31 @@ class FirebaseService {
   void _updateNotificationBloc() {
     try {
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 _updateNotificationBloc called');
+        //debugPrint('[CONSOLE] [FCM] 📱 _updateNotificationBloc called');
       }
       
       // SOLUZIONE ALTERNATIVA: Usa GetIt per ottenere il BLoC direttamente
       final notificationBloc = getIt<NotificationBloc>();
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 BLoC obtained from GetIt');
+        //debugPrint('[CONSOLE] [FCM] 📱 BLoC obtained from GetIt');
       }
       
       if (notificationBloc != null) {
         if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 Adding LoadNotificationsEvent...');
+          //debugPrint('[CONSOLE] [FCM] 📱 Adding LoadNotificationsEvent...');
         }
         notificationBloc.add(const LoadNotificationsEvent());
         if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 Notification BLoC updated successfully');
+          //debugPrint('[CONSOLE] [FCM] 📱 Notification BLoC updated successfully');
         }
       } else {
         if (kDebugMode) {
-          print('[CONSOLE] [FCM] ❌ BLoC is null, cannot update');
+          //debugPrint('[CONSOLE] [FCM] ❌ BLoC is null, cannot update');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
       }
     }
   }
@@ -384,7 +382,7 @@ class FirebaseService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error updating notification BLoC: $e');
       }
     }
   }
@@ -409,11 +407,11 @@ class FirebaseService {
     try {
       await _messaging.subscribeToTopic(topic);
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 Subscribed to topic: $topic');
+        //debugPrint('[CONSOLE] [FCM] 📱 Subscribed to topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error subscribing to topic: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error subscribing to topic: $e');
       }
     }
   }
@@ -423,11 +421,11 @@ class FirebaseService {
     try {
       await _messaging.unsubscribeFromTopic(topic);
       if (kDebugMode) {
-        //print('[CONSOLE] [FCM] 📱 Unsubscribed from topic: $topic');
+        //debugPrint('[CONSOLE] [FCM] 📱 Unsubscribed from topic: $topic');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error unsubscribing from topic: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error unsubscribing from topic: $e');
       }
     }
   }
@@ -446,12 +444,12 @@ class FirebaseService {
         );
         
         if (kDebugMode) {
-          //print('[CONSOLE] [FCM] 📱 FCM Token cleared for user $userId');
+          //debugPrint('[CONSOLE] [FCM] 📱 FCM Token cleared for user $userId');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error clearing token for user $userId: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error clearing token for user $userId: $e');
       }
     }
   }
@@ -480,7 +478,7 @@ class FirebaseService {
       return null;
     } catch (e) {
       if (kDebugMode) {
-        print('[CONSOLE] [FCM] ❌ Error getting current user: $e');
+        //debugPrint('[CONSOLE] [FCM] ❌ Error getting current user: $e');
       }
       return null;
     }

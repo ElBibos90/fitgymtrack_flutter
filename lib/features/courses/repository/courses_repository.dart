@@ -124,7 +124,7 @@ extension CoursesRepositoryExtension on CoursesRepository {
 
   /// Ottieni le sessioni per un mese specifico
   Future<SessionsResponse> getSessionsForMonth(String month, {int? courseId}) async {
-    print('[DEBUG] 📅 Repository: getSessionsForMonth chiamato con month=$month, courseId=$courseId');
+    //debugPrint('[DEBUG] 📅 Repository: getSessionsForMonth chiamato con month=$month, courseId=$courseId');
     final response = await getSessions('list_sessions', courseId, month);
     
     
@@ -145,17 +145,17 @@ extension CoursesRepositoryExtension on CoursesRepository {
 
   /// Ottieni le mie iscrizioni (formato my_enrollments)
   Future<MyEnrollmentsResponse> getMyCourseEnrollments() async {
-    print('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyCourseEnrollments (formato my_enrollments)');
+    //debugPrint('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyCourseEnrollments (formato my_enrollments)');
     final response = await getMyEnrollments('my_enrollments');
-    print('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni (formato my_enrollments)');
+    //debugPrint('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni (formato my_enrollments)');
     return response;
   }
 
   /// Ottieni le mie iscrizioni (formato standard)
   Future<EnrollmentsResponse> getMyCourseEnrollmentsStandard() async {
-    print('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyEnrollmentsStandard');
+    //debugPrint('[COURSES_DEBUG] 🔍 CoursesRepository: Chiamando getMyEnrollmentsStandard');
     final response = await getMyEnrollmentsStandard('my_enrollments');
-    print('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni');
+    //debugPrint('[COURSES_DEBUG] 🔍 CoursesRepository: Ricevute ${response.enrollments.length} iscrizioni');
     return response;
   }
 

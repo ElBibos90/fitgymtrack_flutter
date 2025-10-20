@@ -4,7 +4,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/di/dependency_injection.dart';
-import '../../../../core/services/biometric_auth_service.dart';
 import '../../../../features/auth/bloc/auth_bloc.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/legal_documents_screen.dart';
@@ -287,7 +286,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         width: 40.w,
         height: 40.w,
         decoration: BoxDecoration(
-          color: isDarkMode ? Colors.blue[600]!.withOpacity(0.2) : Colors.blue[50]!,
+          color: isDarkMode ? Colors.blue[600]!.withValues(alpha: 0.2) : Colors.blue[50]!,
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Icon(

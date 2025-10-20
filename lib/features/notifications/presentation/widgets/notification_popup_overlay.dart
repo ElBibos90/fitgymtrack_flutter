@@ -72,7 +72,7 @@ class _NotificationPopupOverlayState extends State<NotificationPopupOverlay>
       child: GestureDetector(
         onTap: _closePopup,
         child: Container(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           child: Center(
             child: GestureDetector(
               onTap: () {}, // Previene la chiusura quando si clicca sul popup
@@ -89,7 +89,7 @@ class _NotificationPopupOverlayState extends State<NotificationPopupOverlay>
                       borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -223,7 +223,7 @@ class _NotificationPopupOverlayState extends State<NotificationPopupOverlay>
         color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: isDark ? AppColors.border.withOpacity(0.3) : AppColors.border,
+          color: isDark ? AppColors.border.withValues(alpha: 0.3) : AppColors.border,
           width: 1,
         ),
       ),

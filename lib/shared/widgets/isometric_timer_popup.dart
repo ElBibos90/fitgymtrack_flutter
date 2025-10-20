@@ -95,9 +95,9 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
           },
         ),
       ));
-      print("🔊 [ISOMETRIC AUDIO] AudioContext configured for ducking");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] AudioContext configured for ducking");
     } catch (e) {
-      print("🔊 [ISOMETRIC AUDIO] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Error configuring AudioContext: $e");
     }
   }
 
@@ -125,9 +125,9 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
       // Force a brief pause to let the system process the audio context change
       await Future.delayed(const Duration(milliseconds: 200));
       
-      print("🔊 [ISOMETRIC AUDIO] Audio session restored - ducking disabled");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Audio session restored - ducking disabled");
     } catch (e) {
-      print("🔊 [ISOMETRIC AUDIO] Error restoring audio session: $e");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Error restoring audio session: $e");
     }
   }
 
@@ -200,10 +200,10 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
       final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
       await _audioPlayer.setVolume(volume);
 
-      print("🔊 [ISOMETRIC AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [ISOMETRIC AUDIO] Error playing countdown beep: $e");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Error playing countdown beep: $e");
     }
   }
 
@@ -215,7 +215,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
           return; // Audio disabilitato
         }
 
-        print("🔊 [ISOMETRIC AUDIO] Playing completion sound");
+        //debugPrint("🔊 [ISOMETRIC AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
         // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
@@ -228,10 +228,10 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
         // Piccolo delay extra per sicurezza
         await Future.delayed(const Duration(milliseconds: 900));
 
-        print("🔊 [ISOMETRIC AUDIO] Completion sound finished");
+        //debugPrint("🔊 [ISOMETRIC AUDIO] Completion sound finished");
       }
     } catch (e) {
-      print("🔊 [ISOMETRIC AUDIO] Error playing completion sound: $e");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Error playing completion sound: $e");
     }
   }
 
@@ -252,7 +252,7 @@ class _IsometricTimerPopupState extends State<IsometricTimerPopup>
         _dismissPopup();
       }
     } catch (e) {
-      //print("🔊 [ISOMETRIC AUDIO] Error in completion sequence: $e");
+      //debugPrint("🔊 [ISOMETRIC AUDIO] Error in completion sequence: $e");
       // Fallback: chiama comunque il callback
       widget.onIsometricComplete();
       if (mounted && !_isDismissed) {

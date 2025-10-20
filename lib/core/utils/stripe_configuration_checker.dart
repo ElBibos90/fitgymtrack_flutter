@@ -111,31 +111,31 @@ class StripeConfigurationChecker {
     //print('[CONSOLE] [stripe_configuration_checker]');
 
     // Errori
-    if (result.errors.isNotEmpty) {
-      //print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI DA RISOLVERE:');
-      for (final error in result.errors) {
-        //print('[CONSOLE] [stripe_configuration_checker]   $error');
-      }
-      //print('[CONSOLE] [stripe_configuration_checker]');
-    }
+    // if (result.errors.isNotEmpty) {
+    //   //print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI DA RISOLVERE:');
+    //   for (final error in result.errors) {
+    //     //print('[CONSOLE] [stripe_configuration_checker]   $error');
+    //   }
+    //   //print('[CONSOLE] [stripe_configuration_checker]');
+    // }
 
     // Warning
-    if (result.warnings.isNotEmpty) {
-      //print('[CONSOLE] [stripe_configuration_checker]⚠️  AVVERTIMENTI:');
-      for (final warning in result.warnings) {
-        //print('[CONSOLE] [stripe_configuration_checker]   $warning');
-      }
-      //print('[CONSOLE] [stripe_configuration_checker]');
-    }
+    // if (result.warnings.isNotEmpty) {
+    //   //print('[CONSOLE] [stripe_configuration_checker]⚠️  AVVERTIMENTI:');
+    //   for (final warning in result.warnings) {
+    //     //print('[CONSOLE] [stripe_configuration_checker]   $warning');
+    //   }
+    //   //print('[CONSOLE] [stripe_configuration_checker]');
+    // }
 
     // Info
-    if (result.info.isNotEmpty) {
-      //print('[CONSOLE] [stripe_configuration_checker]ℹ️  INFORMAZIONI:');
-      for (final infoItem in result.info) {
-        //print('[CONSOLE] [stripe_configuration_checker]   $infoItem');
-      }
-      //print('[CONSOLE] [stripe_configuration_checker]');
-    }
+    // if (result.info.isNotEmpty) {
+    //   //print('[CONSOLE] [stripe_configuration_checker]ℹ️  INFORMAZIONI:');
+    //   for (final infoItem in result.info) {
+    //     //print('[CONSOLE] [stripe_configuration_checker]   $infoItem');
+    //   }
+    //   //print('[CONSOLE] [stripe_configuration_checker]');
+    // }
 
     //print('[CONSOLE] [stripe_configuration_checker]=====================================');
     //print('[CONSOLE] [stripe_configuration_checker]');
@@ -196,12 +196,12 @@ extension StripeDebugHelper on StripeConfigCheckResult {
 
   /// Mostra solo gli errori critici
   void showOnlyErrors() {
-    if (errors.isNotEmpty) {
-      //print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI STRIPE CRITICI:');
-      for (final error in errors) {
-        //print('[CONSOLE] [stripe_configuration_checker]   $error');
-      }
-    }
+    // if (errors.isNotEmpty) {
+    //   //print('[CONSOLE] [stripe_configuration_checker]🚨 ERRORI STRIPE CRITICI:');
+    //   for (final error in errors) {
+    //     //print('[CONSOLE] [stripe_configuration_checker]   $error');
+    //   }
+    // }
   }
 
   /// Verifica se ci sono problemi di sicurezza

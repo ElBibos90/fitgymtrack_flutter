@@ -32,9 +32,9 @@ class SessionService {
   Future<bool> isAuthenticated() async {
     final token = await getAuthToken();
     final isAuth = token != null && token.isNotEmpty;
-    print('🔍 SessionService.isAuthenticated: Token presente=${token != null}, Token non vuoto=${token?.isNotEmpty ?? false}, Risultato=$isAuth');
+    //debugPrint('🔍 SessionService.isAuthenticated: Token presente=${token != null}, Token non vuoto=${token?.isNotEmpty ?? false}, Risultato=$isAuth');
     if (token != null && token.isNotEmpty) {
-      print('🔍 SessionService.isAuthenticated: Token=${token.substring(0, 10)}...');
+      //debugPrint('🔍 SessionService.isAuthenticated: Token=${token.substring(0, 10)}...');
     }
     return isAuth;
   }
@@ -44,7 +44,7 @@ class SessionService {
     try {
       final token = await getAuthToken();
       if (token == null || token.isEmpty) {
-        print('[CONSOLE] [session_service]❌ No token found');
+        //debugPrint('[CONSOLE] [session_service]❌ No token found');
         return false;
       }
 
@@ -55,32 +55,32 @@ class SessionService {
       // 🔧 FIX: Controlla il contenuto della risposta
       if (response is Map<String, dynamic>) {
         if (response.containsKey('error')) {
-          print('[CONSOLE] [session_service]❌ Token validation failed: ${response['error']}');
+          //debugPrint('[CONSOLE] [session_service]❌ Token validation failed: ${response['error']}');
           await clearSession();
           return false;
         }
         
         // Se non c'è errore, il token è valido
-        //print('[CONSOLE] [session_service]✅ Token validation successful');
+        //debugPrint('[CONSOLE] [session_service]✅ Token validation successful');
         await _saveLastValidationTime();
         return true;
       }
       
       // Se la risposta non è un Map, considera il token valido
-      //print('[CONSOLE] [session_service]✅ Token validation successful (non-map response)');
+      //debugPrint('[CONSOLE] [session_service]✅ Token validation successful (non-map response)');
       await _saveLastValidationTime();
       return true;
       
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
-        print('[CONSOLE] [session_service]❌ Token expired (401)');
+        //debugPrint('[CONSOLE] [session_service]❌ Token expired (401)');
         await clearSession();
         return false;
       }
-      print('[CONSOLE] [session_service]⚠️ Token validation error: ${e.message}');
+      //debugPrint('[CONSOLE] [session_service]⚠️ Token validation error: ${e.message}');
       return false;
     } catch (e) {
-      print('[CONSOLE] [session_service]❌ Token validation failed: $e');
+      //debugPrint('[CONSOLE] [session_service]❌ Token validation failed: $e');
       return false;
     }
   }
@@ -99,7 +99,7 @@ class SessionService {
       
       return difference < threshold;
     } catch (e) {
-      print('[CONSOLE] [session_service]❌ Error checking last validation: $e');
+      //debugPrint('[CONSOLE] [session_service]❌ Error checking last validation: $e');
       return false;
     }
   }
@@ -110,21 +110,21 @@ class SessionService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastTokenValidationKey, DateTime.now().toIso8601String());
     } catch (e) {
-      print('[CONSOLE] [session_service]❌ Error saving validation time: $e');
+      //debugPrint('[CONSOLE] [session_service]❌ Error saving validation time: $e');
     }
   }
 
   /// 🔧 NUOVO: Verifica intelligente del token (locale + server se necessario)
   Future<bool> validateTokenIntelligently() async {
-    //print('[CONSOLE] [session_service]🔍 Starting intelligent token validation...');
+    //debugPrint('[CONSOLE] [session_service]🔍 Starting intelligent token validation...');
     
     // Prima controlla se è stato validato recentemente
     if (await isTokenRecentlyValidated()) {
-      //print('[CONSOLE] [session_service]✅ Token recently validated, skipping server check');
+      //debugPrint('[CONSOLE] [session_service]✅ Token recently validated, skipping server check');
       return true;
     }
 
-    //print('[CONSOLE] [session_service]🌐 Token not recently validated, checking with server...');
+    //debugPrint('[CONSOLE] [session_service]🌐 Token not recently validated, checking with server...');
     // Altrimenti valida con il server
     return await validateTokenWithServer();
   }
@@ -160,7 +160,7 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
-    //print('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
+    //debugPrint('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
     
     // 1. Pulisci sessioni e token
     await Future.wait([
@@ -172,7 +172,7 @@ class SessionService {
     // 2. 🧹 NUOVO: Pulisci cache non essenziali (mantiene solo schede e offline)
     await CacheCleanupService.clearNonEssentialCaches();
     
-    //print('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
+    //debugPrint('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
   }
 
   Future<void> clearUserData() async {
@@ -186,7 +186,7 @@ class SessionService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_lastTokenValidationKey);
     } catch (e) {
-      print('[CONSOLE] [session_service]❌ Error clearing validation time: $e');
+      //debugPrint('[CONSOLE] [session_service]❌ Error clearing validation time: $e');
     }
   }
 

@@ -13,7 +13,6 @@ import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
 import '../../bloc/auth_bloc.dart';
 import '../../../../core/services/biometric_auth_service.dart';
-import '../../../../core/services/session_service.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -162,22 +161,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _checkBiometricAvailability() async {
     // Evita controlli duplicati
     if (_biometricChecked) {
-      print('[LOGIN] ⚠️ Biometric already checked, skipping...');
+      //debugPrint('[LOGIN] ⚠️ Biometric already checked, skipping...');
       return;
     }
     
     try {
-      print('[LOGIN] 🔍 Checking biometric availability...');
+      //debugPrint('[LOGIN] 🔍 Checking biometric availability...');
       _biometricChecked = true; // Marca come controllato
       
       final available = await _biometricService.isBiometricAvailable();
       final enabled = await _biometricService.isBiometricEnabled();
       final type = await _biometricService.getBiometricType();
       
-      print('[LOGIN] 📊 Biometric status:');
-      print('[LOGIN]   - Available: $available');
-      print('[LOGIN]   - Enabled: $enabled');
-      print('[LOGIN]   - Type: $type');
+      //debugPrint('[LOGIN] 📊 Biometric status:');
+      //debugPrint('[LOGIN]   - Available: $available');
+      //debugPrint('[LOGIN]   - Enabled: $enabled');
+      //debugPrint('[LOGIN]   - Type: $type');
       
       setState(() {
         _biometricAvailable = available;
@@ -188,13 +187,13 @@ class _LoginScreenState extends State<LoginScreen> {
       // ✅ Auto-login all'apertura se biometrico abilitato
       // Se l'utente non vuole, può premere cancel
       if (_biometricEnabled && mounted) {
-        print('[LOGIN] ✅ Biometric enabled, trying auto-login...');
+        //debugPrint('[LOGIN] ✅ Biometric enabled, trying auto-login...');
         await _tryBiometricLogin();
       } else {
-        print('[LOGIN] ℹ️ Biometric not enabled, normal login flow');
+        //debugPrint('[LOGIN] ℹ️ Biometric not enabled, normal login flow');
       }
     } catch (e) {
-      print('[LOGIN] ❌ Error checking biometric: $e');
+      //debugPrint('[LOGIN] ❌ Error checking biometric: $e');
     }
   }
 
@@ -216,13 +215,13 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      print('[LOGIN] ✅ Biometric authentication successful');
+      //debugPrint('[LOGIN] ✅ Biometric authentication successful');
       setState(() => _isLoading = true);
 
       // Recupera credenziali salvate (username e password)
       final credentials = await _biometricService.getSavedCredentials();
       if (credentials == null) {
-        print('[LOGIN] ❌ No saved credentials found');
+        //debugPrint('[LOGIN] ❌ No saved credentials found');
         setState(() {
           _isLoading = false;
         });
@@ -242,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final username = credentials['username']!;
       final password = credentials['password']!;
       
-      print('[LOGIN] 🔑 Credentials retrieved, logging in with username: $username');
+      //debugPrint('[LOGIN] 🔑 Credentials retrieved, logging in with username: $username');
 
       // Fa login normale con le credenziali recuperate
       // Questo genererà un nuovo token dal server
@@ -257,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     } catch (e) {
       setState(() => _isLoading = false);
-      print('[Login] ❌ Biometric login error: $e');
+      //debugPrint('[Login] ❌ Biometric login error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -271,21 +270,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 🔐 BIOMETRIC: Mostra dialog per abilitare biometrico
   Future<void> _showEnableBiometricDialog() async {
-    print('[LOGIN] 🔐 _showEnableBiometricDialog called');
-    print('[LOGIN]   - Available: $_biometricAvailable');
-    print('[LOGIN]   - Enabled: $_biometricEnabled');
+    //debugPrint('[LOGIN] 🔐 _showEnableBiometricDialog called');
+    //debugPrint('[LOGIN]   - Available: $_biometricAvailable');
+    //debugPrint('[LOGIN]   - Enabled: $_biometricEnabled');
     
     if (!_biometricAvailable) {
-      print('[LOGIN] ⚠️ Biometric not available, skipping dialog');
+      //debugPrint('[LOGIN] ⚠️ Biometric not available, skipping dialog');
       return;
     }
     
     if (_biometricEnabled) {
-      print('[LOGIN] ℹ️ Biometric already enabled, skipping dialog');
+      //debugPrint('[LOGIN] ℹ️ Biometric already enabled, skipping dialog');
       return;
     }
     
-    print('[LOGIN] 📱 Showing enable biometric dialog...');
+    //debugPrint('[LOGIN] 📱 Showing enable biometric dialog...');
 
     final result = await showDialog<bool>(
       context: context,
@@ -367,7 +366,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthLoading) {
@@ -377,7 +376,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
-            print('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
+            //debugPrint('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
             
             // 🔧 AUTOFILL: Salva credenziali per il prossimo login
             // Su iOS, salva le credenziali nel Keychain
@@ -391,15 +390,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // 🔐 BIOMETRIC: Proponi abilitazione biometrico dopo login riuscito
             final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
-            print('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
+            //debugPrint('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
             
             // Mostra dialog biometrico (solo se non già abilitato)
             Future.delayed(const Duration(milliseconds: 500), () {
-              print('[LOGIN] ⏰ Dialog delay completed, showing dialog...');
+              //debugPrint('[LOGIN] ⏰ Dialog delay completed, showing dialog...');
               if (mounted) {
                 _showEnableBiometricDialog();
               } else {
-                print('[LOGIN] ⚠️ Widget not mounted, skipping dialog');
+                //debugPrint('[LOGIN] ⚠️ Widget not mounted, skipping dialog');
               }
             });
             
@@ -421,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: EdgeInsets.all(16.w),
                 child: Column(
                   children: [
-                    SizedBox(height: 60.h),
+                    SizedBox(height: 40.h),
 
                     // Logo e Header
                     Column(
@@ -503,16 +502,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
 
-                    SizedBox(height: 48.h),
+                    SizedBox(height: 24.h),
 
-                    // 🔐 BIOMETRIC: Pulsante biometrico (se disponibile e abilitato)
+                    // 🔐 BIOMETRIC: Pulsante biometrico compatto
                     if (_biometricAvailable) ...[
-                      // Pulsante grande biometrico sempre visibile
                       GestureDetector(
                         onTap: _biometricEnabled 
                             ? _tryBiometricLogin 
                             : () {
-                                // Se non abilitato, mostra messaggio
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Effettua prima il login per abilitare il biometrico'),
@@ -522,8 +519,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                         child: Container(
-                          width: 80.w,
-                          height: 80.w,
+                          width: 64.w,
+                          height: 64.w,
                           decoration: BoxDecoration(
                             color: (isDark ? const Color(0xFF90CAF9) : AppColors.indigo600).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
@@ -534,38 +531,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: Icon(
                             _biometricIcon,
-                            size: 48.sp,
+                            size: 36.sp,
                             color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                           ),
                         ),
                       ),
                       
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 8.h),
                       
                       Text(
                         _biometricEnabled 
                             ? 'Accedi con $_biometricDisplayName'
                             : 'Abilita $_biometricDisplayName',
                         style: TextStyle(
-                          fontSize: 16.sp,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w500,
                           color: isDark ? const Color(0xFF90CAF9) : AppColors.indigo600,
                         ),
                       ),
                       
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 16.h),
                       
-                      // Divider
+                      // Divider compatto
                       Row(
                         children: [
                           Expanded(child: Divider(color: isDark ? Colors.grey[700] : Colors.grey[400])),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
                             child: Text(
                               'oppure',
                               style: TextStyle(
                                 color: isDark ? Colors.grey[500] : Colors.grey[600],
-                                fontSize: 14.sp,
+                                fontSize: 12.sp,
                               ),
                             ),
                           ),
@@ -573,7 +570,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                       
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 16.h),
                     ],
 
                     // 🔧 AUTOFILL: AutofillGroup per gestire le credenziali
@@ -603,7 +600,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
 
-                            SizedBox(height: 16.h),
+                            SizedBox(height: 12.h),
 
                             // Password Field con Autofill
                             CustomTextField(
@@ -649,7 +646,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
 
-                            SizedBox(height: 32.h),
+                            SizedBox(height: 20.h),
 
                             // Login Button
                             SizedBox(
@@ -684,7 +681,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
 
-                            SizedBox(height: 24.h),
+                            SizedBox(height: 16.h),
 
                             // Link registrazione
                             Row(
@@ -714,7 +711,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
 
-                            SizedBox(height: 40.h),
+                            SizedBox(height: 24.h),
                           ],
                         ),
                       ),

@@ -1,6 +1,5 @@
 // lib/features/templates/presentation/screens/template_details_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -242,13 +241,13 @@ class _TemplateDetailsScreenState extends State<TemplateDetailsScreen> {
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: isDarkMode 
-            ? AppColors.surfaceDark.withOpacity(0.8)
-            : AppColors.primary.withOpacity(0.1),
+            ? AppColors.surfaceDark.withValues(alpha: 0.8)
+            : AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(
           color: isDarkMode 
-              ? AppColors.primary.withOpacity(0.5)
-              : AppColors.primary.withOpacity(0.3),
+              ? AppColors.primary.withValues(alpha: 0.5)
+              : AppColors.primary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

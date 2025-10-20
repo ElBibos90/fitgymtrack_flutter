@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/loading_shimmer_widgets.dart';
 import '../../../../shared/widgets/error_handling_widgets.dart';
 import '../../bloc/courses_bloc.dart';
 import '../../bloc/courses_event.dart';
@@ -34,7 +32,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   void initState() {
     super.initState();
     _coursesBloc = context.read<CoursesBloc>();
-    //print('[STATE] CourseDetailScreen: initState - Starting course details for courseId: ${widget.courseId}');
+    //debugPrint('[STATE] CourseDetailScreen: initState - Starting course details for courseId: ${widget.courseId}');
     // Carica prima i dettagli del corso
     _coursesBloc.add(
       LoadCourseDetailsEvent(courseId: widget.courseId),
@@ -196,7 +194,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     
     return GestureDetector(
       onTap: () {
-        print('[DEBUG] 📅 UI: Pulsante "$label" cliccato con month=$month');
+        //debugPrint('[DEBUG] 📅 UI: Pulsante "$label" cliccato con month=$month');
         setState(() {
           _selectedMonth = month;
         });
@@ -348,22 +346,22 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              //print('[DEBUG] 🚫 Dialog: Pulsante Annulla cliccato');
+              //debugPrint('[DEBUG] 🚫 Dialog: Pulsante Annulla cliccato');
               Navigator.of(context).pop();
             },
             child: const Text('Annulla'),
           ),
           ElevatedButton(
             onPressed: () {
-              //print('[DEBUG] 🚫 Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
+              //debugPrint('[DEBUG] 🚫 Dialog: Pulsante Conferma cliccato per sessionId: ${session.id}');
               Navigator.of(context).pop();
               
               // Disdici l'iscrizione alla sessione
-              //print('[DEBUG] 🚫 Dialog: Chiamata context.read<CoursesBloc>()');
+              //debugPrint('[DEBUG] 🚫 Dialog: Chiamata context.read<CoursesBloc>()');
               final bloc = context.read<CoursesBloc>();
-              //print('[DEBUG] 🚫 Dialog: BLoC ottenuto, aggiungo evento');
+              //debugPrint('[DEBUG] 🚫 Dialog: BLoC ottenuto, aggiungo evento');
               bloc.add(CancelSessionEnrollmentEvent(sessionId: session.id));
-              //print('[DEBUG] 🚫 Dialog: Evento aggiunto al BLoC');
+              //debugPrint('[DEBUG] 🚫 Dialog: Evento aggiunto al BLoC');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

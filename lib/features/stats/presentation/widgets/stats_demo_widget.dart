@@ -75,7 +75,7 @@ class _StatsDemoWidgetState extends State<StatsDemoWidget> {
           Text(
             'Fitness Score',
             style: StatsTheme.labelLarge.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           SizedBox(height: StatsTheme.space2.h),
@@ -120,7 +120,7 @@ class _StatsDemoWidgetState extends State<StatsDemoWidget> {
         Text(
           label,
           style: StatsTheme.caption.copyWith(
-            color: color.withOpacity(0.8),
+            color: color.withValues(alpha: 0.8),
           ),
         ),
       ],

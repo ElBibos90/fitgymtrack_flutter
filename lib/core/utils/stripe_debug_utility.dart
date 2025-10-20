@@ -1,7 +1,6 @@
 // lib/core/utils/stripe_debug_utility.dart
 import 'package:dio/dio.dart';
 import '../services/session_service.dart';
-import '../config/environment.dart';
 
 /// Utility per debugging problemi Stripe - FIXED per 405 errors
 class StripeDebugUtility {
@@ -344,15 +343,15 @@ class StripeDebugUtility {
     });
     //print('[CONSOLE] [stripe_debug_utility]');
     //print('[CONSOLE] [stripe_debug_utility]🎯 ENDPOINT TESTS:');
-    report.endpointTests.forEach((endpoint, result) {
-      final status = result.isWorking ? '✅' : result.isReachable ? '⚠️' : '❌';
-      //print('[CONSOLE] [stripe_debug_utility]  $status ${result.httpMethod} $endpoint');
-      //print('[CONSOLE] [stripe_debug_utility]    Status: ${result.statusCode}');
-      //print('[CONSOLE] [stripe_debug_utility]    Working: ${result.isWorking}');
-      //print('[CONSOLE] [stripe_debug_utility]    Reachable: ${result.isReachable}');
-      //print('[CONSOLE] [stripe_debug_utility]    Error: ${result.error ?? 'None'}');
-      //print('[CONSOLE] [stripe_debug_utility]');
-    });
+    // report.endpointTests.forEach((endpoint, result) {
+    //   final status = result.isWorking ? '✅' : result.isReachable ? '⚠️' : '❌';
+    //   //print('[CONSOLE] [stripe_debug_utility]  $status ${result.httpMethod} $endpoint');
+    //   //print('[CONSOLE] [stripe_debug_utility]    Status: ${result.statusCode}');
+    //   //print('[CONSOLE] [stripe_debug_utility]    Working: ${result.isWorking}');
+    //   //print('[CONSOLE] [stripe_debug_utility]    Reachable: ${result.isReachable}');
+    //   //print('[CONSOLE] [stripe_debug_utility]    Error: ${result.error ?? 'None'}');
+    //   //print('[CONSOLE] [stripe_debug_utility]');
+    // });
 
     if (report.overallHealth != 'HEALTHY' && report.overallHealth != 'MOSTLY_HEALTHY') {
       //print('[CONSOLE] [stripe_debug_utility]🔧 SUGGESTED FIXES:');

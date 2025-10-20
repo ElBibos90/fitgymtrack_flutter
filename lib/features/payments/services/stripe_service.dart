@@ -16,7 +16,7 @@ class StripeService {
   /// Inizializza Stripe SDK con gestione errori super robusta (unchanged)
   static Future<Result<bool>> initialize() async {
           if (_isInitialized && _currentPublishableKey == StripeConfig.publishableKey) {
-        print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Already initialized with current key');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Already initialized with current key');
         return Result.success(true);
       }
 
@@ -24,7 +24,7 @@ class StripeService {
     _initAttempts++;
 
     return Result.tryCallAsync(() async {
-      ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Initializing Stripe SDK (attempt $_initAttempts)...');
+      ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Initializing Stripe SDK (attempt $_initAttempts)...');
 
       // ============================================================================
       // STEP 1: VALIDAZIONE CONFIGURAZIONE
@@ -35,10 +35,10 @@ class StripeService {
       }
 
       // 🔍 DEBUG: Verifica che la chiave sia quella corretta
-      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Checking publishable key...');
-      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Key: ${StripeConfig.publishableKey}');
-      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Expected: pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY');
-      //print('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Keys match: ${StripeConfig.publishableKey == 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY'}');
+      //debugPrint('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Checking publishable key...');
+      //debugPrint('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Key: ${StripeConfig.publishableKey}');
+      //debugPrint('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Expected: pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY');
+      //debugPrint('[CONSOLE] [stripe_service]🔍 [STRIPE SERVICE] Keys match: ${StripeConfig.publishableKey == 'pk_test_51RW3uvHHtQGHyul9D48kPP1cBny9yxD75X4hrA1DWsudV37kNGVvPJNzZyCMjIFzuEHlPkRHT4W9R8vCASNpX1xL00qADtuDiY'}');
 
       if (!StripeConfig.isValidKey(StripeConfig.publishableKey)) {
         throw Exception('❌ Invalid Stripe publishable key format: ${StripeConfig.publishableKey.substring(0, 8)}...');
@@ -50,11 +50,11 @@ class StripeService {
       }
 
       if (StripeConfig.isDemoMode) {
-        print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] DEMO MODE DETECTED - THIS SHOULD NOT HAPPEN!');
-        print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Publishable key: ${StripeConfig.publishableKey}');
-        print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Key length: ${StripeConfig.publishableKey.length}');
-        print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Contains REPLACE: ${StripeConfig.publishableKey.contains('REPLACE')}');
-        print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Is demo key: ${StripeConfig.publishableKey == 'pk_test_51234567890abcdefghijklmnopqrstuvwxyz123456789012345678901234567890123456789012345678901234567890'}');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] DEMO MODE DETECTED - THIS SHOULD NOT HAPPEN!');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Publishable key: ${StripeConfig.publishableKey}');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Key length: ${StripeConfig.publishableKey.length}');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Contains REPLACE: ${StripeConfig.publishableKey.contains('REPLACE')}');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Is demo key: ${StripeConfig.publishableKey == 'pk_test_51234567890abcdefghijklmnopqrstuvwxyz123456789012345678901234567890123456789012345678901234567890'}');
         // In demo mode, usiamo configurazione basilare
         return await _initializeDemoMode();
       }
@@ -64,8 +64,8 @@ class StripeService {
         // STEP 2: CONFIGURA STRIPE PUBLISHABLE KEY
         // ============================================================================
 
-        //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 1: Setting publishable key...');
-        //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Setting key: ${StripeConfig.publishableKey.substring(0, 20)}...');
+        //debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 1: Setting publishable key...');
+        //debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Setting key: ${StripeConfig.publishableKey.substring(0, 20)}...');
         Stripe.publishableKey = StripeConfig.publishableKey;
         _currentPublishableKey = StripeConfig.publishableKey;
 
@@ -73,46 +73,46 @@ class StripeService {
         // STEP 3: CONFIGURA MERCHANT IDENTIFIER
         // ============================================================================
 
-        ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 2: Setting merchant identifier...');
+        ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 2: Setting merchant identifier...');
         Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
 
         // ============================================================================
         // STEP 4: APPLICA SETTINGS CON RETRY SUPER INTELLIGENTE
         // ============================================================================
 
-        ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 3: Applying Stripe settings...');
+        ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Step 3: Applying Stripe settings...');
         await _applySettingsWithSuperRetry();
 
         _isInitialized = true;
         _lastError = null;
 
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Stripe SDK initialized successfully!');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key length: ${StripeConfig.publishableKey.length}');
-        //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key ends with: ${StripeConfig.publishableKey.substring(StripeConfig.publishableKey.length - 4)}');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Stripe SDK initialized successfully!');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key: ${StripeConfig.publishableKey.substring(0, 20)}...');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Merchant ID: ${StripeConfig.merchantIdentifier}');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Test mode: ${StripeConfig.isTestMode}');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Demo mode: ${StripeConfig.isDemoMode}');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key length: ${StripeConfig.publishableKey.length}');
+        //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] - Key ends with: ${StripeConfig.publishableKey.substring(StripeConfig.publishableKey.length - 4)}');
 
         return true;
 
       } catch (e) {
         _lastError = e.toString();
-        ////print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Initialization failed: $e');
+        ////debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Initialization failed: $e');
 
         // ============================================================================
         // RETRY INTELLIGENTE CON ANALISI ERRORE
         // ============================================================================
 
         if (_shouldRetryWithDelay(e.toString()) && _initAttempts < 5) {
-          ////print('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Scheduling intelligent retry in ${_initAttempts * 2} seconds...');
+          ////debugPrint('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Scheduling intelligent retry in ${_initAttempts * 2} seconds...');
           await Future.delayed(Duration(seconds: _initAttempts * 2));
           return await _retryInitialization();
         }
 
         // Se non può fare retry, prova modalità degraded
         if (_initAttempts >= 3) {
-          ////print('[CONSOLE] [stripe_service]⚠️ [STRIPE SERVICE] Multiple failures - attempting degraded mode...');
+          ////debugPrint('[CONSOLE] [stripe_service]⚠️ [STRIPE SERVICE] Multiple failures - attempting degraded mode...');
           return await _initializeDegradedMode();
         }
 
@@ -123,7 +123,7 @@ class StripeService {
 
   /// Inizializzazione in modalità demo (unchanged)
   static Future<bool> _initializeDemoMode() async {
-    ////print('[CONSOLE] [stripe_service]🎭 [STRIPE SERVICE] Initializing in DEMO mode...');
+    ////debugPrint('[CONSOLE] [stripe_service]🎭 [STRIPE SERVICE] Initializing in DEMO mode...');
 
     try {
       // Usa una chiave test standard di Stripe per demo
@@ -138,18 +138,18 @@ class StripeService {
       _isInitialized = true;
       _lastError = null;
 
-      ////print('[CONSOLE] [stripe_service]🎭 [STRIPE SERVICE] Demo mode initialized successfully');
+      ////debugPrint('[CONSOLE] [stripe_service]🎭 [STRIPE SERVICE] Demo mode initialized successfully');
       return true;
 
     } catch (e) {
-      ////print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Demo mode initialization failed: $e');
+      ////debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Demo mode initialization failed: $e');
       return false;
     }
   }
 
   /// Inizializzazione in modalità degraded (unchanged)
   static Future<bool> _initializeDegradedMode() async {
-    ////print('[CONSOLE] [stripe_service]⚙️ [STRIPE SERVICE] Initializing in DEGRADED mode...');
+    ////debugPrint('[CONSOLE] [stripe_service]⚙️ [STRIPE SERVICE] Initializing in DEGRADED mode...');
 
     try {
       // Prova solo configurazione base senza applySettings
@@ -161,11 +161,11 @@ class StripeService {
       _isInitialized = true;
       _lastError = 'Initialized in degraded mode - limited functionality';
 
-      ////print('[CONSOLE] [stripe_service]⚙️ [STRIPE SERVICE] Degraded mode initialized');
+      ////debugPrint('[CONSOLE] [stripe_service]⚙️ [STRIPE SERVICE] Degraded mode initialized');
       return true;
 
     } catch (e) {
-      ////print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Degraded mode failed: $e');
+      ////debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Degraded mode failed: $e');
       return false;
     }
   }
@@ -179,13 +179,13 @@ class StripeService {
 
     while (attempts < maxAttempts) {
       attempts++;
-      ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Applying settings - attempt $attempts/$maxAttempts...');
+      ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Applying settings - attempt $attempts/$maxAttempts...');
 
       try {
         // Strategia 1-3: Retry normale con delay progressivo
         if (attempts <= 3) {
           await Stripe.instance.applySettings();
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied successfully on attempt $attempts');
+          ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied successfully on attempt $attempts');
           return;
         }
 
@@ -194,7 +194,7 @@ class StripeService {
           attemptedStrategies.add('Extended timeout');
           await Future.delayed(const Duration(seconds: 3));
           await Stripe.instance.applySettings();
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied with extended timeout');
+          ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied with extended timeout');
           return;
         }
 
@@ -204,7 +204,7 @@ class StripeService {
           Stripe.publishableKey = StripeConfig.publishableKey;
           await Future.delayed(const Duration(seconds: 2));
           await Stripe.instance.applySettings();
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after key reset');
+          ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after key reset');
           return;
         }
 
@@ -214,7 +214,7 @@ class StripeService {
           Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
           await Future.delayed(const Duration(seconds: 1));
           await Stripe.instance.applySettings();
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after merchant ID reset');
+          ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after merchant ID reset');
           return;
         }
 
@@ -225,12 +225,12 @@ class StripeService {
           Stripe.merchantIdentifier = StripeConfig.merchantIdentifier;
           await Future.delayed(const Duration(seconds: 5));
           await Stripe.instance.applySettings();
-          ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after full reset');
+          ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Settings applied after full reset');
           return;
         }
 
       } catch (e) {
-        ////print('[CONSOLE] [stripe_service]⚠️ [STRIPE SERVICE] Settings apply attempt $attempts failed: $e');
+        ////debugPrint('[CONSOLE] [stripe_service]⚠️ [STRIPE SERVICE] Settings apply attempt $attempts failed: $e');
 
         if (attempts >= maxAttempts) {
           final strategiesText = attemptedStrategies.isNotEmpty
@@ -273,7 +273,7 @@ class StripeService {
       return result.isSuccess;
 
     } catch (e) {
-      ////print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Retry initialization failed: $e');
+      ////debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Retry initialization failed: $e');
       return false;
     }
   }
@@ -324,8 +324,8 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Payment Sheet...');
-      ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Client secret: ${clientSecret.substring(0, 20)}...');
+      ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Payment Sheet...');
+      ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Client secret: ${clientSecret.substring(0, 20)}...');
 
       try {
         // ============================================================================
@@ -340,7 +340,7 @@ class StripeService {
         // STEP 2: INIZIALIZZA PAYMENT SHEET
         // ============================================================================
 
-        ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Initializing Payment Sheet...');
+        ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Initializing Payment Sheet...');
 
         await Stripe.instance.initPaymentSheet(
           paymentSheetParameters: SetupPaymentSheetParameters(
@@ -365,13 +365,13 @@ class StripeService {
           ),
         );
 
-        ////print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment Sheet initialized successfully');
+        ////debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment Sheet initialized successfully');
 
         // ============================================================================
         // STEP 3: PRESENTA PAYMENT SHEET
         // ============================================================================
 
-        ////print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Payment Sheet to user...');
+        ////debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Payment Sheet to user...');
 
         try {
           final result = await Stripe.instance.presentPaymentSheet();
@@ -381,7 +381,7 @@ class StripeService {
           return result;
 
         } catch (e) {
-          //print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Payment Sheet presentation failed: $e');
+          //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Payment Sheet presentation failed: $e');
 
           // 🔧 FIX: Gestione intelligente degli errori del Payment Sheet
           if (e is StripeException) {
@@ -402,7 +402,7 @@ class StripeService {
         }
 
       } catch (e) {
-        //print('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Payment Sheet error: $e');
+        //debugPrint('[CONSOLE] [stripe_service]❌ [STRIPE SERVICE] Payment Sheet error: $e');
 
         // ============================================================================
         // GESTIONE INTELLIGENTE ERRORI STRIPE
@@ -416,11 +416,11 @@ class StripeService {
         // Gestione errori di configurazione comuni
         if (e.toString().contains('not properly initialized')) {
           // Tenta re-inizializzazione automatica
-          //print('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Attempting auto re-initialization...');
+          //debugPrint('[CONSOLE] [stripe_service]🔄 [STRIPE SERVICE] Attempting auto re-initialization...');
 
           final reinitResult = await forceReinitialize();
           if (reinitResult.isSuccess) {
-            //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Re-initialization successful, retrying payment...');
+            //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Re-initialization successful, retrying payment...');
             // Retry una volta dopo re-inizializzazione
             final retryResult = await presentPaymentSheet(
               clientSecret: clientSecret,
@@ -455,7 +455,7 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Confirming payment...');
+      //debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Confirming payment...');
 
       final result = await Stripe.instance.confirmPayment(
         paymentIntentClientSecret: clientSecret,
@@ -463,7 +463,7 @@ class StripeService {
         options: options,
       );
 
-      //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment confirmed: ${result.status}');
+      //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment confirmed: ${result.status}');
 
       return result;
     });
@@ -481,13 +481,13 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Creating payment method...');
+      //debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Creating payment method...');
 
       final result = await Stripe.instance.createPaymentMethod(
         params: params,
       );
 
-      //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment method created: ${result.id}');
+      //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Payment method created: ${result.id}');
 
       return result;
     });
@@ -519,7 +519,7 @@ class StripeService {
     }
 
     return Result.tryCallAsync(() async {
-      //print('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Google Pay...');
+      //debugPrint('[CONSOLE] [stripe_service]🔧 [STRIPE SERVICE] Presenting Google Pay...');
 
       await Stripe.instance.initGooglePay(
         GooglePayInitParams(
@@ -538,7 +538,7 @@ class StripeService {
         );
       }
 
-      //print('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Google Pay presented successfully');
+      //debugPrint('[CONSOLE] [stripe_service]✅ [STRIPE SERVICE] Google Pay presented successfully');
     });
   }
 

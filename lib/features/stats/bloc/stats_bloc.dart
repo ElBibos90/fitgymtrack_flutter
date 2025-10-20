@@ -135,12 +135,12 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      //print('🔄 Caricamento statistiche iniziali...');
+      //debugPrint('🔄 Caricamento statistiche iniziali...');
       emit(StatsLoading());
 
       final bundle = await _repository.getStatsBundle(event.initialPeriod);
 
-      //print('✅ Statistiche iniziali caricate con successo');
+      //debugPrint('✅ Statistiche iniziali caricate con successo');
       emit(StatsLoaded(
         userStats: bundle.userStats,
         periodStats: bundle.periodStats,
@@ -149,10 +149,10 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       ));
 
     } on StatsException catch (e) {
-      print('❌ Errore StatsException nel caricamento iniziale: ${e.message}');
+      //debugPrint('❌ Errore StatsException nel caricamento iniziale: ${e.message}');
       emit(StatsError(message: e.message));
     } catch (e) {
-      print('❌ Errore generico nel caricamento iniziale: $e');
+      //debugPrint('❌ Errore generico nel caricamento iniziale: $e');
       emit(const StatsError(
         message: 'Errore imprevisto nel caricamento delle statistiche. Riprova.',
       ));
@@ -164,12 +164,12 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      //print('🔄 Caricamento statistiche utente...');
+      //debugPrint('🔄 Caricamento statistiche utente...');
       emit(StatsLoading());
 
       final userStats = await _repository.getUserStats();
 
-      //print('✅ Statistiche utente caricate con successo');
+      //debugPrint('✅ Statistiche utente caricate con successo');
 
       if (state is StatsLoaded) {
         final currentState = state as StatsLoaded;
@@ -179,10 +179,10 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       }
 
     } on StatsException catch (e) {
-      print('❌ Errore nel caricamento statistiche utente: ${e.message}');
+      //debugPrint('❌ Errore nel caricamento statistiche utente: ${e.message}');
       emit(StatsError(message: e.message));
     } catch (e) {
-      print('❌ Errore generico nel caricamento statistiche utente: $e');
+      //debugPrint('❌ Errore generico nel caricamento statistiche utente: $e');
       emit(const StatsError(
         message: 'Errore nel caricamento delle statistiche utente.',
       ));
@@ -194,7 +194,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      //print('🔄 Cambio periodo a: ${event.period.displayName}');
+      //debugPrint('🔄 Cambio periodo a: ${event.period.displayName}');
 
       if (state is StatsLoaded) {
         final currentState = state as StatsLoaded;
@@ -209,7 +209,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
 
       final periodStats = await _repository.getPeriodStats(event.period);
 
-      //print('✅ Statistiche periodo ${event.period.displayName} caricate');
+      //debugPrint('✅ Statistiche periodo ${event.period.displayName} caricate');
 
       if (state is StatsPeriodLoading) {
         final loadingState = state as StatsPeriodLoading;
@@ -224,10 +224,10 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       }
 
     } on StatsException catch (e) {
-      print('❌ Errore nel cambio periodo: ${e.message}');
+      //debugPrint('❌ Errore nel cambio periodo: ${e.message}');
       emit(StatsError(message: e.message));
     } catch (e) {
-      print('❌ Errore generico nel cambio periodo: $e');
+      //debugPrint('❌ Errore generico nel cambio periodo: $e');
       emit(StatsError(
         message: 'Errore nel cambio del periodo. Riprova.',
       ));
@@ -239,7 +239,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       Emitter<StatsState> emit,
       ) async {
     try {
-      //print('🔄 Refresh completo statistiche...');
+      //debugPrint('🔄 Refresh completo statistiche...');
 
       StatsPeriod currentPeriod = StatsPeriod.week;
       if (state is StatsLoaded) {
@@ -248,7 +248,7 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
 
       final bundle = await _repository.getStatsBundle(currentPeriod);
 
-      //print('✅ Refresh statistiche completato');
+      //debugPrint('✅ Refresh statistiche completato');
       emit(StatsLoaded(
         userStats: bundle.userStats,
         periodStats: bundle.periodStats,
@@ -257,12 +257,12 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       ));
 
     } on StatsException catch (e) {
-      print('❌ Errore nel refresh: ${e.message}');
+      //debugPrint('❌ Errore nel refresh: ${e.message}');
       if (state is! StatsLoaded) {
         emit(StatsError(message: e.message));
       }
     } catch (e) {
-      print('❌ Errore generico nel refresh: $e');
+      //debugPrint('❌ Errore generico nel refresh: $e');
       if (state is! StatsLoaded) {
         emit(const StatsError(
           message: 'Errore nel refresh delle statistiche.',
@@ -277,22 +277,22 @@ class StatsBloc extends Bloc<StatsEvent, StatsState> {
       ) async {
     try {
       if (state is! StatsLoaded) {
-        //print('⚠️ Tentativo di refresh periodo senza stato caricato');
+        //debugPrint('⚠️ Tentativo di refresh periodo senza stato caricato');
         return;
       }
 
       final currentState = state as StatsLoaded;
-      //print('🔄 Refresh statistiche periodo: ${currentState.currentPeriod.displayName}');
+      //debugPrint('🔄 Refresh statistiche periodo: ${currentState.currentPeriod.displayName}');
 
       final periodStats = await _repository.refreshPeriodStats(currentState.currentPeriod);
 
-      //print('✅ Refresh periodo completato');
+      //debugPrint('✅ Refresh periodo completato');
       emit(currentState.copyWith(periodStats: periodStats));
 
-    } on StatsException catch (e) {
-      print('❌ Errore nel refresh periodo: ${e.message}');
+    } on StatsException {
+      //debugPrint('❌ Errore nel refresh periodo');
     } catch (e) {
-      print('❌ Errore generico nel refresh periodo: $e');
+      //debugPrint('❌ Errore generico nel refresh periodo: $e');
     }
   }
 

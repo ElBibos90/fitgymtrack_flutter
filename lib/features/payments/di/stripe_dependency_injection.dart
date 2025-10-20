@@ -34,7 +34,6 @@ class StripeDependencyInjection {
     getIt.registerLazySingleton<StripeRepository>(() {
       //print('[CONSOLE] [stripe_dependency_injection]🏗️ [STRIPE DI] Creating StripeRepository instance...');
       return StripeRepository(
-        apiClient: getIt<ApiClient>(),
         dio: getIt<Dio>(),
         sessionService: getIt<SessionService>(),
       );

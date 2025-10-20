@@ -9,10 +9,6 @@ import '../../features/auth/models/register_request.dart';
 import '../../features/auth/models/register_response.dart';
 import '../../features/auth/models/password_reset_models.dart';
 
-import '../../features/workouts/models/series_request_models.dart';
-import '../../features/exercises/models/exercises_response.dart';
-import '../../features/workouts/models/workout_response_types.dart';
-
 part 'api_client.g.dart';
 
 @RestApi()

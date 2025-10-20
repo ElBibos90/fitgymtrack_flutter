@@ -2,23 +2,19 @@
 import 'package:dio/dio.dart';
 
 import '../../../core/utils/result.dart';
-import '../../../core/network/api_client.dart';
 import '../models/subscription_models.dart';
 
 /// Repository per la gestione degli abbonamenti
 class SubscriptionRepository {
-  final ApiClient _apiClient;
   final Dio _dio;
 
   SubscriptionRepository({
-    required ApiClient apiClient,
     required Dio dio,
-  })  : _apiClient = apiClient,
-        _dio = dio;
+  })  : _dio = dio;
 
   /// Recupera l'abbonamento corrente dell'utente
   Future<Result<Subscription>> getCurrentSubscription() async {
-    //print('[CONSOLE] [subscription_repository]Recupero abbonamento corrente');
+    //debugPrint('[CONSOLE] [subscription_repository]Recupero abbonamento corrente');
 
     return Result.tryCallAsync(() async {
       // Chiamata API diretta usando Dio per flessibilità
@@ -34,7 +30,7 @@ class SubscriptionRepository {
         // 🔧 FIX: Usa il parsing JSON automatico invece di costruzione manuale
         final subscription = Subscription.fromJson(subscriptionData);
 
-        /*print(
+        /*//debugPrint(
           'Abbonamento recuperato: ${subscription.planName} - €${subscription.price}'
         );*/
 
@@ -47,7 +43,7 @@ class SubscriptionRepository {
 
   /// Controlla le subscription scadute
   Future<Result<ExpiredCheckResponse>> checkExpiredSubscriptions() async {
-    //print('[CONSOLE] [subscription_repository]Controllo subscription scadute');
+    //debugPrint('[CONSOLE] [subscription_repository]Controllo subscription scadute');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -61,7 +57,7 @@ class SubscriptionRepository {
           updatedCount: _parseInt(data['data']?['updated_count']), // 🔧 FIX: Parsing robusto
         );
 
-        /*print(
+        /*//debugPrint(
           'Controllo scadenze completato: ${expiredCheck.updatedCount} aggiornamenti'
         );*/
 
@@ -74,7 +70,7 @@ class SubscriptionRepository {
 
   /// Verifica i limiti di utilizzo per un tipo di risorsa
   Future<Result<ResourceLimits>> checkResourceLimits(String resourceType) async {
-    //print('[CONSOLE] [subscription_repository]Verifica limiti per: $resourceType');
+    //debugPrint('[CONSOLE] [subscription_repository]Verifica limiti per: $resourceType');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_resource_limits_api.php', queryParameters: {
@@ -95,7 +91,7 @@ class SubscriptionRepository {
           daysRemaining: limitData['days_remaining'],
         );
 
-        /*print(
+        /*//debugPrint(
           'Limiti verificati: ${resourceLimits.currentCount}/${resourceLimits.maxAllowed}'
         );*/
 
@@ -108,7 +104,7 @@ class SubscriptionRepository {
 
   /// Aggiorna il piano di abbonamento
   Future<Result<UpdatePlanResponse>> updatePlan(int planId) async {
-    //print('[CONSOLE] [subscription_repository]Aggiornamento al piano ID: $planId');
+    //debugPrint('[CONSOLE] [subscription_repository]Aggiornamento al piano ID: $planId');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.post(
@@ -127,7 +123,7 @@ class SubscriptionRepository {
           planName: updateData['plan_name'] ?? 'Unknown',
         );
 
-        /*print(
+        /*//debugPrint(
           'Piano aggiornato: ${updateResponse.planName}'
         );*/
 
@@ -140,7 +136,7 @@ class SubscriptionRepository {
 
   /// Ottiene i piani di abbonamento disponibili
   Future<Result<List<SubscriptionPlan>>> getAvailablePlans() async {
-    //print('[CONSOLE] [subscription_repository]Recupero piani disponibili');
+    //debugPrint('[CONSOLE] [subscription_repository]Recupero piani disponibili');
 
     return Result.tryCallAsync(() async {
       final response = await _dio.get('/android_subscription_api.php', queryParameters: {
@@ -166,9 +162,9 @@ class SubscriptionRepository {
           );
         }).toList();
 
-        print(
-          'Recuperati ${plans.length} piani disponibili'
-        );
+        // print(
+        //   'Recuperati ${plans.length} piani disponibili'
+        // );
 
         return plans;
       } else {
@@ -204,7 +200,7 @@ class SubscriptionRepository {
       try {
         return double.parse(value);
       } catch (e) {
-        //print('[CONSOLE] [subscription_repository]Errore parsing double: $value');
+        //debugPrint('[CONSOLE] [subscription_repository]Errore parsing double: $value');
         return 0.0;
       }
     }
@@ -223,7 +219,7 @@ class SubscriptionRepository {
         try {
           return double.parse(value).toInt();
         } catch (e2) {
-          //print('[CONSOLE] [subscription_repository]Errore parsing int: $value');
+          //debugPrint('[CONSOLE] [subscription_repository]Errore parsing int: $value');
           return 0;
         }
       }

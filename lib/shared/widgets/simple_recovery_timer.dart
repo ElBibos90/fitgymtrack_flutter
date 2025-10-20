@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import '../../core/di/dependency_injection.dart';
@@ -123,7 +122,7 @@ class _SimpleRecoveryTimerState extends State<SimpleRecoveryTimer> {
         await Future.delayed(const Duration(milliseconds: 900));
       }
     } catch (e) {
-      print("🔊 [SIMPLE TIMER] Error playing completion sound: $e");
+      //debugPrint("🔊 [SIMPLE TIMER] Error playing completion sound: $e");
     } finally {
       widget.onTimerComplete();
       if (mounted && !_isDismissed) {
@@ -146,7 +145,7 @@ class _SimpleRecoveryTimerState extends State<SimpleRecoveryTimer> {
 
   @override
   Widget build(BuildContext context) {
-    print("[TIMER] 🚀 SimpleRecoveryTimer build - isDismissed: $_isDismissed, remainingSeconds: $_remainingSeconds");
+    //debugPrint("[TIMER] 🚀 SimpleRecoveryTimer build - isDismissed: $_isDismissed, remainingSeconds: $_remainingSeconds");
     
     if (_isDismissed) return const SizedBox.shrink();
 

@@ -125,8 +125,8 @@ class ModernKPICard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: isPositive 
-            ? StatsTheme.successGreen.withOpacity(0.1)
-            : StatsTheme.warningRed.withOpacity(0.1),
+            ? StatsTheme.successGreen.withValues(alpha: 0.1)
+            : StatsTheme.warningRed.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(StatsTheme.radiusSmall.r),
       ),
       child: Row(

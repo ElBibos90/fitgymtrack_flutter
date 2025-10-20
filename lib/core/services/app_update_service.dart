@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
 import '../di/dependency_injection.dart';
 import '../services/session_service.dart';
-import '../../features/auth/repository/auth_repository.dart';
 
 /// 🔧 NUOVO: Servizio per gestire il controllo degli aggiornamenti dell'app
 class AppUpdateService {
@@ -22,47 +21,47 @@ class AppUpdateService {
       final isAuthenticated = await sessionService.isAuthenticated();
       
       if (!isAuthenticated) {
-        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
+        //debugPrint('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
         return null;
       }
       
       // Controlla se è il momento di verificare gli aggiornamenti
       if (!forceCheck && !await _shouldCheckForUpdates()) {
-        print('[CONSOLE] [app_update_service]⏰ Update check skipped (too recent)');
+        //debugPrint('[CONSOLE] [app_update_service]⏰ Update check skipped (too recent)');
         
         // 🔧 FIX: Controlla SEMPRE se c'è un aggiornamento (non solo critico)
         final update = await _checkForAnyUpdate();
         if (update != null) {
-          print('[CONSOLE] [app_update_service]🚨 UPDATE FOUND! Ignoring time interval');
+          //debugPrint('[CONSOLE] [app_update_service]🚨 UPDATE FOUND! Ignoring time interval');
           return update;
         }
         
         return null;
       }
 
-      print('[CONSOLE] [app_update_service]🔍 Checking for app updates...');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 Checking for app updates...');
 
       // Ottieni la versione corrente
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
       final currentBuild = packageInfo.buildNumber;
 
-      print('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
+      //debugPrint('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
 
       // 🔧 NUOVO: Ottieni informazioni utente per targeting
       final isTestUser = await _checkIfUserIsTester();
       final platform = Platform.isAndroid ? 'android' : 'ios';
       
-      print('[CONSOLE] [app_update_service]🎯 Targeting - Platform: $platform, IsTester: $isTestUser');
+      //debugPrint('[CONSOLE] [app_update_service]🎯 Targeting - Platform: $platform, IsTester: $isTestUser');
 
       // Controlla la versione sul server con targeting
       final apiClient = getIt<ApiClient>();
-      print('[CONSOLE] [app_update_service]🌐 Calling API with params: platform=$platform, isTester=$isTestUser');
+      //debugPrint('[CONSOLE] [app_update_service]🌐 Calling API with params: platform=$platform, isTester=$isTestUser');
       final response = await apiClient.getAppVersion(
         platform: platform,
         isTester: isTestUser,
       );
-      print('[CONSOLE] [app_update_service]🌐 API Response: $response');
+      //debugPrint('[CONSOLE] [app_update_service]🌐 API Response: $response');
       
       if (response is Map<String, dynamic>) {
         final serverVersion = response['version'] as String?;
@@ -71,13 +70,13 @@ class AppUpdateService {
         final updateMessage = response['message'] as String? ?? '';
 
         if (serverVersion != null && serverBuild != null) {
-          print('[CONSOLE] [app_update_service]🌐 Server version: $serverVersion ($serverBuild)');
+          //debugPrint('[CONSOLE] [app_update_service]🌐 Server version: $serverVersion ($serverBuild)');
           
           final hasUpdate = _compareVersions(currentVersion, serverVersion) < 0;
           
           // 🔧 FIX: Mostra aggiornamento solo se c'è una versione nuova (updateRequired viene gestito separatamente)
           if (hasUpdate) {
-            print('[CONSOLE] [app_update_service]✅ Update available!');
+            //debugPrint('[CONSOLE] [app_update_service]✅ Update available!');
             await _saveLastUpdateCheck();
             
             return AppUpdateInfo(
@@ -90,18 +89,18 @@ class AppUpdateService {
               hasUpdate: true,
             );
           } else {
-            print('[CONSOLE] [app_update_service]✅ App is up to date');
+            //debugPrint('[CONSOLE] [app_update_service]✅ App is up to date');
             await _saveLastUpdateCheck();
             return null;
           }
         }
       }
 
-      print('[CONSOLE] [app_update_service]⚠️ Invalid server response');
+      //debugPrint('[CONSOLE] [app_update_service]⚠️ Invalid server response');
       return null;
 
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Update check failed: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Update check failed: $e');
       return null;
     }
   }
@@ -109,14 +108,14 @@ class AppUpdateService {
   /// 🔧 NUOVO: Controlla se c'è qualsiasi aggiornamento (ignora intervallo tempo)
   static Future<AppUpdateInfo?> _checkForAnyUpdate() async {
     try {
-      print('[CONSOLE] [app_update_service]🔍 Checking for any updates...');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 Checking for any updates...');
 
       // 🔧 NUOVO: Controlla prima se l'utente è autenticato
       final sessionService = getIt<SessionService>();
       final isAuthenticated = await sessionService.isAuthenticated();
       
       if (!isAuthenticated) {
-        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
+        //debugPrint('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping update check');
         return null;
       }
 
@@ -143,16 +142,16 @@ class AppUpdateService {
         final updateMessage = response['message'] as String? ?? '';
 
         if (serverVersion != null && serverBuild != null) {
-          print('[CONSOLE] [app_update_service]🔍 Server version: $serverVersion ($serverBuild), update_required: $updateRequired');
-          print('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
+          //debugPrint('[CONSOLE] [app_update_service]🔍 Server version: $serverVersion ($serverBuild), update_required: $updateRequired');
+          //debugPrint('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
           
           // 🔧 FIX: Controlla se le versioni sono diverse
           final hasUpdate = _compareVersions(currentVersion, serverVersion) < 0;
-          print('[CONSOLE] [app_update_service]🔍 Version comparison: current=$currentVersion vs server=$serverVersion, hasUpdate=$hasUpdate');
+          //debugPrint('[CONSOLE] [app_update_service]🔍 Version comparison: current=$currentVersion vs server=$serverVersion, hasUpdate=$hasUpdate');
           
           // Se c'è un aggiornamento, ritornarlo (non solo se è critico)
           if (hasUpdate) {
-            print('[CONSOLE] [app_update_service]✅ UPDATE DETECTED!');
+            //debugPrint('[CONSOLE] [app_update_service]✅ UPDATE DETECTED!');
             return AppUpdateInfo(
               currentVersion: currentVersion,
               currentBuild: currentBuild,
@@ -163,16 +162,16 @@ class AppUpdateService {
               hasUpdate: true,
             );
           } else {
-            print('[CONSOLE] [app_update_service]✅ No update needed (versions match)');
+            //debugPrint('[CONSOLE] [app_update_service]✅ No update needed (versions match)');
           }
         }
       }
 
-      print('[CONSOLE] [app_update_service]✅ No updates found');
+      //debugPrint('[CONSOLE] [app_update_service]✅ No updates found');
       return null;
 
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Update check failed: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Update check failed: $e');
       return null;
     }
   }
@@ -180,14 +179,14 @@ class AppUpdateService {
   /// 🚨 NUOVO: Controlla se c'è un aggiornamento forzato (ignora intervallo tempo)
   static Future<AppUpdateInfo?> _checkForCriticalUpdate() async {
     try {
-      print('[CONSOLE] [app_update_service]🚨 Checking for critical updates...');
+      //debugPrint('[CONSOLE] [app_update_service]🚨 Checking for critical updates...');
 
       // 🔧 NUOVO: Controlla prima se l'utente è autenticato
       final sessionService = getIt<SessionService>();
       final isAuthenticated = await sessionService.isAuthenticated();
       
       if (!isAuthenticated) {
-        print('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping critical update check');
+        //debugPrint('[CONSOLE] [app_update_service]⏳ User not authenticated, skipping critical update check');
         return null;
       }
 
@@ -214,16 +213,16 @@ class AppUpdateService {
         final updateMessage = response['message'] as String? ?? '';
 
         if (serverVersion != null && serverBuild != null) {
-          print('[CONSOLE] [app_update_service]🚨 Server version: $serverVersion ($serverBuild), update_required: $updateRequired');
-          print('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
+          //debugPrint('[CONSOLE] [app_update_service]🚨 Server version: $serverVersion ($serverBuild), update_required: $updateRequired');
+          //debugPrint('[CONSOLE] [app_update_service]📱 Current version: $currentVersion ($currentBuild)');
           
           // 🔧 FIX: Controlla se le versioni sono diverse prima di mostrare aggiornamento forzato
           final hasUpdate = _compareVersions(currentVersion, serverVersion) < 0;
-          print('[CONSOLE] [app_update_service]🔍 Version comparison: current=$currentVersion vs server=$serverVersion, hasUpdate=$hasUpdate');
+          //debugPrint('[CONSOLE] [app_update_service]🔍 Version comparison: current=$currentVersion vs server=$serverVersion, hasUpdate=$hasUpdate');
           
           // Se c'è un aggiornamento forzato E le versioni sono diverse, ritornarlo
           if (updateRequired && hasUpdate) {
-            print('[CONSOLE] [app_update_service]🚨 CRITICAL UPDATE DETECTED!');
+            //debugPrint('[CONSOLE] [app_update_service]🚨 CRITICAL UPDATE DETECTED!');
             return AppUpdateInfo(
               currentVersion: currentVersion,
               currentBuild: currentBuild,
@@ -234,16 +233,16 @@ class AppUpdateService {
               hasUpdate: true,
             );
           } else {
-            print('[CONSOLE] [app_update_service]✅ No critical update needed (versions match or no forced update)');
+            //debugPrint('[CONSOLE] [app_update_service]✅ No critical update needed (versions match or no forced update)');
           }
         }
       }
 
-      print('[CONSOLE] [app_update_service]✅ No critical updates found');
+      //debugPrint('[CONSOLE] [app_update_service]✅ No critical updates found');
       return null;
 
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Critical update check failed: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Critical update check failed: $e');
       return null;
     }
   }
@@ -262,7 +261,7 @@ class AppUpdateService {
       
       return difference >= _updateCheckInterval;
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Error checking last update time: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Error checking last update time: $e');
       return true; // In caso di errore, controlla comunque
     }
   }
@@ -273,7 +272,7 @@ class AppUpdateService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastUpdateCheckKey, DateTime.now().toIso8601String());
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Error saving update check time: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Error saving update check time: $e');
     }
   }
 
@@ -282,7 +281,7 @@ class AppUpdateService {
     final v1Parts = version1.split('.').map(int.parse).toList();
     final v2Parts = version2.split('.').map(int.parse).toList();
     
-    print('[CONSOLE] [app_update_service]🔍 Comparing versions: $version1 (${v1Parts}) vs $version2 (${v2Parts})');
+    //debugPrint('[CONSOLE] [app_update_service]🔍 Comparing versions: $version1 (${v1Parts}) vs $version2 (${v2Parts})');
     
     // Assicurati che entrambe le versioni abbiano lo stesso numero di parti
     while (v1Parts.length < v2Parts.length) v1Parts.add(0);
@@ -290,16 +289,16 @@ class AppUpdateService {
     
     for (int i = 0; i < v1Parts.length; i++) {
       if (v1Parts[i] < v2Parts[i]) {
-        print('[CONSOLE] [app_update_service]🔍 Version $version1 is OLDER than $version2 (part $i: ${v1Parts[i]} < ${v2Parts[i]})');
+        //debugPrint('[CONSOLE] [app_update_service]🔍 Version $version1 is OLDER than $version2 (part $i: ${v1Parts[i]} < ${v2Parts[i]})');
         return -1;
       }
       if (v1Parts[i] > v2Parts[i]) {
-        print('[CONSOLE] [app_update_service]🔍 Version $version1 is NEWER than $version2 (part $i: ${v1Parts[i]} > ${v2Parts[i]})');
+        //debugPrint('[CONSOLE] [app_update_service]🔍 Version $version1 is NEWER than $version2 (part $i: ${v1Parts[i]} > ${v2Parts[i]})');
         return 1;
       }
     }
     
-    print('[CONSOLE] [app_update_service]🔍 Versions are EQUAL: $version1 = $version2');
+    //debugPrint('[CONSOLE] [app_update_service]🔍 Versions are EQUAL: $version1 = $version2');
     return 0; // Versioni uguali
   }
 
@@ -310,37 +309,37 @@ class AppUpdateService {
       final sessionService = getIt<SessionService>();
       final token = await sessionService.getAuthToken();
       
-      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token from SessionService: ${token != null ? "FOUND" : "NOT FOUND"}');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 DEBUG: Token from SessionService: ${token != null ? "FOUND" : "NOT FOUND"}');
       
       if (token == null) {
-        print('[CONSOLE] [app_update_service]❌ No auth token found');
+        //debugPrint('[CONSOLE] [app_update_service]❌ No auth token found');
         return false;
       }
 
-      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token length: ${token.length}');
-      print('[CONSOLE] [app_update_service]🔍 DEBUG: Token preview: ${token.substring(0, 10)}...');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 DEBUG: Token length: ${token.length}');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 DEBUG: Token preview: ${token.substring(0, 10)}...');
 
       // Chiama direttamente l'API di verifica token
       final apiClient = getIt<ApiClient>();
       final response = await apiClient.verifyToken('verify');
       
-      print('[CONSOLE] [app_update_service]🔍 DEBUG: API Response: $response');
+      //debugPrint('[CONSOLE] [app_update_service]🔍 DEBUG: API Response: $response');
       
       if (response is Map<String, dynamic> && response['valid'] == true) {
         final userData = response['user'] as Map<String, dynamic>?;
         if (userData != null) {
           final isTester = userData['is_tester'] == 1 || userData['is_tester'] == true;
-          print('[CONSOLE] [app_update_service]👤 User tester status from API: $isTester');
-          print('[CONSOLE] [app_update_service]👤 User role from API: ${userData['role_name']}');
-          print('[CONSOLE] [app_update_service]👤 User ID from API: ${userData['id']}');
+          //debugPrint('[CONSOLE] [app_update_service]👤 User tester status from API: $isTester');
+          //debugPrint('[CONSOLE] [app_update_service]👤 User role from API: ${userData['role_name']}');
+          //debugPrint('[CONSOLE] [app_update_service]👤 User ID from API: ${userData['id']}');
           return isTester;
         }
       }
       
-      print('[CONSOLE] [app_update_service]❌ Could not get user data from API');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Could not get user data from API');
       return false;
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Error checking user tester status: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Error checking user tester status: $e');
       return false; // In caso di errore, assume utente di produzione
     }
   }
@@ -359,21 +358,21 @@ class AppUpdateService {
         final packageInfo = await PackageInfo.fromPlatform();
         updateUrl = 'https://apps.apple.com/app/id${packageInfo.packageName}';
       } else {
-        print('[CONSOLE] [app_update_service]❌ Platform not supported for updates');
+        //debugPrint('[CONSOLE] [app_update_service]❌ Platform not supported for updates');
         return false;
       }
 
       final uri = Uri.parse(updateUrl);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-        print('[CONSOLE] [app_update_service]✅ Update link opened');
+        //debugPrint('[CONSOLE] [app_update_service]✅ Update link opened');
         return true;
       } else {
-        print('[CONSOLE] [app_update_service]❌ Cannot launch update URL');
+        //debugPrint('[CONSOLE] [app_update_service]❌ Cannot launch update URL');
         return false;
       }
     } catch (e) {
-      print('[CONSOLE] [app_update_service]❌ Error opening update link: $e');
+      //debugPrint('[CONSOLE] [app_update_service]❌ Error opening update link: $e');
       return false;
     }
   }

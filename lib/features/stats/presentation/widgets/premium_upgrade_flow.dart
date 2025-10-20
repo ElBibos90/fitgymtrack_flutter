@@ -40,7 +40,7 @@ class PremiumUpgradeFlow {
                     borderRadius: BorderRadius.circular(40.r),
                     boxShadow: [
                       BoxShadow(
-                        color: StatsTheme.warningOrange.withOpacity(0.3),
+                        color: StatsTheme.warningOrange.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
@@ -176,7 +176,7 @@ class PremiumUpgradeFlow {
               width: 32.w,
               height: 32.h,
               decoration: BoxDecoration(
-                color: StatsTheme.primaryBlue.withOpacity(0.1),
+                color: StatsTheme.primaryBlue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16.r),
               ),
               child: Icon(
@@ -273,7 +273,7 @@ class PremiumUpgradeButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(StatsTheme.radiusMedium.r),
           boxShadow: [
             BoxShadow(
-              color: StatsTheme.warningOrange.withOpacity(0.3),
+              color: StatsTheme.warningOrange.withValues(alpha: 0.3),
               blurRadius: 8,
               spreadRadius: 2,
             ),
@@ -327,7 +327,7 @@ class PremiumFeatureLock extends StatelessWidget {
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(StatsTheme.radiusLarge.r),
             ),
             child: Center(
@@ -363,7 +363,7 @@ class PremiumFeatureLock extends StatelessWidget {
                   Text(
                     'Sblocca $featureName con Premium',
                     style: StatsTheme.bodyMedium.copyWith(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),

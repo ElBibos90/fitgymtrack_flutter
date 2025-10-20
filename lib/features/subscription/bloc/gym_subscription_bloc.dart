@@ -122,11 +122,11 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
     Emitter<GymSubscriptionState> emit,
   ) async {
     try {
-      //print('[CONSOLE] [gym_subscription_bloc] 🏋️ Loading gym subscription for user: ${event.userId}');
+      //debugPrint('[CONSOLE] [gym_subscription_bloc] 🏋️ Loading gym subscription for user: ${event.userId}');
 
       // Controlla cache se non è force refresh
       if (!event.forceRefresh && _isCacheValid()) {
-        //print('[CONSOLE] [gym_subscription_bloc] ⚡ Using cached gym subscription data');
+        //debugPrint('[CONSOLE] [gym_subscription_bloc] ⚡ Using cached gym subscription data');
         emit(GymSubscriptionLoaded(
           subscription: _cachedSubscription!,
           loadedAt: _lastUpdate!,
@@ -136,7 +136,7 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
 
       // Evita carichi multipli simultanei
       if (_isLoading) {
-        //print('[CONSOLE] [gym_subscription_bloc] ⏳ Gym subscription loading already in progress');
+        //debugPrint('[CONSOLE] [gym_subscription_bloc] ⏳ Gym subscription loading already in progress');
         return;
       }
 
@@ -149,14 +149,14 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
         _cachedSubscription = result.data;
         _lastUpdate = DateTime.now();
         
-        //print('[CONSOLE] [gym_subscription_bloc] ✅ Gym subscription loaded: ${result.data!.gymName}');
+        //debugPrint('[CONSOLE] [gym_subscription_bloc] ✅ Gym subscription loaded: ${result.data!.gymName}');
         emit(GymSubscriptionLoaded(
           subscription: result.data!,
           loadedAt: _lastUpdate!,
         ));
       } else {
         final error = result.message ?? 'Errore sconosciuto';
-        print('[CONSOLE] [gym_subscription_bloc] ❌ Error loading gym subscription: $error');
+        //debugPrint('[CONSOLE] [gym_subscription_bloc] ❌ Error loading gym subscription: $error');
         
         if (error.contains('Nessun abbonamento attivo')) {
           emit(const GymSubscriptionNotFound());
@@ -165,7 +165,7 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
         }
       }
     } catch (e) {
-      print('[CONSOLE] [gym_subscription_bloc] ❌ Exception loading gym subscription: $e');
+      //debugPrint('[CONSOLE] [gym_subscription_bloc] ❌ Exception loading gym subscription: $e');
       emit(GymSubscriptionError(
         message: 'Errore nel caricamento abbonamento palestra',
         details: e.toString(),
@@ -201,6 +201,6 @@ class GymSubscriptionBloc extends Bloc<GymSubscriptionEvent, GymSubscriptionStat
   void invalidateCache() {
     _cachedSubscription = null;
     _lastUpdate = null;
-    //print('[CONSOLE] [gym_subscription_bloc] 🧹 Cache invalidated');
+    //debugPrint('[CONSOLE] [gym_subscription_bloc] 🧹 Cache invalidated');
   }
 }

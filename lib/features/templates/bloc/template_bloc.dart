@@ -307,15 +307,15 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     Emitter<TemplateState> emit,
   ) async {
     try {
-      //print('🔍 TemplateBloc._onLoadTemplates: Starting with event: $event');
-      //print('🔍 TemplateBloc._onLoadTemplates: Current state: ${state.runtimeType}');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplates: Starting with event: $event');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplates: Current state: ${state.runtimeType}');
       
       if (event.refresh || state is TemplateInitial) {
-        //print('🔍 TemplateBloc._onLoadTemplates: Emitting TemplateLoading');
+        //debugPrint('🔍 TemplateBloc._onLoadTemplates: Emitting TemplateLoading');
         emit(TemplateLoading());
       }
 
-      //print('🔍 TemplateBloc._onLoadTemplates: Calling _templateService.getTemplates');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplates: Calling _templateService.getTemplates');
       final response = await _templateService.getTemplates(
         categoryId: event.categoryId,
         difficulty: event.difficulty,
@@ -326,10 +326,10 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         offset: event.offset,
       );
       
-      //print('🔍 TemplateBloc._onLoadTemplates: Service returned ${response.templates.length} templates');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplates: Service returned ${response.templates.length} templates');
 
       if (event.refresh || state is TemplateInitial) {
-        //print('🔍 TemplateBloc._onLoadTemplates: Emitting TemplatesLoaded (refresh/initial)');
+        //debugPrint('🔍 TemplateBloc._onLoadTemplates: Emitting TemplatesLoaded (refresh/initial)');
         emit(TemplatesLoaded(
           templates: response.templates,
           pagination: response.pagination,
@@ -337,7 +337,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
           hasMore: response.pagination.hasMore,
         ));
       } else if (state is TemplatesLoaded) {
-        //print('🔍 TemplateBloc._onLoadTemplates: Appending to existing TemplatesLoaded state');
+        //debugPrint('🔍 TemplateBloc._onLoadTemplates: Appending to existing TemplatesLoaded state');
         final currentState = state as TemplatesLoaded;
         final allTemplates = [...currentState.templates, ...response.templates];
         
@@ -349,8 +349,8 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         ));
       }
     } catch (e) {
-      print('❌ TemplateBloc._onLoadTemplates ERROR: $e');
-      print('❌ TemplateBloc._onLoadTemplates ERROR stack: ${e.toString()}');
+      //debugPrint('❌ TemplateBloc._onLoadTemplates ERROR: $e');
+      //debugPrint('❌ TemplateBloc._onLoadTemplates ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nel caricamento dei template: $e'));
     }
   }
@@ -360,24 +360,24 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     Emitter<TemplateState> emit,
   ) async {
     try {
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Starting for templateId=${event.templateId}');
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Current state: ${state.runtimeType}');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Starting for templateId=${event.templateId}');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Current state: ${state.runtimeType}');
       
       emit(TemplateDetailsLoading());
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Emitted TemplateDetailsLoading');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Emitted TemplateDetailsLoading');
 
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Calling _templateService.getTemplateDetails');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Calling _templateService.getTemplateDetails');
       final response = await _templateService.getTemplateDetails(event.templateId);
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Service returned template ${response.template.name}');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Service returned template ${response.template.name}');
 
       emit(TemplateDetailsLoaded(
         template: response.template,
         userPremium: response.userPremium,
       ));
-      //print('🔍 TemplateBloc._onLoadTemplateDetails: Emitted TemplateDetailsLoaded');
+      //debugPrint('🔍 TemplateBloc._onLoadTemplateDetails: Emitted TemplateDetailsLoaded');
     } catch (e) {
-      print('❌ TemplateBloc._onLoadTemplateDetails ERROR: $e');
-      print('❌ TemplateBloc._onLoadTemplateDetails ERROR stack: ${e.toString()}');
+      //debugPrint('❌ TemplateBloc._onLoadTemplateDetails ERROR: $e');
+      //debugPrint('❌ TemplateBloc._onLoadTemplateDetails ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nel caricamento dei dettagli: $e'));
     }
   }
@@ -400,20 +400,20 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     Emitter<TemplateState> emit,
   ) async {
     try {
-      //print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Starting with event: $event');
-      //print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Current state: ${state.runtimeType}');
+      //debugPrint('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Starting with event: $event');
+      //debugPrint('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Current state: ${state.runtimeType}');
       
       emit(CreatingWorkoutFromTemplate());
-      //print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted CreatingWorkoutFromTemplate');
+      //debugPrint('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted CreatingWorkoutFromTemplate');
 
       final response = await _templateService.createWorkoutFromTemplate(event.request);
-      //print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Service call completed successfully');
+      //debugPrint('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Service call completed successfully');
 
       emit(WorkoutCreatedFromTemplate(response));
-      //print('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted WorkoutCreatedFromTemplate');
+      //debugPrint('🔍 TemplateBloc._onCreateWorkoutFromTemplate: Emitted WorkoutCreatedFromTemplate');
     } catch (e) {
-      print('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR: $e');
-      print('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR stack: ${e.toString()}');
+      //debugPrint('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR: $e');
+      //debugPrint('❌ TemplateBloc._onCreateWorkoutFromTemplate ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nella creazione della scheda: $e'));
     }
   }
@@ -450,7 +450,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         ));
       } catch (detailsError) {
         // 🔧 FIX: Se il ricaricamento dei dettagli fallisce, emetti comunque il successo
-        print('⚠️ TemplateBloc._onRateTemplate: Errore nel ricaricamento dettagli: $detailsError');
+        //debugPrint('⚠️ TemplateBloc._onRateTemplate: Errore nel ricaricamento dettagli: $detailsError');
         emit(TemplateRated(TemplateRatingResponse(
           success: true,
           message: 'Valutazione inviata con successo',
@@ -459,8 +459,8 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         )));
       }
     } catch (e) {
-      print('❌ TemplateBloc._onRateTemplate ERROR: $e');
-      print('❌ TemplateBloc._onRateTemplate ERROR stack: ${e.toString()}');
+      //debugPrint('❌ TemplateBloc._onRateTemplate ERROR: $e');
+      //debugPrint('❌ TemplateBloc._onRateTemplate ERROR stack: ${e.toString()}');
       emit(TemplateError('Errore nella valutazione: $e'));
     }
   }
@@ -547,7 +547,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
     Emitter<TemplateState> emit,
   ) async {
     try {
-      //print('🔍 TemplateBloc._onRefreshTemplatesList: Starting refresh');
+      //debugPrint('🔍 TemplateBloc._onRefreshTemplatesList: Starting refresh');
       
       emit(TemplateLoading());
 
@@ -561,7 +561,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         offset: event.offset,
       );
       
-      //print('🔍 TemplateBloc._onRefreshTemplatesList: Service returned ${response.templates.length} templates');
+      //debugPrint('🔍 TemplateBloc._onRefreshTemplatesList: Service returned ${response.templates.length} templates');
 
       emit(TemplatesLoaded(
         templates: response.templates,
@@ -570,7 +570,7 @@ class TemplateBloc extends Bloc<TemplateEvent, TemplateState> {
         hasMore: response.pagination.hasMore,
       ));
     } catch (e) {
-      print('❌ TemplateBloc._onRefreshTemplatesList ERROR: $e');
+      //debugPrint('❌ TemplateBloc._onRefreshTemplatesList ERROR: $e');
       emit(TemplateError('Errore nel ricaricamento dei template: $e'));
     }
   }

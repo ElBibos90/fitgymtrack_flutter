@@ -309,7 +309,7 @@ class ExerciseCardLayoutB extends StatelessWidget {
                           errorWidget: (context, url, error) {
                             // [NEW_PROGR] Log errore caricamento immagine in ExerciseCardLayoutB
                             // ignore: avoid_print
-                            print('[NEW_PROGR] Errore CachedNetworkImage: $url, Errore: $error');
+                            //debugPrint('[NEW_PROGR] Errore CachedNetworkImage: $url, Errore: $error');
                             if (onImageLoadError != null) {
                               onImageLoadError!(url, error);
                             }
@@ -527,8 +527,8 @@ class ExerciseCardLayoutB extends StatelessWidget {
                     : WorkoutDesignSystem.primary600,
                   side: BorderSide(
                     color: currentSeries > 1 
-                      ? WorkoutDesignSystem.gray400.withOpacity(0.3)
-                      : WorkoutDesignSystem.primary600.withOpacity(0.3),
+                      ? WorkoutDesignSystem.gray400.withValues(alpha: 0.3)
+                      : WorkoutDesignSystem.primary600.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                   padding: EdgeInsets.symmetric(

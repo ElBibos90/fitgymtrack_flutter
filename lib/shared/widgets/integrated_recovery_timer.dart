@@ -108,7 +108,7 @@ class _IntegratedRecoveryTimerState extends State<IntegratedRecoveryTimer>
         ),
       ));
     } catch (e) {
-      print("🔊 [INTEGRATED TIMER] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [INTEGRATED TIMER] Error configuring AudioContext: $e");
     }
   }
 
@@ -193,7 +193,7 @@ class _IntegratedRecoveryTimerState extends State<IntegratedRecoveryTimer>
       await _audioPlayer.setVolume(volume);
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [INTEGRATED TIMER] Error playing countdown beep: $e");
+      //debugPrint("🔊 [INTEGRATED TIMER] Error playing countdown beep: $e");
     }
   }
 
@@ -207,7 +207,7 @@ class _IntegratedRecoveryTimerState extends State<IntegratedRecoveryTimer>
         await Future.delayed(const Duration(milliseconds: 900));
       }
     } catch (e) {
-      print("🔊 [INTEGRATED TIMER] Error playing completion sound: $e");
+      //debugPrint("🔊 [INTEGRATED TIMER] Error playing completion sound: $e");
     }
   }
 
@@ -726,7 +726,7 @@ class _IntegratedRecoveryTimerState extends State<IntegratedRecoveryTimer>
 
   @override
   Widget build(BuildContext context) {
-    print("[TIMER] 🚀 IntegratedRecoveryTimer build - isDismissed: $_isDismissed, isMinimized: $_isMinimized, remainingSeconds: $_remainingSeconds");
+    //debugPrint("[TIMER] 🚀 IntegratedRecoveryTimer build - isDismissed: $_isDismissed, isMinimized: $_isMinimized, remainingSeconds: $_remainingSeconds");
     
     if (_isDismissed) return const SizedBox.shrink();
 

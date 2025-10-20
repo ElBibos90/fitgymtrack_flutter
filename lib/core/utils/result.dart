@@ -100,7 +100,7 @@ class Result<T> {
       final result = await operation();
       //print('[CONSOLE] [result]Async operation completed successfully');
       return Result.success(result);
-    } catch (e, stackTrace) {
+    } catch (e) {
       //print('[CONSOLE] [result]Async operation failed: $e');
 
       // Gestione di diversi tipi di eccezioni

@@ -70,7 +70,7 @@ Future<void> _onRestorePendingWorkoutRequested(
   RestorePendingWorkoutRequested event,
   Emitter<AuthState> emit,
 ) async {
-  print('[CONSOLE] [auth_bloc] 🔄 Restoring pending workout...');
+  '[CONSOLE] [auth_bloc] 🔄 Restoring pending workout...');
   
   try {
     final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
@@ -81,7 +81,7 @@ Future<void> _onRestorePendingWorkoutRequested(
     // Non cambiare lo stato, lascia che l'AuthWrapper gestisca la navigazione
     // Lo stato rimane quello corrente (autenticato)
   } catch (e) {
-    print('[CONSOLE] [auth_bloc] ❌ Error restoring pending workout: $e');
+    '[CONSOLE] [auth_bloc] ❌ Error restoring pending workout: $e');
     emit(AuthError(message: 'Errore nel ripristino dell\'allenamento: $e'));
   }
 }

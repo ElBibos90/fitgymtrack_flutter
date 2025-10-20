@@ -202,11 +202,11 @@ class _SplashScreenState extends State<SplashScreen>
     try {
       // 🔧 FIX: Rimosso caricamento subscription dal splash
       // La subscription verrà caricata nella home screen DOPO la validazione del token
-      print('[CONSOLE] [splash_screen]✅ Splash screen preload completed (no subscription loading)');
+      //debugPrint('[CONSOLE] [splash_screen]✅ Splash screen preload completed (no subscription loading)');
       
       // 🔧 RIMOSSO: Controllo aggiornamenti spostato nella home screen
     } catch (e) {
-      print('[CONSOLE] [splash_screen]❌ Splash preload error: $e');
+      //debugPrint('[CONSOLE] [splash_screen]❌ Splash preload error: $e');
       // Non bloccare l'app per errori di preload
     }
   }

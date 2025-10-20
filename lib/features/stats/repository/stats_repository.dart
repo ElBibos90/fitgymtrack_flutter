@@ -16,16 +16,16 @@ class StatsRepository {
   /// Recupera le statistiche generali dell'utente
   Future<UserStatsResponse> getUserStats() async {
     try {
-      //print('🔄 Recupero statistiche utente...');
+      //debugPrint('🔄 Recupero statistiche utente...');
 
       final response = await _apiClient.getUserStats();
       final statsResponse = UserStatsResponse.fromJson(response);
 
-      //print('📊 Statistiche caricate - Premium: ${statsResponse.isPremium}');
+      //debugPrint('📊 Statistiche caricate - Premium: ${statsResponse.isPremium}');
       return statsResponse;
 
     } on DioException catch (e) {
-      print('❌ Errore DioException nel recupero statistiche utente: ${e.message}');
+      //debugPrint('❌ Errore DioException nel recupero statistiche utente: ${e.message}');
 
       if (e.response?.statusCode == 401) {
         throw StatsException('Sessione scaduta. Effettua nuovamente il login.');
@@ -38,7 +38,7 @@ class StatsRepository {
       throw StatsException('Errore di connessione. Verifica la tua connessione internet.');
 
     } catch (e) {
-      print('❌ Errore generico nel recupero statistiche utente: $e');
+      //debugPrint('❌ Errore generico nel recupero statistiche utente: $e');
       throw StatsException('Errore imprevisto nel caricamento delle statistiche.');
     }
   }
@@ -50,16 +50,16 @@ class StatsRepository {
   /// Recupera le statistiche per un periodo specifico
   Future<PeriodStatsResponse> getPeriodStats(StatsPeriod period) async {
     try {
-      //print('🔄 Recupero statistiche periodo: ${period.apiValue}');
+      //debugPrint('🔄 Recupero statistiche periodo: ${period.apiValue}');
 
       final response = await _apiClient.getPeriodStats(period.apiValue);
       final periodStatsResponse = PeriodStatsResponse.fromJson(response);
 
-      //print('📅 Statistiche periodo ${period.displayName} caricate - Premium: ${periodStatsResponse.isPremium}');
+      //debugPrint('📅 Statistiche periodo ${period.displayName} caricate - Premium: ${periodStatsResponse.isPremium}');
       return periodStatsResponse;
 
     } on DioException catch (e) {
-      print('❌ Errore DioException nel recupero statistiche periodo: ${e.message}');
+      //debugPrint('❌ Errore DioException nel recupero statistiche periodo: ${e.message}');
 
       if (e.response?.statusCode == 400) {
         throw StatsException('Periodo non valido: ${period.apiValue}');
@@ -74,7 +74,7 @@ class StatsRepository {
       throw StatsException('Errore di connessione. Verifica la tua connessione internet.');
 
     } catch (e) {
-      print('❌ Errore generico nel recupero statistiche periodo: $e');
+      //debugPrint('❌ Errore generico nel recupero statistiche periodo: $e');
       throw StatsException('Errore imprevisto nel caricamento delle statistiche del periodo.');
     }
   }
@@ -86,7 +86,7 @@ class StatsRepository {
   /// Recupera sia le statistiche utente che quelle di un periodo specifico
   Future<StatsBundle> getStatsBundle(StatsPeriod initialPeriod) async {
     try {
-      //print('🔄 Recupero bundle statistiche completo...');
+      //debugPrint('🔄 Recupero bundle statistiche completo...');
 
       // Esegui le chiamate in parallelo per migliori performance
       final results = await Future.wait([
@@ -97,7 +97,7 @@ class StatsRepository {
       final userStats = results[0] as UserStatsResponse;
       final periodStats = results[1] as PeriodStatsResponse;
 
-      //print('📊 Bundle statistiche caricato con successo');
+      //debugPrint('📊 Bundle statistiche caricato con successo');
 
       return StatsBundle(
         userStats: userStats,
@@ -106,18 +106,18 @@ class StatsRepository {
       );
 
     } catch (e) {
-      print('❌ Errore nel recupero bundle statistiche: $e');
+      //debugPrint('❌ Errore nel recupero bundle statistiche: $e');
       rethrow;
     }
   }
 
   /// Aggiorna le statistiche di un periodo specifico
   Future<PeriodStatsResponse> refreshPeriodStats(StatsPeriod period) async {
-    //print('🔄 Refresh statistiche periodo: ${period.displayName}');
+    //debugPrint('🔄 Refresh statistiche periodo: ${period.displayName}');
 
     final stats = await getPeriodStats(period);
 
-    //print('✅ Refresh completato per periodo: ${period.displayName}');
+    //debugPrint('✅ Refresh completato per periodo: ${period.displayName}');
     return stats;
   }
 }

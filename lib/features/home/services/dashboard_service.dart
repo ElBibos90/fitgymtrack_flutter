@@ -92,8 +92,8 @@ class DashboardService {
   /// ❌ DEPRECATO: Naviga alla tab Workouts usando GoRouter (PROBLEMATICO)
   /// Usare invece la callback function onNavigateToWorkouts
   static void _navigateToWorkouts(BuildContext context) {
-    //print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
-    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToWorkouts callback instead');
+    //debugPrint('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    //debugPrint('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToWorkouts callback instead');
     // Per ora usa GoRouter come fallback
     context.go('/workouts');
   }
@@ -101,16 +101,16 @@ class DashboardService {
   /// ❌ DEPRECATO: Naviga alla schermata Achievements
   /// Usare invece la callback function onNavigateToAchievements
   static void _navigateToAchievements(BuildContext context) {
-    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
-    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToAchievements callback instead');
+    //debugPrint('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    //debugPrint('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToAchievements callback instead');
     context.push('/achievements');
   }
 
   /// ❌ DEPRECATO: Naviga alla schermata Profilo
   /// Usare invece la callback function onNavigateToProfile
   static void _navigateToProfile(BuildContext context) {
-    print('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
-    print('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToProfile callback instead');
+    //debugPrint('[CONSOLE] [dashboard_service]⚠️ WARNING: Using deprecated GoRouter navigation!');
+    //debugPrint('[CONSOLE] [dashboard_service]💡 SUGGESTION: Pass onNavigateToProfile callback instead');
     context.push('/profile');
   }
 

@@ -7,24 +7,24 @@ part 'template_models.g.dart';
 bool _boolFromInt(dynamic value) {
   try {
     if (value == null) {
-      //print('🔍 _boolFromInt: value is null, returning false');
+      //debugPrint('🔍 _boolFromInt: value is null, returning false');
       return false;
     }
     if (value is bool) return value;
     if (value is int) {
       final result = value != 0;
-      //print('🔍 _boolFromInt: int $value -> $result');
+      //debugPrint('🔍 _boolFromInt: int $value -> $result');
       return result;
     }
     if (value is String) {
       final result = value == '1' || value.toLowerCase() == 'true';
-      //print('🔍 _boolFromInt: string "$value" -> $result');
+      //debugPrint('🔍 _boolFromInt: string "$value" -> $result');
       return result;
     }
-    //print('🔍 _boolFromInt: value=$value, type=${value.runtimeType}');
+    //debugPrint('🔍 _boolFromInt: value=$value, type=${value.runtimeType}');
     return false;
   } catch (e) {
-    print('❌ _boolFromInt ERROR: value=$value, type=${value.runtimeType}, error=$e');
+    //debugPrint('❌ _boolFromInt ERROR: value=$value, type=${value.runtimeType}, error=$e');
     return false;
   }
 }
@@ -42,20 +42,20 @@ double? _doubleFromDynamic(dynamic value) {
 double _doubleFromDynamicRequired(dynamic value) {
   try {
     if (value == null) {
-      //print('🔍 _doubleFromDynamicRequired: value is null, returning 0.0');
+      //debugPrint('🔍 _doubleFromDynamicRequired: value is null, returning 0.0');
       return 0.0;
     }
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) {
       final result = double.tryParse(value) ?? 0.0;
-      //print('🔍 _doubleFromDynamicRequired: string "$value" -> $result');
+      //debugPrint('🔍 _doubleFromDynamicRequired: string "$value" -> $result');
       return result;
     }
-    //print('🔍 _doubleFromDynamicRequired: value=$value, type=${value.runtimeType}');
+    //debugPrint('🔍 _doubleFromDynamicRequired: value=$value, type=${value.runtimeType}');
     return 0.0;
   } catch (e) {
-    print('❌ _doubleFromDynamicRequired ERROR: value=$value, type=${value.runtimeType}, error=$e');
+    //debugPrint('❌ _doubleFromDynamicRequired ERROR: value=$value, type=${value.runtimeType}, error=$e');
     return 0.0;
   }
 }
@@ -65,10 +65,10 @@ String _stringFromDynamic(dynamic value) {
   try {
     if (value == null) return '';
     if (value is String) return value;
-    //print('🔍 _stringFromDynamic: value=$value, type=${value.runtimeType}');
+    //debugPrint('🔍 _stringFromDynamic: value=$value, type=${value.runtimeType}');
     return value.toString();
   } catch (e) {
-    print('❌ _stringFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
+    //debugPrint('❌ _stringFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
     return '';
   }
 }
@@ -88,10 +88,10 @@ int _intFromDynamic(dynamic value) {
     if (value is int) return value;
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
-    //print('🔍 _intFromDynamic: value=$value, type=${value.runtimeType}');
+    //debugPrint('🔍 _intFromDynamic: value=$value, type=${value.runtimeType}');
     return 0;
   } catch (e) {
-    print('❌ _intFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
+    //debugPrint('❌ _intFromDynamic ERROR: value=$value, type=${value.runtimeType}, error=$e');
     return 0;
   }
 }
@@ -291,11 +291,11 @@ class WorkoutTemplate {
 
   factory WorkoutTemplate.fromJson(Map<String, dynamic> json) {
     try {
-      //print('🔍 WorkoutTemplate.fromJson: parsing template ${json['id']} - ${json['name']}');
+      //debugPrint('🔍 WorkoutTemplate.fromJson: parsing template ${json['id']} - ${json['name']}');
       return _$WorkoutTemplateFromJson(json);
     } catch (e) {
-      print('❌ WorkoutTemplate.fromJson ERROR: template ${json['id']} - ${json['name']}, error=$e');
-      print('❌ JSON data: $json');
+      //debugPrint('❌ WorkoutTemplate.fromJson ERROR: template ${json['id']} - ${json['name']}, error=$e');
+      //debugPrint('❌ JSON data: $json');
       rethrow;
     }
   }
@@ -421,11 +421,11 @@ class TemplateExercise {
 
   factory TemplateExercise.fromJson(Map<String, dynamic> json) {
     try {
-      //print('🔍 TemplateExercise.fromJson: parsing exercise ${json['exercise_id']} - ${json['exercise_name']}');
+      //debugPrint('🔍 TemplateExercise.fromJson: parsing exercise ${json['exercise_id']} - ${json['exercise_name']}');
       return _$TemplateExerciseFromJson(json);
     } catch (e) {
-      print('❌ TemplateExercise.fromJson ERROR: exercise ${json['exercise_id']} - ${json['exercise_name']}, error=$e');
-      print('❌ JSON data: $json');
+      //debugPrint('❌ TemplateExercise.fromJson ERROR: exercise ${json['exercise_id']} - ${json['exercise_name']}, error=$e');
+      //debugPrint('❌ JSON data: $json');
       rethrow;
     }
   }

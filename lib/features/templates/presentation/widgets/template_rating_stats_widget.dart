@@ -79,7 +79,7 @@ class TemplateRatingStatsWidget extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Text(
@@ -99,10 +99,10 @@ class TemplateRatingStatsWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: _getRatingColor(template.ratingAverage).withOpacity(0.1),
+        color: _getRatingColor(template.ratingAverage).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
-          color: _getRatingColor(template.ratingAverage).withOpacity(0.3),
+          color: _getRatingColor(template.ratingAverage).withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -208,10 +208,10 @@ class TemplateRatingStatsWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -284,7 +284,7 @@ class TemplateRatingStatsWidget extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 8.h),
       padding: EdgeInsets.all(8.w),
       decoration: BoxDecoration(
-        color: AppColors.backgroundLight.withOpacity(0.3),
+        color: AppColors.backgroundLight.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(6.r),
       ),
       child: Row(

@@ -31,7 +31,7 @@ class SmartInsightCard extends StatelessWidget {
           alignment: Alignment.centerRight,
           padding: EdgeInsets.only(right: StatsTheme.space4.w),
           decoration: BoxDecoration(
-            color: StatsTheme.warningRed.withOpacity(0.1),
+            color: StatsTheme.warningRed.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(StatsTheme.radiusLarge.r),
           ),
           child: Icon(
@@ -113,7 +113,7 @@ class SmartInsightCard extends StatelessWidget {
                               vertical: StatsTheme.space1.h,
                             ),
                             decoration: BoxDecoration(
-                              color: _getTypeColor().withOpacity(0.1),
+                              color: _getTypeColor().withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(StatsTheme.radiusSmall.r),
                             ),
                             child: Text(
@@ -132,7 +132,7 @@ class SmartInsightCard extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.all(StatsTheme.space1.w),
                               decoration: BoxDecoration(
-                                color: StatsTheme.warningOrange.withOpacity(0.1),
+                                color: StatsTheme.warningOrange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(StatsTheme.radiusSmall.r),
                               ),
                               child: Icon(
@@ -227,7 +227,7 @@ class SmartInsightCard extends StatelessWidget {
   }
 
   Color _getBorderColor() {
-    return _getTypeColor().withOpacity(0.2);
+    return _getTypeColor().withValues(alpha: 0.2);
   }
 }
 

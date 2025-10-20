@@ -90,10 +90,10 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8.r),
                 border: Border.all(
-                  color: AppColors.error.withOpacity(0.3),
+                  color: AppColors.error.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -139,13 +139,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: _isAuthenticated == true 
-                ? AppColors.success.withOpacity(0.1)
-                : AppColors.error.withOpacity(0.1),
+                ? AppColors.success.withValues(alpha: 0.1)
+                : AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(
               color: _isAuthenticated == true 
-                  ? AppColors.success.withOpacity(0.3)
-                  : AppColors.error.withOpacity(0.3),
+                  ? AppColors.success.withValues(alpha: 0.3)
+                  : AppColors.error.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -288,12 +288,12 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
       final token = await sessionService.getAuthToken();
       final isAuthenticated = await sessionService.isAuthenticated();
       
-      //print('🔍 TokenDebugWidget: Token locale: ${token != null ? 'Presente' : 'Mancante'}');
-      //print('🔍 TokenDebugWidget: IsAuthenticated: $isAuthenticated');
+      //debugPrint('🔍 TokenDebugWidget: Token locale: ${token != null ? 'Presente' : 'Mancante'}');
+      //debugPrint('🔍 TokenDebugWidget: IsAuthenticated: $isAuthenticated');
       
       if (token != null) {
-        //print('🔍 TokenDebugWidget: Token (primi 30 caratteri): ${token.substring(0, 30)}...');
-        //print('🔍 TokenDebugWidget: Token length: ${token.length}');
+        //debugPrint('🔍 TokenDebugWidget: Token (primi 30 caratteri): ${token.substring(0, 30)}...');
+        //debugPrint('🔍 TokenDebugWidget: Token length: ${token.length}');
       }
 
       setState(() {
@@ -304,7 +304,7 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
       setState(() {
         _error = 'Errore: $e';
       });
-      print('❌ TokenDebugWidget: Errore nel check: $e');
+      //debugPrint('❌ TokenDebugWidget: Errore nel check: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -321,13 +321,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
     try {
       // Test connessione con Dio
       final dio = getIt<Dio>();
-      //print('🔍 TokenDebugWidget: Testando connessione con Dio...');
+      //debugPrint('🔍 TokenDebugWidget: Testando connessione con Dio...');
       
       // Test semplice - chiamata a un endpoint che richiede autenticazione
       final response = await dio.get('/simple_auth_test.php');
       
-      //print('🔍 TokenDebugWidget: Risposta server: ${response.statusCode}');
-      print('🔍 TokenDebugWidget: Dati risposta: ${response.data}');
+      //debugPrint('🔍 TokenDebugWidget: Risposta server: ${response.statusCode}');
+      //debugPrint('🔍 TokenDebugWidget: Dati risposta: ${response.data}');
       
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
@@ -337,13 +337,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
           _isAuthenticated = isAuth;
         });
         
-        //print('🔍 TokenDebugWidget: Server conferma autenticazione: $isAuth');
+        //debugPrint('🔍 TokenDebugWidget: Server conferma autenticazione: $isAuth');
       }
     } catch (e) {
       setState(() {
         _error = 'Errore connessione: $e';
       });
-      print('❌ TokenDebugWidget: Errore connessione: $e');
+      //debugPrint('❌ TokenDebugWidget: Errore connessione: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -360,13 +360,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
     try {
       // Test template rating con Dio
       final dio = getIt<Dio>();
-      //print('🔍 TokenDebugWidget: Testando template rating...');
+      //debugPrint('🔍 TokenDebugWidget: Testando template rating...');
       
       // Test template rating finale
       final response = await dio.get('/test_rating_final.php');
       
-      //print('🔍 TokenDebugWidget: Risposta template rating: ${response.statusCode}');
-      //print('🔍 TokenDebugWidget: Dati template rating: ${response.data}');
+      //debugPrint('🔍 TokenDebugWidget: Risposta template rating: ${response.statusCode}');
+      //debugPrint('🔍 TokenDebugWidget: Dati template rating: ${response.data}');
       
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
@@ -376,13 +376,13 @@ class _TokenDebugWidgetState extends State<TokenDebugWidget> {
           _isAuthenticated = isAuth;
         });
         
-        //print('🔍 TokenDebugWidget: Template rating test: ${data['message']}');
+        //debugPrint('🔍 TokenDebugWidget: Template rating test: ${data['message']}');
       }
     } catch (e) {
       setState(() {
         _error = 'Errore template rating: $e';
       });
-      print('❌ TokenDebugWidget: Errore template rating: $e');
+      //debugPrint('❌ TokenDebugWidget: Errore template rating: $e');
     } finally {
       setState(() {
         _isLoading = false;

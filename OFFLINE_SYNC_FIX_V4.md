@@ -160,15 +160,15 @@ void _showPendingWorkoutDialog() {
 /// 🔧 FIX: Avvia l'allenamento in sospeso
 void _startPendingWorkout(Map<String, dynamic> pendingWorkout) async {
   try {
-    print('[CONSOLE] [auth_wrapper] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
+    '[CONSOLE] [auth_wrapper] 🚀 Starting pending workout: ${pendingWorkout['allenamento_id']}');
     
     // Usa l'ActiveWorkoutBloc per ripristinare l'allenamento
     final activeWorkoutBloc = getIt<ActiveWorkoutBloc>();
     activeWorkoutBloc.add(RestorePendingWorkout(pendingWorkout));
     
-    print('[CONSOLE] [auth_wrapper] ✅ Pending workout started successfully');
+    '[CONSOLE] [auth_wrapper] ✅ Pending workout started successfully');
   } catch (e) {
-    print('[CONSOLE] [auth_wrapper] ❌ Error starting pending workout: $e');
+    '[CONSOLE] [auth_wrapper] ❌ Error starting pending workout: $e');
   }
 }
 ```

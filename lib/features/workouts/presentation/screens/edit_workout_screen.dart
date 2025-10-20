@@ -12,14 +12,12 @@ import '../../../../shared/widgets/loading_overlay.dart';
 import '../../../../shared/widgets/custom_snackbar.dart';
 import '../../../../shared/widgets/workout_exercise_editor.dart';
 import '../../../../shared/widgets/exercise_selection_dialog.dart';
-import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../exercises/models/exercises_response.dart';
 import '../../bloc/workout_bloc.dart';
 import '../../models/workout_plan_models.dart';
-import '../../../../shared/widgets/exercise_editor.dart';
 
 class EditWorkoutScreen extends StatefulWidget {
   final int workoutId;
@@ -44,7 +42,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   bool _hasChanges = false;
   bool _isWaitingForRefresh = false; // ✅ Track se stiamo aspettando il refresh dopo update
 
-  WorkoutPlan? _originalWorkoutPlan;
   List<WorkoutExercise> _exercises = [];
   List<WorkoutExercise> _removedExercises = [];
 
@@ -53,8 +50,6 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   bool _showExerciseDialog = false;
   bool _isLoadingAvailableExercises = false;
   int? _currentUserId;
-  int? _editIndex;
-  String? _error;
 
   @override
   void initState() {
@@ -75,8 +70,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _loadWorkoutDetails() {
-    print(
-        '[CONSOLE] [edit_workout_screen]🔄 Loading workout details for ID: ${widget.workoutId}');
+    //print('[CONSOLE] [edit_workout_screen]🔄 Loading workout details for ID: ${widget.workoutId}');
 
     final currentState = _workoutBloc.state;
     if (currentState is WorkoutPlansLoaded) {
@@ -85,8 +79,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           (plan) => plan.id == widget.workoutId,
         );
 
-        print(
-            '[CONSOLE] [edit_workout_screen]✅ Found plan in loaded plans: ${existingPlan.nome}');
+        //print('[CONSOLE] [edit_workout_screen]✅ Found plan in loaded plans: ${existingPlan.nome}');
 
         if (existingPlan.esercizi.isNotEmpty) {
           _resetState(existingPlan, existingPlan.esercizi);
@@ -96,8 +89,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
           return;
         }
       } catch (e) {
-        print(
-            '[CONSOLE] [edit_workout_screen]⚠️ Plan not found in current plans, loading details...');
+        //print('[CONSOLE] [edit_workout_screen]⚠️ Plan not found in current plans, loading details...');
       }
     }
 
@@ -112,8 +104,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     final userId = await _sessionService.getCurrentUserId();
     if (userId != null) {
       _currentUserId = userId; // ✨ SALVA L'USER ID
-      print(
-          '[CONSOLE] [edit_workout_screen]Loading available exercises for user: $userId');
+      //print('[CONSOLE] [edit_workout_screen]Loading available exercises for user: $userId');
       setState(() {
         _isLoadingAvailableExercises = true;
       });
@@ -123,8 +114,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
   // ✨ NUOVO: Gestisce la selezione di un esercizio dal dialog
   void _onExerciseSelected(ExerciseItem exerciseItem) {
-    print(
-        '[CONSOLE] [edit_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
+    //print('[CONSOLE] [edit_workout_screen]Adding exercise from dialog: ${exerciseItem.nome}');
 
     // Converte ExerciseItem a WorkoutExercise
     final workoutExercise = WorkoutExercise(
@@ -179,14 +169,10 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
       final exerciseWithOrder = exercise.safeCopy(ordine: index + 1);
 
-      print(
-          '[CONSOLE] [edit_workout_screen]Converting exercise: ${exercise.nome}');
-      print(
-          '[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
-      print(
-          '[CONSOLE] [edit_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
-      print(
-          '[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
+      //print('[CONSOLE] [edit_workout_screen]Converting exercise: ${exercise.nome}');
+      //print('[CONSOLE] [edit_workout_screen]  - isRestPauseInt: ${exercise.isRestPauseInt}');
+      //print('[CONSOLE] [edit_workout_screen]  - restPauseReps: "${exercise.restPauseReps}"');
+      //print('[CONSOLE] [edit_workout_screen]  - restPauseRestSeconds: ${exercise.restPauseRestSeconds}');
 
       return WorkoutExerciseRequest.fromWorkoutExercise(exerciseWithOrder);
     }).toList();
@@ -199,11 +185,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
         );
       }).toList();
 
-      print(
-          '[CONSOLE] [edit_workout_screen]Esercizi da rimuovere: ${exercisesToRemove.length}');
+      //print('[CONSOLE] [edit_workout_screen]Esercizi da rimuovere: ${exercisesToRemove.length}');
       for (final toRemove in exercisesToRemove) {
-        print(
-            '[CONSOLE] [edit_workout_screen]🗑️ Rimuovi esercizio_id: ${toRemove.id}');
+        //print('[CONSOLE] [edit_workout_screen]🗑️ Rimuovi esercizio_id: ${toRemove.id}');
       }
     }
 
@@ -239,12 +223,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
 
       //print('[CONSOLE] [edit_workout_screen]🔍 ESERCIZIO RIMOSSO:');
       //print('[CONSOLE] [edit_workout_screen]- Nome: ${exerciseToRemove.nome}');
-      print(
-          '[CONSOLE] [edit_workout_screen]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
-      print(
-          '[CONSOLE] [edit_workout_screen]- Totale esercizi rimossi: ${_removedExercises.length}');
-      print(
-          '[CONSOLE] [edit_workout_screen]- Esercizi rimanenti: ${_exercises.length}');
+      //print('[CONSOLE] [edit_workout_screen]- esercizio_id (exercise.id): ${exerciseToRemove.id}');
+      //print('[CONSOLE] [edit_workout_screen]- Totale esercizi rimossi: ${_removedExercises.length}');
+      //print('[CONSOLE] [edit_workout_screen]- Esercizi rimanenti: ${_exercises.length}');
 
       _markAsChanged();
     });
@@ -289,10 +270,9 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
   }
 
   void _resetState(WorkoutPlan workoutPlan, List<WorkoutExercise> exercises) {
-    print(
-        '[CONSOLE] [edit_workout_screen]🔄 Resetting state with: ${workoutPlan.nome}');
+    // print(
+    //     '[CONSOLE] [edit_workout_screen]🔄 Resetting state with: ${workoutPlan.nome}');
 
-    _originalWorkoutPlan = workoutPlan;
     _exercises = List.from(exercises);
     _removedExercises = [];
     _nameController.text = workoutPlan.nome;
@@ -303,8 +283,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
       _isLoading = false;
     });
 
-    print(
-        '[CONSOLE] [edit_workout_screen]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');
+    /*print(
+        '[CONSOLE] [edit_workout_screen]✅ State reset complete. Name: "${_nameController.text}", Exercises: ${_exercises.length}');*/
   }
 
   Future<bool> _onWillPop() async {
@@ -484,8 +464,8 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
                 currentUserId: _currentUserId,
                 onExercisesRefresh: () {
                   // Ricarica gli esercizi disponibili dopo la creazione di un nuovo esercizio
-                  print(
-                      '[CONSOLE] [edit_workout_screen]🔄 Refreshing exercises after creation...');
+                  // print(
+                  //     '[CONSOLE] [edit_workout_screen]🔄 Refreshing exercises after creation...');
                   _loadAvailableExercises();
                 },
               ),
@@ -618,7 +598,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(32.w),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant.withValues(alpha: 0.3),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(AppConfig.radiusM),
               border: Border.all(
                 color: colorScheme.outline.withValues(alpha: 0.3),

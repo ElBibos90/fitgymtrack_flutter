@@ -69,14 +69,14 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
     
     try {
       // Recupera il token di autenticazione
-      print('[SUBSTITUTION] 🔑 Recupero token...');
+      debugPrint('[SUBSTITUTION] 🔑 Recupero token...');
       final sessionService = SessionService();
       final token = await sessionService.getAuthToken();
       
-      print('[SUBSTITUTION] 🔑 Token length: ${token?.length ?? 0}');
+      debugPrint('[SUBSTITUTION] 🔑 Token length: ${token?.length ?? 0}');
       
       if (token == null) {
-        print('[SUBSTITUTION] ❌ Token non disponibile');
+        debugPrint('[SUBSTITUTION] ❌ Token non disponibile');
         setState(() {
           _loading = false;
         });
@@ -93,8 +93,8 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
       final uri = Uri.parse('${AppConfig.baseUrl}exercise_substitution_api.php')
           .replace(queryParameters: queryParams);
       
-      print('[SUBSTITUTION] 📡 Richiesta a: $uri');
-      print('[SUBSTITUTION] 🔍 Query: "${_searchController.text}", Muscles: ${_selectedMuscleGroups.join(", ")}');
+      debugPrint('[SUBSTITUTION] 📡 Richiesta a: $uri');
+      debugPrint('[SUBSTITUTION] 🔍 Query: "${_searchController.text}", Muscles: ${_selectedMuscleGroups.join(", ")}');
       
       final response = await http.get(
         uri,
@@ -106,18 +106,18 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
       ).timeout(
         Duration(seconds: 10),
         onTimeout: () {
-          print('[SUBSTITUTION] ⏱️ Timeout dopo 10 secondi');
+          debugPrint('[SUBSTITUTION] ⏱️ Timeout dopo 10 secondi');
           throw Exception('Timeout');
         },
       );
       
-      print('[SUBSTITUTION] 📥 Status Code: ${response.statusCode}');
-      print('[SUBSTITUTION] 📥 Response body length: ${response.body.length}');
+      debugPrint('[SUBSTITUTION] 📥 Status Code: ${response.statusCode}');
+      debugPrint('[SUBSTITUTION] 📥 Response body length: ${response.body.length}');
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        print('[SUBSTITUTION] 📦 Success: ${data['success']}, Exercises: ${data['exercises']?.length ?? 0}');
+        debugPrint('[SUBSTITUTION] 📦 Success: ${data['success']}, Exercises: ${data['exercises']?.length ?? 0}');
         
         if (data['success'] == true) {
           final exercisesList = (data['exercises'] as List);
@@ -128,18 +128,18 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
                 .toList();
           });
           
-          print('[SUBSTITUTION] ✅ Caricati ${_exercises.length} esercizi');
+          debugPrint('[SUBSTITUTION] ✅ Caricati ${_exercises.length} esercizi');
         } else {
-          print('[SUBSTITUTION] ⚠️ API returned success: false');
-          print('[SUBSTITUTION] ⚠️ Full response: ${response.body.substring(0, 200)}');
+          debugPrint('[SUBSTITUTION] ⚠️ API returned success: false');
+          debugPrint('[SUBSTITUTION] ⚠️ Full response: ${response.body.substring(0, 200)}');
         }
       } else {
-        print('[SUBSTITUTION] ❌ Errore HTTP: ${response.statusCode}');
-        print('[SUBSTITUTION] ❌ Response body: ${response.body.substring(0, 200)}');
+        debugPrint('[SUBSTITUTION] ❌ Errore HTTP: ${response.statusCode}');
+        debugPrint('[SUBSTITUTION] ❌ Response body: ${response.body.substring(0, 200)}');
       }
     } catch (e, stackTrace) {
-      print('[SUBSTITUTION] 💥 Errore ricerca esercizi: $e');
-      print('[SUBSTITUTION] 💥 StackTrace: ${stackTrace.toString().substring(0, 200)}');
+      debugPrint('[SUBSTITUTION] 💥 Errore ricerca esercizi: $e');
+      debugPrint('[SUBSTITUTION] 💥 StackTrace: ${stackTrace.toString().substring(0, 200)}');
     } finally {
       setState(() {
         _loading = false;
@@ -217,7 +217,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
     return Container(
       padding: EdgeInsets.all(WorkoutDesignSystem.spacingM.w),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.only(
           topLeft: WorkoutDesignSystem.borderRadiusM.topLeft,
           topRight: WorkoutDesignSystem.borderRadiusM.topRight,
@@ -257,10 +257,10 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
     return Container(
       padding: EdgeInsets.all(WorkoutDesignSystem.spacingM.w),
       decoration: BoxDecoration(
-        color: WorkoutDesignSystem.primary600.withOpacity(0.1),
+        color: WorkoutDesignSystem.primary600.withValues(alpha: 0.1),
         borderRadius: WorkoutDesignSystem.borderRadiusS,
         border: Border.all(
-          color: WorkoutDesignSystem.primary600.withOpacity(0.3),
+          color: WorkoutDesignSystem.primary600.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -269,7 +269,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
             width: 60.w,
             height: 60.h,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceVariant,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: WorkoutDesignSystem.borderRadiusXS,
             ),
             child: Icon(
@@ -375,7 +375,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
               label: Text(muscle),
               selected: isSelected,
               onSelected: (_) => _toggleMuscleFilter(muscle),
-              selectedColor: WorkoutDesignSystem.primary600.withOpacity(0.2),
+              selectedColor: WorkoutDesignSystem.primary600.withValues(alpha: 0.2),
               checkmarkColor: WorkoutDesignSystem.primary600,
               labelStyle: TextStyle(
                 color: isSelected
@@ -546,7 +546,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
       elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: WorkoutDesignSystem.borderRadiusS,
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: () => _confirmSubstitution(exercise),
@@ -566,13 +566,13 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
                         placeholder: (context, url) => Container(
                           width: 50.w,
                           height: 50.h,
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                           child: Icon(Icons.fitness_center, color: colorScheme.onSurfaceVariant, size: 24.sp),
                         ),
                         errorWidget: (context, url, error) => Container(
                           width: 50.w,
                           height: 50.h,
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                           child: Icon(Icons.fitness_center, color: colorScheme.onSurfaceVariant, size: 24.sp),
                         ),
                       )
@@ -580,7 +580,7 @@ class _ExerciseSubstitutionDialogState extends State<ExerciseSubstitutionDialog>
                         width: 50.w,
                         height: 50.h,
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: WorkoutDesignSystem.borderRadiusXS,
                         ),
                         child: Icon(Icons.fitness_center, color: colorScheme.onSurfaceVariant, size: 24.sp),

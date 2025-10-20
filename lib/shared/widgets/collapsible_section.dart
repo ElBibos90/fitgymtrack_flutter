@@ -158,10 +158,10 @@ class _CollapsibleSectionState extends State<CollapsibleSection>
               gradient: LinearGradient(
                 colors: [
                   (widget.headerColor ?? WorkoutDesignSystem.primary600)
-                      .withOpacity(0.3),
+                      .withValues(alpha: 0.3),
                   widget.headerColor ?? WorkoutDesignSystem.primary600,
                   (widget.headerColor ?? WorkoutDesignSystem.primary600)
-                      .withOpacity(0.3),
+                      .withValues(alpha: 0.3),
                 ],
               ),
             ),

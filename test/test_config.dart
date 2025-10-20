@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
-import 'package:fitgymtrack/core/di/dependency_injection.dart';
 import 'package:fitgymtrack/shared/theme/app_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fitgymtrack/shared/widgets/error_handling_widgets.dart';

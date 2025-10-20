@@ -110,9 +110,9 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
           },
         ),
       ));
-      print("🔊 [RECOVERY AUDIO] AudioContext configured for ducking");
+      //debugPrint("🔊 [RECOVERY AUDIO] AudioContext configured for ducking");
     } catch (e) {
-      print("🔊 [RECOVERY AUDIO] Error configuring AudioContext: $e");
+      //debugPrint("🔊 [RECOVERY AUDIO] Error configuring AudioContext: $e");
     }
   }
 
@@ -140,9 +140,9 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       // Force a brief pause to let the system process the audio context change
       await Future.delayed(const Duration(milliseconds: 200));
       
-      print("🔊 [RECOVERY AUDIO] Audio session restored - ducking disabled");
+      //debugPrint("🔊 [RECOVERY AUDIO] Audio session restored - ducking disabled");
     } catch (e) {
-      print("🔊 [RECOVERY AUDIO] Error restoring audio session: $e");
+      //debugPrint("🔊 [RECOVERY AUDIO] Error restoring audio session: $e");
     }
   }
 
@@ -215,10 +215,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
       final volume = (_audioSettings.beepVolume / 100.0).clamp(0.1, 1.0);
       await _audioPlayer.setVolume(volume);
 
-      print("🔊 [RECOVERY AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
+      //debugPrint("🔊 [RECOVERY AUDIO] Playing countdown beep (volume: $volume, enabled: ${_audioSettings.timerSoundsEnabled})");
       await _audioPlayer.play(AssetSource('audio/beep_countdown.mp3'));
     } catch (e) {
-      print("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
+      //debugPrint("🔊 [RECOVERY AUDIO] Error playing countdown beep: $e");
     }
   }
 
@@ -230,7 +230,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
           return; // Audio disabilitato
         }
 
-        print("🔊 [RECOVERY AUDIO] Playing completion sound");
+        //debugPrint("🔊 [RECOVERY AUDIO] Playing completion sound");
         _hasPlayedCompletionSound = true;
 
         // ✅ FIXED: Applica volume dalle impostazioni (assicurati che sia > 0)
@@ -243,10 +243,10 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         // Piccolo delay extra per sicurezza
         await Future.delayed(const Duration(milliseconds: 900));
 
-        print("🔊 [RECOVERY AUDIO] Completion sound finished");
+        //debugPrint("🔊 [RECOVERY AUDIO] Completion sound finished");
       }
     } catch (e) {
-      print("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
+      //debugPrint("🔊 [RECOVERY AUDIO] Error playing completion sound: $e");
     }
   }
 
@@ -267,7 +267,7 @@ class _RecoveryTimerPopupState extends State<RecoveryTimerPopup>
         _dismissPopup();
       }
     } catch (e) {
-      //print("🔊 [RECOVERY AUDIO] Error in completion sequence: $e");
+      //debugPrint("🔊 [RECOVERY AUDIO] Error in completion sequence: $e");
       // Fallback: chiama comunque il callback
       widget.onTimerComplete();
       if (mounted && !_isDismissed) {

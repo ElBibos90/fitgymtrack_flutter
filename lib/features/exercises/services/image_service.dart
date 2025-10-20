@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -20,7 +19,7 @@ class ImageService {
       }
       return null;
     } catch (e) {
-      debugPrint('Errore nel caricamento delle immagini: $e');
+      //debugPrint('Errore nel caricamento delle immagini: $e');
       return null;
     }
   }
@@ -73,7 +72,7 @@ class ImageService {
         ),
         errorWidget: (context, url, error) {
           // Log dell'errore per debug
-          debugPrint('Errore caricamento immagine: $error per URL: $url');
+          //debugPrint('Errore caricamento immagine: $error per URL: $url');
           return _buildErrorWidget(
             errorWidget: errorWidget,
             width: width,
