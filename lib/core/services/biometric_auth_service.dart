@@ -255,6 +255,23 @@ class BiometricAuthService {
       //debugPrint('[LOGIN] ❌ Error clearing data: $e');
     }
   }
+
+  /// Aggiorna credenziali biometriche salvate (se biometrico già abilitato)
+  /// Usato dopo login manuale o reset password per sincronizzare
+  Future<void> updateCredentials(String username, String password) async {
+    try {
+      // Aggiorna SOLO se biometrico è già abilitato
+      if (await isBiometricEnabled()) {
+        await saveCredentialsSecurely(username, password);
+        //debugPrint('[LOGIN] ✅ Biometric credentials updated silently');
+      } else {
+        //debugPrint('[LOGIN] ℹ️ Biometric not enabled, skipping update');
+      }
+    } catch (e) {
+      //debugPrint('[LOGIN] ❌ Error updating credentials: $e');
+      // Non propagare l'errore - aggiornamento credenziali è operazione silenziosa
+    }
+  }
 }
 
 /// Custom exception per errori biometrici

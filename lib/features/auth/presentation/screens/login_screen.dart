@@ -341,6 +341,13 @@ class _LoginScreenState extends State<LoginScreen> {
               TextInput.finishAutofillContext();
             }
 
+            // 🔐 BIOMETRIC: Aggiorna credenziali biometriche (se già abilitato)
+            // Questo sincronizza password dopo reset o cambio password
+            _biometricService.updateCredentials(
+              _usernameController.text.trim(),
+              _passwordController.text,
+            );
+
             // 🔐 BIOMETRIC: Proponi abilitazione biometrico dopo login riuscito
             final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
             //debugPrint('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
@@ -1061,6 +1068,13 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
       
       if (response['success'] == true) {
         // Successo!
+        
+        // 🔐 BIOMETRIC: Aggiorna credenziali biometriche dopo reset password
+        await BiometricAuthService().updateCredentials(
+          _usernameController.text.trim(),
+          _passwordController.text.trim(),
+        );
+        
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
+import '../../../../core/services/biometric_auth_service.dart';
 import '../../models/security_question_models.dart';
 import '../../repository/security_questions_repository.dart';
 
@@ -767,6 +768,13 @@ class _PasswordResetInAppScreenState extends State<PasswordResetInAppScreen> {
 
       if (response.success) {
         // Success!
+        
+        // 🔐 BIOMETRIC: Aggiorna credenziali biometriche dopo reset password
+        await BiometricAuthService().updateCredentials(
+          _usernameController.text.trim(),
+          _newPasswordController.text.trim(),
+        );
+        
         if (mounted) {
           _showSuccessDialog(response.message ?? 'Password aggiornata con successo!');
         }
