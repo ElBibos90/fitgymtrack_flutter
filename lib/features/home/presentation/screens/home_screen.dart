@@ -20,7 +20,7 @@ import '../../../notifications/presentation/widgets/modern_notification_menu.dar
 import '../../../notifications/bloc/notification_bloc.dart';
 import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/user_role_service.dart';
-import '../../../courses/presentation/screens/courses_list_screen.dart';
+import '../../../courses/presentation/screens/courses_main_screen.dart';
 import '../../../courses/bloc/courses_bloc.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 
@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (UserRoleService.canSeeCoursesTab(user)) {
       pages.add(() => BlocProvider(
         create: (context) => getIt<CoursesBloc>(),
-        child: const CoursesListScreen(),
+        child: const CoursesMainScreen(),
       ));
     }
     

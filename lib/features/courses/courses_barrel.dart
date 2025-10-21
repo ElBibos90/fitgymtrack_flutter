@@ -17,6 +17,9 @@ export 'bloc/courses_state.dart';
 export 'presentation/screens/courses_list_screen.dart';
 export 'presentation/screens/course_detail_screen.dart';
 export 'presentation/screens/my_courses_screen.dart';
+export 'presentation/screens/courses_main_screen.dart';
+export 'presentation/screens/my_courses_tab.dart';
+export 'presentation/screens/available_courses_tab.dart';
 
 // Widget
 export 'presentation/widgets/course_card.dart';

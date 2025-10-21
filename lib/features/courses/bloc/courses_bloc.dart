@@ -338,13 +338,13 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       emit(const MyEnrollmentsLoadingState());
       
       // 🔧 FIX: Retry automatico per problemi di timing dopo logout/login
-      EnrollmentsResponse? response;
+      MyEnrollmentsResponse? response;
       int retryCount = 0;
       const maxRetries = 2;
       
       while (retryCount <= maxRetries) {
         try {
-          response = await _repository.getMyCourseEnrollmentsStandard();
+          response = await _repository.getMyCourseEnrollments();
           break; // Successo, esci dal loop
         } catch (e) {
           retryCount++;
@@ -392,7 +392,7 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
     }
     
     try {
-      final response = await _repository.getMyCourseEnrollmentsStandard();
+      final response = await _repository.getMyCourseEnrollments();
       
       if (response.success) {
         emit(MyEnrollmentsLoadedState(

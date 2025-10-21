@@ -220,7 +220,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 
   /// Dialog conferma annullamento
-  void _showCancelDialog(CourseEnrollment enrollment) {
+  void _showCancelDialog(MyEnrollment enrollment) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

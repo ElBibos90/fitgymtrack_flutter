@@ -161,7 +161,7 @@ class MyEnrollmentsLoadingState extends CoursesState {
 
 /// Iscrizioni utente caricate con successo
 class MyEnrollmentsLoadedState extends CoursesState {
-  final List<CourseEnrollment> enrollments;
+  final List<MyEnrollment> enrollments;
   final bool isRefreshing;
 
   const MyEnrollmentsLoadedState({
@@ -174,7 +174,7 @@ class MyEnrollmentsLoadedState extends CoursesState {
 
   /// Crea una copia dello stato con nuovi valori
   MyEnrollmentsLoadedState copyWith({
-    List<CourseEnrollment>? enrollments,
+    List<MyEnrollment>? enrollments,
     bool? isRefreshing,
   }) {
     return MyEnrollmentsLoadedState(
@@ -187,7 +187,7 @@ class MyEnrollmentsLoadedState extends CoursesState {
 /// Errore nel caricamento iscrizioni
 class MyEnrollmentsErrorState extends CoursesState {
   final String message;
-  final List<CourseEnrollment>? previousEnrollments;
+  final List<MyEnrollment>? previousEnrollments;
 
   const MyEnrollmentsErrorState({
     required this.message,

@@ -9,7 +9,7 @@ import '../../models/course_models_clean.dart';
 
 /// 📅 Tile per un'iscrizione a un corso
 class MyCourseEnrollmentTile extends StatelessWidget {
-  final CourseEnrollment enrollment;
+  final MyEnrollment enrollment;
   final VoidCallback? onCancel;
 
   const MyCourseEnrollmentTile({
@@ -48,7 +48,7 @@ class MyCourseEnrollmentTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Icon(
-                      _getCategoryIcon(enrollment.category),
+                      _getCategoryIcon(enrollment.category ?? ''),
                       color: Color(enrollment.colorValue),
                       size: 20.sp,
                     ),
@@ -73,7 +73,7 @@ class MyCourseEnrollmentTile extends StatelessWidget {
                         ),
                         SizedBox(height: 2.h),
                         Text(
-                          enrollment.category,
+                          enrollment.category ?? 'Corso',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: AppColors.textSecondary,
@@ -135,7 +135,7 @@ class MyCourseEnrollmentTile extends StatelessWidget {
                       ],
                     ),
                     
-                    if (enrollment.location.isNotEmpty) ...[
+                    if (enrollment.location != null && enrollment.location!.isNotEmpty) ...[
                       SizedBox(height: 8.h),
                       Row(
                         children: [
@@ -147,7 +147,7 @@ class MyCourseEnrollmentTile extends StatelessWidget {
                           SizedBox(width: 8.w),
                           Expanded(
                             child: Text(
-                              enrollment.location,
+                              enrollment.location!,
                               style: TextStyle(
                                 fontSize: 14.sp,
                                 color: AppColors.textSecondary,

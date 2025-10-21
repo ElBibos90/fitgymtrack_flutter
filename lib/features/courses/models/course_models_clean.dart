@@ -508,6 +508,62 @@ class MyEnrollment {
       notes: null,
     );
   }
+
+  // ============================================================================
+  // GETTER HELPERS
+  // ============================================================================
+
+  /// Verifica se l'utente è iscritto
+  bool get isEnrolled => enrollmentStatus == 'enrolled';
+
+  /// Verifica se la sessione è programmata
+  bool get isSessionScheduled => sessionStatus == 'scheduled';
+
+  /// Verifica se l'utente ha partecipato
+  bool get hasAttended => attendedAt != null;
+
+  /// Verifica se mancano meno di 24 ore alla sessione
+  bool get isWithin24Hours {
+    try {
+      final sessionDateTime = DateTime.parse('$sessionDate $startTime');
+      final now = DateTime.now();
+      final difference = sessionDateTime.difference(now);
+      return difference.inHours < 24 && difference.inHours > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Formatta la data della sessione (es: "23 Ott 2025")
+  String get formattedSessionDate {
+    try {
+      final date = DateTime.parse(sessionDate);
+      const months = [
+        'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
+        'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return sessionDate;
+    }
+  }
+
+  /// Formatta l'orario (es: "10:00 - 11:00")
+  String get formattedTime {
+    return '$startTime - $endTime';
+  }
+
+  /// Colore del corso come int (per Color widget)
+  int get colorValue {
+    if (color == null) return 0xFF3B82F6; // Blu default
+    try {
+      // Rimuovi # se presente
+      final colorHex = color!.replaceAll('#', '');
+      return int.parse('FF$colorHex', radix: 16);
+    } catch (e) {
+      return 0xFF3B82F6;
+    }
+  }
 }
 
 /// Risposta per la lista delle iscrizioni
