@@ -76,8 +76,6 @@ class CacheCleanupService {
   /// 🧹 PULIZIA SELEZIONATA (mantiene solo schede e offline)
   /// Per quando vuoi mantenere solo le cache essenziali
   static Future<void> clearNonEssentialCaches() async {
-    //print('[ACCESS] 🧹 CACHE CLEANUP: Starting non-essential cache cleanup...');
-    
     try {
       // Pulisci cache non essenziali (MANTIENE schede e offline)
       ApiRequestDebouncer.clearAllCache();
@@ -95,10 +93,8 @@ class CacheCleanupService {
       // - pending_series_queue (per sincronizzazione)
       // - biometric_credentials (per login biometrico)
       
-      //print('[ACCESS] ✅ CACHE CLEANUP: Non-essential caches cleared (kept schede + offline + biometric)');
-      
     } catch (e) {
-      //print('[ACCESS] ❌ CACHE CLEANUP: Error during non-essential cache cleanup: $e');
+      // Silently handle errors
     }
   }
 

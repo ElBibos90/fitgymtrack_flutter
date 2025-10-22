@@ -123,22 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _checkBiometricAvailability() async {
     // Evita controlli duplicati
     if (_biometricChecked) {
-      //print('[ACCESS] ⚠️ Biometric already checked, skipping...');
+      print('[ACCESS] ⚠️ Biometric already checked, skipping...');
       return;
     }
     
     try {
-      //print('[ACCESS] 🔍 LOGIN SCREEN: Checking biometric availability...');
+      print('[ACCESS] 🔍 LOGIN SCREEN: Checking biometric availability...');
       _biometricChecked = true; // Marca come controllato
       
       final available = await _biometricService.isBiometricAvailable();
       final enabled = await _biometricService.isBiometricEnabled();
       final type = await _biometricService.getBiometricType();
       
-      //print('[ACCESS] 📊 LOGIN SCREEN: Biometric status:');
-      //print('[ACCESS]   - Available: $available');
-      //print('[ACCESS]   - Enabled: $enabled');
-      //print('[ACCESS]   - Type: $type');
+      print('[ACCESS] 📊 LOGIN SCREEN: Biometric status:');
+      print('[ACCESS]   - Available: $available');
+      print('[ACCESS]   - Enabled: $enabled');
+      print('[ACCESS]   - Type: $type');
       
       setState(() {
         _biometricAvailable = available;
@@ -149,9 +149,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // ❌ RIMOSSO: Auto-login all'apertura
       // PROBLEMA: Con Face ID, il login si attiva automaticamente quando l'utente guarda lo schermo
       // SOLUZIONE: L'utente deve cliccare il pulsante biometrico per fare login
-      //print('[ACCESS] ℹ️ Biometric check complete. User must click button to login.');
+      print('[ACCESS] ℹ️ Biometric check complete. User must click button to login.');
     } catch (e) {
-      //print('[ACCESS] ❌ LOGIN SCREEN: Error checking biometric: $e');
+      print('[ACCESS] ❌ LOGIN SCREEN: Error checking biometric: $e');
     }
   }
 
@@ -161,28 +161,28 @@ class _LoginScreenState extends State<LoginScreen> {
   // 🔐 BIOMETRIC: Tenta login biometrico
   Future<void> _tryBiometricLogin() async {
     try {
-      //print('[ACCESS] 🚀 BIOMETRIC LOGIN STARTED');
+      print('[ACCESS] 🚀 BIOMETRIC LOGIN STARTED');
       // Piccolo delay per evitare "auth_in_progress"
       await Future.delayed(const Duration(milliseconds: 500));
       
       // Autentica con biometrico
-      //print('[ACCESS] 🔐 Requesting biometric authentication...');
+      print('[ACCESS] 🔐 Requesting biometric authentication...');
       final authenticated = await _biometricService.authenticateWithBiometrics(
         reason: 'Accedi a FitGymTrack',
       );
 
       if (!authenticated) {
-        //print('[ACCESS] ❌ Biometric authentication cancelled or failed');
+        print('[ACCESS] ❌ Biometric authentication cancelled or failed');
         return;
       }
 
-      //print('[ACCESS] ✅ Biometric authentication successful, retrieving credentials...');
+      print('[ACCESS] ✅ Biometric authentication successful, retrieving credentials...');
       setState(() => _isLoading = true);
 
       // Recupera credenziali salvate (username e password)
       final credentials = await _biometricService.getSavedCredentials();
       if (credentials == null) {
-        //print('[ACCESS] ❌ CRITICAL: No saved credentials found after successful biometric auth!');
+        print('[ACCESS] ❌ CRITICAL: No saved credentials found after successful biometric auth!');
         setState(() {
           _isLoading = false;
         });
@@ -223,10 +223,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final username = credentials['username']!;
       final password = credentials['password']!;
       
-      //print('[ACCESS] 🔑 Credentials retrieved successfully');
-      //print('[ACCESS]   - Username: $username');
-      //print('[ACCESS]   - Password length: ${password.length} chars');
-      //print('[ACCESS] 📡 Sending login request to server...');
+      print('[ACCESS] 🔑 Credentials retrieved successfully');
+      print('[ACCESS]   - Username: $username');
+      print('[ACCESS]   - Password length: ${password.length} chars');
+      print('[ACCESS] 📡 Sending login request to server...');
 
       // Fa login normale con le credenziali recuperate
       // Questo genererà un nuovo token dal server
@@ -241,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     } catch (e) {
       setState(() => _isLoading = false);
-      //print('[ACCESS] ❌ BIOMETRIC LOGIN ERROR: $e');
+      print('[ACCESS] ❌ BIOMETRIC LOGIN ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -255,21 +255,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 🔐 BIOMETRIC: Mostra dialog per abilitare biometrico
   Future<void> _showEnableBiometricDialog() async {
-    //print('[ACCESS] 🔐 _showEnableBiometricDialog called');
-    //print('[ACCESS]   - Available: $_biometricAvailable');
-    //print('[ACCESS]   - Enabled: $_biometricEnabled');
+    print('[ACCESS] 🔐 _showEnableBiometricDialog called');
+    print('[ACCESS]   - Available: $_biometricAvailable');
+    print('[ACCESS]   - Enabled: $_biometricEnabled');
     
     if (!_biometricAvailable) {
-      //print('[ACCESS] ⚠️ Biometric not available, skipping dialog');
+      print('[ACCESS] ⚠️ Biometric not available, skipping dialog');
       return;
     }
     
     if (_biometricEnabled) {
-      //print('[ACCESS] ℹ️ Biometric already enabled, skipping dialog');
+      print('[ACCESS] ℹ️ Biometric already enabled, skipping dialog');
       return;
     }
     
-    //print('[ACCESS] 📱 Showing enable biometric dialog...');
+    print('[ACCESS] 📱 Showing enable biometric dialog...');
 
     final result = await showDialog<bool>(
       context: context,
@@ -316,19 +316,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (result == true) {
-      //print('[ACCESS] ✅ User confirmed biometric enablement');
+      print('[ACCESS] ✅ User confirmed biometric enablement');
       try {
         // Salva username e password per login biometrico futuro
         final username = _usernameController.text.trim();
         final password = _passwordController.text;
         
-        //print('[ACCESS] 💾 Enabling biometric with credentials...');
+        print('[ACCESS] 💾 Enabling biometric with credentials...');
         await _biometricService.enableBiometric(username, password);
         
         // 🔧 FIX: Controlla se il widget è ancora montato prima di chiamare setState
         if (mounted) {
           setState(() => _biometricEnabled = true);
-          //print('[ACCESS] ✅ Biometric enabled successfully in UI');
+          print('[ACCESS] ✅ Biometric enabled successfully in UI');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$_biometricDisplayName abilitato con successo!'),
@@ -336,10 +336,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          //print('[ACCESS] ⚠️ Widget disposed before setState, but biometric enabled successfully');
+          print('[ACCESS] ⚠️ Widget disposed before setState, but biometric enabled successfully');
         }
       } catch (e) {
-        //print('[ACCESS] ❌ Error enabling biometric in dialog: $e');
+        print('[ACCESS] ❌ Error enabling biometric in dialog: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -350,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } else {
-      //print('[ACCESS] ❌ User declined biometric enablement');
+      print('[ACCESS] ❌ User declined biometric enablement');
     }
   }
 

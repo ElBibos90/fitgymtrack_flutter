@@ -163,8 +163,6 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
-    //print('[ACCESS] 🧹 SESSION CLEANUP: Starting complete session cleanup...');
-    
     // 1. Pulisci SOLO i token di autenticazione (NON le credenziali biometriche)
     await Future.wait([
       _secureStorage.delete(key: _tokenKey),  // Cancella solo il token di sessione
@@ -172,12 +170,8 @@ class SessionService {
       _clearLastValidationTime(),
     ]);
     
-    //print('[ACCESS] 🧹 SESSION CLEANUP: Auth tokens cleared, now cleaning caches...');
-    
-    // 2. 🧹 NUOVO: Pulisci cache non essenziali (mantiene solo schede e offline)
+    // 2. Pulisci cache non essenziali (mantiene solo schede e offline)
     await CacheCleanupService.clearNonEssentialCaches();
-    
-    //print('[ACCESS] ✅ SESSION CLEANUP: Complete session cleanup finished (biometric credentials preserved)');
   }
 
   Future<void> clearUserData() async {
