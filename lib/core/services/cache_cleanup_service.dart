@@ -9,7 +9,7 @@ import '../utils/api_request_debouncer.dart';
 /// Risolve il problema di contaminazione tra account diversi
 class CacheCleanupService {
   // 🔧 ANDROID FIX: Usa stessa configurazione del BiometricAuthService
-  // Per evitare storage backend diversi che causano perdita dati
+  // Per evitare interferenze con le credenziali biometriche
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: false,  // ✅ FIX: usa KeyStore nativo come BiometricAuthService
@@ -76,7 +76,7 @@ class CacheCleanupService {
   /// 🧹 PULIZIA SELEZIONATA (mantiene solo schede e offline)
   /// Per quando vuoi mantenere solo le cache essenziali
   static Future<void> clearNonEssentialCaches() async {
-    //debugPrint('[CONSOLE] [cache_cleanup] 🧹 Starting non-essential cache cleanup...');
+    //print('[ACCESS] 🧹 CACHE CLEANUP: Starting non-essential cache cleanup...');
     
     try {
       // Pulisci cache non essenziali (MANTIENE schede e offline)
@@ -93,11 +93,12 @@ class CacheCleanupService {
       // - workout_schede_cache (per visualizzazione offline)
       // - offline_workout_data (per riprendere allenamenti)
       // - pending_series_queue (per sincronizzazione)
+      // - biometric_credentials (per login biometrico)
       
-      //debugPrint('[CONSOLE] [cache_cleanup] ✅ Non-essential caches cleared (kept schede + offline)');
+      //print('[ACCESS] ✅ CACHE CLEANUP: Non-essential caches cleared (kept schede + offline + biometric)');
       
     } catch (e) {
-      //debugPrint('[CONSOLE] [cache_cleanup] ❌ Error during non-essential cache cleanup: $e');
+      //print('[ACCESS] ❌ CACHE CLEANUP: Error during non-essential cache cleanup: $e');
     }
   }
 

@@ -13,7 +13,7 @@ class SessionService {
   static const String _lastTokenValidationKey = 'last_token_validation';
 
   // 🔧 ANDROID FIX: Usa stessa configurazione del BiometricAuthService
-  // Per evitare storage backend diversi che causano perdita dati
+  // Per evitare storage backend diversi che causano perdita dati biometrici
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: false,  // ✅ FIX: usa KeyStore nativo come BiometricAuthService
@@ -163,19 +163,21 @@ class SessionService {
   }
 
   Future<void> clearSession() async {
-    //debugPrint('[CONSOLE] [session_service] 🧹 Starting complete session cleanup...');
+    //print('[ACCESS] 🧹 SESSION CLEANUP: Starting complete session cleanup...');
     
-    // 1. Pulisci sessioni e token
+    // 1. Pulisci SOLO i token di autenticazione (NON le credenziali biometriche)
     await Future.wait([
-      _secureStorage.delete(key: _tokenKey),
+      _secureStorage.delete(key: _tokenKey),  // Cancella solo il token di sessione
       clearUserData(),
       _clearLastValidationTime(),
     ]);
     
+    //print('[ACCESS] 🧹 SESSION CLEANUP: Auth tokens cleared, now cleaning caches...');
+    
     // 2. 🧹 NUOVO: Pulisci cache non essenziali (mantiene solo schede e offline)
     await CacheCleanupService.clearNonEssentialCaches();
     
-    //debugPrint('[CONSOLE] [session_service] ✅ Complete session cleanup finished');
+    //print('[ACCESS] ✅ SESSION CLEANUP: Complete session cleanup finished (biometric credentials preserved)');
   }
 
   Future<void> clearUserData() async {
