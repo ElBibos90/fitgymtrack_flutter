@@ -329,13 +329,20 @@ class BiometricAuthService {
         return;
       }
       
-      // Aggiorna SOLO se biometrico è già abilitato
-      if (await isBiometricEnabled()) {
+      // 🔧 PRODUZIONE FIX: Se biometric non è abilitato, abilitalo automaticamente
+      if (!await isBiometricEnabled()) {
+        print('[ACCESS] 🔓 Biometric not enabled, enabling automatically...');
+        try {
+          await enableBiometric(username, password);
+          print('[ACCESS] ✅ Biometric enabled automatically after login');
+        } catch (e) {
+          print('[ACCESS] ⚠️ Failed to enable biometric automatically: $e');
+          // Non propagare l'errore - abilitazione automatica è opzionale
+        }
+      } else {
         print('[ACCESS]   - Biometric is enabled, updating credentials');
         await saveCredentialsSecurely(username, password);
         print('[ACCESS] ✅ Biometric credentials updated silently');
-      } else {
-        print('[ACCESS] ℹ️ Biometric not enabled, skipping update');
       }
     } catch (e) {
       print('[ACCESS] ❌ Error updating credentials: $e');

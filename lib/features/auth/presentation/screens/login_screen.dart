@@ -388,11 +388,18 @@ class _LoginScreenState extends State<LoginScreen> {
             final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
             //debugPrint('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
             
-            // Mostra dialog biometrico (solo se non già abilitato)
-            Future.delayed(const Duration(milliseconds: 500), () {
-              //debugPrint('[LOGIN] ⏰ Dialog delay completed, showing dialog...');
+            // 🔧 FIX: Mostra dialog biometrico SOLO se non già abilitato
+            Future.delayed(const Duration(milliseconds: 500), () async {
+              //debugPrint('[LOGIN] ⏰ Dialog delay completed, checking biometric status...');
               if (mounted) {
-                _showEnableBiometricDialog();
+                // Controlla se il biometric è già abilitato prima di mostrare il dialog
+                final isEnabled = await _biometricService.isBiometricEnabled();
+                if (!isEnabled) {
+                  //debugPrint('[LOGIN] 📱 Biometric not enabled, showing dialog...');
+                  _showEnableBiometricDialog();
+                } else {
+                  //debugPrint('[LOGIN] ✅ Biometric already enabled, skipping dialog');
+                }
               } else {
                 //debugPrint('[LOGIN] ⚠️ Widget not mounted, skipping dialog');
               }
