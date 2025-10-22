@@ -8,9 +8,12 @@ import '../utils/api_request_debouncer.dart';
 /// 🧹 Servizio per pulizia completa delle cache al logout
 /// Risolve il problema di contaminazione tra account diversi
 class CacheCleanupService {
+  // 🔧 ANDROID FIX: Usa stessa configurazione del BiometricAuthService
+  // Per evitare storage backend diversi che causano perdita dati
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
+      encryptedSharedPreferences: false,  // ✅ FIX: usa KeyStore nativo come BiometricAuthService
+      resetOnError: true,  // ✅ FIX: previene errori di corruzione
     ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
