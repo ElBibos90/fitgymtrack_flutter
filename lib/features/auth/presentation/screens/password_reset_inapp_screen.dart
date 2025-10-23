@@ -28,7 +28,7 @@ class _PasswordResetInAppScreenState extends State<PasswordResetInAppScreen> {
   @override
   void initState() {
     super.initState();
-    print('[RESET] PasswordResetInAppScreen initState');
+   //print('[RESET] PasswordResetInAppScreen initState');
   }
   
   // Form keys
@@ -63,7 +63,7 @@ class _PasswordResetInAppScreenState extends State<PasswordResetInAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('[RESET] PasswordResetInAppScreen build called');
+   //print('[RESET] PasswordResetInAppScreen build called');
     
     // Versione ultra-semplificata per debug
     return const Scaffold(

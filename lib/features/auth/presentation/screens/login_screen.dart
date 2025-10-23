@@ -123,22 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _checkBiometricAvailability() async {
     // Evita controlli duplicati
     if (_biometricChecked) {
-      print('[ACCESS] ⚠️ Biometric already checked, skipping...');
+     //print('[ACCESS] ⚠️ Biometric already checked, skipping...');
       return;
     }
     
     try {
-      print('[ACCESS] 🔍 LOGIN SCREEN: Checking biometric availability...');
+     //print('[ACCESS] 🔍 LOGIN SCREEN: Checking biometric availability...');
       _biometricChecked = true; // Marca come controllato
       
       final available = await _biometricService.isBiometricAvailable();
       final enabled = await _biometricService.isBiometricEnabled();
       final type = await _biometricService.getBiometricType();
       
-      print('[ACCESS] 📊 LOGIN SCREEN: Biometric status:');
-      print('[ACCESS]   - Available: $available');
-      print('[ACCESS]   - Enabled: $enabled');
-      print('[ACCESS]   - Type: $type');
+     //print('[ACCESS] 📊 LOGIN SCREEN: Biometric status:');
+     //print('[ACCESS]   - Available: $available');
+     //print('[ACCESS]   - Enabled: $enabled');
+     //print('[ACCESS]   - Type: $type');
       
       setState(() {
         _biometricAvailable = available;
@@ -149,9 +149,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // ❌ RIMOSSO: Auto-login all'apertura
       // PROBLEMA: Con Face ID, il login si attiva automaticamente quando l'utente guarda lo schermo
       // SOLUZIONE: L'utente deve cliccare il pulsante biometrico per fare login
-      print('[ACCESS] ℹ️ Biometric check complete. User must click button to login.');
+     //print('[ACCESS] ℹ️ Biometric check complete. User must click button to login.');
     } catch (e) {
-      print('[ACCESS] ❌ LOGIN SCREEN: Error checking biometric: $e');
+     //print('[ACCESS] ❌ LOGIN SCREEN: Error checking biometric: $e');
     }
   }
 
@@ -161,21 +161,21 @@ class _LoginScreenState extends State<LoginScreen> {
   // 🔧 CHECK FIRST LOGIN: Verifica se è il primo login (password temporanea)
   Future<bool> _checkFirstLogin() async {
     try {
-      print('[LOGIN] 🔍 Checking first login...');
+     //print('[LOGIN] 🔍 Checking first login...');
       final dio = DioClient.getInstance();
       final response = await dio.get('/check_first_login.php');
       
-      print('[LOGIN] 📡 Response: ${response.data}');
+     //print('[LOGIN] 📡 Response: ${response.data}');
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         final isFirstLogin = response.data['first_login'] ?? false;
-        print('[LOGIN] ✅ First login check: $isFirstLogin');
+       //print('[LOGIN] ✅ First login check: $isFirstLogin');
         return isFirstLogin;
       }
-      print('[LOGIN] ❌ Invalid response format');
+     //print('[LOGIN] ❌ Invalid response format');
       return false;
     } catch (e) {
-      print('[LOGIN] ❌ Error checking first login: $e');
+     //print('[LOGIN] ❌ Error checking first login: $e');
       return false;
     }
   }
@@ -183,28 +183,28 @@ class _LoginScreenState extends State<LoginScreen> {
   // 🔐 BIOMETRIC: Tenta login biometrico
   Future<void> _tryBiometricLogin() async {
     try {
-      print('[ACCESS] 🚀 BIOMETRIC LOGIN STARTED');
+     //print('[ACCESS] 🚀 BIOMETRIC LOGIN STARTED');
       // Piccolo delay per evitare "auth_in_progress"
       await Future.delayed(const Duration(milliseconds: 500));
       
       // Autentica con biometrico
-      print('[ACCESS] 🔐 Requesting biometric authentication...');
+     //print('[ACCESS] 🔐 Requesting biometric authentication...');
       final authenticated = await _biometricService.authenticateWithBiometrics(
         reason: 'Accedi a FitGymTrack',
       );
 
       if (!authenticated) {
-        print('[ACCESS] ❌ Biometric authentication cancelled or failed');
+       //print('[ACCESS] ❌ Biometric authentication cancelled or failed');
         return;
       }
 
-      print('[ACCESS] ✅ Biometric authentication successful, retrieving credentials...');
+     //print('[ACCESS] ✅ Biometric authentication successful, retrieving credentials...');
       setState(() => _isLoading = true);
 
       // Recupera credenziali salvate (username e password)
       final credentials = await _biometricService.getSavedCredentials();
       if (credentials == null) {
-        print('[ACCESS] ❌ CRITICAL: No saved credentials found after successful biometric auth!');
+       //print('[ACCESS] ❌ CRITICAL: No saved credentials found after successful biometric auth!');
         setState(() {
           _isLoading = false;
         });
@@ -245,10 +245,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final username = credentials['username']!;
       final password = credentials['password']!;
       
-      print('[ACCESS] 🔑 Credentials retrieved successfully');
-      print('[ACCESS]   - Username: $username');
-      print('[ACCESS]   - Password length: ${password.length} chars');
-      print('[ACCESS] 📡 Sending login request to server...');
+     //print('[ACCESS] 🔑 Credentials retrieved successfully');
+     //print('[ACCESS]   - Username: $username');
+     //print('[ACCESS]   - Password length: ${password.length} chars');
+     //print('[ACCESS] 📡 Sending login request to server...');
 
       // Fa login normale con le credenziali recuperate
       // Questo genererà un nuovo token dal server
@@ -263,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     } catch (e) {
       setState(() => _isLoading = false);
-      print('[ACCESS] ❌ BIOMETRIC LOGIN ERROR: $e');
+     //print('[ACCESS] ❌ BIOMETRIC LOGIN ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -277,21 +277,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // 🔐 BIOMETRIC: Mostra dialog per abilitare biometrico
   Future<void> _showEnableBiometricDialog() async {
-    print('[ACCESS] 🔐 _showEnableBiometricDialog called');
-    print('[ACCESS]   - Available: $_biometricAvailable');
-    print('[ACCESS]   - Enabled: $_biometricEnabled');
+   //print('[ACCESS] 🔐 _showEnableBiometricDialog called');
+   //print('[ACCESS]   - Available: $_biometricAvailable');
+   //print('[ACCESS]   - Enabled: $_biometricEnabled');
     
     if (!_biometricAvailable) {
-      print('[ACCESS] ⚠️ Biometric not available, skipping dialog');
+     //print('[ACCESS] ⚠️ Biometric not available, skipping dialog');
       return;
     }
     
     if (_biometricEnabled) {
-      print('[ACCESS] ℹ️ Biometric already enabled, skipping dialog');
+     //print('[ACCESS] ℹ️ Biometric already enabled, skipping dialog');
       return;
     }
     
-    print('[ACCESS] 📱 Showing enable biometric dialog...');
+   //print('[ACCESS] 📱 Showing enable biometric dialog...');
 
     final result = await showDialog<bool>(
       context: context,
@@ -338,19 +338,19 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (result == true) {
-      print('[ACCESS] ✅ User confirmed biometric enablement');
+     //print('[ACCESS] ✅ User confirmed biometric enablement');
       try {
         // Salva username e password per login biometrico futuro
         final username = _usernameController.text.trim();
         final password = _passwordController.text;
         
-        print('[ACCESS] 💾 Enabling biometric with credentials...');
+       //print('[ACCESS] 💾 Enabling biometric with credentials...');
         await _biometricService.enableBiometric(username, password);
         
         // 🔧 FIX: Controlla se il widget è ancora montato prima di chiamare setState
         if (mounted) {
           setState(() => _biometricEnabled = true);
-          print('[ACCESS] ✅ Biometric enabled successfully in UI');
+         //print('[ACCESS] ✅ Biometric enabled successfully in UI');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$_biometricDisplayName abilitato con successo!'),
@@ -358,10 +358,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         } else {
-          print('[ACCESS] ⚠️ Widget disposed before setState, but biometric enabled successfully');
+         //print('[ACCESS] ⚠️ Widget disposed before setState, but biometric enabled successfully');
         }
       } catch (e) {
-        print('[ACCESS] ❌ Error enabling biometric in dialog: $e');
+       //print('[ACCESS] ❌ Error enabling biometric in dialog: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -372,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } else {
-      print('[ACCESS] ❌ User declined biometric enablement');
+     //print('[ACCESS] ❌ User declined biometric enablement');
     }
   }
 
@@ -385,18 +385,18 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: colorScheme.surface,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          print('[LOGIN] 🔍 State received: ${state.runtimeType}');
+         //print('[LOGIN] 🔍 State received: ${state.runtimeType}');
           
           if (state is AuthLoading) {
-            print('[LOGIN] ⏳ Loading state received');
+           //print('[LOGIN] ⏳ Loading state received');
             setState(() => _isLoading = true);
           } else {
-            print('[LOGIN] ✅ Non-loading state received: ${state.runtimeType}');
+           //print('[LOGIN] ✅ Non-loading state received: ${state.runtimeType}');
             setState(() => _isLoading = false);
           }
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
-            print('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
+           //print('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
             
             // 🔧 AUTOFILL: Finalize autofill context
             if (Platform.isAndroid) {
@@ -412,20 +412,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // 🔐 BIOMETRIC: Proponi abilitazione biometrico dopo login riuscito
             final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
-            print('[LOGIN] 🔑 Token obtained, checking first login...');
+           //print('[LOGIN] 🔑 Token obtained, checking first login...');
             
             // 🔧 FIX: Controlla se è il primo login (password temporanea) - SEMPRE dopo login
             Future.delayed(const Duration(milliseconds: 500), () async {
               if (mounted) {
-                print('[LOGIN] 🔍 Checking first login after successful login...');
+               //print('[LOGIN] 🔍 Checking first login after successful login...');
                 // Controlla se è il primo login
                 final isFirstLogin = await _checkFirstLogin();
                 if (isFirstLogin) {
-                  print('[LOGIN] 🚀 First login detected, navigating to CompleteRegistrationScreen');
+                 //print('[LOGIN] 🚀 First login detected, navigating to CompleteRegistrationScreen');
                   // Primo login: naviga al CompleteRegistrationScreen
                   context.go('/complete-registration');
                 } else {
-                  print('[LOGIN] 🏠 Normal login, navigating to dashboard');
+                 //print('[LOGIN] 🏠 Normal login, navigating to dashboard');
                   // Login normale: controlla biometrico e naviga al dashboard
                   final isEnabled = await _biometricService.isBiometricEnabled();
                   if (!isEnabled) {
@@ -1173,9 +1173,9 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
     final dio = DioClient.getInstance();
     
     // DEBUG: Log delle risposte inviate
-    print('[RESET DEBUG] Username: ${_usernameController.text.trim()}');
-    print('[RESET DEBUG] Answers: $_answers');
-    print('[RESET DEBUG] Password: ${_passwordController.text.trim()}');
+   //print('[RESET DEBUG] Username: ${_usernameController.text.trim()}');
+   //print('[RESET DEBUG] Answers: $_answers');
+   //print('[RESET DEBUG] Password: ${_passwordController.text.trim()}');
     
     final response = await dio.post(
       '/simple_password_reset.php',
@@ -1192,7 +1192,7 @@ class _PasswordResetDialogState extends State<_PasswordResetDialog> {
     );
     
     // DEBUG: Log della risposta
-    print('[RESET DEBUG] Response: ${response.data}');
+   //print('[RESET DEBUG] Response: ${response.data}');
     
     return response.data;
   }

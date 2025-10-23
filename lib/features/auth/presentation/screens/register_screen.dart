@@ -38,9 +38,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: colorScheme.surface,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          print('[REGISTER] State received: ${state.runtimeType}');
+         //print('[REGISTER] State received: ${state.runtimeType}');
           if (state is AuthRegisterSuccess) {
-            print('[REGISTER] ✅ Registration successful, navigating to security questions setup');
+           //print('[REGISTER] ✅ Registration successful, navigating to security questions setup');
             // Mostra messaggio di successo e naviga al setup domande
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -49,14 +49,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             );
             // Naviga al setup domande di sicurezza invece che al login
-            print('[REGISTER] 🚀 Navigating to /security-questions-setup with extra data');
+           //print('[REGISTER] 🚀 Navigating to /security-questions-setup with extra data');
             context.go('/security-questions-setup', extra: {
               'username': _usernameController.text.trim(),
               'email': _emailController.text.trim(),
               'name': _nameController.text.trim(),
             });
           } else if (state is AuthError) {
-            print('[REGISTER] ❌ Registration error: ${state.message}');
+           //print('[REGISTER] ❌ Registration error: ${state.message}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -244,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _handleRegister() {
     if (_formKey.currentState?.validate() ?? false) {
-      print('[REGISTER] 🚀 Starting registration process');
+     //print('[REGISTER] 🚀 Starting registration process');
       context.read<AuthBloc>().add(AuthRegisterRequested(
         username: _usernameController.text.trim(),
         password: _passwordController.text.trim(),
@@ -252,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         name: _nameController.text.trim(),
       ));
     } else {
-      print('[REGISTER] ❌ Form validation failed');
+     //print('[REGISTER] ❌ Form validation failed');
     }
   }
 }

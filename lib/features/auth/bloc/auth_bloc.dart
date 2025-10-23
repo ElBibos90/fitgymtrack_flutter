@@ -438,7 +438,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthRegisterRequested event,
       Emitter<AuthState> emit,
       ) async {
-    print('[REGISTER] 🚀 AuthBloc: Registration started for user: ${event.username}');
+   //print('[REGISTER] 🚀 AuthBloc: Registration started for user: ${event.username}');
     emit(const AuthLoading());
 
     final result = await _authRepository.register(
@@ -450,12 +450,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     result.fold(
       onSuccess: (response) {
-        print('[REGISTER] 📡 AuthBloc: Response received: success=${response.success}, message=${response.message}');
+       //print('[REGISTER] 📡 AuthBloc: Response received: success=${response.success}, message=${response.message}');
         if (response.success) {
-          print('[REGISTER] ✅ AuthBloc: Emitting AuthRegisterSuccess');
+         //print('[REGISTER] ✅ AuthBloc: Emitting AuthRegisterSuccess');
           emit(AuthRegisterSuccess(message: response.message));
         } else {
-          print('[REGISTER] ❌ AuthBloc: Registration failed, emitting AuthError');
+         //print('[REGISTER] ❌ AuthBloc: Registration failed, emitting AuthError');
           final errorMessage = response.message.isNotEmpty
               ? response.message
               : "Si è verificato un errore durante la registrazione";
@@ -463,7 +463,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       },
       onFailure: (exception, message) {
-        print('[REGISTER] ❌ AuthBloc: Registration exception: $message');
+       //print('[REGISTER] ❌ AuthBloc: Registration exception: $message');
         emit(AuthError(message: message ?? exception?.toString() ?? "Errore sconosciuto"));
       },
     );

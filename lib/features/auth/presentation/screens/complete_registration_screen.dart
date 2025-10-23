@@ -174,41 +174,41 @@ class _CompleteRegistrationScreenState extends State<CompleteRegistrationScreen>
   Future<void> _updatePassword() async {
     final dio = DioClient.getInstance();
     
-    print('[COMPLETE_REG] 🔐 Attempting password change...');
+   //print('[COMPLETE_REG] 🔐 Attempting password change...');
     
     // Debug: controlla se l'utente è autenticato
     final authBloc = context.read<AuthBloc>();
     final currentState = authBloc.state;
-    print('[COMPLETE_REG] 🔍 Current auth state: ${currentState.runtimeType}');
+   //print('[COMPLETE_REG] 🔍 Current auth state: ${currentState.runtimeType}');
     
     if (currentState is AuthLoginSuccess) {
-      print('[COMPLETE_REG] ✅ User is authenticated: ${currentState.user.username}');
-      print('[COMPLETE_REG] 🔍 User ID: ${currentState.user.id}');
+     //print('[COMPLETE_REG] ✅ User is authenticated: ${currentState.user.username}');
+     //print('[COMPLETE_REG] 🔍 User ID: ${currentState.user.id}');
     } else if (currentState is AuthAuthenticated) {
-      print('[COMPLETE_REG] ✅ User is authenticated: ${currentState.user.username}');
-      print('[COMPLETE_REG] 🔍 User ID: ${currentState.user.id}');
+     //print('[COMPLETE_REG] ✅ User is authenticated: ${currentState.user.username}');
+     //print('[COMPLETE_REG] 🔍 User ID: ${currentState.user.id}');
     } else {
-      print('[COMPLETE_REG] ❌ User is not authenticated: ${currentState.runtimeType}');
+     //print('[COMPLETE_REG] ❌ User is not authenticated: ${currentState.runtimeType}');
     }
     
     // Debug: controlla se il token è presente nel SessionService
     try {
       final sessionService = getIt<SessionService>();
       final token = await sessionService.getAuthToken();
-      print('[COMPLETE_REG] 🔍 SessionService token: $token');
+     //print('[COMPLETE_REG] 🔍 SessionService token: $token');
     } catch (e) {
-      print('[COMPLETE_REG] ❌ SessionService error: $e');
+     //print('[COMPLETE_REG] ❌ SessionService error: $e');
     }
     
     try {
       // Debug: controlla gli header che verranno inviati
-      print('[COMPLETE_REG] 🔍 Making request to change_password API...');
+     //print('[COMPLETE_REG] 🔍 Making request to change_password API...');
       
       // Debug: controlla gli header del DioClient
-      print('[COMPLETE_REG] 🔍 DioClient headers: ${dio.options.headers}');
+     //print('[COMPLETE_REG] 🔍 DioClient headers: ${dio.options.headers}');
       
       // Debug: controlla se ci sono interceptor attivi
-      print('[COMPLETE_REG] 🔍 DioClient interceptors: ${dio.interceptors.length}');
+     //print('[COMPLETE_REG] 🔍 DioClient interceptors: ${dio.interceptors.length}');
       
       final response = await dio.post(
         '/password_reset_inapp.php',
@@ -218,33 +218,33 @@ class _CompleteRegistrationScreenState extends State<CompleteRegistrationScreen>
         },
       );
 
-      print('[COMPLETE_REG] 📡 Password change response: ${response.data}');
-      print('[COMPLETE_REG] 📡 Status code: ${response.statusCode}');
+     //print('[COMPLETE_REG] 📡 Password change response: ${response.data}');
+     //print('[COMPLETE_REG] 📡 Status code: ${response.statusCode}');
 
       if (response.statusCode != 200 || response.data['success'] != true) {
         throw Exception(response.data['error'] ?? 'Errore nel cambio password');
       }
     } catch (e) {
-      print('[COMPLETE_REG] ❌ Password change error: $e');
+     //print('[COMPLETE_REG] ❌ Password change error: $e');
       
       // Debug dettagliato per DioException
       if (e is DioException) {
-        print('[COMPLETE_REG] 🔍 DioException type: ${e.type}');
-        print('[COMPLETE_REG] 🔍 DioException message: ${e.message}');
-        print('[COMPLETE_REG] 🔍 DioException response: ${e.response?.data}');
-        print('[COMPLETE_REG] 🔍 DioException status code: ${e.response?.statusCode}');
+       //print('[COMPLETE_REG] 🔍 DioException type: ${e.type}');
+       //print('[COMPLETE_REG] 🔍 DioException message: ${e.message}');
+       //print('[COMPLETE_REG] 🔍 DioException response: ${e.response?.data}');
+       //print('[COMPLETE_REG] 🔍 DioException status code: ${e.response?.statusCode}');
         
         // Se c'è una risposta, proviamo a vedere il contenuto raw
         if (e.response != null) {
-          print('[COMPLETE_REG] 🔍 Raw response data: ${e.response!.data}');
-          print('[COMPLETE_REG] 🔍 Response headers: ${e.response!.headers}');
+         //print('[COMPLETE_REG] 🔍 Raw response data: ${e.response!.data}');
+         //print('[COMPLETE_REG] 🔍 Response headers: ${e.response!.headers}');
         }
       }
       
       // Se è un errore di parsing JSON, proviamo a vedere la risposta raw
       if (e.toString().contains('FormatException')) {
-        print('[COMPLETE_REG] 🔍 This is a JSON parsing error - API might be returning HTML/error instead of JSON');
-        print('[COMPLETE_REG] 🔍 This usually means the API has a PHP syntax error or is not updated on the server');
+       //print('[COMPLETE_REG] 🔍 This is a JSON parsing error - API might be returning HTML/error instead of JSON');
+       //print('[COMPLETE_REG] 🔍 This usually means the API has a PHP syntax error or is not updated on the server');
       }
       rethrow;
     }
@@ -274,7 +274,7 @@ class _CompleteRegistrationScreenState extends State<CompleteRegistrationScreen>
       username = currentState.user.username;
     }
     
-    print('[COMPLETE_REG] 🔍 Username from AuthBloc: $username');
+   //print('[COMPLETE_REG] 🔍 Username from AuthBloc: $username');
 
     final response = await dio.post(
       '/password_reset_inapp.php',
