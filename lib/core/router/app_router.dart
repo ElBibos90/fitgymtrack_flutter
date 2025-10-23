@@ -12,10 +12,11 @@ import '../../features/payments/bloc/stripe_bloc.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/security_questions_setup_screen.dart';
+import '../../features/auth/presentation/screens/complete_registration_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/password_reset_inapp_screen.dart';
-import '../../features/settings/presentation/screens/security_questions_setup_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/workouts/presentation/screens/workout_plans_screen.dart';
 import '../../features/workouts/presentation/screens/create_workout_screen.dart';
@@ -92,6 +93,25 @@ class AppRouter {
         ),
 
         GoRoute(
+          path: '/security-questions-setup',
+          name: 'security-questions-setup',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            return SecurityQuestionsSetupScreen(
+              username: extra?['username'] ?? '',
+              email: extra?['email'] ?? '',
+              name: extra?['name'] ?? '',
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/complete-registration',
+          name: 'complete-registration',
+          builder: (context, state) => const CompleteRegistrationScreen(),
+        ),
+
+        GoRoute(
           path: '/forgot-password',
           name: 'forgot-password',
           builder: (context, state) => const ForgotPasswordScreen(),
@@ -112,14 +132,6 @@ class AppRouter {
           builder: (context, state) => const PasswordResetInAppScreen(),
         ),
 
-        GoRoute(
-          path: '/security-questions-setup',
-          name: 'security-questions-setup',
-          builder: (context, state) => const AuthWrapper(
-            authenticatedChild: SecurityQuestionsSetupScreen(),
-            unauthenticatedChild: LoginScreen(),
-          ),
-        ),
 
         // ============================================================================
         // PROTECTED ROUTES

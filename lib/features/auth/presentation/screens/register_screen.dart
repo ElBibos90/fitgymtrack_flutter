@@ -36,18 +36,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: BlocConsumer<RegisterBloc, AuthState>(
+      body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
+          print('[REGISTER] State received: ${state.runtimeType}');
           if (state is AuthRegisterSuccess) {
-            // Mostra messaggio di successo e torna al login
+            print('[REGISTER] ✅ Registration successful, navigating to security questions setup');
+            // Mostra messaggio di successo e naviga al setup domande
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
                 backgroundColor: AppColors.success,
               ),
             );
-            context.go('/login');
+            // Naviga al setup domande di sicurezza invece che al login
+            print('[REGISTER] 🚀 Navigating to /security-questions-setup with extra data');
+            context.go('/security-questions-setup', extra: {
+              'username': _usernameController.text.trim(),
+              'email': _emailController.text.trim(),
+              'name': _nameController.text.trim(),
+            });
           } else if (state is AuthError) {
+            print('[REGISTER] ❌ Registration error: ${state.message}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -235,12 +244,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _handleRegister() {
     if (_formKey.currentState?.validate() ?? false) {
-      context.read<RegisterBloc>().register(
-        _usernameController.text.trim(),
-        _passwordController.text.trim(),
-        _emailController.text.trim(),
-        _nameController.text.trim(),
-      );
+      print('[REGISTER] 🚀 Starting registration process');
+      context.read<AuthBloc>().add(AuthRegisterRequested(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text.trim(),
+        email: _emailController.text.trim(),
+        name: _nameController.text.trim(),
+      ));
+    } else {
+      print('[REGISTER] ❌ Form validation failed');
     }
   }
 }

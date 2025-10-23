@@ -11,9 +11,9 @@ import 'dart:io' show Platform;
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/widgets/loading_overlay.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../bloc/auth_bloc.dart';
 import '../../../../core/services/biometric_auth_service.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../core/di/dependency_injection.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -157,6 +157,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // RIMOSSO: Il campo username serve SOLO per login normale
   // Il biometrico si attiva SOLO dal pulsante dedicato
+
+  // 🔧 CHECK FIRST LOGIN: Verifica se è il primo login (password temporanea)
+  Future<bool> _checkFirstLogin() async {
+    try {
+      print('[LOGIN] 🔍 Checking first login...');
+      final dio = DioClient.getInstance();
+      final response = await dio.get('/check_first_login.php');
+      
+      print('[LOGIN] 📡 Response: ${response.data}');
+      
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final isFirstLogin = response.data['first_login'] ?? false;
+        print('[LOGIN] ✅ First login check: $isFirstLogin');
+        return isFirstLogin;
+      }
+      print('[LOGIN] ❌ Invalid response format');
+      return false;
+    } catch (e) {
+      print('[LOGIN] ❌ Error checking first login: $e');
+      return false;
+    }
+  }
 
   // 🔐 BIOMETRIC: Tenta login biometrico
   Future<void> _tryBiometricLogin() async {
@@ -363,14 +385,18 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: colorScheme.surface,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
+          print('[LOGIN] 🔍 State received: ${state.runtimeType}');
+          
           if (state is AuthLoading) {
+            print('[LOGIN] ⏳ Loading state received');
             setState(() => _isLoading = true);
           } else {
+            print('[LOGIN] ✅ Non-loading state received: ${state.runtimeType}');
             setState(() => _isLoading = false);
           }
 
           if (state is AuthLoginSuccess || state is AuthAuthenticated) {
-            //debugPrint('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
+            print('[LOGIN] ✅ Login successful, state: ${state.runtimeType}');
             
             // 🔧 AUTOFILL: Finalize autofill context
             if (Platform.isAndroid) {
@@ -386,26 +412,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
             // 🔐 BIOMETRIC: Proponi abilitazione biometrico dopo login riuscito
             final token = state is AuthLoginSuccess ? state.token : (state as AuthAuthenticated).token;
-            //debugPrint('[LOGIN] 🔑 Token obtained, scheduling biometric dialog...');
+            print('[LOGIN] 🔑 Token obtained, checking first login...');
             
-            // 🔧 FIX: Mostra dialog biometrico SOLO se non già abilitato
+            // 🔧 FIX: Controlla se è il primo login (password temporanea) - SEMPRE dopo login
             Future.delayed(const Duration(milliseconds: 500), () async {
-              //debugPrint('[LOGIN] ⏰ Dialog delay completed, checking biometric status...');
               if (mounted) {
-                // Controlla se il biometric è già abilitato prima di mostrare il dialog
-                final isEnabled = await _biometricService.isBiometricEnabled();
-                if (!isEnabled) {
-                  //debugPrint('[LOGIN] 📱 Biometric not enabled, showing dialog...');
-                  _showEnableBiometricDialog();
+                print('[LOGIN] 🔍 Checking first login after successful login...');
+                // Controlla se è il primo login
+                final isFirstLogin = await _checkFirstLogin();
+                if (isFirstLogin) {
+                  print('[LOGIN] 🚀 First login detected, navigating to CompleteRegistrationScreen');
+                  // Primo login: naviga al CompleteRegistrationScreen
+                  context.go('/complete-registration');
                 } else {
-                  //debugPrint('[LOGIN] ✅ Biometric already enabled, skipping dialog');
+                  print('[LOGIN] 🏠 Normal login, navigating to dashboard');
+                  // Login normale: controlla biometrico e naviga al dashboard
+                  final isEnabled = await _biometricService.isBiometricEnabled();
+                  if (!isEnabled) {
+                    _showEnableBiometricDialog();
+                  }
+                  context.go('/dashboard');
                 }
-              } else {
-                //debugPrint('[LOGIN] ⚠️ Widget not mounted, skipping dialog');
               }
             });
-            
-            context.go('/dashboard');
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
